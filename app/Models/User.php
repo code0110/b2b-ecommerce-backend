@@ -35,25 +35,9 @@ class User extends Authenticatable
         'is_active' => 'boolean',
     ];
 
-    public function customer(): BelongsTo
-    {
-        return $this->belongsTo(Customer::class);
-    }
 
-    public function roles(): BelongsToMany
-    {
-        return $this->belongsToMany(Role::class);
-    }
 
-    public function hasRole(string $slug): bool
-    {
-        return $this->roles->contains('slug', $slug);
-    }
 
-    public function hasAnyRole(array $slugs): bool
-    {
-        return $this->roles->whereIn('slug', $slugs)->count() > 0;
-    }
 
     public function orders(): HasMany
     {

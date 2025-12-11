@@ -1,109 +1,143 @@
+<script setup>
+import { ref, computed } from 'vue';
+import { useRouter, useRoute } from 'vue-router';
+import { useAuthStore } from '@/store/auth';
+
+const router = useRouter();
+const route = useRoute();
+const authStore = useAuthStore();
+
+const email = ref('');
+const password = ref('');
+const remember = ref(false);
+const localError = ref('');
+
+const loading = computed(() => authStore.loading);
+
+const handleSubmit = async () => {
+  localError.value = '';
+
+  try {
+    const user = await authStore.login({
+      email: email.value,
+      password: password.value,
+      remember: remember.value,
+    });
+
+    // Redirect explicit, dacă avem ?redirect=/...
+    const redirect = route.query.redirect;
+    if (redirect) {
+      return router.push(redirect.toString());
+    }
+
+    // Redirect în funcție de rol
+    if (authStore.role === 'admin') {
+      router.push({ name: 'admin-dashboard' });
+    } else {
+      router.push({ name: 'account-dashboard' });
+    }
+  } catch (e) {
+    localError.value = authStore.error || 'Autentificare eșuată.';
+  }
+};
+</script>
+
 <template>
-  <div class="row justify-content-center">
-    <div class="col-md-6 col-lg-4">
-      <div class="card shadow-sm">
-        <div class="card-body">
-          <h1 class="h4 mb-3 text-center">Autentificare</h1>
+  <div class="container py-5">
+    <div class="row justify-content-center">
+      <div class="col-md-5 col-lg-4">
+        <div class="card shadow-sm">
+          <div class="card-body p-4">
+            <h1 class="h4 mb-3 text-center">Autentificare</h1>
+            <p class="text-muted text-center mb-4">
+              Intră în contul tău pentru a vedea prețuri, comenzi și documente.
+            </p>
 
-          <form @submit.prevent="onSubmit" novalidate>
-            <div class="mb-3">
-              <label for="email" class="form-label">Email / Username</label>
-              <input
-                id="email"
-                v-model="email"
-                type="email"
-                class="form-control"
-                required
-                autocomplete="username"
-              />
+            <div v-if="localError" class="alert alert-danger">
+              {{ localError }}
             </div>
 
-            <div class="mb-3">
-              <label for="password" class="form-label">Parolă</label>
-              <input
-                id="password"
-                v-model="password"
-                type="password"
-                class="form-control"
-                required
-                autocomplete="current-password"
-              />
-            </div>
-
-            <div class="d-flex justify-content-between align-items-center mb-3">
-              <div class="form-check">
+            <form @submit.prevent="handleSubmit" novalidate>
+              <div class="mb-3">
+                <label class="form-label">Email</label>
                 <input
-                  id="remember"
-                  v-model="remember"
-                  type="checkbox"
-                  class="form-check-input"
+                  v-model="email"
+                  type="email"
+                  class="form-control"
+                  required
+                  autocomplete="email"
                 />
-                <label class="form-check-label" for="remember">
-                  Ține-mă minte
-                </label>
               </div>
 
-              <button type="button" class="btn btn-link btn-sm p-0">
-                Ai uitat parola?
+              <div class="mb-3">
+                <label class="form-label">Parolă</label>
+                <input
+                  v-model="password"
+                  type="password"
+                  class="form-control"
+                  required
+                  autocomplete="current-password"
+                />
+              </div>
+
+              <div class="d-flex justify-content-between align-items-center mb-3">
+                <div class="form-check">
+                  <input
+                    id="remember"
+                    v-model="remember"
+                    class="form-check-input"
+                    type="checkbox"
+                  />
+                  <label class="form-check-label" for="remember">
+                    Ține-mă minte
+                  </label>
+                </div>
+
+                <!-- Placeholder pentru "Ai uitat parola?" -->
+                <router-link
+                  :to="{ name: 'login' }"
+                  class="small text-decoration-none"
+                >
+                  Ai uitat parola?
+                </router-link>
+              </div>
+
+              <button
+                class="btn btn-primary w-100"
+                type="submit"
+                :disabled="loading"
+              >
+                <span v-if="!loading">Autentificare</span>
+                <span v-else>Se autentifică...</span>
               </button>
+            </form>
+
+            <hr class="my-4" />
+
+            <div class="text-center">
+              <span class="text-muted">Nu ai cont?</span>
+              <router-link
+                :to="{ name: 'register' }"
+                class="ms-1 text-decoration-none"
+              >
+                Creează cont
+              </router-link>
             </div>
 
-            <div class="mb-3">
-              <label class="form-label small">Rol demo (doar pentru template)</label>
-              <select v-model="role" class="form-select form-select-sm">
-                <option value="b2c">Client B2C</option>
-                <option value="b2b">Client B2B</option>
-                <option value="agent">Agent vânzări</option>
-                <option value="director">Director vânzări</option>
-                <option value="admin">Administrator</option>
-              </select>
-            </div>
-
-            <button type="submit" class="btn btn-primary w-100 mb-3">
-              Autentificare
-            </button>
-
-            <div class="d-grid gap-2 mb-3">
-              <button type="button" class="btn btn-outline-secondary" disabled>
+            <!-- Placeholder pentru login social -->
+            <!--
+            <div class="mt-3 d-grid gap-2">
+              <button type="button" class="btn btn-outline-secondary btn-sm">
                 Login cu Google
               </button>
-              <button type="button" class="btn btn-outline-secondary" disabled>
+              <button type="button" class="btn btn-outline-secondary btn-sm">
                 Login cu Facebook
               </button>
             </div>
-
-            <p class="text-center small mb-0">
-              Nu ai cont?
-              <RouterLink :to="{ name: 'register' }">Creează cont</RouterLink>
-            </p>
-          </form>
+            -->
+          </div>
         </div>
       </div>
     </div>
   </div>
 </template>
-
-<script setup>
-import { ref } from 'vue'
-import { useRouter, RouterLink } from 'vue-router'
-import { useAuthStore } from '@/store/auth'
-
-const router = useRouter()
-const authStore = useAuthStore()
-
-const email = ref('')
-const password = ref('')
-const remember = ref(false)
-const role = ref('b2c')
-
-const onSubmit = () => {
-  // TODO: înlocuiește cu apel real la API.
-  authStore.loginDummy({ email: email.value, role: role.value })
-
-  if (authStore.role === 'admin') {
-    router.push({ name: 'admin-dashboard' })
-  } else {
-    router.push({ name: 'account-dashboard' })
-  }
-}
-</script>

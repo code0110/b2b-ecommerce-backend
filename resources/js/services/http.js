@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: '/api', // același domeniu, doar prefixul API
+  baseURL: '/api', // Laravel API, același domeniu
 });
 
 api.interceptors.request.use((config) => {

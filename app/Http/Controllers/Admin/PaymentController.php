@@ -5,11 +5,14 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Payment;
 use App\Models\Customer;
+use App\Traits\RecordsAudit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class PaymentController extends Controller
 {
+    use RecordsAudit;
+
     public function index(Request $request)
     {
         $query = Payment::with(['customer', 'order', 'recordedBy']);
@@ -51,24 +54,43 @@ class PaymentController extends Controller
 
         return DB::transaction(function () use ($data, $user) {
             $customer = Customer::findOrFail($data['customer_id']);
+            $beforeBalance = $customer->current_balance ?? 0;
 
             $payment = Payment::create([
-                'customer_id'        => $customer->id,
-                'order_id'           => $data['order_id'] ?? null,
-                'recorded_by_user_id'=> $user->id,
-                'type'               => $data['type'],
-                'channel'            => 'offline',
-                'amount'             => $data['amount'],
-                'currency'           => $data['currency'] ?? 'RON',
-                'status'             => 'confirmed',
-                'payment_date'       => $data['payment_date'] ?? now(),
-                'document_number'    => $data['document_number'] ?? null,
-                'notes'              => $data['notes'] ?? null,
+                'customer_id'         => $customer->id,
+                'order_id'            => $data['order_id'] ?? null,
+                'recorded_by_user_id' => $user->id,
+                'type'                => $data['type'],
+                'channel'             => 'offline',
+                'amount'              => $data['amount'],
+                'currency'            => $data['currency'] ?? 'RON',
+                'status'              => 'confirmed',
+                'payment_date'        => $data['payment_date'] ?? now(),
+                'document_number'     => $data['document_number'] ?? null,
+                'notes'               => $data['notes'] ?? null,
             ]);
 
-            // scădem încasarea din sold
-            $customer->current_balance = ($customer->current_balance ?? 0) - $payment->amount;
+            // actualizăm soldul clientului (scădem încasarea)
+            $customer->current_balance = $beforeBalance - $payment->amount;
             $customer->save();
+
+            // Audit – intervenție manuală asupra soldului / încasare
+            $this->recordAudit(
+                action: 'payment_recorded',
+                entityType: 'Payment',
+                entityId: $payment->id,
+                changes: [
+                    'customer_id'    => $customer->id,
+                    'before_balance' => $beforeBalance,
+                    'after_balance'  => $customer->current_balance,
+                    'amount'         => $payment->amount,
+                    'type'           => $payment->type,
+                ],
+                meta: [
+                    'order_id'        => $payment->order_id,
+                    'document_number' => $payment->document_number,
+                ]
+            );
 
             return response()->json($payment->load('customer'), 201);
         });
@@ -76,12 +98,26 @@ class PaymentController extends Controller
 
     public function update(Request $request, Payment $payment)
     {
+        $before = $payment->toArray();
+
         $data = $request->validate([
             'status' => ['sometimes', 'string', 'max:50'],
             'notes'  => ['nullable', 'string'],
         ]);
 
         $payment->update($data);
+
+        // Audit – modificare status/notes în plată
+        $this->recordAudit(
+            action: 'payment_updated',
+            entityType: 'Payment',
+            entityId: $payment->id,
+            changes: [
+                'before' => array_intersect_key($before, array_flip(['status', 'notes'])),
+                'after'  => $payment->only(['status', 'notes']),
+            ],
+            meta: []
+        );
 
         return response()->json($payment);
     }

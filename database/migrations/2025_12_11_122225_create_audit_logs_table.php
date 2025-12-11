@@ -10,13 +10,15 @@ return new class extends Migration {
         Schema::create('audit_logs', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('user_id')->nullable();
-            $table->string('action');
-            $table->string('entity_type');
+            $table->string('action', 100);          // ex: price_update, promotion_status_change, payment_recorded
+            $table->string('entity_type', 100);     // Product, Promotion, Customer, Payment etc.
             $table->unsignedBigInteger('entity_id')->nullable();
-            $table->json('old_values')->nullable();
-            $table->json('new_values')->nullable();
+            $table->json('changes')->nullable();    // before/after
+            $table->json('meta')->nullable();       // orice alt context (IP, etc.)
             $table->timestamps();
 
+            $table->index(['entity_type', 'entity_id']);
+            $table->index(['action']);
             $table->foreign('user_id')->references('id')->on('users')->nullOnDelete();
         });
     }

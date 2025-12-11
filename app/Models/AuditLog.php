@@ -12,13 +12,13 @@ class AuditLog extends Model
         'action',
         'entity_type',
         'entity_id',
-        'old_values',
-        'new_values',
+        'changes',
+        'meta',
     ];
 
     protected $casts = [
-        'old_values' => 'array',
-        'new_values' => 'array',
+        'changes' => 'array',
+        'meta'    => 'array',
     ];
 
     public function user(): BelongsTo

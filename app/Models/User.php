@@ -59,4 +59,27 @@ class User extends Authenticatable
     {
         return $this->hasMany(Order::class, 'placed_by_user_id');
     }
+
+    public function roles()
+{
+    return $this->belongsToMany(\App\Models\Role::class, 'role_user');
+}
+
+public function hasRole(string $code): bool
+{
+    return $this->roles()->where('code', $code)->exists();
+}
+
+public function hasAnyRole(array $codes): bool
+{
+    return $this->roles()->whereIn('code', $codes)->exists();
+}
+
+public function permissions()
+{
+    return \App\Models\Permission::whereHas('roles', function ($q) {
+        $q->whereIn('roles.id', $this->roles()->pluck('roles.id'));
+    })->get();
+}
+
 }

@@ -9,17 +9,22 @@ class Role extends Model
 {
     protected $fillable = [
         'name',
-        'slug',
+        'code',
         'description',
-        'is_default',
+        'is_system',
     ];
 
     protected $casts = [
-        'is_default' => 'boolean',
+        'is_system' => 'boolean',
     ];
 
     public function users(): BelongsToMany
     {
-        return $this->belongsToMany(User::class);
+        return $this->belongsToMany(User::class, 'role_user');
+    }
+
+    public function permissions(): BelongsToMany
+    {
+        return $this->belongsToMany(Permission::class, 'permission_role');
     }
 }

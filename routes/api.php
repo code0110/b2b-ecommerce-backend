@@ -42,6 +42,9 @@ use App\Http\Controllers\Front\QuoteController;
 use App\Http\Controllers\Admin\QuoteController as AdminQuoteController;
 use App\Http\Controllers\Admin\ErpController;
 use App\Http\Controllers\Admin\ShipmentController;
+use App\Http\Controllers\Admin\RoleController;
+use App\Http\Controllers\Admin\PermissionController;
+use App\Http\Controllers\Admin\AuditLogController;
 
 // Auth
 Route::prefix('auth')->group(function () {
@@ -159,17 +162,23 @@ Route::prefix('admin')
         Route::delete('shipping/config/{id}', [AdminShippingController::class, 'destroy']);
 
         // Oferte (admin/agenți)
-Route::apiResource('quotes', AdminQuoteController::class)->only(['index', 'show', 'update']);
-Route::post('quotes/{quoteRequest}/convert-to-order', [AdminQuoteController::class, 'convertToOrder']);
+        Route::apiResource('quotes', AdminQuoteController::class)->only(['index', 'show', 'update']);
+        Route::post('quotes/{quoteRequest}/convert-to-order', [AdminQuoteController::class, 'convertToOrder']);
 
-// ERP logs & manual sync
-Route::get('erp/logs', [ErpController::class, 'logs']);
-Route::post('erp/orders/{order}/sync', [ErpController::class, 'syncOrder']);
+        // ERP logs & manual sync
+        Route::get('erp/logs', [ErpController::class, 'logs']);
+        Route::post('erp/orders/{order}/sync', [ErpController::class, 'syncOrder']);
 
-// Shipments / AWB
-Route::get('shipments', [ShipmentController::class, 'index']);
-Route::post('shipments', [ShipmentController::class, 'store']);
-Route::post('shipments/{id}/status', [ShipmentController::class, 'updateStatus']);
+        // Shipments / AWB
+        Route::get('shipments', [ShipmentController::class, 'index']);
+        Route::post('shipments', [ShipmentController::class, 'store']);
+        Route::post('shipments/{id}/status', [ShipmentController::class, 'updateStatus']);
+        // Roles & permissions
+        Route::apiResource('roles', RoleController::class);
+        Route::apiResource('permissions', PermissionController::class)->only(['index', 'store', 'show', 'update', 'destroy']);
+        // Audit log
+        Route::get('audit-logs', [AuditLogController::class, 'index']);
+        Route::get('audit-logs/{id}', [AuditLogController::class, 'show']);
 
 
     });

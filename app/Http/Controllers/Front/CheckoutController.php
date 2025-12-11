@@ -119,6 +119,34 @@ if ($order->credit_blocked) {
         optional($customer->salesDirector)->notify(new CreditBlockedNotification($order));
     }
 }
+
+$requiresApproval = $customer->type === 'b2b' && $user->requiresOrderApproval();
+
+// dacă utilizatorul necesită aprobare, marcăm comanda ca pending_approval și NU aplicăm credit încă
+if ($requiresApproval) {
+    $order->approval_status = 'pending';
+    $order->status          = 'pending_approval';
+    $order->save();
+
+    // aici poți notifica owner-ul / approverii companiei
+    // ex: foreach ($customer->users()->whereIn('company_role', ['owner', 'approver'])->get() as $approver) { ... }
+
+} else {
+    // cazul normal: aplicăm imediat logica de credit B2B (codul tău existent)
+    if ($customer->type === 'b2b' && $customer->credit_limit > 0) {
+        $futureBalance = ($customer->current_balance ?? 0) + $order->grand_total;
+
+        if ($futureBalance > $customer->credit_limit) {
+            $order->credit_blocked = true;
+            $order->status         = 'credit_blocked';
+            $order->save();
+        } else {
+            $customer->current_balance = $futureBalance;
+            $customer->save();
+        }
+    }
+}
+
             $cart->status = 'converted';
             $cart->save();
             $cart->items()->delete();

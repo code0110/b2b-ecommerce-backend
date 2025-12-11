@@ -45,6 +45,12 @@ use App\Http\Controllers\Admin\ShipmentController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\PermissionController;
 use App\Http\Controllers\Admin\AuditLogController;
+use App\Http\Controllers\Front\InvoiceController as FrontInvoiceController;
+use App\Http\Controllers\Admin\InvoiceController as AdminInvoiceController;
+use App\Http\Controllers\Front\CompanyUserController;
+use App\Http\Controllers\Front\OrderApprovalController;
+use App\Http\Controllers\Front\HomeController;
+use App\Http\Controllers\Front\ShipmentController as FrontShipmentController;
 
 // Auth
 Route::prefix('auth')->group(function () {
@@ -138,6 +144,32 @@ Route::get('quotes', [QuoteController::class, 'index']);
 Route::get('quotes/{id}', [QuoteController::class, 'show']);
 Route::post('quotes/from-product', [QuoteController::class, 'fromProduct']);
 Route::post('quotes/from-cart', [QuoteController::class, 'fromCart']);
+// Documente financiare (cont client)
+Route::get('invoices', [FrontInvoiceController::class, 'index']);
+Route::get('invoices/{id}', [FrontInvoiceController::class, 'show']);
+
+// Multi-user B2B – administrare utilizatori companie (doar owner)
+Route::get('company/users', [CompanyUserController::class, 'index']);
+Route::post('company/users', [CompanyUserController::class, 'store']);
+Route::put('company/users/{id}', [CompanyUserController::class, 'update']);
+Route::delete('company/users/{id}', [CompanyUserController::class, 'destroy']);
+
+// Workflow aprobare comenzi B2B
+Route::get('company/orders/pending-approval', [OrderApprovalController::class, 'pending']);
+Route::post('company/orders/{order}/approve', [OrderApprovalController::class, 'approve']);
+Route::post('company/orders/{order}/reject', [OrderApprovalController::class, 'reject']);
+
+Route::get('shipments', [FrontShipmentController::class, 'index']);
+Route::get('shipments/{id}', [FrontShipmentController::class, 'show']);
+
+// Homepage data
+Route::get('home', [HomeController::class, 'homepage']);
+
+// Produse noi
+Route::get('products/new', [HomeController::class, 'newProducts']);
+
+// Produse în promoție / reduceri
+Route::get('products/discounted', [HomeController::class, 'discountedProducts']);
 
 });
 
@@ -147,6 +179,8 @@ Route::prefix('admin')
     ->group(function () {
 
         Route::get('dashboard', [DashboardController::class, 'index']);
+// Dashboard admin
+Route::get('dashboard/overview', [DashboardController::class, 'overview']);
 
         Route::apiResource('products', AdminProductController::class);
         Route::apiResource('categories', AdminCategoryController::class);
@@ -179,6 +213,8 @@ Route::prefix('admin')
         // Audit log
         Route::get('audit-logs', [AuditLogController::class, 'index']);
         Route::get('audit-logs/{id}', [AuditLogController::class, 'show']);
+// Invoices admin
+Route::apiResource('invoices', AdminInvoiceController::class)->only(['index', 'show', 'store', 'update', 'destroy']);
 
 
     });

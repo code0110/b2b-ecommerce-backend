@@ -82,4 +82,24 @@ public function permissions()
     })->get();
 }
 
+public function customer()
+{
+    return $this->belongsTo(\App\Models\Customer::class);
+}
+
+public function isCompanyOwner(): bool
+{
+    return $this->company_role === 'owner';
+}
+
+public function canApproveCompanyOrders(): bool
+{
+    return in_array($this->company_role, ['owner', 'approver'], true);
+}
+
+public function requiresOrderApproval(): bool
+{
+    return (bool) $this->requires_approval;
+}
+
 }

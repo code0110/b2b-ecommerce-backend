@@ -10,6 +10,8 @@ use App\Models\ShippingMethod;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use App\Notifications\OrderPlacedNotification;
+use App\Notifications\CreditBlockedNotification;
 
 class CheckoutController extends Controller
 {
@@ -48,6 +50,23 @@ class CheckoutController extends Controller
             $shippingTotal = 0; // TODO: calcul pe baza regulilor de shipping
             $grandTotal = $subtotal + $shippingTotal;
 
+            // după ce ai creat $order și ai totalul:
+if ($customer->type === 'b2b' && $customer->credit_limit > 0) {
+    $futureBalance = ($customer->current_balance ?? 0) + $grandTotal;
+
+    if ($futureBalance > $customer->credit_limit) {
+        // depășire credit – blocăm comanda
+        $order->credit_blocked = true;
+        $order->status = 'credit_blocked';
+        $order->save();
+    } else {
+        // actualizăm soldul
+        $customer->current_balance = $futureBalance;
+        $customer->save();
+    }
+}
+
+
             $order = Order::create([
                 'order_number'       => 'C' . now()->format('Ymd') . '-' . Str::upper(Str::random(6)),
                 'customer_id'        => $user->customer_id,
@@ -85,7 +104,21 @@ class CheckoutController extends Controller
                     'total'             => $item->total,
                 ]);
             }
+$user->notify(new OrderPlacedNotification($order));
 
+// dacă e blocată la credit, notificăm și
+if ($order->credit_blocked) {
+    $user->notify(new CreditBlockedNotification($order));
+
+    // opțional: notificăm agentul / directorul
+    // presupunând că în customers ai coloane agent_user_id, sales_director_user_id
+    if ($customer->agent_user_id) {
+        optional($customer->agent)->notify(new CreditBlockedNotification($order));
+    }
+    if ($customer->sales_director_user_id) {
+        optional($customer->salesDirector)->notify(new CreditBlockedNotification($order));
+    }
+}
             $cart->status = 'converted';
             $cart->save();
             $cart->items()->delete();

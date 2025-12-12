@@ -1,362 +1,388 @@
 <template>
-  <div class="container-fluid py-4">
-    <PageHeader
-      title="Roluri & permisiuni"
-      subtitle="Matrice de permisiuni pentru administrator, operator, agent, director, marketer și alți utilizatori interni."
-    >
-      <!-- Slot pentru butoane de acțiune (ex: Export, Sincronizare cu IDM/SSO etc.) -->
-    </PageHeader>
+  <div class="container-fluid py-3">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h1 class="h5 mb-0">Roluri & permisiuni</h1>
+      <button
+        class="btn btn-sm btn-primary"
+        type="button"
+        @click="startCreateRole"
+      >
+        Adaugă rol
+      </button>
+    </div>
 
-    <div class="row g-3 mb-3">
-      <div class="col-lg-7">
-        <div class="card shadow-sm h-100">
-          <div class="card-header py-2 d-flex justify-content-between align-items-center">
-            <strong class="small text-uppercase">Roluri definite</strong>
-            <span class="text-muted small">
-              Roluri demo – în implementarea reală, ar fi gestionate din backend / IDM.
-            </span>
-          </div>
-          <div class="card-body small">
-            <div class="table-responsive">
-              <table class="table table-sm align-middle mb-0">
-                <thead class="table-light">
-                  <tr>
-                    <th style="width: 180px;">Rol</th>
-                    <th>Descriere</th>
-                    <th style="width: 160px;">Tip utilizator</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr v-for="role in roles" :key="role.key">
-                    <td>
-                      <div class="fw-semibold">{{ role.label }}</div>
-                      <div class="text-muted">{{ role.key }}</div>
-                    </td>
-                    <td>
-                      {{ role.description }}
-                    </td>
-                    <td>
-                      <span
-                        class="badge"
-                        :class="role.type === 'internal' ? 'bg-primary' : 'bg-secondary'"
-                      >
-                        {{ role.type === 'internal' ? 'Intern (admin / back-office)' : 'Client (cont front)' }}
-                      </span>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
+    <div v-if="error" class="alert alert-danger py-2">
+      {{ error }}
+    </div>
+
+    <div class="row g-3">
+      <!-- Lista roluri -->
+      <div class="col-md-4">
+        <div class="card h-100">
+          <div class="card-header py-2">
+            <div class="d-flex justify-content-between align-items-center">
+              <span class="fw-semibold small">Roluri definite</span>
+              <span class="badge bg-light text-dark small">
+                {{ roles.length }}
+              </span>
             </div>
           </div>
-          <div class="card-footer small text-muted">
-            În practică, rolurile interne pot fi mapate pe grupuri din Active Directory / LDAP sau pe roluri din ERP.
+          <div class="card-body p-0">
+            <ul class="list-group list-group-flush">
+              <li
+                v-for="role in roles"
+                :key="role.id"
+                class="list-group-item d-flex justify-content-between align-items-center small"
+                :class="{ 'bg-light': currentRole && currentRole.id === role.id }"
+              >
+                <div class="me-2">
+                  <div class="fw-semibold">{{ role.name }}</div>
+                  <div class="text-muted">slug: {{ role.slug }}</div>
+                </div>
+                <div class="btn-group btn-group-sm">
+                  <button
+                    class="btn btn-outline-secondary"
+                    type="button"
+                    @click="selectRole(role)"
+                  >
+                    Editează
+                  </button>
+                  <button
+                    class="btn btn-outline-danger"
+                    type="button"
+                    @click="confirmDelete(role)"
+                    :disabled="isProtected(role)"
+                  >
+                    Șterge
+                  </button>
+                </div>
+              </li>
+
+              <li v-if="!roles.length" class="list-group-item text-muted small">
+                Nu există roluri definite.
+              </li>
+            </ul>
           </div>
         </div>
       </div>
 
-      <div class="col-lg-5">
-        <div class="card shadow-sm h-100">
+      <!-- Detalii rol / form -->
+      <div class="col-md-8">
+        <div class="card">
           <div class="card-header py-2">
-            <strong class="small text-uppercase">Legendă permisiuni</strong>
+            <div class="d-flex justify-content-between align-items-center">
+              <span class="fw-semibold small">
+                {{ currentRole?.id ? 'Editează rol' : 'Rol nou' }}
+              </span>
+              <span v-if="saving" class="small text-muted">
+                Salvare...
+              </span>
+            </div>
           </div>
-          <div class="card-body small">
-            <p class="text-muted mb-2">
-              Matricea de mai jos este o reprezentare vizuală. În implementarea reală, permisiunile ar fi salvate la nivel de backend și ar acoperi inclusiv API-urile.
-            </p>
-            <ul class="list-unstyled mb-3">
-              <li class="mb-1 d-flex align-items-center">
-                <span class="badge bg-success me-2">&nbsp;</span>
-                <span><strong>Acces complet</strong> – listare, creare, editare, ștergere, configurări.</span>
-              </li>
-              <li class="mb-1 d-flex align-items-center">
-                <span class="badge bg-warning text-dark me-2">&nbsp;</span>
-                <span><strong>Editare limitată</strong> – modificări operaționale (fără setări globale).</span>
-              </li>
-              <li class="mb-1 d-flex align-items-center">
-                <span class="badge bg-info text-dark me-2">&nbsp;</span>
-                <span><strong>Doar vizualizare</strong> – acces read-only.</span>
-              </li>
-              <li class="mb-1 d-flex align-items-center">
-                <span class="badge bg-light text-muted border me-2">&nbsp;</span>
-                <span><strong>Fără acces</strong> – modulul nu este disponibil în interfață.</span>
-              </li>
-            </ul>
-            <div class="border rounded p-2 bg-light">
-              <div class="mb-2"><strong>Notă demo:</strong></div>
-              <p class="mb-1">
-                Click pe o celulă din matrice pentru a simula schimbarea nivelului de acces. Modificarea este doar locală, nu se salvează nicăieri.
-              </p>
-              <p class="mb-0">
-                În producție, aceste schimbări ar declanșa un apel la un API de administrare / IDM, cu audit separat.
-              </p>
+
+          <div class="card-body">
+            <form @submit.prevent="saveRole">
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <label class="form-label form-label-sm">Nume rol</label>
+                  <input
+                    v-model="form.name"
+                    type="text"
+                    class="form-control form-control-sm"
+                    required
+                  >
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label form-label-sm">
+                    Slug (identificator intern)
+                  </label>
+                  <input
+                    v-model="form.slug"
+                    type="text"
+                    class="form-control form-control-sm"
+                    :readonly="isProtected(currentRole)"
+                    required
+                  >
+                  <div class="form-text small">
+                    Exemplu: <code>admin</code>, <code>customer_b2b</code>.
+                  </div>
+                </div>
+              </div>
+
+              <hr class="my-3">
+
+              <!-- Permisiuni -->
+              <div>
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                  <h2 class="h6 mb-0">Permisiuni pentru rol</h2>
+                  <button
+                    class="btn btn-sm btn-outline-secondary"
+                    type="button"
+                    @click="toggleAllPermissions"
+                    v-if="permissions.length"
+                  >
+                    {{ allSelected ? 'Debifează tot' : 'Selectează tot' }}
+                  </button>
+                </div>
+
+                <div class="row g-2">
+                  <div
+                    v-for="perm in permissions"
+                    :key="perm.id"
+                    class="col-md-4 col-sm-6"
+                  >
+                    <div class="form-check small">
+                      <input
+                        class="form-check-input"
+                        type="checkbox"
+                        :id="`perm-${perm.id}`"
+                        :value="perm.id"
+                        v-model="form.permission_ids"
+                      >
+                      <label
+                        class="form-check-label"
+                        :for="`perm-${perm.id}`"
+                      >
+                        {{ perm.name }}
+                      </label>
+                      <div class="text-muted small">
+                        <code>{{ perm.slug }}</code>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div v-if="!permissions.length" class="col-12 small text-muted">
+                    Nu există permisiuni definite în sistem.
+                  </div>
+                </div>
+              </div>
+
+              <div class="mt-3 d-flex justify-content-between">
+                <div>
+                  <button
+                    class="btn btn-sm btn-primary me-2"
+                    type="submit"
+                    :disabled="saving"
+                  >
+                    Salvează rolul
+                  </button>
+                  <button
+                    class="btn btn-sm btn-outline-secondary"
+                    type="button"
+                    @click="resetForm"
+                    :disabled="saving"
+                  >
+                    Reset
+                  </button>
+                </div>
+
+                <div class="small text-muted" v-if="currentRole?.id">
+                  ID intern: {{ currentRole.id }}
+                </div>
+              </div>
+            </form>
+          </div>
+
+          <div v-if="formError" class="card-footer py-2">
+            <div class="text-danger small">
+              {{ formError }}
             </div>
           </div>
         </div>
       </div>
     </div>
 
-    <div class="card shadow-sm">
-      <div class="card-header py-2 d-flex justify-content-between align-items-center small">
-        <div>
-          <strong class="text-uppercase">Matrice permisiuni pe module</strong>
+    <!-- Modal confirmare ștergere simplu (dacă vrei, poți înlocui cu un modal complet Bootstrap) -->
+    <div
+      v-if="roleToDelete"
+      class="modal-backdrop fade show"
+    ></div>
+    <div
+      v-if="roleToDelete"
+      class="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center"
+      style="z-index: 1050;"
+    >
+      <div class="card shadow" style="max-width: 400px; width: 100%;">
+        <div class="card-header py-2">
+          <strong class="small">Confirmare ștergere rol</strong>
         </div>
-        <div class="d-flex align-items-center gap-2">
-          <div class="d-none d-md-flex align-items-center">
-            <span class="me-1">Evidențiază rol:</span>
-            <select v-model="highlightRole" class="form-select form-select-sm w-auto">
-              <option value="">Toate</option>
-              <option v-for="role in roles" :key="role.key" :value="role.key">
-                {{ role.label }}
-              </option>
-            </select>
-          </div>
-          <div class="d-none d-md-flex align-items-center">
-            <span class="me-1">Evidențiază modul:</span>
-            <select v-model="highlightArea" class="form-select form-select-sm w-auto">
-              <option value="">Toate</option>
-              <option v-for="area in permissionAreas" :key="area.key" :value="area.key">
-                {{ area.label }}
-              </option>
-            </select>
-          </div>
+        <div class="card-body small">
+          Ești sigur că vrei să ștergi rolul
+          <strong>{{ roleToDelete.name }}</strong>?
         </div>
-      </div>
-      <div class="card-body p-0">
-        <div class="table-responsive">
-          <table class="table table-sm align-middle mb-0">
-            <thead class="table-light small">
-              <tr>
-                <th style="width: 220px;">Modul / resursă</th>
-                <th
-                  v-for="role in roles"
-                  :key="role.key"
-                  class="text-center"
-                >
-                  <div class="fw-semibold">{{ role.label }}</div>
-                  <div class="text-muted">{{ role.shortLabel }}</div>
-                </th>
-              </tr>
-            </thead>
-            <tbody class="small">
-              <tr
-                v-for="area in permissionAreas"
-                :key="area.key"
-                :class="{
-                  'table-active': highlightArea === area.key
-                }"
-              >
-                <td>
-                  <div class="fw-semibold">{{ area.label }}</div>
-                  <div class="text-muted">{{ area.description }}</div>
-                </td>
-                <td
-                  v-for="role in roles"
-                  :key="role.key"
-                  class="text-center"
-                  :class="cellWrapperClass(area.key, role.key)"
-                >
-                  <button
-                    type="button"
-                    class="btn btn-xs btn-sm px-2 py-1"
-                    :class="cellButtonClass(area.key, role.key)"
-                    @click="togglePermission(area.key, role.key)"
-                  >
-                    <span class="d-block">
-                      {{ permissionLabel(matrix[area.key][role.key]) }}
-                    </span>
-                  </button>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+        <div class="card-footer d-flex justify-content-end gap-2 py-2">
+          <button
+            class="btn btn-sm btn-secondary"
+            type="button"
+            @click="roleToDelete = null"
+          >
+            Anulează
+          </button>
+          <button
+            class="btn btn-sm btn-danger"
+            type="button"
+            @click="deleteRoleConfirmed"
+          >
+            Șterge
+          </button>
         </div>
-      </div>
-      <div class="card-footer small text-muted">
-        Aceasta este o matrice statică pentru demo. Într-un proiect real, permisiunile ar fi evaluate și în backend, nu doar în UI, iar schimbările ar fi logate în Audit log.
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { reactive, ref } from 'vue'
-import PageHeader from '@/components/common/PageHeader.vue'
+import { ref, computed, onMounted } from 'vue'
+import {
+  fetchRoles,
+  createRole,
+  updateRole,
+  deleteRole
+} from '@/services/admin/roles'
+import { fetchPermissions } from '@/services/admin/permissions'
 
-const roles = ref([
-  {
-    key: 'admin',
-    label: 'Administrator',
-    shortLabel: 'Admin',
-    description: 'Acces complet la toate modulele, inclusiv setări și audit.',
-    type: 'internal'
-  },
-  {
-    key: 'director',
-    label: 'Director vânzări',
-    shortLabel: 'Director',
-    description: 'Acces complet pe zona comercială și vizualizare pe setări.',
-    type: 'internal'
-  },
-  {
-    key: 'agent',
-    label: 'Agent vânzări',
-    shortLabel: 'Agent',
-    description: 'Acces pe portofoliul de clienți și comenzi aferente.',
-    type: 'internal'
-  },
-  {
-    key: 'operator',
-    label: 'Operator birou / suport',
-    shortLabel: 'Operator',
-    description: 'Acces operațional pe comenzi, clienți și ticketing.',
-    type: 'internal'
-  },
-  {
-    key: 'marketer',
-    label: 'Marketer',
-    shortLabel: 'Marketer',
-    description: 'Acces pe promoții, campanii, bannere și conținut.',
-    type: 'internal'
-  }
-])
+const roles = ref([])
+const permissions = ref([])
+const currentRole = ref(null)
 
-const permissionAreas = ref([
-  {
-    key: 'products',
-    label: 'Produse & prețuri',
-    description: 'Catalog produse, prețuri, stocuri și atribute.'
-  },
-  {
-    key: 'promotions',
-    label: 'Promoții & discounturi',
-    description: 'Campanii, reguli de discount, landing pages.'
-  },
-  {
-    key: 'customers',
-    label: 'Clienți & grupuri',
-    description: 'Fișe clienți, grupuri, condiții comerciale.'
-  },
-  {
-    key: 'orders',
-    label: 'Comenzi & livrări',
-    description: 'Comenzi, AWB, statusuri de livrare.'
-  },
-  {
-    key: 'payments',
-    label: 'Plăți & încasări',
-    description: 'Plăți online, încasări CHS/BO/CEC, reconciliere.'
-  },
-  {
-    key: 'shipping',
-    label: 'Reguli transport',
-    description: 'Configurare curieri, regiuni, praguri de transport.'
-  },
-  {
-    key: 'content',
-    label: 'Conținut & marketing',
-    description: 'Bannere, blog, pagini statice, reprezentanți.'
-  },
-  {
-    key: 'settings',
-    label: 'Setări & audit',
-    description: 'Configurări generale, roluri, audit log.'
-  }
-])
+const loading = ref(false)
+const saving = ref(false)
+const error = ref('')
+const formError = ref('')
 
-const matrix = reactive({
-  products: {
-    admin: 'full',
-    director: 'full',
-    agent: 'edit',
-    operator: 'edit',
-    marketer: 'read'
-  },
-  promotions: {
-    admin: 'full',
-    director: 'edit',
-    agent: 'read',
-    operator: 'read',
-    marketer: 'full'
-  },
-  customers: {
-    admin: 'full',
-    director: 'full',
-    agent: 'edit',
-    operator: 'edit',
-    marketer: 'read'
-  },
-  orders: {
-    admin: 'full',
-    director: 'full',
-    agent: 'edit',
-    operator: 'edit',
-    marketer: 'read'
-  },
-  payments: {
-    admin: 'full',
-    director: 'edit',
-    agent: 'read',
-    operator: 'edit',
-    marketer: 'none'
-  },
-  shipping: {
-    admin: 'full',
-    director: 'read',
-    agent: 'none',
-    operator: 'none',
-    marketer: 'none'
-  },
-  content: {
-    admin: 'full',
-    director: 'read',
-    agent: 'none',
-    operator: 'none',
-    marketer: 'full'
-  },
-  settings: {
-    admin: 'full',
-    director: 'read',
-    agent: 'none',
-    operator: 'none',
-    marketer: 'none'
-  }
+const form = ref({
+  name: '',
+  slug: '',
+  permission_ids: []
 })
 
-const levels = ['none', 'read', 'edit', 'full']
+const roleToDelete = ref(null)
 
-const highlightRole = ref('')
-const highlightArea = ref('')
+const protectedSlugs = ['admin', 'customer_b2c', 'customer_b2b']
 
-const permissionLabel = (level) => {
-  if (level === 'full') return 'Complet'
-  if (level === 'edit') return 'Editare'
-  if (level === 'read') return 'Vizualizare'
-  return 'Fără acces'
+const allSelected = computed(() => {
+  if (!permissions.value.length) return false
+  return (
+    form.value.permission_ids.length === permissions.value.length
+  )
+})
+
+const isProtected = (role) => {
+  if (!role) return false
+  return protectedSlugs.includes(role.slug)
 }
 
-const cellButtonClass = (areaKey, roleKey) => {
-  const level = matrix[areaKey][roleKey]
-  if (level === 'full') return 'btn-success'
-  if (level === 'edit') return 'btn-warning text-dark'
-  if (level === 'read') return 'btn-info text-dark'
-  return 'btn-light text-muted border'
-}
-
-const cellWrapperClass = (areaKey, roleKey) => {
-  const classes = {}
-  if (highlightRole.value && highlightRole.value === roleKey) {
-    classes['table-primary'] = true
+const resetForm = () => {
+  currentRole.value = null
+  form.value = {
+    name: '',
+    slug: '',
+    permission_ids: []
   }
-  if (highlightArea.value && highlightArea.value === areaKey) {
-    classes['table-primary'] = true
-  }
-  return classes
+  formError.value = ''
 }
 
-const togglePermission = (areaKey, roleKey) => {
-  const current = matrix[areaKey][roleKey] || 'none'
-  const index = levels.indexOf(current)
-  const next = levels[(index + 1) % levels.length]
-  matrix[areaKey][roleKey] = next
+const selectRole = (role) => {
+  currentRole.value = role
+  form.value = {
+    name: role.name,
+    slug: role.slug,
+    permission_ids: (role.permissions || role.permission_ids || []).map(
+      (p) => (typeof p === 'object' ? p.id : p)
+    )
+  }
+  formError.value = ''
 }
+
+const startCreateRole = () => {
+  resetForm()
+}
+
+const toggleAllPermissions = () => {
+  if (allSelected.value) {
+    form.value.permission_ids = []
+  } else {
+    form.value.permission_ids = permissions.value.map((p) => p.id)
+  }
+}
+
+const loadData = async () => {
+  loading.value = true
+  error.value = ''
+
+  try {
+    const [rolesResp, permsResp] = await Promise.all([
+      fetchRoles(),
+      fetchPermissions()
+    ])
+
+    // Tolerant la structuri paginate / simple
+    roles.value = rolesResp.data || rolesResp || []
+    permissions.value = permsResp.data || permsResp || []
+  } catch (e) {
+    console.error(e)
+    error.value = 'Nu s-au putut încărca rolurile și permisiunile.'
+  } finally {
+    loading.value = false
+  }
+}
+
+const saveRole = async () => {
+  formError.value = ''
+  saving.value = true
+
+  try {
+    const payload = {
+      name: form.value.name,
+      slug: form.value.slug,
+      permissions: form.value.permission_ids
+    }
+
+    if (currentRole.value?.id) {
+      await updateRole(currentRole.value.id, payload)
+    } else {
+      await createRole(payload)
+    }
+
+    await loadData()
+
+    // realimentezi currentRole după save
+    const updated = roles.value.find((r) => r.slug === form.value.slug)
+    if (updated) {
+      selectRole(updated)
+    } else {
+      resetForm()
+    }
+  } catch (e) {
+    console.error(e)
+    formError.value =
+      e?.response?.data?.message ||
+      'A apărut o eroare la salvarea rolului.'
+  } finally {
+    saving.value = false
+  }
+}
+
+const confirmDelete = (role) => {
+  if (isProtected(role)) return
+  roleToDelete.value = role
+}
+
+const deleteRoleConfirmed = async () => {
+  if (!roleToDelete.value) return
+  try {
+    await deleteRole(roleToDelete.value.id)
+    roleToDelete.value = null
+    // dacă ștergi rolul curent, resetezi formularul
+    if (currentRole.value?.id === roleToDelete.value?.id) {
+      resetForm()
+    }
+    await loadData()
+  } catch (e) {
+    console.error(e)
+    alert('Nu s-a putut șterge rolul.')
+  }
+}
+
+onMounted(loadData)
 </script>

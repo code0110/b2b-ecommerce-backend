@@ -3,8 +3,7 @@ import { adminApi } from '@/services/http';
 
 export async function fetchCustomers(params = {}) {
   const { data } = await adminApi.get('/customers', { params });
-  // Laravel paginator: data = { data: [...], meta, links }
-  return data;
+  return data; // paginator Laravel: { data, meta, links }
 }
 
 export async function fetchCustomer(id) {

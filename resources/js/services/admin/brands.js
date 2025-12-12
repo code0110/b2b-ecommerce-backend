@@ -16,6 +16,11 @@ export async function fetchAdminBrand(id) {
   return data;
 }
 
+export async function fetchBrand(id) {
+  const { data } = await adminApi.get(`/brands/${id}`)
+  return data
+}
+
 export async function createAdminBrand(payload) {
   const { data } = await adminApi.post('/brands', payload);
   return data;
@@ -29,4 +34,18 @@ export async function updateAdminBrand(id, payload) {
 export async function deleteAdminBrand(id) {
   const { data } = await adminApi.delete(`/brands/${id}`);
   return data;
+}
+
+export async function createBrand(payload) {
+  const { data } = await adminApi.post('/brands', payload)
+  return data
+}
+
+export async function updateBrand(id, payload) {
+  const { data } = await adminApi.put(`/brands/${id}`, payload)
+  return data
+}
+
+export async function deleteBrand(id) {
+  await adminApi.delete(`/brands/${id}`)
 }

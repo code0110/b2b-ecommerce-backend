@@ -1,186 +1,141 @@
 <template>
   <div class="container-fluid py-3">
     <div class="d-flex justify-content-between align-items-center mb-3">
-      <h1 class="h4 mb-0">Categorii produse</h1>
+      <h1 class="h5 mb-0">Categorii produse</h1>
       <RouterLink
+        class="btn btn-sm btn-primary"
         :to="{ name: 'admin-categories-new' }"
-        class="btn btn-primary btn-sm"
       >
-        + Categorie nouă
+        Adaugă categorie
       </RouterLink>
     </div>
 
-    <div v-if="loading" class="text-muted">
-      Se încarcă categoriile...
-    </div>
-
-    <div v-else-if="error" class="alert alert-danger">
+    <div v-if="error" class="alert alert-danger py-2">
       {{ error }}
     </div>
 
-    <div v-else>
-      <table class="table table-sm align-middle">
-        <thead>
-          <tr>
-            <th style="width: 40px;">#</th>
-            <th>Denumire</th>
-            <th>Slug</th>
-            <th>Părinte</th>
-            <th class="text-center">Ordine</th>
-            <th class="text-center">Publicat</th>
-            <th style="width: 120px;"></th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr
-            v-for="cat in categories"
-            :key="cat.id"
-          >
-            <td>{{ cat.id }}</td>
-            <td>{{ cat.name }}</td>
-            <td class="small text-muted">{{ cat.slug }}</td>
-            <td class="small">
-              {{ cat.parent ? cat.parent.name : '-' }}
-            </td>
-            <td class="text-center">
-              {{ cat.sort_order ?? '-' }}
-            </td>
-            <td class="text-center">
-              <span
-                class="badge"
-                :class="cat.is_published ? 'bg-success' : 'bg-secondary'"
-              >
-                {{ cat.is_published ? 'Da' : 'Nu' }}
-              </span>
-            </td>
-            <td class="text-end">
-              <div class="btn-group btn-group-sm">
+    <div class="card">
+      <div class="card-body p-0">
+        <table class="table table-sm mb-0 align-middle">
+          <thead class="table-light">
+            <tr>
+              <th>Denumire</th>
+              <th>Slug</th>
+              <th>Categorie părinte</th>
+              <th>Ordine</th>
+              <th>Status</th>
+              <th style="width: 140px;">Acțiuni</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-if="loading">
+              <td colspan="6" class="text-center text-muted py-3">
+                Se încarcă...
+              </td>
+            </tr>
+            <tr v-if="!loading && !categories.length">
+              <td colspan="6" class="text-center text-muted py-3">
+                Nu există categorii definite.
+              </td>
+            </tr>
+            <tr
+              v-for="cat in categories"
+              :key="cat.id"
+            >
+              <td class="small">
                 <RouterLink
+                  class="fw-semibold text-decoration-none"
                   :to="{ name: 'admin-categories-edit', params: { id: cat.id } }"
-                  class="btn btn-outline-secondary btn-sm"
                 >
-                  Editează
+                  {{ cat.name }}
                 </RouterLink>
-                <button
-                  class="btn btn-outline-danger btn-sm"
-                  type="button"
-                  @click="confirmDelete(cat)"
+              </td>
+              <td class="small">
+                <code>{{ cat.slug }}</code>
+              </td>
+              <td class="small">
+                {{ cat.parent_name || cat.parent?.name || '-' }}
+              </td>
+              <td class="small">
+                {{ cat.sort_order ?? '-' }}
+              </td>
+              <td class="small">
+                <span
+                  class="badge"
+                  :class="cat.is_active ? 'bg-success' : 'bg-secondary'"
                 >
-                  Șterge
-                </button>
-              </div>
-            </td>
-          </tr>
-          <tr v-if="categories.length === 0">
-            <td colspan="7" class="text-center text-muted py-4">
-              Nu există încă nicio categorie.
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-
-    <!-- confirmare ștergere simplă -->
-    <div
-      v-if="toDelete"
-      class="modal-backdrop fade show"
-      style="z-index: 1040;"
-    ></div>
-    <div
-      v-if="toDelete"
-      class="modal d-block"
-      tabindex="-1"
-      style="z-index: 1050;"
-    >
-      <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-          <div class="modal-header py-2">
-            <h5 class="modal-title">Ștergere categorie</h5>
-            <button
-              type="button"
-              class="btn-close"
-              @click="toDelete = null"
-            ></button>
-          </div>
-          <div class="modal-body">
-            Ești sigur că vrei să ștergi categoria
-            <strong>{{ toDelete?.name }}</strong>?
-          </div>
-          <div class="modal-footer py-2">
-            <button
-              type="button"
-              class="btn btn-secondary btn-sm"
-              @click="toDelete = null"
-            >
-              Anulează
-            </button>
-            <button
-              type="button"
-              class="btn btn-danger btn-sm"
-              :disabled="deleteLoading"
-              @click="doDelete"
-            >
-              <span
-                v-if="deleteLoading"
-                class="spinner-border spinner-border-sm me-1"
-              />
-              Șterge
-            </button>
-          </div>
-        </div>
+                  {{ cat.is_active ? 'Publicată' : 'Ascunsă' }}
+                </span>
+              </td>
+              <td class="small">
+                <div class="btn-group btn-group-sm">
+                  <RouterLink
+                    class="btn btn-outline-secondary"
+                    :to="{ name: 'admin-categories-edit', params: { id: cat.id } }"
+                  >
+                    Editează
+                  </RouterLink>
+                  <button
+                    class="btn btn-outline-danger"
+                    type="button"
+                    @click="removeCategory(cat)"
+                  >
+                    Șterge
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import {
-  fetchAdminCategories,
-  deleteAdminCategory
-} from '@/services/admin/categories';
+  fetchCategories,
+  deleteCategory
+} from '@/services/admin/categories'
 
-const categories = ref([]);
-const loading = ref(false);
-const error = ref('');
-
-const toDelete = ref(null);
-const deleteLoading = ref(false);
+const router = useRouter()
+const categories = ref([])
+const loading = ref(false)
+const error = ref('')
 
 const loadCategories = async () => {
-  loading.value = true;
-  error.value = '';
+  loading.value = true
+  error.value = ''
+  try {
+    const resp = await fetchCategories({ per_page: 1000 })
+    categories.value = resp.data || resp || []
+  } catch (e) {
+    console.error(e)
+    error.value = 'Nu s-au putut încărca categoriile.'
+  } finally {
+    loading.value = false
+  }
+}
+
+const removeCategory = async (cat) => {
+  if (
+    !confirm(
+      `Ești sigur că vrei să ștergi categoria "${cat.name}"?\nDacă are produse asociate, backend-ul poate refuza ștergerea.`
+    )
+  ) {
+    return
+  }
 
   try {
-    categories.value = await fetchAdminCategories();
+    await deleteCategory(cat.id)
+    await loadCategories()
   } catch (e) {
-    console.error('Admin categories error', e);
-    error.value = 'Nu s-au putut încărca categoriile.';
-  } finally {
-    loading.value = false;
+    console.error(e)
+    alert('Nu s-a putut șterge categoria. Verifică dacă nu are produse asociate.')
   }
-};
+}
 
-const confirmDelete = (cat) => {
-  toDelete.value = cat;
-};
-
-const doDelete = async () => {
-  if (!toDelete.value) return;
-
-  deleteLoading.value = true;
-
-  try {
-    await deleteAdminCategory(toDelete.value.id);
-    await loadCategories();
-    toDelete.value = null;
-  } catch (e) {
-    console.error('Delete category error', e);
-    // poți adăuga un mesaj mai explicit dacă vrei
-  } finally {
-    deleteLoading.value = false;
-  }
-};
-
-onMounted(loadCategories);
+onMounted(loadCategories)
 </script>

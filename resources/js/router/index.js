@@ -41,6 +41,7 @@ import AccountNotifications from '@/views/account/AccountNotifications.vue'
 
 // Admin
 import AdminDashboard from '@/views/admin/Dashboard.vue'
+import OrderListAdmin from '@/views/admin/orders/OrderList.vue';
 import ProductList from '@/views/admin/products/ProductList.vue'
 import ProductForm from '@/views/admin/products/ProductForm.vue'
 import CategoryListAdmin from '@/views/admin/categories/CategoryList.vue'
@@ -266,6 +267,11 @@ const router = createRouter({
           path: 'notificari',
           name: 'admin-notifications',
           component: AdminNotifications
+        },
+        {
+          path: 'orders',
+          name: 'admin-orders',
+          component: OrderListAdmin,
         },
         {
           path: 'products',

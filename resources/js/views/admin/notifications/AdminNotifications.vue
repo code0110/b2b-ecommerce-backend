@@ -1,164 +1,111 @@
 <template>
-  <div class="container-fluid">
-    <PageHeader
-      title="Notificări admin"
-      subtitle="Notificări privind comenzi, blocaje de credit, promoții și alte evenimente critice."
-    />
+  <div class="container-fluid py-3">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h1 class="h5 mb-0">Notificări admin</h1>
+      <button
+        class="btn btn-sm btn-outline-secondary"
+        type="button"
+        @click="loadNotifications"
+      >
+        Reîncarcă
+      </button>
+    </div>
 
-    <div class="card shadow-sm">
-      <div class="card-header d-flex justify-content-between align-items-center">
-        <div class="small text-muted">
-          Total notificări: <strong>{{ notifications.length }}</strong>
-          <span v-if="unreadCount > 0">
-            &middot; Necitite: <strong>{{ unreadCount }}</strong>
-          </span>
-        </div>
-        <button
-          type="button"
-          class="btn btn-link btn-sm text-decoration-none"
-          :disabled="unreadCount === 0"
-          @click="markAll"
-        >
-          Marchează toate ca citite
-        </button>
-      </div>
+    <div v-if="error" class="alert alert-danger py-2">
+      {{ error }}
+    </div>
 
-      <div class="table-responsive mb-0">
-        <table class="table table-sm align-middle mb-0">
-          <thead class="table-light">
-            <tr>
-              <th style="width: 40px;"></th>
-              <th>Titlu</th>
-              <th>Tip</th>
-              <th>Mesaj</th>
-              <th>Creat la</th>
-              <th>Acțiuni</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-if="notifications.length === 0">
-              <td colspan="6" class="text-center text-muted py-4">
-                Nu există notificări pentru moment.
-              </td>
-            </tr>
-            <tr
-              v-for="n in notificationsSorted"
-              :key="n.id"
-              :class="{ 'table-info': !n.read }"
-            >
-              <td>
-                <span
-                  v-if="!n.read"
-                  class="badge bg-primary"
-                  style="font-size: 0.6rem;"
-                >
-                  Nou
-                </span>
-              </td>
-              <td class="fw-semibold">
-                {{ n.title }}
-              </td>
-              <td class="small text-muted">
-                {{ formatType(n.type) }}
-              </td>
-              <td class="small">
-                {{ n.message }}
-              </td>
-              <td class="small text-muted">
-                {{ formatDateTime(n.createdAt) }}
-              </td>
-              <td>
-                <div class="btn-group btn-group-sm">
-                  <button
-                    type="button"
-                    class="btn btn-outline-primary btn-sm"
-                    @click="goTo(n)"
-                  >
-                    Deschide
-                  </button>
-                  <button
-                    v-if="!n.read"
-                    type="button"
-                    class="btn btn-outline-secondary btn-sm"
-                    @click="markOne(n)"
-                  >
-                    Marchează citit
-                  </button>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+    <div class="card">
+      <div class="card-body p-0">
+        <ul class="list-group list-group-flush">
+          <li
+            v-if="loading"
+            class="list-group-item small text-muted text-center py-3"
+          >
+            Se încarcă...
+          </li>
+          <li
+            v-if="!loading && notifications.length === 0"
+            class="list-group-item small text-muted text-center py-3"
+          >
+            Nu există notificări sau endpoint-ul nu este încă implementat.
+          </li>
 
-      <div class="card-footer small text-muted">
-        Acesta este un template de listă notificări pentru echipa internă
-        (administrator, operator, agent, director). În proiectul real se vor filtra
-        după utilizator și rol, iar datele vor veni din backend / ERP.
+          <li
+            v-for="n in notifications"
+            :key="n.id"
+            class="list-group-item small d-flex justify-content-between align-items-start"
+            :class="n.read_at ? 'bg-white' : 'bg-light'"
+          >
+            <div>
+              <div class="fw-semibold">
+                {{ n.title || n.type || 'Notificare' }}
+              </div>
+              <div class="text-muted">
+                {{ n.message || n.body || '—' }}
+              </div>
+              <div class="text-muted">
+                <small>{{ formatDate(n.created_at) }}</small>
+              </div>
+            </div>
+            <div class="ms-3">
+              <button
+                v-if="!n.read_at"
+                class="btn btn-sm btn-outline-secondary"
+                type="button"
+                @click="markRead(n)"
+              >
+                Marchează citită
+              </button>
+            </div>
+          </li>
+        </ul>
       </div>
     </div>
+
   </div>
 </template>
 
 <script setup>
-import { computed } from 'vue'
-import { useRouter } from 'vue-router'
-import PageHeader from '@/components/common/PageHeader.vue'
-import { useNotificationsStore } from '@/store/notifications'
+import { ref, onMounted } from 'vue'
+import {
+  fetchAdminNotifications,
+  markNotificationRead
+} from '@/services/admin/notifications'
 
-const router = useRouter()
-const notificationsStore = useNotificationsStore()
+const notifications = ref([])
+const loading = ref(false)
+const error = ref('')
 
-const notifications = computed(() => notificationsStore.adminNotifications)
-const unreadCount = computed(() => notificationsStore.adminUnreadCount)
-
-const notificationsSorted = computed(() => {
-  return [...notifications.value].sort((a, b) => {
-    const da = new Date(a.createdAt).getTime()
-    const db = new Date(b.createdAt).getTime()
-    return db - da
-  })
-})
-
-const formatDateTime = (value) => {
-  if (!value) return ''
-  const d = new Date(value)
-  return d.toLocaleString('ro-RO', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
-  })
+const formatDate = (val) => {
+  if (!val) return ''
+  const d = new Date(val)
+  return d.toLocaleString('ro-RO')
 }
 
-const formatType = (type) => {
-  switch (type) {
-    case 'order_status':
-      return 'Status comandă'
-    case 'credit_block':
-      return 'Blocaj credit'
-    case 'promotion_expiring':
-      return 'Promoție / campanie'
-    case 'ticket':
-      return 'Tichet suport'
-    default:
-      return 'General'
+const loadNotifications = async () => {
+  loading.value = true
+  error.value = ''
+  try {
+    const resp = await fetchAdminNotifications()
+    notifications.value = resp.data || resp || []
+  } catch (e) {
+    console.error(e)
+    error.value = 'Nu s-au putut încărca notificările (sau endpoint-ul nu există încă).'
+  } finally {
+    loading.value = false
   }
 }
 
-const goTo = (notification) => {
-  notificationsStore.markAsRead(notification.id)
-  if (notification.route) {
-    router.push(notification.route)
+const markRead = async (n) => {
+  try {
+    await markNotificationRead(n.id)
+    await loadNotifications()
+  } catch (e) {
+    console.error(e)
+    alert('Nu s-a putut marca notificarea ca citită.')
   }
 }
 
-const markOne = (notification) => {
-  notificationsStore.markAsRead(notification.id)
-}
-
-const markAll = () => {
-  notificationsStore.markAllAsReadFor('admin')
-}
+onMounted(loadNotifications)
 </script>

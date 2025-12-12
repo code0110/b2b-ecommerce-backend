@@ -1,381 +1,139 @@
 <template>
-  <div class="container-fluid">
+  <div class="container-fluid py-3">
     <div class="d-flex justify-content-between align-items-center mb-3">
-      <div>
-        <h5 class="mb-0">Solicitări &quot;Devino partener&quot;</h5>
-        <small class="text-muted">
-          Aici sunt centralizate cererile de parteneriat trimise din front-office. Pot fi alocate
-          automat sau manual pe agenți și transformate ulterior în conturi B2B.
-        </small>
-      </div>
+      <h1 class="h5 mb-0">Cereri „Devino partener”</h1>
+      <button
+        class="btn btn-sm btn-outline-secondary"
+        type="button"
+        @click="loadRequests"
+      >
+        Reîncarcă
+      </button>
     </div>
 
-    <div class="row g-3">
-      <!-- Lista solicitări -->
-      <div class="col-lg-7">
-        <div class="card shadow-sm">
-          <div class="card-body small">
-            <div class="row g-2 mb-2">
-              <div class="col-md-3">
-                <label class="form-label text-muted">Status</label>
-                <select
-                  v-model="filters.status"
-                  class="form-select form-select-sm"
-                >
-                  <option value="">Toate</option>
-                  <option value="pending">În așteptare</option>
-                  <option value="approved">Aprobat</option>
-                  <option value="rejected">Respins</option>
-                </select>
-              </div>
-              <div class="col-md-3">
-                <label class="form-label text-muted">Regiune</label>
-                <select
-                  v-model="filters.region"
-                  class="form-select form-select-sm"
-                >
-                  <option value="">Toate</option>
-                  <option
-                    v-for="reg in distinctRegions"
-                    :key="reg"
-                    :value="reg"
-                  >
-                    {{ reg }}
-                  </option>
-                </select>
-              </div>
-              <div class="col-md-3">
-                <label class="form-label text-muted">Agent alocat</label>
-                <select
-                  v-model="filters.assignedAgent"
-                  class="form-select form-select-sm"
-                >
-                  <option value="">Toți</option>
-                  <option value="__unassigned">Nealocate</option>
-                  <option
-                    v-for="agent in distinctAgents"
-                    :key="agent"
-                    :value="agent"
-                  >
-                    {{ agent }}
-                  </option>
-                </select>
-              </div>
-              <div class="col-md-3">
-                <label class="form-label text-muted">Căutare</label>
-                <input
-                  v-model="filters.search"
-                  type="text"
-                  class="form-control form-control-sm"
-                  placeholder="Denumire firmă / CUI / email"
-                />
-              </div>
-            </div>
+    <div v-if="error" class="alert alert-danger py-2">
+      {{ error }}
+    </div>
 
-            <div class="table-responsive">
-              <table class="table table-sm align-middle mb-0">
-                <thead class="table-light">
-                  <tr>
-                    <th>Firmă</th>
-                    <th>Regiune</th>
-                    <th>Status</th>
-                    <th>Agent</th>
-                    <th>Creat la</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr v-if="filteredRequests.length === 0">
-                    <td colspan="5" class="text-center text-muted py-4">
-                      Nu există solicitări pentru filtrele selectate.
-                    </td>
-                  </tr>
-                  <tr
-                    v-for="req in filteredRequests"
-                    :key="req.id"
-                    :class="{ 'table-active': selectedRequest && selectedRequest.id === req.id }"
-                    style="cursor: pointer;"
-                    @click="selectRequest(req)"
-                  >
-                    <td class="small">
-                      <div class="fw-semibold">{{ req.companyName }}</div>
-                      <div class="text-muted">
-                        <small>{{ req.cui }}</small>
-                      </div>
-                    </td>
-                    <td class="small">
-                      {{ req.region || '-' }}
-                    </td>
-                    <td class="small">
-                      <span :class="['badge', statusBadgeClass(req.status)]">
-                        {{ statusLabel(req.status) }}
-                      </span>
-                    </td>
-                    <td class="small">
-                      <span v-if="req.assignedAgent">{{ req.assignedAgent }}</span>
-                      <span v-else class="text-muted">Nealocat</span>
-                    </td>
-                    <td class="small">
-                      {{ formatDateTime(req.createdAt) }}
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-
-            <p class="small text-muted mt-2 mb-0">
-              În implementarea reală, acest ecran poate fi integrat cu un modul CRM / ERP pentru a
-              transforma rapid solicitările în conturi B2B, împreună cu condiții comerciale
-              predefinite.
-            </p>
-          </div>
-        </div>
-      </div>
-
-      <!-- Detalii solicitare -->
-      <div class="col-lg-5">
-        <div v-if="selectedRequest" class="card shadow-sm mb-3">
-          <div class="card-header py-2 d-flex justify-content-between align-items-center">
-            <strong>{{ selectedRequest.companyName }}</strong>
-            <span :class="['badge', statusBadgeClass(selectedRequest.status)]">
-              {{ statusLabel(selectedRequest.status) }}
-            </span>
-          </div>
-          <div class="card-body small">
-            <div class="mb-2">
-              <h6 class="mb-1">Date firmă</h6>
-              <div class="text-muted">
-                CUI: {{ selectedRequest.cui || '-' }}<br />
-                Nr. Reg. Com: {{ selectedRequest.regCom || '-' }}<br />
-                IBAN: {{ selectedRequest.iban || '-' }}
-              </div>
-            </div>
-            <div class="mb-2">
-              <h6 class="mb-1">Persoană de contact</h6>
-              <div class="text-muted">
-                {{ selectedRequest.contactPerson || '-' }}<br />
-                <a
-                  v-if="selectedRequest.email"
-                  :href="'mailto:' + selectedRequest.email"
-                >
-                  {{ selectedRequest.email }}
-                </a>
-                <span v-else>-</span><br />
-                <span>{{ selectedRequest.phone || '-' }}</span>
-              </div>
-            </div>
-            <div class="mb-2">
-              <h6 class="mb-1">Informații suplimentare</h6>
-              <div class="text-muted">
-                Regiune: {{ selectedRequest.region || '-' }}<br />
-                Tip activitate: {{ selectedRequest.activityType || '-' }}<br />
-              </div>
-              <div v-if="selectedRequest.notes" class="mt-1">
-                <strong>Mesaj:</strong>
-                <div class="border rounded p-2 mt-1 bg-light">
-                  {{ selectedRequest.notes }}
+    <div class="card">
+      <div class="card-body p-0">
+        <table class="table table-sm mb-0 align-middle">
+          <thead class="table-light">
+            <tr>
+              <th>Companie</th>
+              <th>Persoană contact</th>
+              <th>Regiune</th>
+              <th>Status</th>
+              <th>Creat la</th>
+              <th style="width: 180px;">Acțiuni</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-if="loading">
+              <td colspan="6" class="text-center text-muted py-3">
+                Se încarcă...
+              </td>
+            </tr>
+            <tr v-if="!loading && !requests.length">
+              <td colspan="6" class="text-center text-muted py-3">
+                Nu există cereri sau endpoint-ul nu este încă implementat.
+              </td>
+            </tr>
+            <tr
+              v-for="r in requests"
+              :key="r.id"
+            >
+              <td class="small">
+                <div class="fw-semibold">{{ r.company_name || r.firm_name }}</div>
+                <div class="text-muted">
+                  CUI: {{ r.cui || '—' }}
                 </div>
-              </div>
-            </div>
-
-            <div class="mb-2">
-              <h6 class="mb-1">Alocare agent</h6>
-              <div class="row g-2 align-items-center">
-                <div class="col-7">
-                  <select
-                    v-model="agentSelection"
-                    class="form-select form-select-sm"
-                  >
-                    <option value="">Nealocat</option>
-                    <option
-                      v-for="rep in allAgents"
-                      :key="rep.id"
-                      :value="rep.name"
-                    >
-                      {{ rep.name }} – {{ rep.region }}
-                    </option>
-                  </select>
-                </div>
-                <div class="col-5 text-end">
+              </td>
+              <td class="small">
+                {{ r.contact_name || '—' }}<br>
+                <span class="text-muted">{{ r.contact_email || '' }}</span>
+              </td>
+              <td class="small">
+                {{ r.region || r.county || '—' }}
+              </td>
+              <td class="small">
+                <span class="badge bg-light text-dark">
+                  {{ r.status || 'new' }}
+                </span>
+              </td>
+              <td class="small">
+                {{ formatDate(r.created_at) }}
+              </td>
+              <td class="small">
+                <div class="btn-group btn-group-sm">
                   <button
                     type="button"
-                    class="btn btn-outline-primary btn-sm"
-                    @click="assignAgentToRequest"
+                    class="btn btn-outline-success"
+                    @click="changeStatus(r, 'approved')"
                   >
-                    Salvează alocarea
+                    Acceptă
+                  </button>
+                  <button
+                    type="button"
+                    class="btn btn-outline-danger"
+                    @click="changeStatus(r, 'rejected')"
+                  >
+                    Respinge
                   </button>
                 </div>
-              </div>
-              <p class="small text-muted mt-1 mb-0">
-                În implementarea completă, alocarea poate fi automată în funcție de regiune, tip
-                client și capacitatea agentului.
-              </p>
-            </div>
-          </div>
-          <div class="card-footer small d-flex justify-content-between">
-            <div>
-              <button
-                type="button"
-                class="btn btn-outline-success btn-sm me-1"
-                @click="updateStatus('approved')"
-              >
-                Acceptă ca partener
-              </button>
-              <button
-                type="button"
-                class="btn btn-outline-danger btn-sm"
-                @click="updateStatus('rejected')"
-              >
-                Respinge
-              </button>
-            </div>
-            <button
-              type="button"
-              class="btn btn-outline-secondary btn-sm"
-              @click="selectedRequest = null"
-            >
-              Închide detalii
-            </button>
-          </div>
-        </div>
-
-        <div class="card shadow-sm">
-          <div class="card-body small text-muted">
-            <h6>Flux recomandat</h6>
-            <ol class="mb-0">
-              <li>Solicitarea intră în status &bdquo;În așteptare&rdquo;.</li>
-              <li>Se alocă automat / manual pe un agent responsabil.</li>
-              <li>Agentul contactează potențialul client și evaluează oportunitatea.</li>
-              <li>Dacă se aprobă, se generează un cont B2B cu condiții comerciale dedicate.</li>
-            </ol>
-          </div>
-        </div>
-
-        <p v-if="infoMessage" class="small text-muted mt-2 mb-0">
-          {{ infoMessage }}
-        </p>
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
     </div>
+
   </div>
 </template>
 
 <script setup>
-import { computed, reactive, ref } from 'vue'
-import { usePartnerRequestsStore } from '@/store/partnerRequests'
-import { useRepresentativesStore } from '@/store/representatives'
+import { ref, onMounted } from 'vue'
+import {
+  fetchPartnerRequests,
+  updatePartnerRequestStatus
+} from '@/services/admin/partners'
 
-const partnerStore = usePartnerRequestsStore()
-const repsStore = useRepresentativesStore()
+const requests = ref([])
+const loading = ref(false)
+const error = ref('')
 
-const filters = reactive({
-  status: '',
-  region: '',
-  assignedAgent: '',
-  search: ''
-})
+const formatDate = (val) => {
+  if (!val) return ''
+  const d = new Date(val)
+  return d.toLocaleString('ro-RO')
+}
 
-const selectedRequest = ref(null)
-const agentSelection = ref('')
-const infoMessage = ref('')
-
-const allRequests = computed(() => partnerStore.all)
-const allAgents = computed(() => repsStore.all)
-
-const distinctRegions = computed(() => {
-  const regs = allRequests.value
-    .map((r) => r.region)
-    .filter((r) => !!r)
-  return Array.from(new Set(regs)).sort()
-})
-
-const distinctAgents = computed(() => {
-  const agents = allRequests.value
-    .map((r) => r.assignedAgent)
-    .filter((a) => !!a)
-  return Array.from(new Set(agents)).sort()
-})
-
-const filteredRequests = computed(() => {
-  return allRequests.value.filter((r) => {
-    if (filters.status && r.status !== filters.status) return false
-    if (filters.region && r.region !== filters.region) return false
-    if (filters.assignedAgent) {
-      if (filters.assignedAgent === '__unassigned') {
-        if (r.assignedAgent) return false
-      } else if (r.assignedAgent !== filters.assignedAgent) {
-        return false
-      }
-    }
-    if (filters.search) {
-      const term = filters.search.toLowerCase()
-      const haystack = [
-        r.companyName,
-        r.cui,
-        r.email
-      ]
-        .join(' ')
-        .toLowerCase()
-      if (!haystack.includes(term)) return false
-    }
-    return true
-  })
-})
-
-const statusLabel = (status) => {
-  switch (status) {
-    case 'pending':
-      return 'În așteptare'
-    case 'approved':
-      return 'Aprobat'
-    case 'rejected':
-      return 'Respins'
-    default:
-      return status
+const loadRequests = async () => {
+  loading.value = true
+  error.value = ''
+  try {
+    const resp = await fetchPartnerRequests()
+    requests.value = resp.data || resp || []
+  } catch (e) {
+    console.error(e)
+    error.value = 'Nu s-au putut încărca cererile (sau endpoint-ul nu există încă).'
+  } finally {
+    loading.value = false
   }
 }
 
-const statusBadgeClass = (status) => {
-  switch (status) {
-    case 'pending':
-      return 'bg-warning text-dark'
-    case 'approved':
-      return 'bg-success'
-    case 'rejected':
-      return 'bg-danger'
-    default:
-      return 'bg-secondary'
+const changeStatus = async (req, status) => {
+  if (!confirm(`Schimbi statusul cererii pentru "${req.company_name}" în "${status}"?`)) {
+    return
+  }
+  try {
+    await updatePartnerRequestStatus(req.id, { status })
+    await loadRequests()
+  } catch (e) {
+    console.error(e)
+    alert('Nu s-a putut actualiza statusul cererii.')
   }
 }
 
-const formatDateTime = (iso) => {
-  if (!iso) return '-'
-  const d = new Date(iso)
-  if (Number.isNaN(d.getTime())) return iso
-  return (
-    d.toLocaleDateString('ro-RO', { year: 'numeric', month: '2-digit', day: '2-digit' }) +
-    ' ' +
-    d.toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit' })
-  )
-}
-
-const selectRequest = (req) => {
-  selectedRequest.value = req
-  agentSelection.value = req.assignedAgent || ''
-  infoMessage.value = ''
-}
-
-const assignAgentToRequest = () => {
-  if (!selectedRequest.value) return
-  partnerStore.assignAgent(selectedRequest.value.id, agentSelection.value || null)
-  infoMessage.value =
-    'Template: agentul a fost salvat pentru această solicitare. În implementarea reală, se trimit notificări către agent și se actualizează și în CRM / ERP.'
-}
-
-const updateStatus = (status) => {
-  if (!selectedRequest.value) return
-  partnerStore.updateStatus(selectedRequest.value.id, status)
-  infoMessage.value =
-    'Template: statusul solicitării a fost actualizat la &bdquo;' +
-    statusLabel(status) +
-    '&rdquo;. În implementarea reală, se pot declanșa fluxuri automate (creare cont B2B, e-mail către client etc.).'
-}
+onMounted(loadRequests)
 </script>

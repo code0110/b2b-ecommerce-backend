@@ -13,6 +13,9 @@ use App\Http\Controllers\Admin\CustomerGroupController as AdminCustomerGroupCont
 use App\Http\Controllers\Admin\PromotionController as AdminPromotionController;
 use App\Http\Controllers\Admin\ShippingController as AdminShippingController;
 
+
+use App\Http\Controllers\Admin\OrderController as AdminOrderController;
+
 use App\Http\Controllers\Front\CatalogController;
 use App\Http\Controllers\Front\CartController;
 use App\Http\Controllers\Front\CheckoutController;
@@ -181,6 +184,13 @@ Route::prefix('admin')
         Route::get('dashboard', [DashboardController::class, 'index']);
 // Dashboard admin
 Route::get('dashboard/overview', [DashboardController::class, 'overview']);
+
+    // Orders (admin)
+    Route::get('orders', [AdminOrderController::class, 'index']);
+    Route::get('orders/{order}', [AdminOrderController::class, 'show']);
+    Route::put('orders/{order}', [AdminOrderController::class, 'update']);
+    Route::post('orders/{order}/status', [AdminOrderController::class, 'updateStatus']);
+    Route::post('orders/{order}/payment-status', [AdminOrderController::class, 'updatePaymentStatus']);
 
         Route::apiResource('products', AdminProductController::class);
         Route::apiResource('categories', AdminCategoryController::class);

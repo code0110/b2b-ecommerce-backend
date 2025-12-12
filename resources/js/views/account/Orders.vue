@@ -1,37 +1,27 @@
 <template>
-  <div class="container py-4">
+  <div>
     <h1 class="h4 mb-3">Comenzile mele</h1>
 
-    <div v-if="error" class="alert alert-danger">
-      {{ error }}
-    </div>
-    <div v-if="loading" class="alert alert-info">
-      Se încarcă comenzile...
-    </div>
-
-    <!-- Filtre simple -->
     <div class="card mb-3">
       <div class="card-body">
-        <form class="row g-3" @submit.prevent="reloadOrders">
-          <div class="col-md-4">
-            <label class="form-label small">Căutare</label>
+        <form class="row g-2 align-items-end" @submit.prevent="reload">
+          <div class="col-md-3">
+            <label class="form-label small">Număr / ID comandă</label>
             <input
               v-model="filters.search"
               type="text"
               class="form-control form-control-sm"
-              placeholder="Număr comandă, referință..."
+              placeholder="#, ID sau text"
             />
           </div>
           <div class="col-md-3">
-            <label class="form-label small">Status</label>
-            <select
-              v-model="filters.status"
-              class="form-select form-select-sm"
-            >
+            <label class="form-label small">Status comandă</label>
+            <select v-model="filters.status" class="form-select form-select-sm">
               <option value="">Toate</option>
-              <option value="new">Nouă</option>
-              <option value="processing">În procesare</option>
-              <option value="shipped">Livrată</option>
+              <option value="pending">În așteptare</option>
+              <option value="processing">În lucru</option>
+              <option value="shipped">Expediată</option>
+              <option value="completed">Finalizată</option>
               <option value="cancelled">Anulată</option>
             </select>
           </div>
@@ -42,48 +32,60 @@
               class="form-select form-select-sm"
             >
               <option value="">Toate</option>
-              <option value="pending">În așteptare</option>
+              <option value="unpaid">Neplătită</option>
+              <option value="pending">Plată în așteptare</option>
               <option value="paid">Plătită</option>
-              <option value="failed">Eroare plată</option>
+              <option value="failed">Eșuată</option>
             </select>
           </div>
-          <div class="col-md-2 d-flex align-items-end">
-            <button type="submit" class="btn btn-outline-primary btn-sm w-100">
+          <div class="col-md-3 text-md-end mt-2 mt-md-0">
+            <button type="submit" class="btn btn-primary btn-sm me-2">
               Aplică filtre
+            </button>
+            <button
+              type="button"
+              class="btn btn-outline-secondary btn-sm"
+              @click="resetFilters"
+            >
+              Resetează
             </button>
           </div>
         </form>
       </div>
     </div>
 
-    <div v-if="!loading && !orders.length" class="text-muted">
-      Nu ai comenzi înregistrate.
+    <div v-if="loading" class="text-center py-5 text-muted">
+      Se încarcă comenzile...
     </div>
 
-    <div class="card" v-else>
-      <div class="card-body table-responsive">
-        <table class="table align-middle mb-0">
-          <thead>
+    <div v-else-if="error" class="alert alert-danger">
+      {{ error }}
+    </div>
+
+    <div v-else>
+      <div v-if="orders.data && orders.data.length" class="table-responsive">
+        <table class="table table-sm align-middle">
+          <thead class="table-light">
             <tr>
-              <th>#</th>
+              <th>ID</th>
+              <th>Număr</th>
               <th>Data</th>
               <th>Status</th>
-              <th>Status plată</th>
-              <th>Valoare</th>
-              <th>Metodă plată</th>
+              <th>Plată</th>
+              <th class="text-end">Total</th>
               <th></th>
             </tr>
           </thead>
           <tbody>
-            <tr
-              v-for="order in orders"
-              :key="order.id"
-            >
-              <td>{{ order.number || order.id }}</td>
-              <td>{{ order.date || order.created_at }}</td>
+            <tr v-for="order in orders.data" :key="order.id">
+              <td>#{{ order.id }}</td>
+              <td>{{ order.order_number || `CMD-${order.id}` }}</td>
+              <td>
+                {{ formatDate(order.placed_at || order.created_at) }}
+              </td>
               <td>
                 <span class="badge bg-secondary">
-                  {{ order.status_label || order.status }}
+                  {{ order.status || 'necunoscut' }}
                 </span>
               </td>
               <td>
@@ -91,17 +93,19 @@
                   class="badge"
                   :class="paymentBadgeClass(order.payment_status)"
                 >
-                  {{ paymentStatusLabel(order.payment_status) }}
+                  {{ order.payment_status || 'necunoscut' }}
                 </span>
               </td>
-              <td>{{ formatPrice(order.total) }} RON</td>
-              <td class="small">
-                {{ order.payment_method_label || order.payment_method || '—' }}
+              <td class="text-end">
+                {{ formatMoney(order.grand_total || 0) }}
               </td>
               <td class="text-end">
                 <RouterLink
-                  :to="{ name: 'account-order-details', params: { id: order.id } }"
-                  class="btn btn-outline-secondary btn-sm"
+                  :to="{
+                    name: 'account-order-details',
+                    params: { id: order.id }
+                  }"
+                  class="btn btn-link btn-sm text-decoration-none"
                 >
                   Detalii
                 </RouterLink>
@@ -111,132 +115,153 @@
         </table>
       </div>
 
-      <!-- Paginare -->
       <div
-        v-if="meta.last_page > 1"
-        class="card-footer d-flex justify-content-between align-items-center"
+        v-else
+        class="alert alert-info mb-0"
       >
-        <div class="text-muted small">
-          Pagina {{ meta.current_page }} din {{ meta.last_page }} –
-          {{ meta.total }} comenzi
-        </div>
-        <div class="btn-group">
-          <button
-            type="button"
-            class="btn btn-sm btn-outline-secondary"
-            :disabled="meta.current_page === 1"
-            @click="changePage(meta.current_page - 1)"
-          >
-            « Anterioară
-          </button>
-          <button
-            type="button"
-            class="btn btn-sm btn-outline-secondary"
-            :disabled="meta.current_page === meta.last_page"
-            @click="changePage(meta.current_page + 1)"
-          >
-            Următoarea »
-          </button>
-        </div>
+        Nu ai încă nicio comandă înregistrată.
       </div>
+
+      <!-- Paginare simplă -->
+      <nav
+        v-if="orders.meta && orders.meta.last_page > 1"
+        class="mt-3"
+      >
+        <ul class="pagination pagination-sm mb-0">
+          <li
+            class="page-item"
+            :class="{ disabled: !orders.links.prev }"
+          >
+            <button class="page-link" @click="changePage(orders.meta.current_page - 1)">
+              «
+            </button>
+          </li>
+
+          <li
+            v-for="page in pages"
+            :key="page"
+            class="page-item"
+            :class="{ active: page === orders.meta.current_page }"
+          >
+            <button class="page-link" @click="changePage(page)">
+              {{ page }}
+            </button>
+          </li>
+
+          <li
+            class="page-item"
+            :class="{ disabled: !orders.links.next }"
+          >
+            <button class="page-link" @click="changePage(orders.meta.current_page + 1)">
+              »
+            </button>
+          </li>
+        </ul>
+      </nav>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
-import { RouterLink } from 'vue-router';
-import { fetchAccountOrders } from '@/services/account';
+import { ref, computed, onMounted } from 'vue';
+import { fetchMyOrders } from '@/services/orders';
 
 const loading = ref(false);
 const error = ref('');
-const orders = ref([]);
-const meta = ref({
-  current_page: 1,
-  last_page: 1,
-  total: 0,
+
+const orders = ref({
+  data: [],
+  meta: null,
+  links: {},
 });
 
 const filters = ref({
   search: '',
   status: '',
   payment_status: '',
+  page: 1,
 });
 
-const formatPrice = (value) => {
-  if (value == null) return '-';
-  const num = Number(value);
-  if (Number.isNaN(num)) return String(value);
-  return num.toLocaleString('ro-RO', {
+const pages = computed(() => {
+  if (!orders.value.meta) return [];
+  const total = orders.value.meta.last_page;
+  return Array.from({ length: total }, (_, i) => i + 1);
+});
+
+const formatDate = (value) => {
+  if (!value) return '-';
+  return new Date(value).toLocaleString('ro-RO');
+};
+
+const formatMoney = (value) => {
+  return (Number(value) || 0).toLocaleString('ro-RO', {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   });
 };
 
-const paymentStatusLabel = (status) => {
-  switch (status) {
-    case 'pending':
-      return 'În așteptare';
-    case 'paid':
-      return 'Plătită';
-    case 'failed':
-      return 'Eroare plată';
-    case 'cancelled':
-      return 'Anulată';
-    default:
-      return status || '—';
-  }
-};
-
 const paymentBadgeClass = (status) => {
   switch (status) {
-    case 'pending':
-      return 'bg-warning text-dark';
     case 'paid':
       return 'bg-success';
+    case 'pending':
+      return 'bg-warning text-dark';
     case 'failed':
       return 'bg-danger';
-    case 'cancelled':
-      return 'bg-secondary';
     default:
-      return 'bg-light text-muted';
+      return 'bg-secondary';
   }
 };
 
-const loadOrders = async (page = 1) => {
+const loadOrders = async () => {
   loading.value = true;
   error.value = '';
 
   try {
     const params = {
-      page,
-      search: filters.value.search || undefined,
+      page: filters.value.page,
       status: filters.value.status || undefined,
       payment_status: filters.value.payment_status || undefined,
+      search: filters.value.search || undefined,
     };
 
-    const { items, meta: m } = await fetchAccountOrders(params);
-    orders.value = items;
-    meta.value = m;
+    const response = await fetchMyOrders(params);
+
+    // Laravel paginator: data, meta, links
+    orders.value = {
+      data: response.data ?? response.data,
+      meta: response.meta ?? null,
+      links: response.links ?? {},
+    };
   } catch (e) {
-    console.error('Account orders error', e);
-    error.value =
-      e.response?.data?.message ||
-      'Nu s-au putut încărca comenzile.';
+    console.error(e);
+    error.value = 'Nu s-au putut încărca comenzile.';
   } finally {
     loading.value = false;
   }
 };
 
-const reloadOrders = () => {
-  loadOrders(1);
+const reload = () => {
+  filters.value.page = 1;
+  loadOrders();
+};
+
+const resetFilters = () => {
+  filters.value = {
+    search: '',
+    status: '',
+    payment_status: '',
+    page: 1,
+  };
+  loadOrders();
 };
 
 const changePage = (page) => {
-  loadOrders(page);
+  if (!orders.value.meta) return;
+  if (page < 1 || page > orders.value.meta.last_page) return;
+  filters.value.page = page;
+  loadOrders();
 };
 
-onMounted(() => {
-  loadOrders(1);
-});
+onMounted(loadOrders);
 </script>

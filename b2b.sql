@@ -1,11 +1,11 @@
 -- phpMyAdmin SQL Dump
--- version 5.2.2
+-- version 5.2.3
 -- https://www.phpmyadmin.net/
 --
 -- Gazdă: localhost
--- Timp de generare: dec. 11, 2025 la 05:08 PM
--- Versiune server: 8.0.43
--- Versiune PHP: 8.2.29
+-- Timp de generare: dec. 12, 2025 la 01:57 PM
+-- Versiune server: 8.0.44
+-- Versiune PHP: 8.2.28
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
@@ -30,15 +30,15 @@ SET time_zone = "+00:00";
 CREATE TABLE `addresses` (
   `id` bigint UNSIGNED NOT NULL,
   `customer_id` bigint UNSIGNED DEFAULT NULL,
-  `type` enum('billing','shipping','office') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'shipping',
-  `label` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `contact_name` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `country` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'Romania',
-  `county` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `city` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `street` varchar(191) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `postal_code` varchar(20) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `phone` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `type` enum('billing','shipping','office') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'shipping',
+  `label` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `contact_name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `country` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'Romania',
+  `county` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `city` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `street` varchar(191) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `postal_code` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `phone` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `is_default_billing` tinyint(1) NOT NULL DEFAULT '0',
   `is_default_shipping` tinyint(1) NOT NULL DEFAULT '0',
   `created_at` timestamp NULL DEFAULT NULL,
@@ -53,9 +53,9 @@ CREATE TABLE `addresses` (
 
 CREATE TABLE `attributes` (
   `id` bigint UNSIGNED NOT NULL,
-  `name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `slug` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `type` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'string',
+  `name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `slug` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `type` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'string',
   `is_filterable` tinyint(1) NOT NULL DEFAULT '0',
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL
@@ -83,7 +83,7 @@ CREATE TABLE `attribute_values` (
   `attribute_id` bigint UNSIGNED NOT NULL,
   `product_id` bigint UNSIGNED DEFAULT NULL,
   `product_variant_id` bigint UNSIGNED DEFAULT NULL,
-  `value` varchar(191) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `value` varchar(191) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -97,8 +97,8 @@ CREATE TABLE `attribute_values` (
 CREATE TABLE `audit_logs` (
   `id` bigint UNSIGNED NOT NULL,
   `user_id` bigint UNSIGNED DEFAULT NULL,
-  `action` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `entity_type` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `action` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `entity_type` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `entity_id` bigint UNSIGNED DEFAULT NULL,
   `changes` json DEFAULT NULL,
   `meta` json DEFAULT NULL,
@@ -114,14 +114,22 @@ CREATE TABLE `audit_logs` (
 
 CREATE TABLE `blog_categories` (
   `id` bigint UNSIGNED NOT NULL,
-  `name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `slug` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `description` text COLLATE utf8mb4_unicode_ci,
+  `name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `slug` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `description` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
   `is_published` tinyint(1) NOT NULL DEFAULT '1',
   `sort_order` int NOT NULL DEFAULT '0',
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Eliminarea datelor din tabel `blog_categories`
+--
+
+INSERT INTO `blog_categories` (`id`, `name`, `slug`, `description`, `is_published`, `sort_order`, `created_at`, `updated_at`) VALUES
+(1, 'Noutăți produse', 'noutati-produse', 'Lansări și actualizări de produse.', 1, 10, '2025-12-12 13:56:40', '2025-12-12 13:56:40'),
+(2, 'Sfaturi pentru profesioniști', 'sfaturi-profesionisti', 'Articole cu recomandări pentru profesioniști.', 1, 20, '2025-12-12 13:56:40', '2025-12-12 13:56:40');
 
 -- --------------------------------------------------------
 
@@ -131,19 +139,27 @@ CREATE TABLE `blog_categories` (
 
 CREATE TABLE `blog_posts` (
   `id` bigint UNSIGNED NOT NULL,
-  `title` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `slug` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `excerpt` text COLLATE utf8mb4_unicode_ci,
-  `content` longtext COLLATE utf8mb4_unicode_ci NOT NULL,
+  `title` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `slug` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `excerpt` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
+  `content` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `category_id` bigint UNSIGNED DEFAULT NULL,
   `author_user_id` bigint UNSIGNED DEFAULT NULL,
   `is_published` tinyint(1) NOT NULL DEFAULT '0',
   `published_at` timestamp NULL DEFAULT NULL,
-  `meta_title` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `meta_description` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `meta_title` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `meta_description` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Eliminarea datelor din tabel `blog_posts`
+--
+
+INSERT INTO `blog_posts` (`id`, `title`, `slug`, `excerpt`, `content`, `category_id`, `author_user_id`, `is_published`, `published_at`, `meta_title`, `meta_description`, `created_at`, `updated_at`) VALUES
+(1, 'Cum alegi bormașina potrivită pentru proiectele tale', 'cum-alegi-bormasina-potrivita', 'Ghid rapid pentru alegerea unei bormașini potrivite, în funcție de tipul de lucru.', '<p>Alegerea bormașinii potrivite depinde de materialele în care lucrezi, de frecvența utilizării și de tipul alimentării (rețea sau acumulator).</p>', 1, 1, 1, '2025-12-12 13:56:40', 'Cum alegi bormașina potrivită', 'Ghid de alegere a bormașinii pentru proiecte DIY sau profesionale.', '2025-12-12 13:56:40', '2025-12-12 13:56:40'),
+(2, 'Organizarea flotei de scule într-un depozit B2B', 'organizarea-flotei-de-scule-b2b', 'Recomandări pentru gestionarea eficientă a sculelor într-un depozit sau atelier.', '<p>Pentru companiile B2B, organizarea sculelor și echipamentelor este esențială pentru productivitate și siguranță.</p>', 2, 1, 1, '2025-12-12 13:56:40', 'Organizarea flotei de scule', 'Sfaturi pentru organizarea sculelor în depozite B2B.', '2025-12-12 13:56:40', '2025-12-12 13:56:40');
 
 -- --------------------------------------------------------
 
@@ -153,15 +169,24 @@ CREATE TABLE `blog_posts` (
 
 CREATE TABLE `brands` (
   `id` bigint UNSIGNED NOT NULL,
-  `name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `slug` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `logo_path` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `description` text COLLATE utf8mb4_unicode_ci,
+  `name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `slug` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `logo_path` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `description` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
   `is_published` tinyint(1) NOT NULL DEFAULT '1',
   `sort_order` int NOT NULL DEFAULT '0',
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Eliminarea datelor din tabel `brands`
+--
+
+INSERT INTO `brands` (`id`, `name`, `slug`, `logo_path`, `description`, `is_published`, `sort_order`, `created_at`, `updated_at`) VALUES
+(1, 'Bosch Professional', 'bosch-professional', NULL, 'Scule electrice profesionale pentru șantiere și uz intensiv.', 1, 10, '2025-12-12 13:56:40', '2025-12-12 13:56:40'),
+(2, 'Makita', 'makita', NULL, 'Scule și echipamente pentru profesioniști și hobby.', 1, 20, '2025-12-12 13:56:40', '2025-12-12 13:56:40'),
+(3, 'DeWalt', 'dewalt', NULL, 'Brand orientat către construcții și aplicații industriale.', 1, 30, '2025-12-12 13:56:40', '2025-12-12 13:56:40');
 
 -- --------------------------------------------------------
 
@@ -181,8 +206,8 @@ CREATE TABLE `brand_promotion` (
 --
 
 CREATE TABLE `cache` (
-  `key` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `value` mediumtext COLLATE utf8mb4_unicode_ci NOT NULL,
+  `key` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `value` mediumtext CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `expiration` int NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -193,8 +218,8 @@ CREATE TABLE `cache` (
 --
 
 CREATE TABLE `cache_locks` (
-  `key` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `owner` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `key` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `owner` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `expiration` int NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -208,11 +233,19 @@ CREATE TABLE `carts` (
   `id` bigint UNSIGNED NOT NULL,
   `customer_id` bigint UNSIGNED DEFAULT NULL,
   `user_id` bigint UNSIGNED DEFAULT NULL,
-  `session_id` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `status` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'active',
+  `session_id` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `status` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'active',
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Eliminarea datelor din tabel `carts`
+--
+
+INSERT INTO `carts` (`id`, `customer_id`, `user_id`, `session_id`, `status`, `created_at`, `updated_at`) VALUES
+(1, NULL, NULL, 'c6332c01-21fb-476e-8af4-7f4403ae3001', 'active', '2025-12-12 06:24:47', '2025-12-12 06:24:47'),
+(2, NULL, 1, NULL, 'active', '2025-12-12 06:37:37', '2025-12-12 06:37:37');
 
 -- --------------------------------------------------------
 
@@ -240,17 +273,28 @@ CREATE TABLE `cart_items` (
 
 CREATE TABLE `categories` (
   `id` bigint UNSIGNED NOT NULL,
-  `name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `slug` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `slug` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `parent_id` bigint UNSIGNED DEFAULT NULL,
   `sort_order` int NOT NULL DEFAULT '0',
   `is_published` tinyint(1) NOT NULL DEFAULT '1',
-  `image_path` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `banner_desktop` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `banner_mobile` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `image_path` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `banner_desktop` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `banner_mobile` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Eliminarea datelor din tabel `categories`
+--
+
+INSERT INTO `categories` (`id`, `name`, `slug`, `parent_id`, `sort_order`, `is_published`, `image_path`, `banner_desktop`, `banner_mobile`, `created_at`, `updated_at`) VALUES
+(1, 'Catalog general', 'catalog-general', NULL, 0, 1, NULL, NULL, NULL, '2025-12-12 05:30:11', '2025-12-12 05:30:11'),
+(2, 'Subcategorie', 's', 1, 0, 1, NULL, NULL, NULL, '2025-12-12 09:49:34', '2025-12-12 09:49:34'),
+(6, 'Scule electrice', 'scule-electrice', NULL, 10, 1, NULL, NULL, NULL, '2025-12-12 13:56:40', '2025-12-12 13:56:40'),
+(7, 'Scule manuale', 'scule-manuale', NULL, 20, 1, NULL, NULL, NULL, '2025-12-12 13:56:40', '2025-12-12 13:56:40'),
+(8, 'Echipamente de protecție', 'echipamente-protectie', NULL, 30, 1, NULL, NULL, NULL, '2025-12-12 13:56:40', '2025-12-12 13:56:40');
 
 -- --------------------------------------------------------
 
@@ -262,6 +306,13 @@ CREATE TABLE `category_product` (
   `category_id` bigint UNSIGNED NOT NULL,
   `product_id` bigint UNSIGNED NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Eliminarea datelor din tabel `category_product`
+--
+
+INSERT INTO `category_product` (`category_id`, `product_id`) VALUES
+(1, 1);
 
 -- --------------------------------------------------------
 
@@ -282,21 +333,21 @@ CREATE TABLE `category_promotion` (
 
 CREATE TABLE `customers` (
   `id` bigint UNSIGNED NOT NULL,
-  `type` enum('b2c','b2b') COLLATE utf8mb4_unicode_ci NOT NULL,
-  `name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `legal_name` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `cif` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `reg_com` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `iban` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `email` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `phone` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `type` enum('b2c','b2b') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `legal_name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `cif` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `reg_com` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `iban` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `email` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `phone` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `group_id` bigint UNSIGNED DEFAULT NULL,
   `agent_user_id` bigint UNSIGNED DEFAULT NULL,
   `sales_director_user_id` bigint UNSIGNED DEFAULT NULL,
   `payment_terms_days` int NOT NULL DEFAULT '0',
   `credit_limit` decimal(15,2) NOT NULL DEFAULT '0.00',
   `current_balance` decimal(15,2) NOT NULL DEFAULT '0.00',
-  `currency` varchar(10) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'RON',
+  `currency` varchar(10) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'RON',
   `is_active` tinyint(1) NOT NULL DEFAULT '1',
   `is_partner` tinyint(1) NOT NULL DEFAULT '0',
   `created_at` timestamp NULL DEFAULT NULL,
@@ -311,7 +362,7 @@ INSERT INTO `customers` (`id`, `type`, `name`, `legal_name`, `cif`, `reg_com`, `
 (1, 'b2c', 'binar cod', NULL, NULL, NULL, NULL, 'cod.binar@gmail.com', '+40758880618', NULL, NULL, NULL, 0, 0.00, 0.00, 'RON', 1, 0, '2025-12-11 14:48:57', '2025-12-11 14:48:57'),
 (2, 'b2c', 'binar cod', NULL, NULL, NULL, NULL, 'cod.binar@gmail.com', '+40758880618', NULL, NULL, NULL, 0, 0.00, 0.00, 'RON', 1, 0, '2025-12-11 14:49:19', '2025-12-11 14:49:19'),
 (3, 'b2c', 'binar cod', NULL, NULL, NULL, NULL, 'cod.binar@gmail.com', '+40758880618', NULL, NULL, NULL, 0, 0.00, 0.00, 'RON', 1, 0, '2025-12-11 14:50:11', '2025-12-11 14:50:11'),
-(4, 'b2c', 'binar cod', NULL, NULL, NULL, NULL, 'cod.binar@gmail.com', '+40758880618', NULL, NULL, NULL, 0, 0.00, 0.00, 'RON', 1, 0, '2025-12-11 14:50:23', '2025-12-11 14:50:23');
+(4, 'b2b', 'binar cod', NULL, NULL, NULL, NULL, 'cod.binar@gmail.com', '+40758880618', NULL, NULL, NULL, 0, 0.00, 0.00, 'RON', 1, 0, '2025-12-11 14:50:23', '2025-12-11 14:50:23');
 
 -- --------------------------------------------------------
 
@@ -321,14 +372,23 @@ INSERT INTO `customers` (`id`, `type`, `name`, `legal_name`, `cif`, `reg_com`, `
 
 CREATE TABLE `customer_groups` (
   `id` bigint UNSIGNED NOT NULL,
-  `name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `type` enum('b2b','b2c') COLLATE utf8mb4_unicode_ci NOT NULL,
+  `name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `type` enum('b2b','b2c') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `default_discount_percent` decimal(8,2) NOT NULL DEFAULT '0.00',
   `default_payment_terms_days` int NOT NULL DEFAULT '0',
   `default_credit_limit` decimal(15,2) NOT NULL DEFAULT '0.00',
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Eliminarea datelor din tabel `customer_groups`
+--
+
+INSERT INTO `customer_groups` (`id`, `name`, `type`, `default_discount_percent`, `default_payment_terms_days`, `default_credit_limit`, `created_at`, `updated_at`) VALUES
+(1, 'Grup b2c', 'b2c', 0.00, 0, 0.00, '2025-12-12 07:09:29', '2025-12-12 07:09:29'),
+(2, 'Grup b2b silver', 'b2b', 0.00, 0, 0.00, '2025-12-12 07:09:44', '2025-12-12 07:09:44'),
+(3, 'grup b2b gold', 'b2b', 0.00, 0, 0.00, '2025-12-12 07:10:00', '2025-12-12 07:10:00');
 
 -- --------------------------------------------------------
 
@@ -340,6 +400,14 @@ CREATE TABLE `customer_group_promotion` (
   `promotion_id` bigint UNSIGNED NOT NULL,
   `customer_group_id` bigint UNSIGNED NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Eliminarea datelor din tabel `customer_group_promotion`
+--
+
+INSERT INTO `customer_group_promotion` (`promotion_id`, `customer_group_id`) VALUES
+(1, 3),
+(2, 3);
 
 -- --------------------------------------------------------
 
@@ -360,12 +428,12 @@ CREATE TABLE `customer_promotion` (
 
 CREATE TABLE `erp_sync_logs` (
   `id` bigint UNSIGNED NOT NULL,
-  `entity_type` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `direction` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `external_id` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `status` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'pending',
+  `entity_type` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `direction` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `external_id` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `status` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'pending',
   `payload` json DEFAULT NULL,
-  `message` text COLLATE utf8mb4_unicode_ci,
+  `message` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
   `run_at` timestamp NULL DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL
@@ -379,11 +447,11 @@ CREATE TABLE `erp_sync_logs` (
 
 CREATE TABLE `failed_jobs` (
   `id` bigint UNSIGNED NOT NULL,
-  `uuid` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `connection` text COLLATE utf8mb4_unicode_ci NOT NULL,
-  `queue` text COLLATE utf8mb4_unicode_ci NOT NULL,
-  `payload` longtext COLLATE utf8mb4_unicode_ci NOT NULL,
-  `exception` longtext COLLATE utf8mb4_unicode_ci NOT NULL,
+  `uuid` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `connection` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `queue` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `payload` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `exception` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `failed_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -397,18 +465,18 @@ CREATE TABLE `invoices` (
   `id` bigint UNSIGNED NOT NULL,
   `customer_id` bigint UNSIGNED NOT NULL,
   `order_id` bigint UNSIGNED DEFAULT NULL,
-  `erp_id` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `type` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'invoice',
-  `series` varchar(20) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `number` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `status` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'issued',
+  `erp_id` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `type` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'invoice',
+  `series` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `number` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `status` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'issued',
   `issue_date` date DEFAULT NULL,
   `due_date` date DEFAULT NULL,
   `subtotal` decimal(15,2) NOT NULL DEFAULT '0.00',
   `tax_total` decimal(15,2) NOT NULL DEFAULT '0.00',
   `total` decimal(15,2) NOT NULL DEFAULT '0.00',
-  `currency` varchar(10) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'RON',
-  `pdf_url` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `currency` varchar(10) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'RON',
+  `pdf_url` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `meta` json DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL
@@ -422,8 +490,8 @@ CREATE TABLE `invoices` (
 
 CREATE TABLE `jobs` (
   `id` bigint UNSIGNED NOT NULL,
-  `queue` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `payload` longtext COLLATE utf8mb4_unicode_ci NOT NULL,
+  `queue` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `payload` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `attempts` tinyint UNSIGNED NOT NULL,
   `reserved_at` int UNSIGNED DEFAULT NULL,
   `available_at` int UNSIGNED NOT NULL,
@@ -437,13 +505,13 @@ CREATE TABLE `jobs` (
 --
 
 CREATE TABLE `job_batches` (
-  `id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `id` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `total_jobs` int NOT NULL,
   `pending_jobs` int NOT NULL,
   `failed_jobs` int NOT NULL,
-  `failed_job_ids` longtext COLLATE utf8mb4_unicode_ci NOT NULL,
-  `options` mediumtext COLLATE utf8mb4_unicode_ci,
+  `failed_job_ids` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `options` mediumtext CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
   `cancelled_at` int DEFAULT NULL,
   `created_at` int NOT NULL,
   `finished_at` int DEFAULT NULL
@@ -457,7 +525,7 @@ CREATE TABLE `job_batches` (
 
 CREATE TABLE `migrations` (
   `id` int UNSIGNED NOT NULL,
-  `migration` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `migration` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `batch` int NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -509,11 +577,11 @@ INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES
 --
 
 CREATE TABLE `notifications` (
-  `id` char(36) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `type` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `notifiable_type` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `id` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `type` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `notifiable_type` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `notifiable_id` bigint UNSIGNED NOT NULL,
-  `data` text COLLATE utf8mb4_unicode_ci NOT NULL,
+  `data` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `read_at` timestamp NULL DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL
@@ -527,35 +595,43 @@ CREATE TABLE `notifications` (
 
 CREATE TABLE `orders` (
   `id` bigint UNSIGNED NOT NULL,
-  `order_number` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `order_number` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `customer_id` bigint UNSIGNED NOT NULL,
   `placed_by_user_id` bigint UNSIGNED DEFAULT NULL,
-  `status` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'pending',
-  `approval_status` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'none',
+  `status` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'pending',
+  `approval_status` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'none',
   `approved_by_user_id` bigint UNSIGNED DEFAULT NULL,
   `approved_at` timestamp NULL DEFAULT NULL,
-  `type` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'b2c',
+  `type` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'b2c',
   `total_items` int NOT NULL DEFAULT '0',
   `subtotal` decimal(15,2) NOT NULL DEFAULT '0.00',
   `discount_total` decimal(15,2) NOT NULL DEFAULT '0.00',
   `tax_total` decimal(15,2) NOT NULL DEFAULT '0.00',
   `shipping_total` decimal(15,2) NOT NULL DEFAULT '0.00',
   `grand_total` decimal(15,2) NOT NULL DEFAULT '0.00',
-  `currency` varchar(10) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'RON',
-  `payment_method` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `payment_status` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'pending',
+  `currency` varchar(10) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'RON',
+  `payment_method` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `payment_status` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'pending',
   `shipping_method_id` bigint UNSIGNED DEFAULT NULL,
   `billing_address_id` bigint UNSIGNED DEFAULT NULL,
   `shipping_address_id` bigint UNSIGNED DEFAULT NULL,
   `credit_blocked` tinyint(1) NOT NULL DEFAULT '0',
   `placed_at` timestamp NULL DEFAULT NULL,
   `cancelled_at` timestamp NULL DEFAULT NULL,
-  `cancel_reason` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `cancel_reason` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `auto_cancelled` tinyint(1) NOT NULL DEFAULT '0',
   `due_date` timestamp NULL DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Eliminarea datelor din tabel `orders`
+--
+
+INSERT INTO `orders` (`id`, `order_number`, `customer_id`, `placed_by_user_id`, `status`, `approval_status`, `approved_by_user_id`, `approved_at`, `type`, `total_items`, `subtotal`, `discount_total`, `tax_total`, `shipping_total`, `grand_total`, `currency`, `payment_method`, `payment_status`, `shipping_method_id`, `billing_address_id`, `shipping_address_id`, `credit_blocked`, `placed_at`, `cancelled_at`, `cancel_reason`, `auto_cancelled`, `due_date`, `created_at`, `updated_at`) VALUES
+(1, 'B2C-1001', 1, 2, 'processing', 'none', NULL, NULL, 'b2c', 3, 1149.70, 50.00, 209.44, 25.00, 1334.14, 'RON', 'card', 'paid', 1, NULL, NULL, 0, '2025-12-12 13:56:40', NULL, NULL, 0, NULL, '2025-12-12 13:56:40', '2025-12-12 13:56:40'),
+(2, 'B2B-2001', 4, 1, 'pending', 'pending', NULL, NULL, 'b2b', 5, 3599.40, 360.00, 615.07, 0.00, 3854.47, 'RON', 'op', 'pending', 2, NULL, NULL, 1, '2025-12-12 13:56:40', NULL, NULL, 0, '2026-01-11 13:56:40', '2025-12-12 13:56:40', '2025-12-12 13:56:40');
 
 -- --------------------------------------------------------
 
@@ -568,8 +644,8 @@ CREATE TABLE `order_items` (
   `order_id` bigint UNSIGNED NOT NULL,
   `product_id` bigint UNSIGNED DEFAULT NULL,
   `product_variant_id` bigint UNSIGNED DEFAULT NULL,
-  `product_name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `sku` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `product_name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `sku` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `quantity` int NOT NULL DEFAULT '1',
   `unit_price` decimal(15,2) NOT NULL DEFAULT '0.00',
   `discount_amount` decimal(15,2) NOT NULL DEFAULT '0.00',
@@ -588,8 +664,8 @@ CREATE TABLE `order_items` (
 CREATE TABLE `order_templates` (
   `id` bigint UNSIGNED NOT NULL,
   `user_id` bigint UNSIGNED NOT NULL,
-  `name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `notes` text COLLATE utf8mb4_unicode_ci,
+  `name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `notes` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -618,15 +694,24 @@ CREATE TABLE `order_template_items` (
 
 CREATE TABLE `pages` (
   `id` bigint UNSIGNED NOT NULL,
-  `title` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `slug` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `content` longtext COLLATE utf8mb4_unicode_ci NOT NULL,
+  `title` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `slug` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `content` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `is_published` tinyint(1) NOT NULL DEFAULT '1',
-  `meta_title` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `meta_description` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `meta_title` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `meta_description` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Eliminarea datelor din tabel `pages`
+--
+
+INSERT INTO `pages` (`id`, `title`, `slug`, `content`, `is_published`, `meta_title`, `meta_description`, `created_at`, `updated_at`) VALUES
+(1, 'Despre noi', 'despre-noi', '<h2>Despre platformă</h2><p>Aceasta este o platformă demo B2B/B2C pentru distribuție de scule, unelte și echipamente.</p>', 1, 'Despre noi', 'Informații despre companie și platformă.', '2025-12-12 13:56:40', '2025-12-12 13:56:40'),
+(2, 'Termeni și condiții', 'termeni-conditii', '<h2>Termeni și condiții</h2><p>Condițiile comerciale și termenele standard se afișează aici.</p>', 1, 'Termeni și condiții', 'Termeni și condiții pentru utilizarea platformei.', '2025-12-12 13:56:40', '2025-12-12 13:56:40'),
+(3, 'Politica GDPR', 'gdpr', '<h2>Politica GDPR</h2><p>Descrierea modului în care prelucrăm datele cu caracter personal.</p>', 1, 'Politica GDPR', 'Informații privind protecția datelor personale.', '2025-12-12 13:56:40', '2025-12-12 13:56:40');
 
 -- --------------------------------------------------------
 
@@ -636,17 +721,17 @@ CREATE TABLE `pages` (
 
 CREATE TABLE `partner_requests` (
   `id` bigint UNSIGNED NOT NULL,
-  `company_name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `cif` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `reg_com` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `iban` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `contact_name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `email` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `phone` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `region` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `activity_type` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `notes` text COLLATE utf8mb4_unicode_ci,
-  `status` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'new',
+  `company_name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `cif` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `reg_com` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `iban` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `contact_name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `email` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `phone` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `region` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `activity_type` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `notes` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
+  `status` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'new',
   `assigned_agent_id` bigint UNSIGNED DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL
@@ -663,14 +748,14 @@ CREATE TABLE `payments` (
   `customer_id` bigint UNSIGNED NOT NULL,
   `order_id` bigint UNSIGNED DEFAULT NULL,
   `recorded_by_user_id` bigint UNSIGNED DEFAULT NULL,
-  `type` enum('chs','bo','cec','card','op') COLLATE utf8mb4_unicode_ci NOT NULL,
-  `channel` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `type` enum('chs','bo','cec','card','op') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `channel` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `amount` decimal(15,2) NOT NULL,
-  `currency` varchar(10) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'RON',
-  `status` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'confirmed',
+  `currency` varchar(10) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'RON',
+  `status` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'confirmed',
   `payment_date` timestamp NULL DEFAULT NULL,
-  `document_number` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `notes` text COLLATE utf8mb4_unicode_ci,
+  `document_number` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `notes` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -683,10 +768,10 @@ CREATE TABLE `payments` (
 
 CREATE TABLE `permissions` (
   `id` bigint UNSIGNED NOT NULL,
-  `name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `code` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `module` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `description` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `code` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `module` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `description` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -710,11 +795,11 @@ CREATE TABLE `permission_role` (
 
 CREATE TABLE `personal_access_tokens` (
   `id` bigint UNSIGNED NOT NULL,
-  `tokenable_type` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `tokenable_type` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `tokenable_id` bigint UNSIGNED NOT NULL,
-  `name` text COLLATE utf8mb4_unicode_ci NOT NULL,
-  `token` varchar(64) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `abilities` text COLLATE utf8mb4_unicode_ci,
+  `name` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `token` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `abilities` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
   `last_used_at` timestamp NULL DEFAULT NULL,
   `expires_at` timestamp NULL DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
@@ -726,7 +811,9 @@ CREATE TABLE `personal_access_tokens` (
 --
 
 INSERT INTO `personal_access_tokens` (`id`, `tokenable_type`, `tokenable_id`, `name`, `token`, `abilities`, `last_used_at`, `expires_at`, `created_at`, `updated_at`) VALUES
-(2, 'App\\Models\\User', 1, 'spa', 'cd12d255ddaf85693ca3e2b2a72d9edfc39f393c9b371f901eec43686a4fdece', '[\"*\"]', NULL, NULL, '2025-12-11 15:03:13', '2025-12-11 15:03:13');
+(2, 'App\\Models\\User', 1, 'spa', 'cd12d255ddaf85693ca3e2b2a72d9edfc39f393c9b371f901eec43686a4fdece', '[\"*\"]', NULL, NULL, '2025-12-11 15:03:13', '2025-12-11 15:03:13'),
+(4, 'App\\Models\\User', 1, 'spa', 'a5d73e2c38cc9f10c87f326525372a73d950797a198d0bf24a03216e9775dabb', '[\"*\"]', '2025-12-12 08:45:56', NULL, '2025-12-12 05:14:17', '2025-12-12 08:45:56'),
+(5, 'App\\Models\\User', 1, 'spa', '8d6fdb14811b400544e975de3ed9cbec0c6f22b1f53d03854bb2f5d173112f29', '[\"*\"]', '2025-12-12 11:56:54', NULL, '2025-12-12 09:00:05', '2025-12-12 11:56:54');
 
 -- --------------------------------------------------------
 
@@ -736,22 +823,22 @@ INSERT INTO `personal_access_tokens` (`id`, `tokenable_type`, `tokenable_id`, `n
 
 CREATE TABLE `products` (
   `id` bigint UNSIGNED NOT NULL,
-  `name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `slug` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `internal_code` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `barcode` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `erp_id` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `short_description` text COLLATE utf8mb4_unicode_ci,
-  `long_description` longtext COLLATE utf8mb4_unicode_ci,
+  `name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `slug` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `internal_code` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `barcode` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `erp_id` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `short_description` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
+  `long_description` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
   `main_category_id` bigint UNSIGNED NOT NULL,
   `brand_id` bigint UNSIGNED DEFAULT NULL,
-  `status` enum('published','hidden') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'hidden',
+  `status` enum('published','hidden') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'hidden',
   `sort_order` int NOT NULL DEFAULT '0',
   `list_price` decimal(15,2) NOT NULL DEFAULT '0.00',
   `rrp_price` decimal(15,2) NOT NULL DEFAULT '0.00',
   `vat_rate` decimal(5,2) NOT NULL DEFAULT '19.00',
   `price_override` decimal(15,2) DEFAULT NULL,
-  `stock_status` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'in_stock',
+  `stock_status` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'in_stock',
   `stock_qty` int NOT NULL DEFAULT '0',
   `supplier_stock_qty` int NOT NULL DEFAULT '0',
   `lead_time_days` int NOT NULL DEFAULT '0',
@@ -764,6 +851,13 @@ CREATE TABLE `products` (
   `updated_at` timestamp NULL DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+--
+-- Eliminarea datelor din tabel `products`
+--
+
+INSERT INTO `products` (`id`, `name`, `slug`, `internal_code`, `barcode`, `erp_id`, `short_description`, `long_description`, `main_category_id`, `brand_id`, `status`, `sort_order`, `list_price`, `rrp_price`, `vat_rate`, `price_override`, `stock_status`, `stock_qty`, `supplier_stock_qty`, `lead_time_days`, `is_new`, `is_recommended`, `is_on_sale`, `is_promo`, `is_best_seller`, `created_at`, `updated_at`) VALUES
+(1, 'sdfsdf', 'produs', '111', NULL, '12', 'dsf', 'sdfsdfsdfsdf', 1, NULL, 'published', 0, 12.00, 0.00, 19.00, NULL, 'in_stock', 0, 0, 0, 0, 0, 0, 0, 0, '2025-12-12 05:30:42', '2025-12-12 07:08:54');
+
 -- --------------------------------------------------------
 
 --
@@ -773,7 +867,7 @@ CREATE TABLE `products` (
 CREATE TABLE `product_comparisons` (
   `id` bigint UNSIGNED NOT NULL,
   `user_id` bigint UNSIGNED DEFAULT NULL,
-  `session_key` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `session_key` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `product_id` bigint UNSIGNED NOT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL
@@ -788,7 +882,7 @@ CREATE TABLE `product_comparisons` (
 CREATE TABLE `product_images` (
   `id` bigint UNSIGNED NOT NULL,
   `product_id` bigint UNSIGNED NOT NULL,
-  `path` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `path` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `is_main` tinyint(1) NOT NULL DEFAULT '0',
   `sort_order` int NOT NULL DEFAULT '0',
   `created_at` timestamp NULL DEFAULT NULL,
@@ -815,15 +909,15 @@ CREATE TABLE `product_promotion` (
 CREATE TABLE `product_variants` (
   `id` bigint UNSIGNED NOT NULL,
   `product_id` bigint UNSIGNED NOT NULL,
-  `name` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `sku` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `barcode` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `erp_id` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `slug` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `sku` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `barcode` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `erp_id` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `slug` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `list_price` decimal(15,2) NOT NULL DEFAULT '0.00',
   `price_override` decimal(15,2) DEFAULT NULL,
   `stock_qty` int NOT NULL DEFAULT '0',
-  `stock_status` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'in_stock',
+  `stock_status` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'in_stock',
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -836,26 +930,35 @@ CREATE TABLE `product_variants` (
 
 CREATE TABLE `promotions` (
   `id` bigint UNSIGNED NOT NULL,
-  `name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `slug` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `short_description` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `description` text COLLATE utf8mb4_unicode_ci,
-  `hero_image` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `banner_image` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `mobile_image` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `slug` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `short_description` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `description` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
+  `hero_image` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `banner_image` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `mobile_image` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `start_at` timestamp NULL DEFAULT NULL,
   `end_at` timestamp NULL DEFAULT NULL,
-  `status` enum('draft','active','inactive') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'draft',
+  `status` enum('draft','active','inactive') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'draft',
   `is_exclusive` tinyint(1) NOT NULL DEFAULT '0',
   `is_iterative` tinyint(1) NOT NULL DEFAULT '0',
-  `bonus_type` enum('free_item','discount_value','discount_percent') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'discount_percent',
+  `bonus_type` enum('free_item','discount_value','discount_percent') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'discount_percent',
   `min_cart_total` decimal(15,2) NOT NULL DEFAULT '0.00',
   `min_qty_per_product` int NOT NULL DEFAULT '0',
-  `customer_type` enum('b2b','b2c','both') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'both',
+  `customer_type` enum('b2b','b2c','both') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'both',
   `logged_in_only` tinyint(1) NOT NULL DEFAULT '0',
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Eliminarea datelor din tabel `promotions`
+--
+
+INSERT INTO `promotions` (`id`, `name`, `slug`, `short_description`, `description`, `hero_image`, `banner_image`, `mobile_image`, `start_at`, `end_at`, `status`, `is_exclusive`, `is_iterative`, `bonus_type`, `min_cart_total`, `min_qty_per_product`, `customer_type`, `logged_in_only`, `created_at`, `updated_at`) VALUES
+(1, 'promo 1', 'promo1', 'sdf', 'sdf', NULL, NULL, NULL, '2025-12-11 22:00:00', '2025-12-30 22:00:00', 'active', 0, 0, 'discount_percent', 10.00, 1, 'both', 1, '2025-12-12 07:12:05', '2025-12-12 07:12:05'),
+(2, 'Scule electrice -10% pentru parteneri', 'scule-electrice-10-procent', 'Reducere 10% la toată gama de scule electrice pentru clienți B2B.', 'Campanie dedicată partenerilor B2B: reducere 10% la sculele electrice selectate (bormașini, ciocane rotopercutoare, polizoare).', NULL, NULL, NULL, '2025-12-07 13:56:40', '2026-01-01 13:56:40', 'active', 0, 1, 'discount_percent', 500.00, 1, 'b2b', 1, '2025-12-12 13:56:40', '2025-12-12 13:56:40'),
+(3, 'Echipamente de protecție – pachet avantajos', 'echipamente-protectie-pachet', 'Prețuri speciale la pachete de mănuși și echipamente de protecție.', 'Pachete avantajoase pentru echiparea rapidă a echipelor din teren: mănuși de protecție, ochelari, cască și încălțăminte.', NULL, NULL, NULL, '2025-12-10 13:56:40', '2026-01-11 13:56:40', 'active', 0, 0, 'discount_value', 300.00, 5, 'both', 0, '2025-12-12 13:56:40', '2025-12-12 13:56:40');
 
 -- --------------------------------------------------------
 
@@ -868,13 +971,13 @@ CREATE TABLE `quote_requests` (
   `customer_id` bigint UNSIGNED NOT NULL,
   `created_by_user_id` bigint UNSIGNED NOT NULL,
   `assigned_agent_id` bigint UNSIGNED DEFAULT NULL,
-  `status` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'new',
-  `source` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `status` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'new',
+  `source` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `estimated_total` decimal(15,2) NOT NULL DEFAULT '0.00',
   `offered_total` decimal(15,2) NOT NULL DEFAULT '0.00',
   `valid_until` timestamp NULL DEFAULT NULL,
-  `customer_notes` text COLLATE utf8mb4_unicode_ci,
-  `internal_notes` text COLLATE utf8mb4_unicode_ci,
+  `customer_notes` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
+  `internal_notes` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -907,7 +1010,7 @@ CREATE TABLE `quote_request_items` (
 CREATE TABLE `recently_viewed_products` (
   `id` bigint UNSIGNED NOT NULL,
   `user_id` bigint UNSIGNED DEFAULT NULL,
-  `session_key` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `session_key` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `product_id` bigint UNSIGNED NOT NULL,
   `viewed_at` timestamp NOT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
@@ -924,7 +1027,7 @@ CREATE TABLE `related_products` (
   `id` bigint UNSIGNED NOT NULL,
   `product_id` bigint UNSIGNED NOT NULL,
   `related_product_id` bigint UNSIGNED NOT NULL,
-  `type` enum('similar','complementary') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'similar',
+  `type` enum('similar','complementary') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'similar',
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -937,10 +1040,10 @@ CREATE TABLE `related_products` (
 
 CREATE TABLE `roles` (
   `id` bigint UNSIGNED NOT NULL,
-  `slug` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `code` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `description` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `slug` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `code` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `description` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `is_system` tinyint(1) NOT NULL DEFAULT '0',
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL
@@ -970,6 +1073,13 @@ CREATE TABLE `role_user` (
   `user_id` bigint UNSIGNED NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+--
+-- Eliminarea datelor din tabel `role_user`
+--
+
+INSERT INTO `role_user` (`role_id`, `user_id`) VALUES
+(1, 1);
+
 -- --------------------------------------------------------
 
 --
@@ -978,16 +1088,25 @@ CREATE TABLE `role_user` (
 
 CREATE TABLE `sales_representatives` (
   `id` bigint UNSIGNED NOT NULL,
-  `name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `email` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `phone` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `region` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `email` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `phone` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `region` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `counties` json DEFAULT NULL,
   `is_active` tinyint(1) NOT NULL DEFAULT '1',
   `sort_order` int NOT NULL DEFAULT '0',
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Eliminarea datelor din tabel `sales_representatives`
+--
+
+INSERT INTO `sales_representatives` (`id`, `name`, `email`, `phone`, `region`, `counties`, `is_active`, `sort_order`, `created_at`, `updated_at`) VALUES
+(1, 'Ion Popescu', 'ion.popescu@example.com', '+40 721 000 111', 'Transilvania', '[\"Cluj\", \"Bihor\", \"Alba\", \"Mureș\"]', 1, 10, '2025-12-12 13:56:40', '2025-12-12 13:56:40'),
+(2, 'Maria Ionescu', 'maria.ionescu@example.com', '+40 722 000 222', 'Muntenia', '[\"București\", \"Ilfov\", \"Prahova\", \"Dâmbovița\"]', 1, 20, '2025-12-12 13:56:40', '2025-12-12 13:56:40'),
+(3, 'Andrei Georgescu', 'andrei.georgescu@example.com', '+40 723 000 333', 'Moldova', '[\"Iași\", \"Bacău\", \"Neamț\"]', 1, 30, '2025-12-12 13:56:40', '2025-12-12 13:56:40');
 
 -- --------------------------------------------------------
 
@@ -998,11 +1117,11 @@ CREATE TABLE `sales_representatives` (
 CREATE TABLE `shipments` (
   `id` bigint UNSIGNED NOT NULL,
   `order_id` bigint UNSIGNED NOT NULL,
-  `courier` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `awb_number` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `label_url` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `tracking_url` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `status` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'created',
+  `courier` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `awb_number` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `label_url` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `tracking_url` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `status` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'created',
   `raw_payload` json DEFAULT NULL,
   `is_active` tinyint(1) NOT NULL DEFAULT '1',
   `created_at` timestamp NULL DEFAULT NULL,
@@ -1017,13 +1136,21 @@ CREATE TABLE `shipments` (
 
 CREATE TABLE `shipping_methods` (
   `id` bigint UNSIGNED NOT NULL,
-  `name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `code` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `type` enum('courier','own_fleet','pickup') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'courier',
+  `name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `code` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `type` enum('courier','own_fleet','pickup') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'courier',
   `is_active` tinyint(1) NOT NULL DEFAULT '1',
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Eliminarea datelor din tabel `shipping_methods`
+--
+
+INSERT INTO `shipping_methods` (`id`, `name`, `code`, `type`, `is_active`, `created_at`, `updated_at`) VALUES
+(1, 'Sameday', 'sameday', 'courier', 1, '2025-12-12 07:12:18', '2025-12-12 07:12:18'),
+(2, 'Sofer flota proprie', 'flota1', 'own_fleet', 1, '2025-12-12 07:12:45', '2025-12-12 07:12:45');
 
 -- --------------------------------------------------------
 
@@ -1038,9 +1165,9 @@ CREATE TABLE `shipping_rules` (
   `max_weight` decimal(10,2) NOT NULL DEFAULT '0.00',
   `min_value` decimal(15,2) NOT NULL DEFAULT '0.00',
   `max_value` decimal(15,2) NOT NULL DEFAULT '0.00',
-  `region` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `county` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `city` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `region` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `county` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `city` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `price` decimal(15,2) NOT NULL DEFAULT '0.00',
   `free_over` decimal(15,2) NOT NULL DEFAULT '0.00',
   `created_at` timestamp NULL DEFAULT NULL,
@@ -1058,10 +1185,10 @@ CREATE TABLE `tickets` (
   `customer_id` bigint UNSIGNED DEFAULT NULL,
   `created_by_user_id` bigint UNSIGNED DEFAULT NULL,
   `assigned_to_user_id` bigint UNSIGNED DEFAULT NULL,
-  `subject` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `category` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `status` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'new',
-  `priority` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'normal',
+  `subject` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `category` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `status` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'new',
+  `priority` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'normal',
   `last_message_at` timestamp NULL DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL
@@ -1077,7 +1204,7 @@ CREATE TABLE `ticket_messages` (
   `id` bigint UNSIGNED NOT NULL,
   `ticket_id` bigint UNSIGNED NOT NULL,
   `sender_user_id` bigint UNSIGNED DEFAULT NULL,
-  `message` text COLLATE utf8mb4_unicode_ci NOT NULL,
+  `message` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `is_internal` tinyint(1) NOT NULL DEFAULT '0',
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL
@@ -1092,15 +1219,15 @@ CREATE TABLE `ticket_messages` (
 CREATE TABLE `users` (
   `id` bigint UNSIGNED NOT NULL,
   `customer_id` bigint UNSIGNED DEFAULT NULL,
-  `first_name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `last_name` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `email` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `phone` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `first_name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `last_name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `email` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `phone` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `email_verified_at` timestamp NULL DEFAULT NULL,
-  `password` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `password` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `is_active` tinyint(1) NOT NULL DEFAULT '1',
-  `remember_token` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `company_role` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `remember_token` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `company_role` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `requires_approval` tinyint(1) NOT NULL DEFAULT '0',
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL
@@ -1111,7 +1238,8 @@ CREATE TABLE `users` (
 --
 
 INSERT INTO `users` (`id`, `customer_id`, `first_name`, `last_name`, `email`, `phone`, `email_verified_at`, `password`, `is_active`, `remember_token`, `company_role`, `requires_approval`, `created_at`, `updated_at`) VALUES
-(1, 4, 'binar', 'cod', 'cod.binar@gmail.com', '+40758880618', NULL, '$2y$12$QGDQEF22w6jLDSkNQHjoOuRWIy25dUd1Xc2GxQaQBU.7MHx8Tv/kW', 1, NULL, NULL, 0, '2025-12-11 14:50:24', '2025-12-11 14:50:24');
+(1, 4, 'binar', 'cod', 'cod.binar@gmail.com', '+40758880618', NULL, '$2y$12$QGDQEF22w6jLDSkNQHjoOuRWIy25dUd1Xc2GxQaQBU.7MHx8Tv/kW', 1, NULL, NULL, 0, '2025-12-11 14:50:24', '2025-12-11 14:50:24'),
+(2, 3, 'binar', 'cod', 'client@metal-rom.ro', '+40758880618', NULL, '$2y$12$QGDQEF22w6jLDSkNQHjoOuRWIy25dUd1Xc2GxQaQBU.7MHx8Tv/kW', 1, NULL, NULL, 0, '2025-12-11 14:50:24', '2025-12-11 14:50:24');
 
 --
 -- Indexuri pentru tabele eliminate
@@ -1575,37 +1703,37 @@ ALTER TABLE `audit_logs`
 -- AUTO_INCREMENT pentru tabele `blog_categories`
 --
 ALTER TABLE `blog_categories`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT pentru tabele `blog_posts`
 --
 ALTER TABLE `blog_posts`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT pentru tabele `brands`
 --
 ALTER TABLE `brands`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- AUTO_INCREMENT pentru tabele `carts`
 --
 ALTER TABLE `carts`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT pentru tabele `cart_items`
 --
 ALTER TABLE `cart_items`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT pentru tabele `categories`
 --
 ALTER TABLE `categories`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
 
 --
 -- AUTO_INCREMENT pentru tabele `customers`
@@ -1617,7 +1745,7 @@ ALTER TABLE `customers`
 -- AUTO_INCREMENT pentru tabele `customer_groups`
 --
 ALTER TABLE `customer_groups`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- AUTO_INCREMENT pentru tabele `erp_sync_logs`
@@ -1653,7 +1781,7 @@ ALTER TABLE `migrations`
 -- AUTO_INCREMENT pentru tabele `orders`
 --
 ALTER TABLE `orders`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT pentru tabele `order_items`
@@ -1677,7 +1805,7 @@ ALTER TABLE `order_template_items`
 -- AUTO_INCREMENT pentru tabele `pages`
 --
 ALTER TABLE `pages`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- AUTO_INCREMENT pentru tabele `partner_requests`
@@ -1701,13 +1829,13 @@ ALTER TABLE `permissions`
 -- AUTO_INCREMENT pentru tabele `personal_access_tokens`
 --
 ALTER TABLE `personal_access_tokens`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
 
 --
 -- AUTO_INCREMENT pentru tabele `products`
 --
 ALTER TABLE `products`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
 
 --
 -- AUTO_INCREMENT pentru tabele `product_comparisons`
@@ -1731,7 +1859,7 @@ ALTER TABLE `product_variants`
 -- AUTO_INCREMENT pentru tabele `promotions`
 --
 ALTER TABLE `promotions`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- AUTO_INCREMENT pentru tabele `quote_requests`
@@ -1767,7 +1895,7 @@ ALTER TABLE `roles`
 -- AUTO_INCREMENT pentru tabele `sales_representatives`
 --
 ALTER TABLE `sales_representatives`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- AUTO_INCREMENT pentru tabele `shipments`
@@ -1779,7 +1907,7 @@ ALTER TABLE `shipments`
 -- AUTO_INCREMENT pentru tabele `shipping_methods`
 --
 ALTER TABLE `shipping_methods`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT pentru tabele `shipping_rules`
@@ -1803,7 +1931,7 @@ ALTER TABLE `ticket_messages`
 -- AUTO_INCREMENT pentru tabele `users`
 --
 ALTER TABLE `users`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- Constrângeri pentru tabele eliminate

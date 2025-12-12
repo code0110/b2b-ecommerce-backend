@@ -205,7 +205,7 @@ const router = createRouter({
           path: 'comenzi',
           name: 'account-orders',
           component: Orders,
-          meta: { requiresAuth: false }
+          meta: { requiresAuth: true }
         },
         {
           path: 'oferte',

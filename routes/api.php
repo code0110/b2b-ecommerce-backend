@@ -59,6 +59,7 @@ use App\Http\Controllers\Front\CategoryTreeController;
 use App\Http\Controllers\Front\CatalogCategoryController;
 use App\Http\Controllers\Front\PromotionController as FrontPromotionController;
 use App\Http\Controllers\Front\CatalogHighlightController;
+use App\Http\Controllers\Front\AccountOrderController;
 
 // Auth
 Route::prefix('auth')->group(function () {
@@ -151,6 +152,11 @@ Route::prefix('checkout')->group(function () {
 
 // Orders in client account
 Route::middleware('auth:sanctum')->group(function () {
+
+    Route::prefix('account')->group(function () {
+    Route::get('orders', [AccountOrderController::class, 'index']);
+    Route::get('orders/{order}', [AccountOrderController::class, 'show']);
+});
     Route::get('orders', [OrderController::class, 'index']);
     Route::get('orders/{id}', [OrderController::class, 'show']);
     Route::post('orders/{id}/reorder', [OrderController::class, 'reorder']);

@@ -1,233 +1,140 @@
 <template>
-  <div class="container py-4">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-      <h1 class="h4 mb-0">Promoții active și în curând</h1>
-    </div>
+  <div class="py-3">
+    <div class="container">
+      <h1 class="h4 mb-2">Promoții</h1>
+      <p class="text-muted small mb-3">
+        Promoții active și campanii în derulare pentru clienți B2B și B2C.
+      </p>
 
-    <!-- Mesaje -->
-    <div v-if="error" class="alert alert-danger">
-      {{ error }}
-    </div>
-    <div v-if="loading" class="alert alert-info">
-      Se încarcă promoțiile...
-    </div>
+      <div class="d-flex flex-wrap gap-2 align-items-center mb-3">
+        <select
+          v-model="filters.customer_type"
+          class="form-select form-select-sm"
+          style="max-width: 220px"
+          @change="reload"
+        >
+          <option value="">Toți clienții</option>
+          <option value="b2c">Doar B2C</option>
+          <option value="b2b">Doar B2B</option>
+        </select>
 
-    <!-- Filtre simple -->
-    <div class="card mb-3">
-      <div class="card-body">
-        <form class="row g-3" @submit.prevent="reloadPromotions">
-          <div class="col-md-4">
-            <label class="form-label small">Căutare</label>
-            <input
-              v-model="filters.search"
-              type="text"
-              class="form-control form-control-sm"
-              placeholder="Nume promoție..."
-            />
-          </div>
-          <div class="col-md-3">
-            <label class="form-label small">Tip client</label>
-            <select
-              v-model="filters.customer_type"
-              class="form-select form-select-sm"
-            >
-              <option value="">Toți</option>
-              <option value="b2c">B2C</option>
-              <option value="b2b">B2B</option>
-            </select>
-          </div>
-          <div class="col-md-3">
-            <label class="form-label small">Status</label>
-            <select
-              v-model="filters.status"
-              class="form-select form-select-sm"
-            >
-              <option value="">Toate</option>
-              <option value="active">Active</option>
-              <option value="upcoming">În curând</option>
-              <option value="expired">Expirate</option>
-            </select>
-          </div>
-          <div class="col-md-2 d-flex align-items-end">
-            <button type="submit" class="btn btn-outline-primary btn-sm w-100">
-              Aplică filtre
-            </button>
-          </div>
-        </form>
+        <select
+          v-model="filters.type"
+          class="form-select form-select-sm"
+          style="max-width: 220px"
+          @change="reload"
+        >
+          <option value="">Toate tipurile</option>
+          <option value="discount">Discount</option>
+          <option value="free">Gratuitate</option>
+        </select>
       </div>
-    </div>
 
-    <!-- Listă promoții -->
-    <div v-if="!loading && !promotions.length" class="text-muted">
-      Nu există promoții pentru filtrele curente.
-    </div>
+      <div v-if="loading" class="text-muted small py-3">
+        Se încarcă promoțiile...
+      </div>
+      <div v-else-if="error" class="alert alert-danger small py-2">
+        {{ error }}
+      </div>
 
-    <div class="row g-3">
-      <div
-        v-for="promo in promotions"
-        :key="promo.slug || promo.id"
-        class="col-md-4"
-      >
-        <div class="card h-100 shadow-sm">
-          <div class="card-body d-flex flex-column">
-            <div class="mb-2">
-              <span
-                v-if="promo.status"
-                class="badge"
-                :class="badgeClass(promo.status)"
-              >
-                {{ statusLabel(promo.status) }}
-              </span>
-              <span
-                v-if="promo.customer_type"
-                class="badge bg-light text-muted border ms-1"
-              >
-                {{ promo.customer_type.toUpperCase() }}
-              </span>
-            </div>
-            <h2 class="h6 mb-1">
-              {{ promo.name || promo.title }}
-            </h2>
-            <p class="small text-muted mb-2">
-              {{ promo.short_description || promo.teaser }}
-            </p>
-            <p class="small mb-2">
-              <strong>Perioadă:</strong>
-              <span v-if="promo.start_at || promo.end_at">
-                {{ promo.start_at }} – {{ promo.end_at || 'nelimitat' }}
-              </span>
-              <span v-else>
-                Fără perioadă definită
-              </span>
-            </p>
-            <p v-if="promo.logged_in_only" class="small text-muted mb-3">
-              Disponibilă doar pentru utilizatori logați.
-            </p>
-            <div class="mt-auto">
+      <div v-else class="row g-3">
+        <div
+          v-for="promo in promotions.data"
+          :key="promo.id"
+          class="col-md-4"
+        >
+          <div class="card h-100 shadow-sm">
+            <div class="card-body d-flex flex-column">
+              <span class="badge bg-danger mb-2">Promoție</span>
+              <h2 class="h6 mb-1">
+                {{ promo.name || promo.title }}
+              </h2>
+              <p class="small text-muted mb-2">
+                {{ promo.short_description || promo.description }}
+              </p>
+              <p class="small mb-2">
+                <strong>Perioadă:</strong>
+                {{ formatPeriod(promo) }}
+              </p>
+              <p class="small text-muted mb-3">
+                Segment: {{ formatCustomerType(promo.customer_type) }}
+              </p>
               <RouterLink
-                v-if="promo.slug"
                 :to="`/promotii/${promo.slug}`"
-                class="btn btn-outline-primary btn-sm"
+                class="btn btn-outline-primary btn-sm mt-auto"
               >
-                Vezi detalii
+                Detalii promoție
               </RouterLink>
             </div>
           </div>
         </div>
-      </div>
-    </div>
 
-    <!-- Paginare simplă -->
-    <div
-      v-if="meta.last_page > 1"
-      class="d-flex justify-content-between align-items-center mt-3"
-    >
-      <div class="text-muted small">
-        Pagina {{ meta.current_page }} din {{ meta.last_page }} –
-        {{ meta.total }} promoții
-      </div>
-      <div class="btn-group">
-        <button
-          type="button"
-          class="btn btn-sm btn-outline-secondary"
-          :disabled="meta.current_page === 1"
-          @click="changePage(meta.current_page - 1)"
-        >
-          « Anterioară
-        </button>
-        <button
-          type="button"
-          class="btn btn-sm btn-outline-secondary"
-          :disabled="meta.current_page === meta.last_page"
-          @click="changePage(meta.current_page + 1)"
-        >
-          Următoarea »
-        </button>
+        <div v-if="!promotions.data.length" class="col-12">
+          <div class="alert alert-light border small mb-0">
+            Nu există promoții pentru filtrele selectate.
+          </div>
+        </div>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
-import { RouterLink } from 'vue-router';
-import { fetchPromotions } from '@/services/promotions';
+import { ref, reactive, onMounted } from 'vue';
+import { fetchPromotionsList } from '@/services/promotions';
 
 const loading = ref(false);
 const error = ref('');
-
-const promotions = ref([]);
-const meta = ref({
-  current_page: 1,
-  last_page: 1,
-  total: 0,
+const promotions = reactive({
+  data: [],
+  meta: null,
 });
 
-const filters = ref({
-  search: '',
+const filters = reactive({
   customer_type: '',
-  status: '',
+  type: '',
 });
 
-const loadPromotions = async (page = 1) => {
+const formatPeriod = (promo) => {
+  if (!promo.start_at && !promo.end_at) return 'fără perioadă';
+  const start = promo.start_at
+    ? new Date(promo.start_at).toLocaleDateString('ro-RO')
+    : '–';
+  const end = promo.end_at
+    ? new Date(promo.end_at).toLocaleDateString('ro-RO')
+    : '–';
+  return `${start} – ${end}`;
+};
+
+const formatCustomerType = (t) => {
+  if (t === 'b2b') return 'clienți B2B';
+  if (t === 'b2c') return 'clienți B2C';
+  return 'toți clienții';
+};
+
+const load = async () => {
   loading.value = true;
   error.value = '';
 
   try {
-    const params = {
-      page,
-      search: filters.value.search || undefined,
-      customer_type: filters.value.customer_type || undefined,
-      status: filters.value.status || undefined,
-    };
+    const data = await fetchPromotionsList({
+      customer_type: filters.customer_type || undefined,
+      type: filters.type || undefined,
+    });
 
-    const { items, meta: m } = await fetchPromotions(params);
-    promotions.value = items;
-    meta.value = m;
+    promotions.data = data.data || [];
+    promotions.meta = data.meta || null;
   } catch (e) {
-    console.error('Promotions load error', e);
-    error.value =
-      e.response?.data?.message || 'Nu s-au putut încărca promoțiile.';
+    console.error(e);
+    error.value = 'Nu s-au putut încărca promoțiile.';
   } finally {
     loading.value = false;
   }
 };
 
-const reloadPromotions = () => {
-  loadPromotions(1);
+const reload = () => {
+  load();
 };
 
-const changePage = (page) => {
-  loadPromotions(page);
-};
-
-const badgeClass = (status) => {
-  switch (status) {
-    case 'active':
-      return 'bg-success';
-    case 'upcoming':
-      return 'bg-info';
-    case 'expired':
-      return 'bg-secondary';
-    default:
-      return 'bg-light text-muted';
-  }
-};
-
-const statusLabel = (status) => {
-  switch (status) {
-    case 'active':
-      return 'Activă';
-    case 'upcoming':
-      return 'În curând';
-    case 'expired':
-      return 'Expirată';
-    default:
-      return status;
-  }
-};
-
-onMounted(() => {
-  loadPromotions(1);
-});
+onMounted(load);
 </script>

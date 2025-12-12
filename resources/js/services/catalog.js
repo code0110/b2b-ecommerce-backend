@@ -31,3 +31,12 @@ export async function searchProducts(params = {}) {
 }
 export const fetchCategoryTree = () =>
   api.get('/catalog/categories-tree').then((r) => r.data);
+  
+export const fetchCategoryPage = (slug, params = {}) =>
+  api.get(`/catalog/category/${slug}`, { params }).then((r) => r.data);
+
+export const fetchNewProductsPage = (params = {}) =>
+  api.get('/catalog/new-products', { params }).then((r) => r.data);
+
+export const fetchDiscountedProductsPage = (params = {}) =>
+  api.get('/catalog/discounted-products', { params }).then((r) => r.data);

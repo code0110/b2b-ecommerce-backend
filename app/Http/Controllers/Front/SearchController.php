@@ -10,102 +10,52 @@ use Illuminate\Http\Request;
 
 class SearchController extends Controller
 {
-    public function search(Request $request)
+    public function index(Request $request)
     {
-        $q = trim((string) $request->get('q', ''));
+        $term = trim((string) $request->input('q', ''));
 
-        $query = Product::query()->with(['brand', 'categories']);
-
-        if ($q !== '') {
-            $query->where(function ($qBuilder) use ($q) {
-                $qBuilder
-                    ->where('name', 'like', "%{$q}%")
-                    ->orWhere('internal_code', 'like', "%{$q}%")
-                    ->orWhere('barcode', 'like', "%{$q}%");
-            });
-        }
-
-        if ($categorySlug = $request->get('category')) {
-            $query->whereHas('categories', function ($qBuilder) use ($categorySlug) {
-                $qBuilder->where('slug', $categorySlug);
-            });
-        }
-
-        if ($brandSlug = $request->get('brand')) {
-            $query->whereHas('brand', function ($qBuilder) use ($brandSlug) {
-                $qBuilder->where('slug', $brandSlug);
-            });
-        }
-
-        if ($minPrice = $request->get('min_price')) {
-            $query->where('list_price', '>=', (float) $minPrice);
-        }
-
-        if ($maxPrice = $request->get('max_price')) {
-            $query->where('list_price', '<=', (float) $maxPrice);
-        }
-
-        // disponibilitate
-        if ($availability = $request->get('availability')) {
-            if ($availability === 'in_stock') {
-                $query->where('stock_status', 'in_stock');
-            } elseif ($availability === 'on_order') {
-                $query->where('stock_status', 'on_order');
-            }
-        }
-
-        $sort = $request->get('sort', 'relevance');
-        switch ($sort) {
-            case 'price_asc':
-                $query->orderBy('list_price', 'asc');
-                break;
-            case 'price_desc':
-                $query->orderBy('list_price', 'desc');
-                break;
-            case 'newest':
-                $query->orderBy('created_at', 'desc');
-                break;
-            default:
-                $query->orderBy('name');
-        }
-
-        $perPage = (int) $request->get('per_page', 20);
-
-        return $query->paginate($perPage);
-    }
-
-    public function autocomplete(Request $request)
-    {
-        $q = trim((string) $request->get('q', ''));
-        if ($q === '') {
+        if ($term === '') {
             return response()->json([
-                'products'  => [],
-                'categories'=> [],
+                'query'     => '',
+                'products'  => ['data' => [], 'meta' => null],
+                'categories' => [],
                 'brands'    => [],
             ]);
         }
 
-        $products = Product::select('id', 'name', 'slug', 'internal_code')
-            ->where(function ($qBuilder) use ($q) {
-                $qBuilder
-                    ->where('name', 'like', "%{$q}%")
-                    ->orWhere('internal_code', 'like', "%{$q}%")
-                    ->orWhere('barcode', 'like', "%{$q}%");
+        $perPage = min((int) $request->input('per_page', 24), 100);
+
+        // produse
+        $productQuery = Product::query()
+            ->with(['mainCategory', 'brand'])
+            ->where('status', 'published')
+            ->where(function ($q) use ($term) {
+                $like = '%' . $term . '%';
+                $q->where('name', 'like', $like)
+                  ->orWhere('code', 'like', $like)
+                  ->orWhere('sku', 'like', $like)
+                  ->orWhere('barcode', 'like', $like);
             })
+            ->orderBy('name');
+
+        $products = $productQuery->paginate($perPage);
+
+        // categorii sugestii
+        $categories = Category::query()
+            ->where('name', 'like', '%' . $term . '%')
+            ->orderBy('name')
             ->limit(10)
-            ->get();
+            ->get(['id', 'name', 'slug']);
 
-        $categories = Category::select('id', 'name', 'slug')
-            ->where('name', 'like', "%{$q}%")
-            ->limit(5)
-            ->get();
-
-        $brands = Brand::select('id', 'name', 'slug')
-            ->where('name', 'like', "%{$q}%")
-            ->limit(5)
-            ->get();
+        // branduri sugestii
+        $brands = Brand::query()
+            ->where('name', 'like', '%' . $term . '%')
+            ->orderBy('name')
+            ->limit(10)
+            ->get(['id', 'name', 'slug']);
 
         return response()->json([
+            'query'      => $term,
             'products'   => $products,
             'categories' => $categories,
             'brands'     => $brands,

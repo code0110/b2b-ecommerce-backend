@@ -1,119 +1,73 @@
 <template>
-  <div class="container py-4" v-if="!loading && promotion">
-    <!-- Breadcrumbs -->
-    <nav aria-label="breadcrumb" class="mb-3">
-      <ol class="breadcrumb mb-0">
-        <li class="breadcrumb-item">
-          <RouterLink to="/">Acasă</RouterLink>
-        </li>
-        <li class="breadcrumb-item">
-          <RouterLink to="/promotii">Promoții</RouterLink>
-        </li>
-        <li class="breadcrumb-item active" aria-current="page">
-          {{ promotion.name || promotion.title }}
-        </li>
-      </ol>
-    </nav>
+  <div class="py-3">
+    <div class="container">
+      <RouterLink to="/promotii" class="small text-muted text-decoration-none">
+        ← Înapoi la promoții
+      </RouterLink>
 
-    <!-- Header promoție -->
-    <div class="row mb-4">
-      <div class="col-md-8 mb-3 mb-md-0">
-        <h1 class="h4 mb-2">
-          {{ promotion.name || promotion.title }}
-        </h1>
-        <p v-if="promotion.short_description" class="text-muted mb-2">
-          {{ promotion.short_description }}
-        </p>
-        <p class="small mb-1">
-          <strong>Perioadă:</strong>
-          <span v-if="promotion.start_at || promotion.end_at">
-            {{ promotion.start_at }} – {{ promotion.end_at || 'nelimitat' }}
-          </span>
-          <span v-else>Fără perioadă definită</span>
-        </p>
-        <p class="small text-muted mb-1">
-          <span v-if="promotion.customer_type">
-            Tip client: {{ promotion.customer_type.toUpperCase() }}.
-          </span>
-          <span v-if="promotion.logged_in_only" class="ms-2">
-            (Doar pentru utilizatori logați)
-          </span>
-        </p>
-        <div
-          v-if="promotion.conditions"
-          class="small text-muted"
-        >
-          {{ promotion.conditions }}
+      <div class="row mt-2">
+        <div class="col-md-8">
+          <h1 class="h4 mb-1">
+            {{ promotion?.name || 'Promoție' }}
+          </h1>
+          <p class="text-muted small mb-2">
+            {{ promotion?.short_description }}
+          </p>
+          <div class="small mb-2">
+            <strong>Perioadă:</strong>
+            {{ formatPeriod(promotion) }}
+          </div>
+          <div class="small text-muted mb-3">
+            Segment: {{ formatCustomerType(promotion?.customer_type) }}
+          </div>
+          <p v-if="promotion?.description" class="mb-3">
+            {{ promotion.description }}
+          </p>
         </div>
       </div>
-      <div class="col-md-4">
-        <!-- Imagine / banner promoție (simplificat) -->
-        <div
-          class="border rounded bg-light d-flex align-items-center justify-content-center"
-          style="min-height: 180px;"
-        >
-          <span class="text-muted small">
-            Banner promoție (hero_image / banner_image)
-          </span>
-        </div>
-      </div>
-    </div>
 
-    <!-- Descriere detaliată (landing content) -->
-    <div class="mb-4">
-      <h2 class="h5 mb-2">Descriere campanie</h2>
-      <p v-if="promotion.description" class="mb-0">
-        {{ promotion.description }}
-      </p>
-      <p v-else class="text-muted small mb-0">
-        Nu există o descriere detaliată configurată pentru această promoție.
-      </p>
-    </div>
+      <hr class="my-3" />
 
-    <!-- Produse incluse în promoție -->
-    <section>
       <div class="d-flex justify-content-between align-items-center mb-2">
-        <h2 class="h5 mb-0">Produse incluse în promoție</h2>
+        <h2 class="h6 mb-0">Produse incluse în promoție</h2>
       </div>
 
-      <div v-if="!products.length" class="text-muted small">
-        Nu sunt produse listate explicit pentru această promoție sau promoția
-        se aplică la nivel de categorie/brand.
+      <div v-if="loading" class="text-muted small py-3">
+        Se încarcă promoția...
+      </div>
+      <div v-else-if="error" class="alert alert-danger small py-2">
+        {{ error }}
       </div>
 
-      <div class="row g-3">
+      <div v-else class="row g-3">
         <div
-          v-for="product in products"
-          :key="product.slug || product.id"
-          class="col-md-3 col-sm-6"
+          v-for="p in products.data"
+          :key="p.id"
+          class="col-lg-3 col-md-4 col-sm-6"
         >
           <div class="card h-100">
             <div class="card-body d-flex flex-column">
               <div class="small text-muted mb-1">
-                {{ product.brand?.name || product.brand || '—' }}
+                {{ p.main_category?.name || 'Categorie' }}
               </div>
-              <h3 class="h6 mb-1">{{ product.name }}</h3>
+              <h3 class="h6 mb-1">{{ p.name }}</h3>
               <div class="small text-muted mb-2">
-                {{ product.internal_code || product.code }}
+                {{ p.code || p.sku }}
               </div>
               <div class="mt-auto">
-                <div
-                  class="small text-muted"
-                  v-if="product.promo_price || product.promoPrice"
-                >
+                <div class="small text-muted" v-if="p.promo_price">
                   <span class="text-decoration-line-through me-1">
-                    {{ formatPrice(product.price ?? product.list_price) }}
+                    {{ formatMoney(p.price || p.list_price || 0) }}
                   </span>
                   <span class="fw-semibold">
-                    {{ formatPrice(product.promo_price ?? product.promoPrice) }} RON
+                    {{ formatMoney(p.promo_price) }} RON
                   </span>
                 </div>
                 <div v-else class="fw-semibold mb-1">
-                  {{ formatPrice(product.final_price ?? product.price ?? product.list_price) }} RON
+                  {{ formatMoney(p.price || p.list_price || 0) }} RON
                 </div>
                 <RouterLink
-                  v-if="product.slug"
-                  :to="`/produs/${product.slug}`"
+                  :to="`/produs/${p.slug}`"
                   class="btn btn-outline-primary btn-sm"
                 >
                   Detalii produs
@@ -122,86 +76,73 @@
             </div>
           </div>
         </div>
-      </div>
-    </section>
-  </div>
 
-  <!-- Loading / 404 -->
-  <div v-else-if="loading" class="container py-4">
-    <div class="alert alert-info">
-      Se încarcă detaliile promoției...
-    </div>
-  </div>
-  <div v-else class="container py-4">
-    <div class="alert alert-warning">
-      Promoția nu a fost găsită.
+        <div v-if="!products.data.length" class="col-12">
+          <div class="alert alert-light border small mb-0">
+            Nu există produse legate de această promoție.
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from 'vue';
-import { useRoute, RouterLink } from 'vue-router';
-import { fetchPromotionBySlug } from '@/services/promotions';
+import { ref, reactive, onMounted } from 'vue';
+import { useRoute } from 'vue-router';
+import { fetchPromotionLanding } from '@/services/promotions';
 
 const route = useRoute();
 
 const loading = ref(false);
 const error = ref('');
-
 const promotion = ref(null);
-const products = ref([]);
+const products = reactive({
+  data: [],
+  meta: null,
+});
 
-const formatPrice = (value) => {
-  if (value == null) return '-';
-  const num = Number(value);
-  if (Number.isNaN(num)) return String(value);
-  return num.toLocaleString('ro-RO', {
+const formatMoney = (value) =>
+  (Number(value) || 0).toLocaleString('ro-RO', {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   });
+
+const formatPeriod = (promo) => {
+  if (!promo) return '';
+  if (!promo.start_at && !promo.end_at) return 'fără perioadă';
+  const start = promo.start_at
+    ? new Date(promo.start_at).toLocaleDateString('ro-RO')
+    : '–';
+  const end = promo.end_at
+    ? new Date(promo.end_at).toLocaleDateString('ro-RO')
+    : '–';
+  return `${start} – ${end}`;
 };
 
-const loadPromotion = async () => {
+const formatCustomerType = (t) => {
+  if (t === 'b2b') return 'clienți B2B';
+  if (t === 'b2c') return 'clienți B2C';
+  return 'toți clienții';
+};
+
+const load = async () => {
   loading.value = true;
   error.value = '';
-  promotion.value = null;
-  products.value = [];
-
-  const slug = route.params.slug;
 
   try {
-    const data = await fetchPromotionBySlug(slug);
+    const data = await fetchPromotionLanding(route.params.slug);
 
-    // adaptare la structura backend-ului
-    promotion.value = data.promotion ?? data;
-    products.value =
-      data.products ??
-      data.promotion_products ??
-      data.items ??
-      [];
+    promotion.value = data.promotion;
+    products.data = data.products?.data || [];
+    products.meta = data.products?.meta || null;
   } catch (e) {
-    console.error('Promotion load error', e);
-    if (e.response?.status === 404) {
-      error.value = 'Promoția nu a fost găsită.';
-    } else {
-      error.value =
-        e.response?.data?.message ||
-        'Nu s-au putut încărca detaliile promoției.';
-    }
+    console.error(e);
+    error.value = 'Promoția nu a putut fi încărcată.';
   } finally {
     loading.value = false;
   }
 };
 
-watch(
-  () => route.params.slug,
-  () => {
-    loadPromotion();
-  },
-);
-
-onMounted(() => {
-  loadPromotion();
-});
+onMounted(load);
 </script>

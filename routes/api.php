@@ -56,6 +56,9 @@ use App\Http\Controllers\Front\HomeController;
 use App\Http\Controllers\Front\ShipmentController as FrontShipmentController;
 
 use App\Http\Controllers\Front\CategoryTreeController;
+use App\Http\Controllers\Front\CatalogCategoryController;
+use App\Http\Controllers\Front\PromotionController as FrontPromotionController;
+use App\Http\Controllers\Front\CatalogHighlightController;
 
 // Auth
 Route::prefix('auth')->group(function () {
@@ -129,6 +132,17 @@ Route::prefix('cart')->group(function () {
 });
 // Arbore de categorii pentru front (overlay catalog)
 Route::get('catalog/categories-tree', CategoryTreeController::class);
+// Pagina de categorie (front)
+Route::get('catalog/category/{slug}', [CatalogCategoryController::class, 'show']);
+
+// Promoții (front)
+Route::get('promotions', [FrontPromotionController::class, 'index']);
+Route::get('promotions/{slug}', [FrontPromotionController::class, 'show']);
+
+// Produse noi / reduse (front)
+Route::get('catalog/new-products', [CatalogHighlightController::class, 'newProducts']);
+Route::get('catalog/discounted-products', [CatalogHighlightController::class, 'discountedProducts']);
+
 
 Route::prefix('checkout')->group(function () {
     Route::get('summary', [CheckoutController::class, 'summary'])->middleware('auth:sanctum');

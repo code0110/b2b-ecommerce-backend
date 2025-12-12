@@ -44,3 +44,9 @@ export async function fetchPromotionBySlug(slug, params = {}) {
   const { data } = await api.get(`/promotions/${slug}`, { params });
   return data;
 }
+
+export const fetchPromotionsList = (params = {}) =>
+  api.get('/promotions', { params }).then((r) => r.data);
+
+export const fetchPromotionLanding = (slug, params = {}) =>
+  api.get(`/promotions/${slug}`, { params }).then((r) => r.data);

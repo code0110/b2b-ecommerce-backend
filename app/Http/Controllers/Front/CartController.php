@@ -11,9 +11,15 @@ use Illuminate\Http\Request;
 
 class CartController extends Controller
 {
+    /**
+     * Coș-ul este legat de:
+     *  - user_id (dacă e logat via Sanctum sau sesiune web)
+     *  - session_id (dacă e guest, folosind sesiunea Laravel)
+     */
     protected function resolveCart(Request $request): Cart
     {
-        $user = $request->user();
+        // User logat: încercăm întâi via sanctum, apoi via sesiunea web
+        $user = auth('sanctum')->user() ?? auth()->user();
 
         if ($user) {
             return Cart::firstOrCreate([
@@ -22,7 +28,8 @@ class CartController extends Controller
             ]);
         }
 
-        $sessionId = $request->header('X-Cart-Session') ?? $request->session()->getId();
+        // Guest: folosim ID-ul de sesiune Laravel (middleware web)
+        $sessionId = $request->session()->getId();
 
         return Cart::firstOrCreate([
             'session_id' => $sessionId,
@@ -30,22 +37,64 @@ class CartController extends Controller
         ]);
     }
 
-    public function show(Request $request)
+    /**
+     * Transformă modelul Cart într-o structură simplă pentru frontend.
+     */
+    protected function transformCart(Cart $cart): array
     {
-        $cart = $this->resolveCart($request)->load('items.product', 'items.variant');
+        $cart->loadMissing(['items.product', 'items.variant']);
 
-        return $cart;
+        $items = $cart->items->map(function (CartItem $item) {
+            $product = $item->product;
+            $variant = $item->variant;
+
+            $lineTotal = $item->total ?? ($item->unit_price * $item->quantity);
+
+            return [
+                'id'                 => $item->id,
+                'product_id'         => $item->product_id,
+                'product_variant_id' => $item->product_variant_id,
+                'quantity'           => $item->quantity,
+                'unit_price'         => (float) $item->unit_price,
+                'total'              => (float) $lineTotal,
+                'product'            => $product,
+                'variant'            => $variant,
+            ];
+        });
+
+        $subtotal = $items->sum('total');
+
+        return [
+            'id'       => $cart->id,
+            'items'    => $items,
+            'subtotal' => (float) $subtotal,
+            'total'    => (float) $subtotal, // pentru moment = subtotal
+        ];
     }
 
-    public function addItem(Request $request)
+    /**
+     * GET /api/cart
+     */
+    public function show(Request $request)
     {
         $cart = $this->resolveCart($request);
 
+        return response()->json($this->transformCart($cart));
+    }
+
+    /**
+     * POST /api/cart/items
+     * body: { product_id, product_variant_id?, quantity }
+     */
+    public function addItem(Request $request)
+    {
         $data = $request->validate([
-            'product_id'        => ['required', 'integer', 'exists:products,id'],
-            'product_variant_id'=> ['nullable', 'integer', 'exists:product_variants,id'],
-            'quantity'          => ['required', 'integer', 'min:1'],
+            'product_id'         => ['required', 'integer', 'exists:products,id'],
+            'product_variant_id' => ['nullable', 'integer', 'exists:product_variants,id'],
+            'quantity'           => ['required', 'integer', 'min:1'],
         ]);
+
+        $cart = $this->resolveCart($request);
 
         $product = Product::findOrFail($data['product_id']);
         $variant = null;
@@ -54,21 +103,45 @@ class CartController extends Controller
             $variant = ProductVariant::findOrFail($data['product_variant_id']);
         }
 
-        $unitPrice = $variant
-            ? ($variant->price_override ?? $variant->list_price)
-            : ($product->price_override ?? $product->list_price);
+        // Stabilim prețul (fallback pe list_price)
+        $unitPrice = 0;
 
-        $item = $cart->items()->create([
-            'product_id'        => $product->id,
-            'product_variant_id'=> $variant?->id,
-            'quantity'          => $data['quantity'],
-            'unit_price'        => $unitPrice,
-            'total'             => $unitPrice * $data['quantity'],
-        ]);
+        if ($variant) {
+            $unitPrice = $variant->price_override ?? $variant->list_price ?? 0;
+        } else {
+            $unitPrice = $product->price_override ?? $product->list_price ?? 0;
+        }
 
-        return response()->json($item->load('product', 'variant'), 201);
+        // Item existent cu același produs / variantă
+        $item = $cart->items()
+            ->where('product_id', $product->id)
+            ->where('product_variant_id', $variant ? $variant->id : null)
+            ->first();
+
+        if ($item) {
+            $item->quantity += $data['quantity'];
+            $item->unit_price = $unitPrice;
+        } else {
+            $item = new CartItem([
+                'product_id'         => $product->id,
+                'product_variant_id' => $variant ? $variant->id : null,
+                'quantity'           => $data['quantity'],
+                'unit_price'         => $unitPrice,
+            ]);
+            $cart->items()->save($item);
+        }
+
+        $item->total = $item->unit_price * $item->quantity;
+        $item->save();
+
+        $cart->refresh();
+
+        return response()->json($this->transformCart($cart), 201);
     }
 
+    /**
+     * PUT /api/cart/items/{item}
+     */
     public function updateItem($itemId, Request $request)
     {
         $data = $request->validate([
@@ -81,22 +154,32 @@ class CartController extends Controller
         $item->total    = $item->unit_price * $item->quantity;
         $item->save();
 
-        return response()->json($item->load('product', 'variant'));
+        $cart = $item->cart;
+
+        return response()->json($this->transformCart($cart));
     }
 
-    public function removeItem($itemId)
+    /**
+     * DELETE /api/cart/items/{item}
+     */
+    public function removeItem($itemId, Request $request)
     {
         $item = CartItem::findOrFail($itemId);
+        $cart = $item->cart;
+
         $item->delete();
 
-        return response()->json(['message' => 'Removed.']);
+        return response()->json($this->transformCart($cart));
     }
 
+    /**
+     * DELETE /api/cart
+     */
     public function clear(Request $request)
     {
         $cart = $this->resolveCart($request);
         $cart->items()->delete();
 
-        return response()->json(['message' => 'Cart cleared.']);
+        return response()->json($this->transformCart($cart));
     }
 }

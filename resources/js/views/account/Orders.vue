@@ -1,147 +1,142 @@
 <template>
-  <div class="container">
-    <PageHeader
-      title="Comenzi"
-      subtitle="Istoric comenzi, status plată și opțiune de comandă din nou."
-    />
+  <div class="container py-4">
+    <h1 class="h4 mb-3">Comenzile mele</h1>
 
-    <!-- Filtre -->
-    <div class="card shadow-sm mb-3">
+    <div v-if="error" class="alert alert-danger">
+      {{ error }}
+    </div>
+    <div v-if="loading" class="alert alert-info">
+      Se încarcă comenzile...
+    </div>
+
+    <!-- Filtre simple -->
+    <div class="card mb-3">
       <div class="card-body">
-        <form class="row g-3 align-items-end" @submit.prevent>
+        <form class="row g-3" @submit.prevent="reloadOrders">
           <div class="col-md-4">
-            <label class="form-label small text-muted">Status comandă</label>
-            <select v-model="filters.status" class="form-select form-select-sm">
+            <label class="form-label small">Căutare</label>
+            <input
+              v-model="filters.search"
+              type="text"
+              class="form-control form-control-sm"
+              placeholder="Număr comandă, referință..."
+            />
+          </div>
+          <div class="col-md-3">
+            <label class="form-label small">Status</label>
+            <select
+              v-model="filters.status"
+              class="form-select form-select-sm"
+            >
               <option value="">Toate</option>
               <option value="new">Nouă</option>
               <option value="processing">În procesare</option>
-              <option value="shipped">Expediată</option>
-              <option value="delivered">Livrată</option>
+              <option value="shipped">Livrată</option>
               <option value="cancelled">Anulată</option>
             </select>
           </div>
-          <div class="col-md-4">
-            <label class="form-label small text-muted">Status plată</label>
-            <select v-model="filters.paymentStatus" class="form-select form-select-sm">
+          <div class="col-md-3">
+            <label class="form-label small">Status plată</label>
+            <select
+              v-model="filters.payment_status"
+              class="form-select form-select-sm"
+            >
               <option value="">Toate</option>
-              <option value="pending">Plată în așteptare</option>
+              <option value="pending">În așteptare</option>
               <option value="paid">Plătită</option>
               <option value="failed">Eroare plată</option>
-              <option value="refunded">Rambursată</option>
             </select>
           </div>
-          <div class="col-md-4">
-            <label class="form-label small text-muted">Perioadă</label>
-            <select v-model="filters.period" class="form-select form-select-sm">
-              <option value="all">Toată perioada</option>
-              <option value="30">Ultimele 30 zile</option>
-              <option value="180">Ultimele 6 luni</option>
-            </select>
+          <div class="col-md-2 d-flex align-items-end">
+            <button type="submit" class="btn btn-outline-primary btn-sm w-100">
+              Aplică filtre
+            </button>
           </div>
         </form>
       </div>
     </div>
 
-    <!-- Listă comenzi -->
-    <div class="card shadow-sm">
-      <div class="card-body p-0">
-        <div class="table-responsive">
-          <table class="table table-sm table-hover align-middle mb-0">
-            <thead class="table-light">
-              <tr>
-                <th>Nr. comandă</th>
-                <th>Data</th>
-                <th>Tip</th>
-                <th>Valoare</th>
-                <th>Status comandă</th>
-                <th>Status plată</th>
-                <th>Livrare</th>
-                <th class="text-end">Acțiuni</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-if="filteredOrders.length === 0">
-                <td colspan="8" class="text-center text-muted py-4">
-                  Nu există comenzi pentru filtrele selectate.
-                </td>
-              </tr>
-              <tr v-for="order in filteredOrders" :key="order.id">
-                <td>
-                  <RouterLink
-                    :to="{ name: 'account-order-details', params: { id: order.id } }"
-                    class="fw-semibold text-decoration-none"
-                  >
-                    {{ order.number }}
-                  </RouterLink>
-                  <div class="small text-muted">
-                    Canal: {{ order.channel === 'agent' ? 'Agent vânzări' : 'Online' }}
-                  </div>
-                </td>
-                <td class="small">
-                  {{ formatDate(order.createdAt) }}
-                </td>
-                <td class="small">
-                  <span :class="['badge', order.isB2B ? 'bg-secondary' : 'bg-light text-dark']">
-                    {{ order.isB2B ? 'B2B' : 'B2C' }}
-                  </span>
-                </td>
-                <td class="small">
-                  <strong>{{ order.totalGross.toLocaleString('ro-RO') }} {{ order.currency }}</strong>
-                </td>
-                <td class="small">
-                  <span :class="['badge', statusBadgeClass(order.status)]">
-                    {{ statusLabel(order.status) }}
-                  </span>
-                </td>
-                <td class="small">
-                  <span :class="['badge', paymentBadgeClass(order.paymentStatus)]">
-                    {{ paymentStatusLabel(order.paymentStatus) }}
-                  </span>
-                </td>
-                <td class="small">
-                  <div v-if="latestShipmentForOrder(order.id)">
-                    <div>
-                      <span
-                        :class="['badge', shipmentBadgeClass(latestShipmentForOrder(order.id).status)]"
-                      >
-                        {{ shipmentStatusLabel(latestShipmentForOrder(order.id).status) }}
-                      </span>
-                    </div>
-                    <div class="small text-muted mt-1">
-                      AWB:
-                      <span class="fw-semibold">
-                        {{ latestShipmentForOrder(order.id).awbNumber || 'N/A' }}
-                      </span>
-                    </div>
-                  </div>
-                  <div v-else class="text-muted small">
-                    Fără AWB (încă).
-                  </div>
-                </td>
-                <td class="text-end">
-                  <div class="btn-group btn-group-sm">
-                    <RouterLink
-                      :to="{ name: 'account-order-details', params: { id: order.id } }"
-                      class="btn btn-outline-primary"
-                    >
-                      Detalii
-                    </RouterLink>
-                    <button
-                      type="button"
-                      class="btn btn-outline-secondary"
-                      @click="onReorder(order)"
-                    >
-                      Comandă din nou
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+    <div v-if="!loading && !orders.length" class="text-muted">
+      Nu ai comenzi înregistrate.
+    </div>
 
-        <div v-if="reorderInfo" class="border-top small text-muted p-2">
-          {{ reorderInfo }}
+    <div class="card" v-else>
+      <div class="card-body table-responsive">
+        <table class="table align-middle mb-0">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Data</th>
+              <th>Status</th>
+              <th>Status plată</th>
+              <th>Valoare</th>
+              <th>Metodă plată</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr
+              v-for="order in orders"
+              :key="order.id"
+            >
+              <td>{{ order.number || order.id }}</td>
+              <td>{{ order.date || order.created_at }}</td>
+              <td>
+                <span class="badge bg-secondary">
+                  {{ order.status_label || order.status }}
+                </span>
+              </td>
+              <td>
+                <span
+                  class="badge"
+                  :class="paymentBadgeClass(order.payment_status)"
+                >
+                  {{ paymentStatusLabel(order.payment_status) }}
+                </span>
+              </td>
+              <td>{{ formatPrice(order.total) }} RON</td>
+              <td class="small">
+                {{ order.payment_method_label || order.payment_method || '—' }}
+              </td>
+              <td class="text-end">
+                <RouterLink
+                  :to="{ name: 'account-order-details', params: { id: order.id } }"
+                  class="btn btn-outline-secondary btn-sm"
+                >
+                  Detalii
+                </RouterLink>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Paginare -->
+      <div
+        v-if="meta.last_page > 1"
+        class="card-footer d-flex justify-content-between align-items-center"
+      >
+        <div class="text-muted small">
+          Pagina {{ meta.current_page }} din {{ meta.last_page }} –
+          {{ meta.total }} comenzi
+        </div>
+        <div class="btn-group">
+          <button
+            type="button"
+            class="btn btn-sm btn-outline-secondary"
+            :disabled="meta.current_page === 1"
+            @click="changePage(meta.current_page - 1)"
+          >
+            « Anterioară
+          </button>
+          <button
+            type="button"
+            class="btn btn-sm btn-outline-secondary"
+            :disabled="meta.current_page === meta.last_page"
+            @click="changePage(meta.current_page + 1)"
+          >
+            Următoarea »
+          </button>
         </div>
       </div>
     </div>
@@ -149,136 +144,99 @@
 </template>
 
 <script setup>
-import { computed, reactive, ref } from 'vue'
-import { RouterLink } from 'vue-router'
-import PageHeader from '@/components/common/PageHeader.vue'
-import { useOrdersStore } from '@/store/orders'
-import { useShipmentsStore } from '@/store/shipments'
-import { useAuthStore } from '@/store/auth'
+import { ref, onMounted } from 'vue';
+import { RouterLink } from 'vue-router';
+import { fetchAccountOrders } from '@/services/account';
 
-const ordersStore = useOrdersStore()
-const authStore = useAuthStore()
-const shipmentsStore = useShipmentsStore()
+const loading = ref(false);
+const error = ref('');
+const orders = ref([]);
+const meta = ref({
+  current_page: 1,
+  last_page: 1,
+  total: 0,
+});
 
-const filters = reactive({
+const filters = ref({
+  search: '',
   status: '',
-  paymentStatus: '',
-  period: 'all'
-})
+  payment_status: '',
+});
 
-const reorderInfo = ref('')
+const formatPrice = (value) => {
+  if (value == null) return '-';
+  const num = Number(value);
+  if (Number.isNaN(num)) return String(value);
+  return num.toLocaleString('ro-RO', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+};
 
-const now = new Date()
-
-const userOrders = computed(() => {
-  if (authStore.user) {
-    return ordersStore.forUser(authStore.user.id)
-  }
-  return ordersStore.all
-})
-
-const filteredOrders = computed(() => {
-  const maxAgeDays = filters.period === 'all' ? null : Number(filters.period)
-
-  return userOrders.value.filter((order) => {
-    if (filters.status && order.status !== filters.status) return false
-    if (filters.paymentStatus && order.paymentStatus !== filters.paymentStatus) return false
-
-    if (maxAgeDays) {
-      const created = new Date(order.createdAt)
-      const diffMs = now - created
-      const diffDays = diffMs / (1000 * 60 * 60 * 24)
-      if (diffDays > maxAgeDays) return false
-    }
-
-    return true
-  })
-})
-
-const formatDate = (isoString) => {
-  const d = new Date(isoString)
-  return d.toLocaleDateString('ro-RO', { year: 'numeric', month: '2-digit', day: '2-digit' })
-}
-
-const statusLabel = (s) => {
-  switch (s) {
-    case 'new':
-      return 'Nouă'
-    case 'processing':
-      return 'În procesare'
-    case 'shipped':
-      return 'Expediată'
-    case 'delivered':
-      return 'Livrată'
-    case 'cancelled':
-      return 'Anulată'
-    default:
-      return s
-  }
-}
-
-const statusBadgeClass = (s) => {
-  switch (s) {
-    case 'new':
-      return 'bg-secondary'
-    case 'processing':
-      return 'bg-info text-dark'
-    case 'shipped':
-      return 'bg-primary'
-    case 'delivered':
-      return 'bg-success'
-    case 'cancelled':
-      return 'bg-danger'
-    default:
-      return 'bg-light text-dark'
-  }
-}
-
-const paymentStatusLabel = (s) => {
-  switch (s) {
+const paymentStatusLabel = (status) => {
+  switch (status) {
     case 'pending':
-      return 'Plată în așteptare'
+      return 'În așteptare';
     case 'paid':
-      return 'Plătită'
+      return 'Plătită';
     case 'failed':
-      return 'Eroare plată'
-    case 'refunded':
-      return 'Rambursată'
+      return 'Eroare plată';
+    case 'cancelled':
+      return 'Anulată';
     default:
-      return s
+      return status || '—';
   }
-}
+};
 
-const paymentBadgeClass = (s) => {
-  switch (s) {
+const paymentBadgeClass = (status) => {
+  switch (status) {
     case 'pending':
-      return 'bg-warning text-dark'
+      return 'bg-warning text-dark';
     case 'paid':
-      return 'bg-success'
+      return 'bg-success';
     case 'failed':
-      return 'bg-danger'
-    case 'refunded':
-      return 'bg-info text-dark'
+      return 'bg-danger';
+    case 'cancelled':
+      return 'bg-secondary';
     default:
-      return 'bg-light text-dark'
+      return 'bg-light text-muted';
   }
-}
+};
 
-const onReorder = (order) => {
-  const result = ordersStore.reorder(order.id)
-  if (!result) {
-    reorderInfo.value = 'A apărut o eroare la generarea comenzii noi.'
-    return
+const loadOrders = async (page = 1) => {
+  loading.value = true;
+  error.value = '';
+
+  try {
+    const params = {
+      page,
+      search: filters.value.search || undefined,
+      status: filters.value.status || undefined,
+      payment_status: filters.value.payment_status || undefined,
+    };
+
+    const { items, meta: m } = await fetchAccountOrders(params);
+    orders.value = items;
+    meta.value = m;
+  } catch (e) {
+    console.error('Account orders error', e);
+    error.value =
+      e.response?.data?.message ||
+      'Nu s-au putut încărca comenzile.';
+  } finally {
+    loading.value = false;
   }
-  reorderInfo.value =
-    'Template: s-ar genera un coș nou pe baza comenzii #' +
-    order.number +
-    ' (' +
-    result.lineCount +
-    ' linii, ' +
-    result.totalGross.toLocaleString('ro-RO') +
-    ' ' +
-    order.currency +
-    ').'
-}
+};
+
+const reloadOrders = () => {
+  loadOrders(1);
+};
+
+const changePage = (page) => {
+  loadOrders(page);
+};
+
+onMounted(() => {
+  loadOrders(1);
+});
 </script>

@@ -1,748 +1,432 @@
+<script setup>
+import { ref, onMounted, computed, watch } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
+import {
+  fetchAdminProduct,
+  createAdminProduct,
+  updateAdminProduct,
+} from '@/services/admin/products';
+import { fetchAdminCategories } from '@/services/admin/categories';
+import { fetchAdminBrands } from '@/services/admin/brands';
+
+const route = useRoute();
+const router = useRouter();
+
+const productId = computed(() => route.params.id ?? null);
+const isEdit = computed(() => !!productId.value);
+
+const loading = ref(false);
+const saving = ref(false);
+const error = ref('');
+const successMessage = ref('');
+
+// formularul de produs – acum include slug și main_category_id
+const form = ref({
+  name: '',
+  slug: '',
+  internal_code: '',
+  erp_id: '',
+  barcode: '',
+  status: 'published', // published / hidden
+  sort_order: 0,
+
+  main_category_id: null,
+  brand_id: null,
+
+  list_price: null,
+  recommended_price: null,
+  vat: 19,
+  override_price: null,
+
+  stock_status: 'in_stock', // in_stock / low_stock / out_of_stock / on_demand
+  stock_qty: 0,
+  supplier_stock: null,
+  delivery_eta_days: null,
+
+  short_description: '',
+  long_description: '',
+});
+
+// dropdowns
+const categories = ref([]);
+const brands = ref([]);
+
+// helper pentru slug
+const slugify = (value) => {
+  return String(value || '')
+    .toLowerCase()
+    .trim()
+    .replace(/[\s\_]+/g, '-') // spații și underscore -> -
+    .replace(/[^a-z0-9\-]/g, '') // elimină caractere non-alfanumerice
+    .replace(/\-+/g, '-'); // compactează multiple '-'
+};
+
+// dacă numele se schimbă și slug-ul e gol (sau suntem pe create), generăm automat un slug
+watch(
+  () => form.value.name,
+  (newVal) => {
+    if (!isEdit.value && !form.value.slug) {
+      form.value.slug = slugify(newVal);
+    }
+  },
+);
+
+// încărcăm categorii și branduri pentru select
+const loadOptions = async () => {
+  try {
+    const [cats, brs] = await Promise.all([
+      fetchAdminCategories({ per_page: 999 }),
+      fetchAdminBrands({ per_page: 999 }),
+    ]);
+    categories.value = cats;
+    brands.value = brs;
+  } catch (e) {
+    console.error('Load categories/brands error', e);
+  }
+};
+
+const loadProduct = async () => {
+  if (!isEdit.value) return;
+  loading.value = true;
+  error.value = '';
+
+  try {
+    const data = await fetchAdminProduct(productId.value);
+
+    form.value = {
+      name: data.name ?? '',
+      slug: data.slug ?? '',
+      internal_code: data.internal_code ?? '',
+      erp_id: data.erp_id ?? '',
+      barcode: data.barcode ?? '',
+      status: data.status ?? 'published',
+      sort_order: data.sort_order ?? 0,
+
+      main_category_id: data.main_category_id ?? null,
+      brand_id: data.brand_id ?? null,
+
+      list_price: data.list_price ?? null,
+      recommended_price: data.recommended_price ?? null,
+      vat: data.vat ?? 19,
+      override_price: data.override_price ?? null,
+
+      stock_status: data.stock_status ?? 'in_stock',
+      stock_qty: data.stock_qty ?? 0,
+      supplier_stock: data.supplier_stock ?? null,
+      delivery_eta_days: data.delivery_eta_days ?? null,
+
+      short_description: data.short_description ?? '',
+      long_description: data.long_description ?? '',
+    };
+  } catch (e) {
+    console.error('Load product error', e);
+    error.value = 'Nu s-a putut încărca produsul pentru editare.';
+  } finally {
+    loading.value = false;
+  }
+};
+
+const handleSubmit = async () => {
+  error.value = '';
+  successMessage.value = '';
+  saving.value = true;
+
+  try {
+    const payload = { ...form.value };
+
+    if (isEdit.value) {
+      await updateAdminProduct(productId.value, payload);
+      successMessage.value = 'Produsul a fost actualizat.';
+    } else {
+      await createAdminProduct(payload);
+      successMessage.value = 'Produsul a fost creat.';
+      // după creare, mergem la listă (sau poți rămâne pe form)
+      router.push({ name: 'admin-products' });
+      return;
+    }
+  } catch (e) {
+    console.error('Save product error', e);
+
+    if (e.response?.data?.errors) {
+      // concatenăm mesajele de validare într-un singur string
+      const errs = e.response.data.errors;
+      error.value = Object.values(errs).flat().join(' ');
+    } else {
+      error.value =
+        e.response?.data?.message ||
+        'Salvarea produsului a eșuat. Verifică datele și încearcă din nou.';
+    }
+  } finally {
+    saving.value = false;
+  }
+};
+
+const cancel = () => {
+  router.push({ name: 'admin-products' });
+};
+
+onMounted(async () => {
+  await loadOptions();
+  await loadProduct();
+});
+</script>
+
 <template>
-  <div class="container-fluid">
-    <PageHeader
-      :title="isEdit ? 'Produs - editare' : 'Produs - creare'"
-      subtitle="Formular complet pentru configurarea produselor, prețurilor, stocurilor și variantelor."
-    >
-      <div class="btn-group btn-group-sm">
-        <RouterLink :to="{ name: 'admin-products' }" class="btn btn-outline-secondary">
-          Închide
-        </RouterLink>
-        <button type="button" class="btn btn-primary" @click="onSubmit">
-          Salvează
-        </button>
-      </div>
-    </PageHeader>
+  <div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <h1 class="h4 mb-0">
+        {{ isEdit ? 'Editează produs' : 'Adaugă produs nou' }}
+      </h1>
+      <button type="button" class="btn btn-outline-secondary" @click="cancel">
+        Înapoi la listă
+      </button>
+    </div>
 
-    <form @submit.prevent="onSubmit">
-      <div class="row g-3">
-        <!-- Informații generale -->
-        <div class="col-lg-7">
-          <div class="card shadow-sm mb-3">
-            <div class="card-header py-2">
-              <strong>Informații generale</strong>
-            </div>
-            <div class="card-body">
-              <div class="mb-3">
-                <label class="form-label small text-muted">Denumire produs</label>
-                <input v-model="form.name" type="text" class="form-control form-control-sm" required />
-              </div>
+    <div v-if="error" class="alert alert-danger">
+      {{ error }}
+    </div>
+    <div v-if="successMessage" class="alert alert-success">
+      {{ successMessage }}
+    </div>
 
-              <div class="row">
-                <div class="col-md-4 mb-3">
-                  <label class="form-label small text-muted">Cod produs intern</label>
-                  <input v-model="form.internalCode" type="text" class="form-control form-control-sm" />
-                </div>
-                <div class="col-md-4 mb-3">
-                  <label class="form-label small text-muted">Cod de bare (barcode)</label>
-                  <input v-model="form.barcode" type="text" class="form-control form-control-sm" />
-                </div>
-                <div class="col-md-4 mb-3">
-                  <label class="form-label small text-muted">ERP ID</label>
-                  <input v-model="form.erpId" type="text" class="form-control form-control-sm" />
-                </div>
-              </div>
+    <div class="card">
+      <div class="card-body">
+        <div v-if="loading">Se încarcă datele produsului...</div>
 
-              <div class="row">
-                <div class="col-md-6 mb-3">
-                  <label class="form-label small text-muted">Categorie principală</label>
-                  <input
-                    v-model="form.mainCategory"
-                    type="text"
-                    class="form-control form-control-sm"
-                    placeholder="Ex.: Plăci gips-carton"
-                  />
-                </div>
-                <div class="col-md-6 mb-3">
-                  <label class="form-label small text-muted">Categorii secundare (virgule)</label>
-                  <input
-                    v-model="categoriesSecondaryInput"
-                    type="text"
-                    class="form-control form-control-sm"
-                    placeholder="Ex.: Pardoseli, Izolații"
-                  />
-                </div>
-              </div>
+        <form v-else @submit.prevent="handleSubmit" class="row g-3">
+          <!-- Date generale -->
+          <div class="col-12">
+            <h5 class="mb-3">Date generale</h5>
+          </div>
 
-              <div class="row">
-                <div class="col-md-6 mb-3">
-                  <label class="form-label small text-muted">Marcă (Brand)</label>
-                  <input v-model="form.brand" type="text" class="form-control form-control-sm" />
-                </div>
-                <div class="col-md-3 mb-3">
-                  <label class="form-label small text-muted">Status</label>
-                  <select v-model="form.isPublished" class="form-select form-select-sm">
-                    <option :value="true">Publicat</option>
-                    <option :value="false">Ascuns</option>
-                  </select>
-                </div>
-                <div class="col-md-3 mb-3">
-                  <label class="form-label small text-muted">Ordine sortare</label>
-                  <input
-                    v-model.number="form.sortOrder"
-                    type="number"
-                    class="form-control form-control-sm"
-                  />
-                </div>
-              </div>
+          <div class="col-md-6">
+            <label class="form-label">Denumire produs</label>
+            <input
+              v-model="form.name"
+              type="text"
+              class="form-control"
+              required
+            />
+          </div>
 
-              <div class="mb-3">
-                <label class="form-label small text-muted">Descriere scurtă</label>
-                <textarea
-                  v-model="form.shortDescription"
-                  class="form-control form-control-sm"
-                  rows="2"
-                />
-              </div>
-
-              <div class="mb-0">
-                <label class="form-label small text-muted">Descriere lungă (HTML / rich text placeholder)</label>
-                <textarea
-                  v-model="form.longDescription"
-                  class="form-control form-control-sm"
-                  rows="4"
-                  placeholder="<p>Descriere detaliată...</p>"
-                />
-              </div>
+          <div class="col-md-6">
+            <label class="form-label">Slug</label>
+            <input
+              v-model="form.slug"
+              type="text"
+              class="form-control"
+              required
+            />
+            <div class="form-text">
+              URL friendly (se poate genera automat din denumire, dar e editabil).
             </div>
           </div>
 
-          <!-- Atribute & filtre -->
-          <div class="card shadow-sm mb-3">
-            <div class="card-header py-2 d-flex justify-content-between align-items-center">
-              <strong>Atribute & filtre</strong>
-              <button
-                type="button"
-                class="btn btn-sm btn-outline-secondary"
-                @click="addAttributeRow"
+          <div class="col-md-3">
+            <label class="form-label">Cod intern</label>
+            <input
+              v-model="form.internal_code"
+              type="text"
+              class="form-control"
+            />
+          </div>
+
+          <div class="col-md-3">
+            <label class="form-label">ERP ID</label>
+            <input
+              v-model="form.erp_id"
+              type="text"
+              class="form-control"
+            />
+          </div>
+
+          <div class="col-md-3">
+            <label class="form-label">Cod de bare</label>
+            <input
+              v-model="form.barcode"
+              type="text"
+              class="form-control"
+            />
+          </div>
+
+          <div class="col-md-3">
+            <label class="form-label">Status</label>
+            <select v-model="form.status" class="form-select">
+              <option value="published">Publicat</option>
+              <option value="hidden">Ascuns</option>
+            </select>
+          </div>
+
+          <div class="col-md-3">
+            <label class="form-label">Ordine sortare</label>
+            <input
+              v-model.number="form.sort_order"
+              type="number"
+              class="form-control"
+            />
+          </div>
+
+          <!-- Categorie principală & Brand -->
+          <div class="col-md-3">
+            <label class="form-label">Categorie principală</label>
+            <select v-model="form.main_category_id" class="form-select" required>
+              <option :value="null">— Selectează categorie —</option>
+              <option
+                v-for="cat in categories"
+                :key="cat.id"
+                :value="cat.id"
               >
-                + Atribut
-              </button>
-            </div>
-            <div class="card-body">
-              <p class="small text-muted">
-                Set de atribute la nivel de categorie (ex.: material, grosime, dimensiune, culoare).
-              </p>
+                {{ cat.name }}
+              </option>
+            </select>
+          </div>
 
-              <div
-                v-for="(attr, index) in attributesArray"
-                :key="index"
-                class="row g-2 align-items-center mb-2"
+          <div class="col-md-3">
+            <label class="form-label">Brand</label>
+            <select v-model="form.brand_id" class="form-select">
+              <option :value="null">— Fără brand —</option>
+              <option
+                v-for="brand in brands"
+                :key="brand.id"
+                :value="brand.id"
               >
-                <div class="col-md-4">
-                  <input
-                    v-model="attr.key"
-                    type="text"
-                    class="form-control form-control-sm"
-                    placeholder="Nume atribut (ex: material)"
-                  />
-                </div>
-                <div class="col-md-6">
-                  <input
-                    v-model="attr.value"
-                    type="text"
-                    class="form-control form-control-sm"
-                    placeholder="Valoare (ex: gips-carton)"
-                  />
-                </div>
-                <div class="col-md-2 text-end">
-                  <button
-                    type="button"
-                    class="btn btn-sm btn-outline-danger"
-                    @click="removeAttributeRow(index)"
-                  >
-                    ×
-                  </button>
-                </div>
-              </div>
-            </div>
+                {{ brand.name }}
+              </option>
+            </select>
           </div>
 
-          <!-- Variante de produs -->
-          <div class="card shadow-sm mb-3">
-            <div class="card-header py-2 d-flex justify-content-between align-items-center">
-              <strong>Variante produs</strong>
-              <div class="form-check form-check-inline small">
-                <input
-                  id="simpleProduct"
-                  class="form-check-input"
-                  type="radio"
-                  value="simple"
-                  v-model="form.variationType"
-                />
-                <label class="form-check-label" for="simpleProduct">Produs simplu</label>
-              </div>
-              <div class="form-check form-check-inline small">
-                <input
-                  id="variantProduct"
-                  class="form-check-input"
-                  type="radio"
-                  value="with_variants"
-                  v-model="form.variationType"
-                />
-                <label class="form-check-label" for="variantProduct">Produs cu variante</label>
-              </div>
-            </div>
-            <div class="card-body" v-if="form.variationType === 'with_variants'">
-              <p class="small text-muted">
-                Definește atribute de variație (ex.: culoare, dimensiune) și lista de variante.
-              </p>
-
-              <div class="mb-3">
-                <label class="form-label small text-muted">Atribute variație (virgule)</label>
-                <input
-                  v-model="variationAttributesInput"
-                  type="text"
-                  class="form-control form-control-sm"
-                  placeholder="Ex.: culoare, dimensiune"
-                />
-              </div>
-
-              <div class="d-flex justify-content-between align-items-center mb-2">
-                <strong class="small">Variante</strong>
-                <button
-                  type="button"
-                  class="btn btn-sm btn-outline-secondary"
-                  @click="addVariantRow"
-                >
-                  + Variantă
-                </button>
-              </div>
-
-              <div class="table-responsive">
-                <table class="table table-sm align-middle">
-                  <thead class="table-light small">
-                    <tr>
-                      <th>Denumire</th>
-                      <th>Cod</th>
-                      <th>Barcode</th>
-                      <th>ERP ID</th>
-                      <th>Preț</th>
-                      <th>Stoc</th>
-                      <th>Slug URL</th>
-                      <th></th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr v-if="form.variants.length === 0">
-                      <td colspan="8" class="text-center text-muted small">
-                        Nu există variante definite.
-                      </td>
-                    </tr>
-                    <tr v-for="(variant, index) in form.variants" :key="index">
-                      <td>
-                        <input
-                          v-model="variant.name"
-                          type="text"
-                          class="form-control form-control-sm"
-                          placeholder="Ex.: Culoare roșu / mărime L"
-                        />
-                      </td>
-                      <td>
-                        <input
-                          v-model="variant.code"
-                          type="text"
-                          class="form-control form-control-sm"
-                        />
-                      </td>
-                      <td>
-                        <input
-                          v-model="variant.barcode"
-                          type="text"
-                          class="form-control form-control-sm"
-                        />
-                      </td>
-                      <td>
-                        <input
-                          v-model="variant.erpId"
-                          type="text"
-                          class="form-control form-control-sm"
-                        />
-                      </td>
-                      <td style="width: 90px;">
-                        <input
-                          v-model.number="variant.price"
-                          type="number"
-                          step="0.01"
-                          class="form-control form-control-sm"
-                        />
-                      </td>
-                      <td style="width: 80px;">
-                        <input
-                          v-model.number="variant.stockQty"
-                          type="number"
-                          class="form-control form-control-sm"
-                        />
-                      </td>
-                      <td>
-                        <input
-                          v-model="variant.slug"
-                          type="text"
-                          class="form-control form-control-sm"
-                        />
-                      </td>
-                      <td class="text-end">
-                        <button
-                          type="button"
-                          class="btn btn-sm btn-outline-danger"
-                          @click="removeVariantRow(index)"
-                        >
-                          ×
-                        </button>
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Col dreapta: prețuri, stoc, imagini, documente, produse asociate -->
-        <div class="col-lg-5">
           <!-- Prețuri -->
-          <div class="card shadow-sm mb-3">
-            <div class="card-header py-2">
-              <strong>Prețuri</strong>
-            </div>
-            <div class="card-body">
-              <div class="mb-2">
-                <label class="form-label small text-muted">Preț de listă (din ERP)</label>
-                <div class="input-group input-group-sm">
-                  <input
-                    v-model.number="form.listPrice"
-                    type="number"
-                    step="0.01"
-                    class="form-control"
-                  />
-                  <span class="input-group-text">RON</span>
-                </div>
-              </div>
-              <div class="mb-2">
-                <label class="form-label small text-muted">PRP (preț recomandat producător)</label>
-                <div class="input-group input-group-sm">
-                  <input
-                    v-model.number="form.prp"
-                    type="number"
-                    step="0.01"
-                    class="form-control"
-                  />
-                  <span class="input-group-text">RON</span>
-                </div>
-              </div>
-              <div class="mb-2">
-                <label class="form-label small text-muted">TVA</label>
-                <div class="input-group input-group-sm">
-                  <input
-                    v-model.number="form.vat"
-                    type="number"
-                    step="0.01"
-                    class="form-control"
-                  />
-                  <span class="input-group-text">%</span>
-                </div>
-              </div>
-              <div class="mb-0">
-                <label class="form-label small text-muted">Override preț (opțional)</label>
-                <div class="input-group input-group-sm">
-                  <input
-                    v-model.number="form.overridePrice"
-                    type="number"
-                    step="0.01"
-                    class="form-control"
-                    placeholder="Lasă gol pentru preț ERP"
-                  />
-                  <span class="input-group-text">RON</span>
-                </div>
-              </div>
-            </div>
+          <div class="col-12 mt-4">
+            <h5 class="mb-3">Prețuri</h5>
+          </div>
+
+          <div class="col-md-3">
+            <label class="form-label">Preț listă</label>
+            <input
+              v-model.number="form.list_price"
+              type="number"
+              step="0.01"
+              class="form-control"
+            />
+          </div>
+
+          <div class="col-md-3">
+            <label class="form-label">Preț recomandat (PRP)</label>
+            <input
+              v-model.number="form.recommended_price"
+              type="number"
+              step="0.01"
+              class="form-control"
+            />
+          </div>
+
+          <div class="col-md-2">
+            <label class="form-label">TVA (%)</label>
+            <input
+              v-model.number="form.vat"
+              type="number"
+              step="0.01"
+              class="form-control"
+            />
+          </div>
+
+          <div class="col-md-4">
+            <label class="form-label">Override preț (opțional)</label>
+            <input
+              v-model.number="form.override_price"
+              type="number"
+              step="0.01"
+              class="form-control"
+            />
           </div>
 
           <!-- Stoc -->
-          <div class="card shadow-sm mb-3">
-            <div class="card-header py-2">
-              <strong>Stoc</strong>
-            </div>
-            <div class="card-body">
-              <div class="mb-2">
-                <label class="form-label small text-muted">Status stoc</label>
-                <select v-model="form.stockStatus" class="form-select form-select-sm">
-                  <option value="in_stock">În stoc</option>
-                  <option value="on_order">La comandă</option>
-                  <option value="low_stock">Stoc limitat</option>
-                  <option value="out_of_stock">Epuizat</option>
-                </select>
-              </div>
-              <div class="mb-2">
-                <label class="form-label small text-muted">Cantitate stoc</label>
-                <input
-                  v-model.number="form.stockQty"
-                  type="number"
-                  class="form-control form-control-sm"
-                />
-              </div>
-              <div class="mb-2">
-                <label class="form-label small text-muted">Stoc furnizor (informație ERP)</label>
-                <input
-                  v-model.number="form.supplierStockQty"
-                  type="number"
-                  class="form-control form-control-sm"
-                />
-              </div>
-              <div class="mb-0">
-                <label class="form-label small text-muted">Termen estimativ livrare (zile)</label>
-                <input
-                  v-model.number="form.leadTimeDays"
-                  type="number"
-                  class="form-control form-control-sm"
-                />
-              </div>
-            </div>
+          <div class="col-12 mt-4">
+            <h5 class="mb-3">Stoc</h5>
           </div>
 
-          <!-- Imagini -->
-          <div class="card shadow-sm mb-3">
-            <div class="card-header py-2">
-              <strong>Imagini</strong>
-            </div>
-            <div class="card-body">
-              <p class="small text-muted">
-                Placeholder pentru upload galerie imagini (drag&drop). În demo folosim doar URL-uri text.
-              </p>
-              <div
-                v-for="(img, index) in form.images"
-                :key="index"
-                class="input-group input-group-sm mb-2"
-              >
-                <span class="input-group-text">
-                  <input
-                    class="form-check-input mt-0"
-                    type="radio"
-                    name="mainImage"
-                    :checked="index === form.mainImageIndex"
-                    @change="form.mainImageIndex = index"
-                  />
-                </span>
-                <input
-                  v-model="img.url"
-                  type="text"
-                  class="form-control"
-                  placeholder="URL imagine"
-                />
-                <button
-                  type="button"
-                  class="btn btn-outline-danger"
-                  @click="removeImage(index)"
-                >
-                  ×
-                </button>
-              </div>
-              <button
-                type="button"
-                class="btn btn-sm btn-outline-secondary"
-                @click="addImage"
-              >
-                + Adaugă imagine
-              </button>
-            </div>
+          <div class="col-md-3">
+            <label class="form-label">Status stoc</label>
+            <select v-model="form.stock_status" class="form-select">
+              <option value="in_stock">În stoc</option>
+              <option value="low_stock">Stoc limitat</option>
+              <option value="out_of_stock">Epuizat</option>
+              <option value="on_demand">La comandă</option>
+            </select>
           </div>
 
-          <!-- Documente -->
-          <div class="card shadow-sm mb-3">
-            <div class="card-header py-2 d-flex justify-content-between align-items-center">
-              <strong>Documente</strong>
-              <button
-                type="button"
-                class="btn btn-sm btn-outline-secondary"
-                @click="addDocument"
-              >
-                + Document
-              </button>
-            </div>
-            <div class="card-body">
-              <p class="small text-muted">
-                Fișiere (PDF, DOC) precum fișe tehnice, certificate, manuale. În demo folosim URL-uri.
-              </p>
-              <div
-                v-for="(doc, index) in form.documents"
-                :key="index"
-                class="row g-2 align-items-center mb-2"
-              >
-                <div class="col-4">
-                  <select v-model="doc.type" class="form-select form-select-sm">
-                    <option value="fisa-tehnica">Fișă tehnică</option>
-                    <option value="certificat">Certificat</option>
-                    <option value="manual">Manual</option>
-                  </select>
-                </div>
-                <div class="col-5">
-                  <input
-                    v-model="doc.url"
-                    type="text"
-                    class="form-control form-control-sm"
-                    placeholder="URL document"
-                  />
-                </div>
-                <div class="col-2">
-                  <select v-model="doc.access" class="form-select form-select-sm">
-                    <option value="public">Public</option>
-                    <option value="purchased">Clienți care au cumpărat</option>
-                    <option value="request">Pe bază de cerere</option>
-                  </select>
-                </div>
-                <div class="col-1 text-end">
-                  <button
-                    type="button"
-                    class="btn btn-sm btn-outline-danger"
-                    @click="removeDocument(index)"
-                  >
-                    ×
-                  </button>
-                </div>
-              </div>
-            </div>
+          <div class="col-md-3">
+            <label class="form-label">Cantitate stoc</label>
+            <input
+              v-model.number="form.stock_qty"
+              type="number"
+              class="form-control"
+            />
           </div>
 
-          <!-- Produse asociate -->
-          <div class="card shadow-sm mb-3">
-            <div class="card-header py-2">
-              <strong>Produse asociate</strong>
-            </div>
-            <div class="card-body">
-              <p class="small text-muted">
-                Selectează manual produse similare și complementare (cross-sell / upsell).
-                În demo folosim câmpuri text pentru coduri produse.
-              </p>
-              <div class="mb-2">
-                <label class="form-label small text-muted">Produse similare (coduri, virgule)</label>
-                <input
-                  v-model="relatedInput"
-                  type="text"
-                  class="form-control form-control-sm"
-                  placeholder="Ex.: PGC-12.5, UW-50"
-                />
-              </div>
-              <div class="mb-0">
-                <label class="form-label small text-muted">
-                  Produse complementare (coduri, virgule)
-                </label>
-                <input
-                  v-model="complementaryInput"
-                  type="text"
-                  class="form-control form-control-sm"
-                  placeholder="Ex.: PROF-ACC, ADEZIV-XYZ"
-                />
-              </div>
-            </div>
+          <div class="col-md-3">
+            <label class="form-label">Stoc furnizor</label>
+            <input
+              v-model.number="form.supplier_stock"
+              type="number"
+              class="form-control"
+            />
           </div>
 
-          <!-- Meta / ERP -->
-          <div class="card shadow-sm mb-3">
-            <div class="card-header py-2">
-              <strong>Meta & ERP</strong>
-            </div>
-            <div class="card-body">
-              <div class="mb-2">
-                <label class="form-label small text-muted">Status sincronizare ERP</label>
-                <select v-model="form.erpSyncStatus" class="form-select form-select-sm">
-                  <option value="synced">Sincronizat</option>
-                  <option value="pending">În așteptare</option>
-                  <option value="error">Eroare</option>
-                </select>
-              </div>
-              <div class="form-check small">
-                <input
-                  id="promoted"
-                  v-model="form.isPromoted"
-                  class="form-check-input"
-                  type="checkbox"
-                />
-                <label class="form-check-label" for="promoted">
-                  Produs promovat / în promoție
-                </label>
-              </div>
-            </div>
+          <div class="col-md-3">
+            <label class="form-label">Termen livrare (zile)</label>
+            <input
+              v-model.number="form.delivery_eta_days"
+              type="number"
+              class="form-control"
+            />
           </div>
 
-          <div class="d-grid mb-5">
-            <button type="submit" class="btn btn-primary btn-sm">
-              Salvează produs
+          <!-- Descrieri -->
+          <div class="col-12 mt-4">
+            <h5 class="mb-3">Descrieri</h5>
+          </div>
+
+          <div class="col-12">
+            <label class="form-label">Descriere scurtă</label>
+            <textarea
+              v-model="form.short_description"
+              class="form-control"
+              rows="2"
+            ></textarea>
+          </div>
+
+          <div class="col-12">
+            <label class="form-label">Descriere lungă</label>
+            <textarea
+              v-model="form.long_description"
+              class="form-control"
+              rows="5"
+            ></textarea>
+          </div>
+
+          <!-- Acțiuni -->
+          <div class="col-12 mt-4 d-flex justify-content-end gap-2">
+            <button
+              type="button"
+              class="btn btn-outline-secondary"
+              @click="cancel"
+            >
+              Anulează
+            </button>
+            <button
+              type="submit"
+              class="btn btn-primary"
+              :disabled="saving"
+            >
+              <span v-if="!saving">
+                {{ isEdit ? 'Salvează modificările' : 'Creează produs' }}
+              </span>
+              <span v-else>Se salvează...</span>
             </button>
           </div>
-        </div>
+        </form>
       </div>
-    </form>
+    </div>
   </div>
 </template>
-
-<script setup>
-import { computed, onMounted, reactive, ref } from 'vue'
-import { useRoute, useRouter, RouterLink } from 'vue-router'
-import PageHeader from '@/components/common/PageHeader.vue'
-import { useProductsStore } from '@/store/products'
-
-const route = useRoute()
-const router = useRouter()
-const productsStore = useProductsStore()
-
-const isEdit = computed(() => !!route.params.id)
-
-const emptyForm = () => ({
-  id: null,
-  name: '',
-  internalCode: '',
-  barcode: '',
-  erpId: '',
-  mainCategory: '',
-  categories: [],
-  brand: '',
-  isPublished: true,
-  sortOrder: 0,
-  shortDescription: '',
-  longDescription: '',
-  listPrice: 0,
-  prp: 0,
-  vat: 19,
-  overridePrice: null,
-  stockStatus: 'in_stock',
-  stockQty: 0,
-  supplierStockQty: 0,
-  leadTimeDays: null,
-  attributes: {},
-  variationType: 'simple',
-  variationAttributes: [],
-  variants: [],
-  images: [],
-  mainImageIndex: 0,
-  documents: [],
-  relatedProducts: [],
-  complementaryProducts: [],
-  erpSyncStatus: 'synced',
-  isPromoted: false
-})
-
-const form = reactive(emptyForm())
-
-const categoriesSecondaryInput = ref('')
-const variationAttributesInput = ref('')
-const relatedInput = ref('')
-const complementaryInput = ref('')
-
-const attributesArray = ref([])
-
-onMounted(() => {
-  if (isEdit.value) {
-    const product = productsStore.getById(route.params.id)
-    if (product) {
-      Object.assign(form, emptyForm(), JSON.parse(JSON.stringify(product)))
-      categoriesSecondaryInput.value = (form.categories || [])
-        .filter(c => c !== form.mainCategory)
-        .join(', ')
-      variationAttributesInput.value = (form.variationAttributes || []).join(', ')
-      relatedInput.value = (form.relatedProducts || []).join(', ')
-      complementaryInput.value = (form.complementaryProducts || []).join(', ')
-      attributesArray.value = Object.entries(form.attributes || {}).map(
-        ([key, value]) => ({ key, value })
-      )
-    }
-  } else {
-    attributesArray.value = []
-  }
-})
-
-const normalizeArraysBeforeSave = () => {
-  form.categories = []
-  if (form.mainCategory) {
-    form.categories.push(form.mainCategory)
-  }
-  if (categoriesSecondaryInput.value) {
-    form.categories.push(
-      ...categoriesSecondaryInput.value
-        .split(',')
-        .map(c => c.trim())
-        .filter(Boolean)
-    )
-  }
-
-  form.variationAttributes = variationAttributesInput.value
-    ? variationAttributesInput.value
-        .split(',')
-        .map(v => v.trim())
-        .filter(Boolean)
-    : []
-
-  form.relatedProducts = relatedInput.value
-    ? relatedInput.value
-        .split(',')
-        .map(v => v.trim())
-        .filter(Boolean)
-    : []
-
-  form.complementaryProducts = complementaryInput.value
-    ? complementaryInput.value
-        .split(',')
-        .map(v => v.trim())
-        .filter(Boolean)
-    : []
-
-  const attrs = {}
-  attributesArray.value
-    .filter(a => a.key && a.value)
-    .forEach(a => {
-      attrs[a.key] = a.value
-    })
-  form.attributes = attrs
-}
-
-const onSubmit = () => {
-  normalizeArraysBeforeSave()
-  productsStore.saveProduct({ ...form })
-  router.push({ name: 'admin-products' })
-}
-
-const addAttributeRow = () => {
-  attributesArray.value.push({ key: '', value: '' })
-}
-const removeAttributeRow = (index) => {
-  attributesArray.value.splice(index, 1)
-}
-
-const addVariantRow = () => {
-  form.variants.push({
-    name: '',
-    code: '',
-    barcode: '',
-    erpId: '',
-    price: form.listPrice,
-    stockQty: 0,
-    slug: ''
-  })
-}
-const removeVariantRow = (index) => {
-  form.variants.splice(index, 1)
-}
-
-const addImage = () => {
-  form.images.push({ url: '' })
-  if (form.images.length === 1) {
-    form.mainImageIndex = 0
-  }
-}
-const removeImage = (index) => {
-  form.images.splice(index, 1)
-  if (form.mainImageIndex >= form.images.length) {
-    form.mainImageIndex = Math.max(0, form.images.length - 1)
-  }
-}
-
-const addDocument = () => {
-  form.documents.push({
-    type: 'fisa-tehnica',
-    url: '',
-    access: 'public'
-  })
-}
-const removeDocument = (index) => {
-  form.documents.splice(index, 1)
-}
-</script>

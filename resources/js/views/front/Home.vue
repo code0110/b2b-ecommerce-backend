@@ -1,4 +1,5 @@
 <template>
+  <!-- Hero de sus -->
   <div class="bg-light border-bottom py-4 mb-4">
     <div class="container">
       <div class="row align-items-center">
@@ -35,6 +36,14 @@
   </div>
 
   <div class="container mb-4">
+    <!-- Mesaje globale -->
+    <div v-if="error" class="alert alert-danger mb-3">
+      {{ error }}
+    </div>
+    <div v-if="loading" class="alert alert-info mb-3">
+      Se încarcă conținutul homepage-ului...
+    </div>
+
     <!-- Secțiune promoții -->
     <section class="mb-4">
       <div class="d-flex justify-content-between align-items-center mb-2">
@@ -43,25 +52,40 @@
           Vezi toate promoțiile →
         </RouterLink>
       </div>
-      <div class="row g-3">
+
+      <div v-if="!homePromotions.length && !loading" class="text-muted small">
+        Momentan nu există promoții active.
+      </div>
+
+      <div v-else class="row g-3">
         <div
           v-for="promo in homePromotions"
-          :key="promo.slug"
+          :key="promo.slug || promo.id"
           class="col-md-4"
         >
           <div class="card h-100 shadow-sm">
             <div class="card-body">
-              <span class="badge bg-danger mb-2">{{ promo.badge }}</span>
-              <h3 class="h6">{{ promo.title }}</h3>
-              <p class="small text-muted mb-2">{{ promo.teaser }}</p>
-              <p class="small mb-1">
+              <span
+                v-if="promo.badge"
+                class="badge bg-danger mb-2"
+              >
+                {{ promo.badge }}
+              </span>
+              <h3 class="h6">
+                {{ promo.title || 'Campanie promoțională' }}
+              </h3>
+              <p class="small text-muted mb-2">
+                {{ promo.teaser || promo.short_description }}
+              </p>
+              <p v-if="promo.period" class="small mb-1">
                 <strong>Perioadă:</strong>
                 {{ promo.period }}
               </p>
-              <p class="small text-muted mb-3">
+              <p v-if="promo.segmentLabel" class="small text-muted mb-3">
                 Segment: {{ promo.segmentLabel }}
               </p>
               <RouterLink
+                v-if="promo.slug"
                 :to="`/promotii/${promo.slug}`"
                 class="btn btn-outline-primary btn-sm"
               >
@@ -81,23 +105,35 @@
           Vezi toate noutățile →
         </RouterLink>
       </div>
-      <div class="row g-3">
+
+      <div v-if="!newProducts.length && !loading" class="text-muted small">
+        Momentan nu există produse noi.
+      </div>
+
+      <div v-else class="row g-3">
         <div
           v-for="product in newProducts"
-          :key="product.slug"
+          :key="product.slug || product.id"
           class="col-md-3 col-sm-6"
         >
           <div class="card h-100">
             <div class="card-body d-flex flex-column">
-              <div class="small text-muted mb-1">{{ product.category }}</div>
+              <div class="small text-muted mb-1">
+                {{ product.category?.name || product.category || '—' }}
+              </div>
               <h3 class="h6 mb-1">{{ product.name }}</h3>
-              <div class="small text-muted mb-2">{{ product.code }}</div>
+              <div class="small text-muted mb-2">
+                {{ product.internal_code || product.code }}
+              </div>
               <div class="mt-auto">
                 <div class="fw-semibold mb-1">
-                  {{ product.price.toLocaleString('ro-RO', { minimumFractionDigits: 2 }) }}
-                  RON
+                  {{ formatPrice(product.price ?? product.final_price ?? product.list_price) }}
+                  <span v-if="product.price || product.final_price || product.list_price">
+                    RON
+                  </span>
                 </div>
                 <RouterLink
+                  v-if="product.slug"
                   :to="`/produs/${product.slug}`"
                   class="btn btn-outline-secondary btn-sm"
                 >
@@ -118,40 +154,60 @@
           Vezi toate produsele în promoție →
         </RouterLink>
       </div>
-      <div class="row g-3">
+
+      <div v-if="!recommendedProducts.length && !loading" class="text-muted small">
+        Momentan nu există produse recomandate.
+      </div>
+
+      <div v-else class="row g-3">
         <div
           v-for="product in recommendedProducts"
-          :key="product.slug"
+          :key="product.slug || product.id"
           class="col-md-3 col-sm-6"
         >
           <div class="card h-100 border-0 shadow-sm">
             <div class="card-body d-flex flex-column">
               <div class="d-flex justify-content-between align-items-start mb-1">
-                <div class="small text-muted">{{ product.category }}</div>
+                <div class="small text-muted">
+                  {{ product.category?.name || product.category || '—' }}
+                </div>
                 <span
-                  v-if="product.hasDiscount"
+                  v-if="product.hasDiscount || product.discountPercent"
                   class="badge bg-success"
                 >
-                  -{{ product.discountPercent }}%
+                  -{{ product.discountPercent ?? product.discount_percent ?? 0 }}%
                 </span>
               </div>
               <h3 class="h6 mb-1">{{ product.name }}</h3>
-              <div class="small text-muted mb-2">{{ product.code }}</div>
+              <div class="small text-muted mb-2">
+                {{ product.internal_code || product.code }}
+              </div>
               <div class="mt-auto">
-                <div class="small text-muted" v-if="product.hasDiscount">
+                <!-- cu discount -->
+                <div
+                  class="small text-muted"
+                  v-if="product.hasDiscount || product.promoPrice || product.promo_price"
+                >
                   <span class="text-decoration-line-through me-1">
-                    {{ product.price.toLocaleString('ro-RO', { minimumFractionDigits: 2 }) }}
+                    {{ formatPrice(product.price ?? product.list_price) }}
                   </span>
                   <span class="fw-semibold">
-                    {{ product.promoPrice.toLocaleString('ro-RO', { minimumFractionDigits: 2 }) }}
+                    {{ formatPrice(product.promoPrice ?? product.promo_price ?? product.final_price) }}
                     RON
                   </span>
                 </div>
-                <div class="fw-semibold mb-1" v-else>
-                  {{ product.price.toLocaleString('ro-RO', { minimumFractionDigits: 2 }) }}
-                  RON
+                <!-- fără discount -->
+                <div
+                  class="fw-semibold mb-1"
+                  v-else
+                >
+                  {{ formatPrice(product.price ?? product.final_price ?? product.list_price) }}
+                  <span v-if="product.price || product.final_price || product.list_price">
+                    RON
+                  </span>
                 </div>
                 <RouterLink
+                  v-if="product.slug"
                   :to="`/produs/${product.slug}`"
                   class="btn btn-outline-primary btn-sm"
                 >
@@ -167,100 +223,48 @@
 </template>
 
 <script setup>
-const homePromotions = [
-  {
-    slug: 'campanie-primavara-b2b',
-    title: 'Campanie de primăvară pentru parteneri B2B',
-    teaser: 'Discount suplimentar la materiale de construcții pentru comenzi peste 10.000 RON.',
-    badge: 'B2B',
-    period: '01.03 – 30.04',
-    segmentLabel: 'Clienți B2B (parteneri)'
-  },
-  {
-    slug: 'weekend-special-b2c',
-    title: 'Weekend special B2C',
-    teaser: 'Reduceri pentru clienți persoane fizice la produse de bricolaj și grădină.',
-    badge: 'B2C',
-    period: 'În fiecare weekend',
-    segmentLabel: 'Clienți B2C (retail)'
-  },
-  {
-    slug: 'transport-gratuit-combinat',
-    title: 'Transport gratuit combinat',
-    teaser: 'Transport gratuit pentru comenzi mixte B2B/B2C peste 500 RON.',
-    badge: 'ALL',
-    period: '01.02 – 31.05',
-    segmentLabel: 'Toți clienții (B2B & B2C)'
-  }
-]
+import { ref, onMounted } from 'vue';
+import { RouterLink } from 'vue-router';
+import { fetchHomeData } from '@/services/catalog';
 
-const newProducts = [
-  {
-    slug: 'ciment-premium-42-5',
-    name: 'Ciment Premium 42.5',
-    code: 'PRD-NEW-001',
-    category: 'Materiale de construcții',
-    price: 48.5
-  },
-  {
-    slug: 'vopsea-lavabila-interior',
-    name: 'Vopsea lavabilă interior 15L',
-    code: 'PRD-NEW-002',
-    category: 'Finisaje',
-    price: 210.0
-  },
-  {
-    slug: 'bormasina-compacta',
-    name: 'Bormașină compactă 18V',
-    code: 'PRD-NEW-003',
-    category: 'Unelte electrice',
-    price: 399.9
-  },
-  {
-    slug: 'sistem-scaffolding-aluminiu',
-    name: 'Sistem schelă aluminiu',
-    code: 'PRD-NEW-004',
-    category: 'Echipamente șantier',
-    price: 2850.0
-  }
-]
+const loading = ref(false);
+const error = ref('');
 
-const recommendedProducts = [
-  {
-    slug: 'ciment-portland-40kg',
-    name: 'Ciment Portland 40kg',
-    code: 'PRD-001',
-    category: 'Materiale de construcții',
-    price: 45.0,
-    hasDiscount: true,
-    discountPercent: 10,
-    promoPrice: 40.5
-  },
-  {
-    slug: 'adeziv-gresie-faianta',
-    name: 'Adeziv gresie / faianță',
-    code: 'PRD-005',
-    category: 'Adezivi',
-    price: 35.0,
-    hasDiscount: false
-  },
-  {
-    slug: 'pavaj-beton',
-    name: 'Pavaj beton 20x10',
-    code: 'PRD-020',
-    category: 'Pavaje',
-    price: 3.2,
-    hasDiscount: true,
-    discountPercent: 5,
-    promoPrice: 3.04
-  },
-  {
-    slug: 'echipament-protectie-kit',
-    name: 'Kit echipament protecție',
-    code: 'PRD-030',
-    category: 'Echipamente protecție',
-    price: 150.0,
-    hasDiscount: false
+// colecțiile folosite în template
+const homePromotions = ref([]);        // promoțiile de pe home
+const newProducts = ref([]);           // produse noi
+const recommendedProducts = ref([]);   // produse recomandate
+
+const formatPrice = (value) => {
+  if (value == null) return '-';
+  const num = Number(value);
+  if (Number.isNaN(num)) return String(value);
+  return num.toLocaleString('ro-RO', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+};
+
+const loadHome = async () => {
+  loading.value = true;
+  error.value = '';
+
+  try {
+    const data = await fetchHomeData();
+
+    // adaptează la structura reală a răspunsului /api/home
+    homePromotions.value = data.promotions ?? data.home_promotions ?? [];
+    newProducts.value = data.new_products ?? [];
+    recommendedProducts.value = data.recommended_products ?? [];
+  } catch (e) {
+    console.error('Home data error', e);
+    error.value = 'Nu s-au putut încărca datele pentru homepage.';
+  } finally {
+    loading.value = false;
   }
-]
+};
+
+onMounted(loadHome);
 </script>
+`
+::contentReference[oaicite:0]{index=0}

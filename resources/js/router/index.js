@@ -114,10 +114,17 @@ const router = createRouter({
           component: DiscountedProducts
         },
         {
+      path: 'produse',
+      name: 'products-list',
+      component: Category,
+      meta: { public: true }
+    },
+        {
           path: 'categorie/:slug',
           name: 'category',
           component: Category
         },
+
         {
           path: 'produs/:slug',
           name: 'product-details',

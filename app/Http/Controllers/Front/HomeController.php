@@ -15,13 +15,13 @@ class HomeController extends Controller
         $promotions = Promotion::where('status', 'active')
             ->where(function ($q) {
                 $now = now();
-                $q->whereNull('start_date')->orWhere('start_date', '<=', $now);
+                $q->whereNull('start_at')->orWhere('start_at', '<=', $now);
             })
             ->where(function ($q) {
                 $now = now();
-                $q->whereNull('end_date')->orWhere('end_date', '>=', $now);
+                $q->whereNull('end_at')->orWhere('end_at', '>=', $now);
             })
-            ->orderByDesc('start_date')
+            ->orderByDesc('start_at')
             ->limit(5)
             ->get();
 

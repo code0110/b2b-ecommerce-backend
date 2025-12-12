@@ -176,58 +176,71 @@ Route::get('products/discounted', [HomeController::class, 'discountedProducts'])
 
 });
 
-// Admin area
 Route::prefix('admin')
     ->middleware(['auth:sanctum', 'role:admin,operator,marketer,agent,sales_director'])
     ->group(function () {
+        // Dashboard
+        Route::get('dashboard', [\App\Http\Controllers\Admin\DashboardController::class, 'index']);
+        Route::get('dashboard/overview', [\App\Http\Controllers\Admin\DashboardController::class, 'overview']);
 
-        Route::get('dashboard', [DashboardController::class, 'index']);
-// Dashboard admin
-Route::get('dashboard/overview', [DashboardController::class, 'overview']);
+        // Products
+        Route::apiResource('products', \App\Http\Controllers\Admin\ProductController::class);
 
-    // Orders (admin)
-    Route::get('orders', [AdminOrderController::class, 'index']);
-    Route::get('orders/{order}', [AdminOrderController::class, 'show']);
-    Route::put('orders/{order}', [AdminOrderController::class, 'update']);
-    Route::post('orders/{order}/status', [AdminOrderController::class, 'updateStatus']);
-    Route::post('orders/{order}/payment-status', [AdminOrderController::class, 'updatePaymentStatus']);
+        // Categories
+        Route::apiResource('categories', \App\Http\Controllers\Admin\CategoryController::class);
 
-        Route::apiResource('products', AdminProductController::class);
-        Route::apiResource('categories', AdminCategoryController::class);
-        Route::apiResource('brands', AdminBrandController::class);
+        // Brands
+        Route::apiResource('brands', \App\Http\Controllers\Admin\BrandController::class);
 
-        Route::apiResource('customers', AdminCustomerController::class);
-        Route::apiResource('customer-groups', AdminCustomerGroupController::class);
+        // Customers
+        Route::apiResource('customers', \App\Http\Controllers\Admin\CustomerController::class);
 
-        Route::apiResource('promotions', AdminPromotionController::class);
-        Route::get('shipping/config', [AdminShippingController::class, 'index']);
-        Route::post('shipping/config', [AdminShippingController::class, 'store']);
-        Route::put('shipping/config/{id}', [AdminShippingController::class, 'update']);
-        Route::delete('shipping/config/{id}', [AdminShippingController::class, 'destroy']);
+        // Customer Groups
+        Route::apiResource('customer-groups', \App\Http\Controllers\Admin\CustomerGroupController::class);
 
-        // Oferte (admin/agenți)
-        Route::apiResource('quotes', AdminQuoteController::class)->only(['index', 'show', 'update']);
-        Route::post('quotes/{quoteRequest}/convert-to-order', [AdminQuoteController::class, 'convertToOrder']);
+        // Promotions
+        Route::apiResource('promotions', \App\Http\Controllers\Admin\PromotionController::class);
 
-        // ERP logs & manual sync
-        Route::get('erp/logs', [ErpController::class, 'logs']);
-        Route::post('erp/orders/{order}/sync', [ErpController::class, 'syncOrder']);
+        // Roles
+        Route::apiResource('roles', \App\Http\Controllers\Admin\RoleController::class);
 
-        // Shipments / AWB
-        Route::get('shipments', [ShipmentController::class, 'index']);
-        Route::post('shipments', [ShipmentController::class, 'store']);
-        Route::post('shipments/{id}/status', [ShipmentController::class, 'updateStatus']);
-        // Roles & permissions
-        Route::apiResource('roles', RoleController::class);
-        Route::apiResource('permissions', PermissionController::class)->only(['index', 'store', 'show', 'update', 'destroy']);
-        // Audit log
-        Route::get('audit-logs', [AuditLogController::class, 'index']);
-        Route::get('audit-logs/{id}', [AuditLogController::class, 'show']);
-// Invoices admin
-Route::apiResource('invoices', AdminInvoiceController::class)->only(['index', 'show', 'store', 'update', 'destroy']);
+        // Permissions
+        Route::apiResource('permissions', \App\Http\Controllers\Admin\PermissionController::class);
 
+        // Invoices
+        Route::apiResource('invoices', \App\Http\Controllers\Admin\InvoiceController::class);
 
+        // Quotes / oferte
+        Route::apiResource('quotes', \App\Http\Controllers\Admin\QuoteController::class)->only(['index', 'show', 'update']);
+        Route::post('quotes/{quoteRequest}/convert-to-order', [\App\Http\Controllers\Admin\QuoteController::class, 'convertToOrder']);
+
+        // Shipping config
+        Route::get('shipping/config', [\App\Http\Controllers\Admin\ShippingController::class, 'index']);
+        Route::post('shipping/config', [\App\Http\Controllers\Admin\ShippingController::class, 'store']);
+        Route::put('shipping/config/{id}', [\App\Http\Controllers\Admin\ShippingController::class, 'update']);
+        Route::delete('shipping/config/{id}', [\App\Http\Controllers\Admin\ShippingController::class, 'destroy']);
+
+        // Shipments
+        Route::get('shipments', [\App\Http\Controllers\Admin\ShipmentController::class, 'index']);
+        Route::post('shipments', [\App\Http\Controllers\Admin\ShipmentController::class, 'store']);
+        Route::post('shipments/{id}/status', [\App\Http\Controllers\Admin\ShipmentController::class, 'updateStatus']);
+
+        // ERP helper
+        Route::get('erp/logs', [\App\Http\Controllers\Admin\ErpController::class, 'logs']);
+        Route::post('erp/orders/{order}/sync', [\App\Http\Controllers\Admin\ErpController::class, 'syncOrder']);
+
+        // Audit logs
+        Route::get('audit-logs', [\App\Http\Controllers\Admin\AuditLogController::class, 'index']);
+        Route::get('audit-logs/{id}', [\App\Http\Controllers\Admin\AuditLogController::class, 'show']);
+
+        // ORDERS (NOU) – foarte important să fie în ACEST grup
+        Route::get('orders', [AdminOrderController::class, 'index']);
+        Route::get('orders/{order}', [AdminOrderController::class, 'show']);
+        Route::put('orders/{order}', [AdminOrderController::class, 'update']);
+        Route::post('orders/{order}/status', [AdminOrderController::class, 'updateStatus']);
+        Route::post('orders/{order}/payment-status', [AdminOrderController::class, 'updatePaymentStatus']);
     });
+
 
     // Tickets
 Route::apiResource('tickets', AdminTicketController::class)->only(['index', 'show', 'update']);

@@ -1,5 +1,8 @@
 // resources/js/services/orders.js
-import { api } from './http';
+import api from './http';
+
+
+import axios from 'axios';
 
 /**
  * Comenzi din contul clientului logat

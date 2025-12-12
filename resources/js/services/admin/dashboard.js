@@ -1,3 +1,4 @@
+// resources/js/services/admin/dashboard.js
 import { adminApi } from '@/services/http';
 
 export async function fetchAdminDashboard() {

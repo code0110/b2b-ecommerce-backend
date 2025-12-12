@@ -1,145 +1,149 @@
+<!-- resources/js/views/admin/customers/CustomerList.vue -->
 <template>
-  <div class="container-fluid">
-    <PageHeader
-      title="Clienți - listă"
-      subtitle="Administrare clienți B2B/B2C, status, condiții comerciale și solduri."
-    >
-      <button type="button" class="btn btn-primary btn-sm" disabled>
-        + Client nou (template)
-      </button>
-    </PageHeader>
-
-    <!-- Filtre -->
-    <div class="card shadow-sm mb-3">
-      <div class="card-body">
-        <form class="row g-3 align-items-end" @submit.prevent>
-          <div class="col-md-3">
-            <label class="form-label small text-muted">Căutare client</label>
-            <input
-              v-model="filters.search"
-              type="text"
-              class="form-control form-control-sm"
-              placeholder="Denumire client, cod, email..."
-            />
-          </div>
-          <div class="col-md-2">
-            <label class="form-label small text-muted">Tip client</label>
-            <select v-model="filters.clientType" class="form-select form-select-sm">
-              <option value="">Toți</option>
-              <option value="B2B">B2B</option>
-              <option value="B2C">B2C</option>
-              <option value="Agent">Agent</option>
-              <option value="Director">Director</option>
-              <option value="Operator">Operator</option>
-            </select>
-          </div>
-          <div class="col-md-2">
-            <label class="form-label small text-muted">Status</label>
-            <select v-model="filters.status" class="form-select form-select-sm">
-              <option value="">Toți</option>
-              <option value="active">Activ</option>
-              <option value="blocked">Blocat</option>
-            </select>
-          </div>
-          <div class="col-md-2">
-            <label class="form-label small text-muted">Grup client</label>
-            <input
-              v-model="filters.group"
-              type="text"
-              class="form-control form-control-sm"
-              placeholder="Ex.: Distribuitori"
-            />
-          </div>
-          <div class="col-md-3">
-            <label class="form-label small text-muted">Agent / director</label>
-            <input
-              v-model="filters.representative"
-              type="text"
-              class="form-control form-control-sm"
-              placeholder="Nume agent sau director"
-            />
-          </div>
-        </form>
-      </div>
+  <div class="container-fluid py-3">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h1 class="h4 mb-0">Clienți</h1>
     </div>
 
-    <!-- Lista clienți -->
+    <form class="card mb-3 shadow-sm" @submit.prevent="applyFilters">
+      <div class="card-body row g-2 align-items-end">
+        <div class="col-md-4">
+          <label class="form-label form-label-sm">Căutare</label>
+          <input
+            v-model="filters.q"
+            type="text"
+            class="form-control form-control-sm"
+            placeholder="nume, email, CIF, telefon..."
+          />
+        </div>
+        <div class="col-md-3">
+          <label class="form-label form-label-sm">Tip client</label>
+          <select
+            v-model="filters.type"
+            class="form-select form-select-sm"
+          >
+            <option value="">Toate</option>
+            <option value="b2b">B2B</option>
+            <option value="b2c">B2C</option>
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label form-label-sm d-block">&nbsp;</label>
+          <button
+            type="submit"
+            class="btn btn-primary btn-sm me-2"
+            :disabled="loading"
+          >
+            Aplică filtre
+          </button>
+          <button
+            type="button"
+            class="btn btn-outline-secondary btn-sm"
+            @click="resetFilters"
+          >
+            Reset
+          </button>
+        </div>
+      </div>
+    </form>
+
+    <div v-if="loading" class="alert alert-info small py-2">
+      Se încarcă lista de clienți...
+    </div>
+    <div v-else-if="error" class="alert alert-danger small py-2">
+      {{ error }}
+    </div>
+
     <div class="card shadow-sm">
       <div class="card-body p-0">
-        <div class="table-responsive">
-          <table class="table table-sm table-hover align-middle mb-0">
-            <thead class="table-light">
-              <tr>
-                <th>Denumire client</th>
-                <th>Tip</th>
-                <th>Contact</th>
-                <th>Grup</th>
-                <th>Sold / credit</th>
-                <th>Termen plată</th>
-                <th>Status</th>
-                <th class="text-end">Acțiuni</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-if="filteredCustomers.length === 0">
-                <td colspan="8" class="text-center text-muted py-4">
-                  Nu există clienți pentru filtrele selectate.
-                </td>
-              </tr>
-              <tr v-for="c in filteredCustomers" :key="c.id">
-                <td>
-                  <div class="fw-semibold">{{ c.name }}</div>
-                  <div class="small text-muted">
-                    Cod: {{ c.customerCode }} · ERP: {{ c.erpId }}
-                  </div>
-                </td>
-                <td class="small">
-                  <span class="badge bg-light text-dark">
-                    {{ c.clientType }}
-                  </span>
-                </td>
-                <td class="small">
-                  <div>{{ c.email }}</div>
-                  <div class="text-muted">{{ c.phone }}</div>
-                </td>
-                <td class="small">
-                  <span v-if="c.group" class="badge bg-secondary">
-                    {{ c.group }}
-                  </span>
-                </td>
-                <td class="small">
-                  <div>
-                    Sold: <strong>{{ c.currentBalance.toLocaleString('ro-RO') }} {{ c.currency }}</strong>
-                  </div>
-                  <div>
-                    Limită credit:
-                    <strong>{{ c.creditLimit.toLocaleString('ro-RO') }} {{ c.currency }}</strong>
-                  </div>
-                  <div v-if="c.overdueBalance > 0" class="text-danger">
-                    Restanțe: {{ c.overdueBalance.toLocaleString('ro-RO') }} {{ c.currency }}
-                  </div>
-                </td>
-                <td class="small">
-                  {{ c.paymentTermDays }} zile
-                </td>
-                <td class="small">
-                  <span
-                    :class="['badge', c.status === 'active' ? 'bg-success' : 'bg-danger']"
-                  >
-                    {{ c.status === 'active' ? 'Activ' : 'Blocat' }}
-                  </span>
-                </td>
-                <td class="text-end">
-                  <RouterLink
-                    :to="{ name: 'admin-customer-details', params: { id: c.id } }"
-                    class="btn btn-outline-primary btn-sm"
-                  >
-                    Fișă client
-                  </RouterLink>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+        <table class="table table-sm mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>Client</th>
+              <th>Tip</th>
+              <th>Grup</th>
+              <th>Email</th>
+              <th>Telefon</th>
+              <th class="text-end">Status</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-if="!customers.length">
+              <td colspan="7" class="text-center small text-muted py-3">
+                Nu au fost găsiți clienți pentru filtrele curente.
+              </td>
+            </tr>
+            <tr v-for="customer in customers" :key="customer.id">
+              <td class="small">
+                <div class="fw-semibold">{{ customer.name }}</div>
+                <div v-if="customer.legal_name" class="text-muted">
+                  {{ customer.legal_name }}
+                </div>
+              </td>
+              <td class="small text-muted">
+                {{ customer.type === 'b2b' ? 'B2B' : 'B2C' }}
+              </td>
+              <td class="small text-muted">
+                {{ customer.group?.name || '-' }}
+              </td>
+              <td class="small">
+                {{ customer.email || '-' }}
+              </td>
+              <td class="small">
+                {{ customer.phone || '-' }}
+              </td>
+              <td class="small text-end">
+                <span
+                  class="badge"
+                  :class="customer.is_active ? 'bg-success' : 'bg-secondary'"
+                >
+                  {{ customer.is_active ? 'Activ' : 'Blocat' }}
+                </span>
+                <span
+                  v-if="customer.is_partner"
+                  class="badge bg-info ms-1"
+                >
+                  Partener
+                </span>
+              </td>
+              <td class="text-end">
+                <button
+                  class="btn btn-link btn-sm text-decoration-none"
+                  @click="goToDetails(customer.id)"
+                >
+                  Fișă client
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div
+        v-if="pagination.last_page > 1"
+        class="card-footer py-2 d-flex justify-content-between align-items-center small"
+      >
+        <div>
+          Pagina {{ pagination.current_page }} din {{ pagination.last_page }}
+        </div>
+        <div class="btn-group btn-group-sm">
+          <button
+            type="button"
+            class="btn btn-outline-secondary"
+            :disabled="pagination.current_page <= 1 || loading"
+            @click="changePage(pagination.current_page - 1)"
+          >
+            « Înapoi
+          </button>
+          <button
+            type="button"
+            class="btn btn-outline-secondary"
+            :disabled="pagination.current_page >= pagination.last_page || loading"
+            @click="changePage(pagination.current_page + 1)"
+          >
+            Înainte »
+          </button>
         </div>
       </div>
     </div>
@@ -147,50 +151,75 @@
 </template>
 
 <script setup>
-import { computed, reactive } from 'vue'
-import { RouterLink } from 'vue-router'
-import PageHeader from '@/components/common/PageHeader.vue'
-import { useCustomersStore } from '@/store/customers'
+import { ref, reactive, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
+import { fetchCustomers } from '@/services/admin/customers';
 
-const store = useCustomersStore()
+const router = useRouter();
+
+const loading = ref(false);
+const error = ref('');
+const customers = ref([]);
 
 const filters = reactive({
-  search: '',
-  clientType: '',
-  status: '',
-  group: '',
-  representative: ''
-})
+  q: '',
+  type: ''
+});
 
-const filteredCustomers = computed(() => {
-  return store.all.filter((c) => {
-    if (filters.search) {
-      const s = filters.search.toLowerCase()
-      if (
-        !(
-          c.name.toLowerCase().includes(s) ||
-          (c.customerCode && c.customerCode.toLowerCase().includes(s)) ||
-          (c.email && c.email.toLowerCase().includes(s))
-        )
-      ) {
-        return false
-      }
-    }
+const pagination = ref({
+  current_page: 1,
+  last_page: 1,
+  total: 0
+});
 
-    if (filters.clientType && c.clientType !== filters.clientType) return false
-    if (filters.status && c.status !== filters.status) return false
-    if (filters.group && !(c.group || '').toLowerCase().includes(filters.group.toLowerCase())) {
-      return false
-    }
+const loadCustomers = async (page = 1) => {
+  loading.value = true;
+  error.value = '';
 
-    if (filters.representative) {
-      const rep = filters.representative.toLowerCase()
-      const inAgent = (c.assignedAgent || '').toLowerCase().includes(rep)
-      const inDirector = (c.assignedDirector || '').toLowerCase().includes(rep)
-      if (!inAgent && !inDirector) return false
-    }
+  try {
+    const response = await fetchCustomers({
+      page,
+      q: filters.q || undefined,
+      type: filters.type || undefined
+    });
 
-    return true
-  })
-})
+    customers.value = response.data || [];
+    const meta = response.meta || {};
+
+    pagination.value = {
+      current_page: meta.current_page || 1,
+      last_page: meta.last_page || 1,
+      total: meta.total || customers.value.length
+    };
+  } catch (e) {
+    console.error('Customers load error', e);
+    error.value = 'Nu s-a putut încărca lista de clienți.';
+  } finally {
+    loading.value = false;
+  }
+};
+
+const applyFilters = () => {
+  loadCustomers(1);
+};
+
+const resetFilters = () => {
+  filters.q = '';
+  filters.type = '';
+  loadCustomers(1);
+};
+
+const changePage = page => {
+  if (page < 1 || page > pagination.value.last_page) return;
+  loadCustomers(page);
+};
+
+const goToDetails = id => {
+  router.push({
+    name: 'admin-customer-details',
+    params: { id }
+  });
+};
+
+onMounted(() => loadCustomers(1));
 </script>

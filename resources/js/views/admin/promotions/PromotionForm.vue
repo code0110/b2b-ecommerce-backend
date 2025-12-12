@@ -1,373 +1,371 @@
+<!-- resources/js/views/admin/promotions/PromotionForm.vue -->
 <template>
-  <div class="container-fluid">
-    <PageHeader
-      :title="isEdit ? 'Promoție - editare' : 'Promoție - creare'"
-      subtitle="Definire model promoție: reguli, segmentare și landing page."
-    >
-      <div class="btn-group btn-group-sm">
-        <RouterLink :to="{ name: 'admin-promotions' }" class="btn btn-outline-secondary">
-          Înapoi la listă
-        </RouterLink>
-        <button type="button" class="btn btn-primary" @click="onSubmit">
-          Salvează promoția
-        </button>
+  <div class="container-fluid py-3">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <div>
+        <h1 class="h4 mb-1">
+          {{ isEdit ? 'Editează promoție' : 'Promoție nouă' }}
+        </h1>
+        <div class="text-muted small">
+          Configurare regulă de promoție și segmentare.
+        </div>
       </div>
-    </PageHeader>
+    </div>
 
-    <form @submit.prevent="onSubmit">
-      <div class="row g-3">
-        <!-- Col stânga: detalii și segmentare -->
-        <div class="col-lg-7">
-          <!-- Detalii generale -->
+    <div v-if="loading" class="alert alert-info small py-2">
+      Se încarcă datele promoției...
+    </div>
+    <div v-else-if="error" class="alert alert-danger small py-2">
+      {{ error }}
+    </div>
+
+    <form v-if="!loading" @submit.prevent="submit">
+      <div class="row g-3 mb-3">
+        <div class="col-lg-8">
           <div class="card shadow-sm mb-3">
             <div class="card-header py-2">
-              <strong>Detalii generale</strong>
+              <span class="small text-uppercase text-muted">Date generale</span>
             </div>
             <div class="card-body">
-              <div class="mb-3">
-                <label class="form-label small text-muted">Denumire promoție</label>
+              <div class="mb-2">
+                <label class="form-label form-label-sm">Denumire promoție</label>
                 <input
                   v-model="form.name"
                   type="text"
                   class="form-control form-control-sm"
-                  required
+                  :class="{ 'is-invalid': validationErrors.name }"
                 />
-              </div>
-              <div class="mb-3">
-                <label class="form-label small text-muted">Slug (pentru URL landing)</label>
-                <div class="input-group input-group-sm">
-                  <span class="input-group-text">/promotii/</span>
-                  <input
-                    v-model="form.slug"
-                    type="text"
-                    class="form-control"
-                    placeholder="ex: promotie-gips-carton-10"
-                  />
+                <div v-if="validationErrors.name" class="invalid-feedback">
+                  {{ validationErrors.name[0] }}
                 </div>
               </div>
+
               <div class="mb-2">
-                <label class="form-label small text-muted">Descriere scurtă</label>
-                <textarea
-                  v-model="form.shortDescription"
+                <label class="form-label form-label-sm">Slug (URL)</label>
+                <input
+                  v-model="form.slug"
+                  type="text"
                   class="form-control form-control-sm"
-                  rows="2"
+                  :class="{ 'is-invalid': validationErrors.slug }"
                 />
+                <div v-if="validationErrors.slug" class="invalid-feedback">
+                  {{ validationErrors.slug[0] }}
+                </div>
+                <div class="form-text small">
+                  Folosit în URL: /promotii/{{ form.slug || 'campanie' }}
+                </div>
               </div>
-              <div class="mb-3">
-                <label class="form-label small text-muted">Descriere detaliată (landing)</label>
+
+              <div class="mb-2">
+                <label class="form-label form-label-sm">Descriere scurtă</label>
                 <textarea
-                  v-model="form.longDescription"
+                  v-model="form.short_description"
+                  rows="2"
                   class="form-control form-control-sm"
-                  rows="4"
+                  :class="{ 'is-invalid': validationErrors.short_description }"
                 />
+                <div
+                  v-if="validationErrors.short_description"
+                  class="invalid-feedback"
+                >
+                  {{ validationErrors.short_description[0] }}
+                </div>
+              </div>
+
+              <div class="mb-2">
+                <label class="form-label form-label-sm">Descriere detaliată</label>
+                <textarea
+                  v-model="form.description"
+                  rows="4"
+                  class="form-control form-control-sm"
+                  :class="{ 'is-invalid': validationErrors.description }"
+                />
+                <div
+                  v-if="validationErrors.description"
+                  class="invalid-feedback"
+                >
+                  {{ validationErrors.description[0] }}
+                </div>
               </div>
 
               <div class="row">
-                <div class="col-md-4 mb-3">
-                  <label class="form-label small text-muted">Data start</label>
+                <div class="col-md-4 mb-2">
+                  <label class="form-label form-label-sm">Data start</label>
                   <input
-                    v-model="form.startDate"
+                    v-model="form.start_at"
                     type="date"
                     class="form-control form-control-sm"
+                    :class="{ 'is-invalid': validationErrors.start_at }"
                   />
+                  <div v-if="validationErrors.start_at" class="invalid-feedback">
+                    {{ validationErrors.start_at[0] }}
+                  </div>
                 </div>
-                <div class="col-md-4 mb-3">
-                  <label class="form-label small text-muted">Data stop</label>
+                <div class="col-md-4 mb-2">
+                  <label class="form-label form-label-sm">Data stop</label>
                   <input
-                    v-model="form.endDate"
+                    v-model="form.end_at"
                     type="date"
                     class="form-control form-control-sm"
+                    :class="{ 'is-invalid': validationErrors.end_at }"
                   />
+                  <div v-if="validationErrors.end_at" class="invalid-feedback">
+                    {{ validationErrors.end_at[0] }}
+                  </div>
                 </div>
-                <div class="col-md-4 mb-3">
-                  <label class="form-label small text-muted">Status</label>
-                  <select v-model="form.status" class="form-select form-select-sm">
+                <div class="col-md-4 mb-2">
+                  <label class="form-label form-label-sm">Status</label>
+                  <select
+                    v-model="form.status"
+                    class="form-select form-select-sm"
+                    :class="{ 'is-invalid': validationErrors.status }"
+                  >
+                    <option value="draft">Draft</option>
                     <option value="active">Activă</option>
-                    <option value="upcoming">În curând</option>
                     <option value="inactive">Inactivă</option>
                   </select>
+                  <div v-if="validationErrors.status" class="invalid-feedback">
+                    {{ validationErrors.status[0] }}
+                  </div>
                 </div>
               </div>
+            </div>
+          </div>
 
+          <div class="card shadow-sm">
+            <div class="card-header py-2">
+              <span class="small text-uppercase text-muted">Reguli promoție</span>
+            </div>
+            <div class="card-body">
               <div class="row">
-                <div class="col-md-4 mb-3">
-                  <label class="form-label small text-muted">Tip promoție</label>
-                  <select v-model="form.type" class="form-select form-select-sm">
+                <div class="col-md-4 mb-2">
+                  <label class="form-label form-label-sm">Tip bonus</label>
+                  <select
+                    v-model="form.bonus_type"
+                    class="form-select form-select-sm"
+                    :class="{ 'is-invalid': validationErrors.bonus_type }"
+                  >
                     <option value="discount_percent">Discount procentual</option>
-                    <option value="discount_fixed">Discount valoric</option>
-                    <option value="x_get_y">Cumperi X → primești Y</option>
-                    <option value="bundle">Pachet (bundle)</option>
+                    <option value="discount_value">Discount valoric</option>
+                    <option value="free_item">Produs gratuit</option>
                   </select>
-                </div>
-                <div class="col-md-4 mb-3">
-                  <label class="form-label small text-muted">Tip pachet</label>
-                  <select v-model="form.packageType" class="form-select form-select-sm">
-                    <option value="exclusive">Exclusivă</option>
-                    <option value="iterative">Iterativă</option>
-                  </select>
-                </div>
-                <div class="col-md-4 mb-3">
-                  <label class="form-label small text-muted">Tip bonus</label>
-                  <select v-model="form.bonusType" class="form-select form-select-sm">
-                    <option value="valoare">Valoare / discount</option>
-                    <option value="gratuitate">Gratuitate</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Segmentare -->
-          <div class="card shadow-sm mb-3">
-            <div class="card-header py-2">
-              <strong>Segmentare</strong>
-            </div>
-            <div class="card-body">
-              <div class="mb-2">
-                <label class="form-label small text-muted">Tip client</label>
-                <div class="d-flex gap-3 small">
-                  <div class="form-check">
-                    <input
-                      id="clientB2B"
-                      v-model="clientTypes.b2b"
-                      class="form-check-input"
-                      type="checkbox"
-                    />
-                    <label class="form-check-label" for="clientB2B">B2B</label>
+                  <div
+                    v-if="validationErrors.bonus_type"
+                    class="invalid-feedback"
+                  >
+                    {{ validationErrors.bonus_type[0] }}
                   </div>
-                  <div class="form-check">
-                    <input
-                      id="clientB2C"
-                      v-model="clientTypes.b2c"
-                      class="form-check-input"
-                      type="checkbox"
-                    />
-                    <label class="form-check-label" for="clientB2C">B2C</label>
+                </div>
+
+                <div class="col-md-4 mb-2">
+                  <label class="form-label form-label-sm">Valoare min. coș</label>
+                  <input
+                    v-model.number="form.min_cart_total"
+                    type="number"
+                    class="form-control form-control-sm"
+                    min="0"
+                    step="0.01"
+                    :class="{ 'is-invalid': validationErrors.min_cart_total }"
+                  />
+                  <div
+                    v-if="validationErrors.min_cart_total"
+                    class="invalid-feedback"
+                  >
+                    {{ validationErrors.min_cart_total[0] }}
+                  </div>
+                </div>
+
+                <div class="col-md-4 mb-2">
+                  <label class="form-label form-label-sm">Cantitate min. / produs</label>
+                  <input
+                    v-model.number="form.min_qty_per_product"
+                    type="number"
+                    min="0"
+                    step="1"
+                    class="form-control form-control-sm"
+                    :class="{ 'is-invalid': validationErrors.min_qty_per_product }"
+                  />
+                  <div
+                    v-if="validationErrors.min_qty_per_product"
+                    class="invalid-feedback"
+                  >
+                    {{ validationErrors.min_qty_per_product[0] }}
                   </div>
                 </div>
               </div>
 
-              <div class="mb-2">
-                <label class="form-label small text-muted">Utilizator</label>
-                <select v-model="form.loggedIn" class="form-select form-select-sm">
-                  <option value="any">Logați și nelogați</option>
-                  <option value="logged">Doar utilizatori logați</option>
-                  <option value="guest">Doar vizitatori nelogați</option>
-                </select>
-              </div>
-
-              <div class="mb-2">
-                <label class="form-label small text-muted">Grupuri de clienți (virgule)</label>
-                <input
-                  v-model="customerGroupsInput"
-                  type="text"
-                  class="form-control form-control-sm"
-                  placeholder="Ex.: Distribuitori, Clienți VIP"
-                />
-              </div>
-
-              <div class="mb-2">
-                <label class="form-label small text-muted">Clienți individuali (ID-uri / coduri, virgule)</label>
-                <input
-                  v-model="customersInput"
-                  type="text"
-                  class="form-control form-control-sm"
-                  placeholder="Ex.: CUST-001, CUST-002"
-                />
-              </div>
-
-              <div class="mb-2">
-                <label class="form-label small text-muted">Categorii produse (virgule)</label>
-                <input
-                  v-model="categoriesInput"
-                  type="text"
-                  class="form-control form-control-sm"
-                  placeholder="Ex.: Plăci gips-carton, Profile metalice"
-                />
-              </div>
-
-              <div class="mb-2">
-                <label class="form-label small text-muted">Branduri (virgule)</label>
-                <input
-                  v-model="brandsInput"
-                  type="text"
-                  class="form-control form-control-sm"
-                  placeholder="Ex.: DemoBrand, SteelBrand"
-                />
-              </div>
-
-              <div class="mb-0">
-                <label class="form-label small text-muted">Listă produse (coduri, virgule)</label>
-                <input
-                  v-model="productListInput"
-                  type="text"
-                  class="form-control form-control-sm"
-                  placeholder="Ex.: PGC-12.5, UW-50"
-                />
-              </div>
-            </div>
-          </div>
-
-          <!-- Reguli -->
-          <div class="card shadow-sm mb-3">
-            <div class="card-header py-2">
-              <strong>Reguli promoție</strong>
-            </div>
-            <div class="card-body">
-              <h6 class="small text-muted">Condiții de declanșare</h6>
-              <div class="row">
-                <div class="col-md-6 mb-2">
-                  <label class="form-label small text-muted">
-                    Cantitate minimă per produs
-                  </label>
-                  <input
-                    v-model.number="form.trigger.minQtyPerProduct"
-                    type="number"
-                    class="form-control form-control-sm"
-                  />
+              <div class="row mb-2">
+                <div class="col-md-4">
+                  <div class="form-check form-switch">
+                    <input
+                      v-model="form.is_exclusive"
+                      class="form-check-input"
+                      type="checkbox"
+                      id="promo-exclusive"
+                    />
+                    <label
+                      class="form-check-label small"
+                      for="promo-exclusive"
+                    >
+                      Promoție exclusivă
+                    </label>
+                  </div>
                 </div>
-                <div class="col-md-6 mb-2">
-                  <label class="form-label small text-muted">
-                    Valoare minimă coș (RON)
-                  </label>
-                  <input
-                    v-model.number="form.trigger.minCartValue"
-                    type="number"
-                    class="form-control form-control-sm"
-                  />
+                <div class="col-md-4">
+                  <div class="form-check form-switch">
+                    <input
+                      v-model="form.is_iterative"
+                      class="form-check-input"
+                      type="checkbox"
+                      id="promo-iterative"
+                    />
+                    <label
+                      class="form-check-label small"
+                      for="promo-iterative"
+                    >
+                      Promoție cumulabilă
+                    </label>
+                  </div>
                 </div>
               </div>
-              <div class="mb-3">
-                <label class="form-label small text-muted">
-                  Note / combinații de produse/categorii
-                </label>
-                <textarea
-                  v-model="form.trigger.notes"
-                  class="form-control form-control-sm"
-                  rows="2"
-                  placeholder="Ex.: minim 2 produse din categoria X și 1 din categoria Y."
-                />
-              </div>
 
-              <h6 class="small text-muted">Beneficiu</h6>
               <div class="row">
                 <div class="col-md-4 mb-2">
-                  <label class="form-label small text-muted">Discount %</label>
-                  <input
-                    v-model.number="form.benefit.discountPercent"
-                    type="number"
-                    class="form-control form-control-sm"
-                  />
+                  <label class="form-label form-label-sm">Tip client</label>
+                  <select
+                    v-model="form.customer_type"
+                    class="form-select form-select-sm"
+                    :class="{ 'is-invalid': validationErrors.customer_type }"
+                  >
+                    <option value="b2b">B2B</option>
+                    <option value="b2c">B2C</option>
+                    <option value="both">B2B + B2C</option>
+                  </select>
+                  <div
+                    v-if="validationErrors.customer_type"
+                    class="invalid-feedback"
+                  >
+                    {{ validationErrors.customer_type[0] }}
+                  </div>
                 </div>
                 <div class="col-md-4 mb-2">
-                  <label class="form-label small text-muted">Discount fix (RON)</label>
-                  <input
-                    v-model.number="form.benefit.discountValue"
-                    type="number"
-                    class="form-control form-control-sm"
-                  />
+                  <label class="form-label form-label-sm d-block">Utilizatori</label>
+                  <div class="form-check form-switch">
+                    <input
+                      v-model="form.logged_in_only"
+                      class="form-check-input"
+                      type="checkbox"
+                      id="promo-logged-in-only"
+                    />
+                    <label
+                      class="form-check-label small"
+                      for="promo-logged-in-only"
+                    >
+                      Doar utilizatori logați
+                    </label>
+                  </div>
                 </div>
-                <div class="col-md-4 mb-2">
-                  <label class="form-label small text-muted">Produs gratuit (cod)</label>
-                  <input
-                    v-model="form.benefit.freeProductCode"
-                    type="text"
-                    class="form-control form-control-sm"
-                  />
-                </div>
-              </div>
-
-              <div class="mb-0">
-                <label class="form-label small text-muted">Produs cu preț special (cod)</label>
-                <input
-                  v-model="form.benefit.specialPriceCode"
-                  type="text"
-                  class="form-control form-control-sm"
-                />
               </div>
             </div>
           </div>
         </div>
 
-        <!-- Col dreapta: imagini & landing -->
-        <div class="col-lg-5">
-          <!-- Imagini campanie -->
+        <!-- Segmentare -->
+        <div class="col-lg-4">
           <div class="card shadow-sm mb-3">
             <div class="card-header py-2">
-              <strong>Imagini campanie</strong>
+              <span class="small text-uppercase text-muted">Segmentare clienți</span>
             </div>
-            <div class="card-body">
-              <p class="small text-muted">
-                Placeholder pentru upload bannere; în demo folosim doar URL-uri text.
-              </p>
+            <div class="card-body small">
               <div class="mb-2">
-                <label class="form-label small text-muted">Imagine listă</label>
-                <input
-                  v-model="form.images.list"
-                  type="text"
-                  class="form-control form-control-sm"
-                />
-              </div>
-              <div class="mb-2">
-                <label class="form-label small text-muted">Imagine header desktop</label>
-                <input
-                  v-model="form.images.header"
-                  type="text"
-                  class="form-control form-control-sm"
-                />
-              </div>
-              <div class="mb-0">
-                <label class="form-label small text-muted">Imagine header mobile</label>
-                <input
-                  v-model="form.images.mobile"
-                  type="text"
-                  class="form-control form-control-sm"
-                />
+                <label class="form-label form-label-sm">Grupuri de clienți</label>
+                <select
+                  v-model="form.customer_group_ids"
+                  class="form-select form-select-sm"
+                  multiple
+                >
+                  <option
+                    v-for="group in groups"
+                    :key="group.id"
+                    :value="group.id"
+                  >
+                    {{ group.name }} ({{ group.type.toUpperCase() }})
+                  </option>
+                </select>
+                <div class="form-text">
+                  Dacă nu selectezi nimic, promoția se aplică tuturor grupurilor
+                  compatibile cu tipul de client.
+                </div>
               </div>
             </div>
           </div>
 
-          <!-- Landing page -->
           <div class="card shadow-sm mb-3">
             <div class="card-header py-2">
-              <strong>Landing page</strong>
+              <span class="small text-uppercase text-muted">Segmentare catalog</span>
             </div>
-            <div class="card-body">
+            <div class="card-body small">
               <div class="mb-2">
-                <label class="form-label small text-muted">Titlu hero</label>
-                <input
-                  v-model="form.landingTitle"
-                  type="text"
-                  class="form-control form-control-sm"
-                  placeholder="Ex.: Promoție gips-carton -10%"
-                />
+                <label class="form-label form-label-sm">Categorii</label>
+                <select
+                  v-model="form.category_ids"
+                  class="form-select form-select-sm"
+                  multiple
+                >
+                  <option
+                    v-for="category in categories"
+                    :key="category.id"
+                    :value="category.id"
+                  >
+                    {{ category.name }}
+                  </option>
+                </select>
               </div>
+
               <div class="mb-2">
-                <label class="form-label small text-muted">Subtitlu hero</label>
-                <input
-                  v-model="form.landingSubtitle"
-                  type="text"
-                  class="form-control form-control-sm"
-                  placeholder="Ex.: Reduceri dedicate proiectelor tale"
-                />
-              </div>
-              <div class="form-check small mb-0">
-                <input
-                  id="landingShowFilters"
-                  v-model="form.landingShowFilters"
-                  class="form-check-input"
-                  type="checkbox"
-                />
-                <label class="form-check-label" for="landingShowFilters">
-                  Afișează filtre în listarea de produse din landing
-                </label>
+                <label class="form-label form-label-sm">Branduri</label>
+                <select
+                  v-model="form.brand_ids"
+                  class="form-select form-select-sm"
+                  multiple
+                >
+                  <option
+                    v-for="brand in brands"
+                    :key="brand.id"
+                    :value="brand.id"
+                  >
+                    {{ brand.name }}
+                  </option>
+                </select>
               </div>
             </div>
           </div>
 
-          <div class="d-grid mb-5">
-            <button type="submit" class="btn btn-primary btn-sm">
-              Salvează promoția
+          <div
+            v-if="generalError"
+            class="alert alert-danger small py-2 mb-2"
+          >
+            {{ generalError }}
+          </div>
+
+          <div class="d-flex justify-content-between">
+            <RouterLink
+              :to="{ name: 'admin-promotions' }"
+              class="btn btn-outline-secondary btn-sm"
+            >
+              « Înapoi la listă
+            </RouterLink>
+
+            <button
+              type="submit"
+              class="btn btn-primary btn-sm"
+              :disabled="saving"
+            >
+              <span
+                v-if="saving"
+                class="spinner-border spinner-border-sm me-1"
+              />
+              {{ isEdit ? 'Salvează promoția' : 'Creează promoția' }}
             </button>
           </div>
         </div>
@@ -377,110 +375,158 @@
 </template>
 
 <script setup>
-import { computed, onMounted, reactive, ref } from 'vue'
-import { useRoute, useRouter, RouterLink } from 'vue-router'
-import PageHeader from '@/components/common/PageHeader.vue'
-import { usePromotionsStore } from '@/store/promotions'
+import { ref, computed, onMounted } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
+import {
+  fetchPromotion,
+  createPromotion,
+  updatePromotion
+} from '@/services/admin/promotions';
+import { fetchCustomerGroups } from '@/services/admin/customerGroups';
+import { fetchAdminCategories } from '@/services/admin/categories';
+import { fetchAdminBrands } from '@/services/admin/brands';
 
-const route = useRoute()
-const router = useRouter()
-const store = usePromotionsStore()
+const route = useRoute();
+const router = useRouter();
 
-const isEdit = computed(() => !!route.params.id)
+const isEdit = computed(() => route.name === 'admin-promotions-edit');
+const promotionId = computed(() => route.params.id);
 
-const emptyForm = () => ({
-  id: null,
+const loading = ref(false);
+const saving = ref(false);
+const error = ref('');
+const generalError = ref('');
+const validationErrors = ref({});
+
+const groups = ref([]);
+const categories = ref([]);
+const brands = ref([]);
+
+const form = ref({
   name: '',
   slug: '',
-  shortDescription: '',
-  longDescription: '',
-  type: 'discount_percent',
-  images: {
-    list: '',
-    header: '',
-    mobile: ''
-  },
-  startDate: '',
-  endDate: '',
-  status: 'active',
-  packageType: 'iterative',
-  bonusType: 'valoare',
-  clientTypes: ['B2B', 'B2C'],
-  loggedIn: 'any',
-  customerGroups: [],
-  customers: [],
-  categories: [],
-  brands: [],
-  productList: [],
-  trigger: {
-    minQtyPerProduct: null,
-    minCartValue: null,
-    notes: ''
-  },
-  benefit: {
-    discountPercent: null,
-    discountValue: null,
-    freeProductCode: '',
-    specialPriceCode: ''
-  },
-  landingTitle: '',
-  landingSubtitle: '',
-  landingShowFilters: true
-})
+  short_description: '',
+  description: '',
+  hero_image: '',
+  banner_image: '',
+  mobile_image: '',
+  start_at: '',
+  end_at: '',
+  status: 'draft',
+  is_exclusive: false,
+  is_iterative: false,
+  bonus_type: 'discount_percent',
+  min_cart_total: null,
+  min_qty_per_product: null,
+  customer_type: 'both',
+  logged_in_only: false,
+  customer_group_ids: [],
+  category_ids: [],
+  brand_ids: []
+});
 
-const form = reactive(emptyForm())
+const loadLookups = async () => {
+  const [g, c, b] = await Promise.all([
+    fetchCustomerGroups(),
+    fetchAdminCategories(),
+    fetchAdminBrands()
+  ]);
+  groups.value = g;
+  categories.value = c;
+  brands.value = b;
+};
 
-const clientTypes = reactive({
-  b2b: true,
-  b2c: true
-})
+const loadPromotion = async () => {
+  if (!isEdit.value) return;
 
-const customerGroupsInput = ref('')
-const customersInput = ref('')
-const categoriesInput = ref('')
-const brandsInput = ref('')
-const productListInput = ref('')
+  try {
+    const data = await fetchPromotion(promotionId.value);
 
-onMounted(() => {
-  if (isEdit.value) {
-    const promo = store.all.find((p) => p.id === Number(route.params.id))
-    if (promo) {
-      Object.assign(form, emptyForm(), JSON.parse(JSON.stringify(promo)))
-
-      clientTypes.b2b = form.clientTypes.includes('B2B')
-      clientTypes.b2c = form.clientTypes.includes('B2C')
-
-      customerGroupsInput.value = (form.customerGroups || []).join(', ')
-      customersInput.value = (form.customers || []).join(', ')
-      categoriesInput.value = (form.categories || []).join(', ')
-      brandsInput.value = (form.brands || []).join(', ')
-      productListInput.value = (form.productList || []).join(', ')
-    }
+    form.value = {
+      ...form.value,
+      name: data.name || '',
+      slug: data.slug || '',
+      short_description: data.short_description || '',
+      description: data.description || '',
+      hero_image: data.hero_image || '',
+      banner_image: data.banner_image || '',
+      mobile_image: data.mobile_image || '',
+      start_at: data.start_at ? data.start_at.substring(0, 10) : '',
+      end_at: data.end_at ? data.end_at.substring(0, 10) : '',
+      status: data.status || 'draft',
+      is_exclusive: !!data.is_exclusive,
+      is_iterative: !!data.is_iterative,
+      bonus_type: data.bonus_type || 'discount_percent',
+      min_cart_total: data.min_cart_total,
+      min_qty_per_product: data.min_qty_per_product,
+      customer_type: data.customer_type || 'both',
+      logged_in_only: !!data.logged_in_only,
+      customer_group_ids:
+        (data.customer_groups || data.customerGroups || []).map(g => g.id),
+      category_ids: (data.categories || []).map(c => c.id),
+      brand_ids: (data.brands || []).map(b => b.id)
+    };
+  } catch (e) {
+    console.error('Promotion load error', e);
+    error.value = 'Nu s-au putut încărca datele promoției.';
   }
-})
+};
 
-const normalizeArraysBeforeSave = () => {
-  const ct = []
-  if (clientTypes.b2b) ct.push('B2B')
-  if (clientTypes.b2c) ct.push('B2C')
-  form.clientTypes = ct.length ? ct : ['B2B', 'B2C']
+const submit = async () => {
+  saving.value = true;
+  validationErrors.value = {};
+  generalError.value = '';
 
-  const parseList = (input) =>
-    input
-      .split(',')
-      .map((v) => v.trim())
-      .filter(Boolean)
+  const payload = {
+    name: form.value.name,
+    slug: form.value.slug,
+    short_description: form.value.short_description,
+    description: form.value.description,
+    hero_image: form.value.hero_image || null,
+    banner_image: form.value.banner_image || null,
+    mobile_image: form.value.mobile_image || null,
+    start_at: form.value.start_at || null,
+    end_at: form.value.end_at || null,
+    status: form.value.status,
+    is_exclusive: form.value.is_exclusive,
+    is_iterative: form.value.is_iterative,
+    bonus_type: form.value.bonus_type,
+    min_cart_total: form.value.min_cart_total,
+    min_qty_per_product: form.value.min_qty_per_product,
+    customer_type: form.value.customer_type,
+    logged_in_only: form.value.logged_in_only,
+    customer_group_ids: form.value.customer_group_ids,
+    category_ids: form.value.category_ids,
+    brand_ids: form.value.brand_ids
+  };
 
-  form.customerGroups = customerGroupsInput.value ? parseList(customerGroupsInput.value) : []
-  form.customers = customersInput.value ? parseList(customersInput.value) : []
-  form.categories = categoriesInput.value ? parseList(categoriesInput.value) : []
-  form.brands = brandsInput.value ? parseList(brandsInput.value) : []
-  form.productList = productListInput.value ? parseList(productListInput.value) : []
-}
+  try {
+    if (isEdit.value) {
+      await updatePromotion(promotionId.value, payload);
+    } else {
+      await createPromotion(payload);
+    }
 
-const onSubmit = () => {
-  normalizeArraysBeforeSave()
-  store.savePromotion({ ...form })
-  router.push({ name: 'admin-promotions' })
-}
+    router.push({ name: 'admin-promotions' });
+  } catch (e) {
+    console.error('Promotion save error', e);
+    if (e.response && e.response.status === 422) {
+      validationErrors.value = e.response.data.errors || {};
+    } else {
+      generalError.value = 'A apărut o eroare la salvarea promoției.';
+    }
+  } finally {
+    saving.value = false;
+  }
+};
+
+onMounted(async () => {
+  loading.value = true;
+  try {
+    await loadLookups();
+    await loadPromotion();
+  } finally {
+    loading.value = false;
+  }
+});
 </script>

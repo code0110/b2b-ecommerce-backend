@@ -1,43 +1,32 @@
 // resources/js/services/admin/categories.js
 import { adminApi } from '@/services/http';
 
-// listă categorii (poate fi paginată sau nu, tratăm ambele cazuri)
-export async function fetchAdminCategories(params = {}) {
-  const { data } = await adminApi.get('/categories', { params });
-
-  // Dacă backend-ul întoarce direct array
-  if (Array.isArray(data)) {
-    return data;
-  }
-
-  // Dacă e resursă paginată: { data: [...], meta: {...} }
-  if (Array.isArray(data.data)) {
-    return data.data;
-  }
-
-  return [];
+// Lista tuturor categoriilor (nu e paginată în backend)
+export async function fetchAdminCategories() {
+  const { data } = await adminApi.get('/categories');
+  return data;
 }
 
-export async function fetchAdminCategoriesPaginated(params = {}) {
-  const { data } = await adminApi.get('/categories', { params });
-  return data; // aici lăsăm forma brută pentru listă cu paginare
-}
-
+// Detaliu categorie
 export async function fetchAdminCategory(id) {
   const { data } = await adminApi.get(`/categories/${id}`);
   return data;
 }
 
+// Creare
 export async function createAdminCategory(payload) {
   const { data } = await adminApi.post('/categories', payload);
   return data;
 }
 
+// Update
 export async function updateAdminCategory(id, payload) {
   const { data } = await adminApi.put(`/categories/${id}`, payload);
   return data;
 }
 
+// Delete
 export async function deleteAdminCategory(id) {
-  return adminApi.delete(`/categories/${id}`);
+  const { data } = await adminApi.delete(`/categories/${id}`);
+  return data;
 }

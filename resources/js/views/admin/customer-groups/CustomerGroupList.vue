@@ -1,262 +1,212 @@
+<!-- resources/js/views/admin/customer-groups/CustomerGroupList.vue -->
 <template>
-  <div class="container py-4">
-    <PageHeader
-      title="Grupuri de clienți"
-      subtitle="Definire grupuri cu condiții comerciale implicite, promoții și segmentări."
-    >
-      <template #actions>
-        <button type="button" class="btn btn-primary btn-sm" @click="onCreateGroup">
-          <i class="bi bi-plus-lg me-1"></i>
-          Adaugă grup (demo)
-        </button>
-      </template>
-    </PageHeader>
+  <div class="container-fluid py-3">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h1 class="h4 mb-0">Grupuri de clienți</h1>
+      <button class="btn btn-primary btn-sm" @click="resetForm">
+        + Grup nou
+      </button>
+    </div>
 
-    <div class="row g-4">
-      <div class="col-lg-8">
+    <div v-if="loading" class="alert alert-info small py-2">
+      Se încarcă grupurile de clienți...
+    </div>
+    <div v-else-if="error" class="alert alert-danger small py-2">
+      {{ error }}
+    </div>
+
+    <div class="row g-3">
+      <div class="col-lg-7">
         <div class="card shadow-sm">
-          <div class="card-header bg-white border-0 pb-0">
-            <div class="d-flex flex-wrap gap-2 justify-content-between align-items-end">
-              <div>
-                <h2 class="h6 mb-1">Listă grupuri</h2>
-                <p class="text-muted small mb-0">
-                  Grupuri de clienți B2B / B2C cu condiții comerciale implicite și promoții asociate.
-                </p>
-              </div>
-              <div class="d-flex flex-wrap gap-2">
-                <div class="input-group input-group-sm">
-                  <span class="input-group-text bg-light border-end-0">
-                    <i class="bi bi-search"></i>
-                  </span>
-                  <input
-                    type="text"
-                    class="form-control border-start-0"
-                    placeholder="Caută după nume, promoții, segment..."
-                    v-model="searchTerm"
-                  />
-                </div>
-                <select
-                  class="form-select form-select-sm"
-                  v-model="typeFilter"
-                  aria-label="Filtru tip client"
-                >
-                  <option value="">Tip client: toți</option>
-                  <option value="B2B">B2B</option>
-                  <option value="B2C">B2C</option>
-                </select>
-              </div>
-            </div>
+          <div class="card-header py-2">
+            <span class="small text-uppercase text-muted">Listă grupuri</span>
           </div>
-
           <div class="card-body p-0">
-            <div class="table-responsive">
-              <table class="table table-sm align-middle mb-0">
-                <thead class="table-light text-muted small text-uppercase">
-                  <tr>
-                    <th style="width: 26%">Grup</th>
-                    <th style="width: 8%">Tip</th>
-                    <th style="width: 34%">Condiții comerciale implicite</th>
-                    <th style="width: 16%">Promoții</th>
-                    <th style="width: 10%">Segmentare</th>
-                    <th style="width: 6%" class="text-end">Detalii</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr
-                    v-for="group in filteredGroups"
-                    :key="group.id"
-                    :class="{
-                      'table-active': selectedGroup && selectedGroup.id === group.id
-                    }"
-                  >
-                    <td>
-                      <div class="fw-semibold">
-                        {{ group.name }}
-                        <span
-                          v-if="group.isDefault"
-                          class="badge bg-light text-primary border ms-1 align-middle"
-                        >
-                          implicit
-                        </span>
-                      </div>
-                      <div class="small text-muted">
-                        {{ group.notes }}
-                      </div>
-                    </td>
-                    <td>
-                      <span
-                        class="badge"
-                        :class="group.type === 'B2B' ? 'bg-primary-subtle text-primary' : 'bg-success-subtle text-success'"
-                      >
-                        {{ group.type }}
-                      </span>
-                    </td>
-                    <td class="small">
-                      {{ formatCommercialTerms(group) }}
-                    </td>
-                    <td>
-                      <div class="d-flex flex-wrap gap-1 small">
-                        <span
-                          v-for="promo in group.promotions"
-                          :key="promo"
-                          class="badge bg-warning-subtle text-warning border"
-                        >
-                          {{ promo }}
-                        </span>
-                        <span v-if="group.promotions.length === 0" class="text-muted small">
-                          Fără promoții implicite
-                        </span>
-                      </div>
-                    </td>
-                    <td>
-                      <div class="d-flex flex-wrap gap-1 small">
-                        <span
-                          v-for="tag in group.segmentTags"
-                          :key="tag"
-                          class="badge bg-light text-secondary border"
-                        >
-                          {{ tag }}
-                        </span>
-                      </div>
-                    </td>
-                    <td class="text-end">
-                      <button
-                        type="button"
-                        class="btn btn-outline-secondary btn-sm"
-                        @click="selectGroup(group)"
-                      >
-                        <i class="bi bi-eye me-1"></i>
-                        Vezi
-                      </button>
-                    </td>
-                  </tr>
-                  <tr v-if="filteredGroups.length === 0">
-                    <td colspan="6" class="text-center py-4 text-muted small">
-                      Nu există grupuri care să corespundă filtrelor selectate.
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          <div class="card-footer bg-white border-0 small text-muted d-flex justify-content-between">
-            <div>
-              <i class="bi bi-info-circle me-1"></i>
-              Date demo. Într-o implementare reală, grupurile ar proveni din baza de date / ERP,
-              cu paginare, sortare și export.
-            </div>
-            <div>
-              Grupuri afișate: <strong>{{ filteredGroups.length }}</strong> din
-              <strong>{{ groups.length }}</strong>
-            </div>
+            <table class="table table-sm mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th>Denumire</th>
+                  <th>Tip</th>
+                  <th class="text-end">Discount default</th>
+                  <th class="text-end">Termen plată</th>
+                  <th class="text-end">Limită credit</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-if="!groups.length">
+                  <td colspan="6" class="text-center small text-muted py-3">
+                    Nu există încă grupuri de clienți.
+                  </td>
+                </tr>
+                <tr
+                  v-for="group in groups"
+                  :key="group.id"
+                  :class="{ 'table-active': form.id === group.id }"
+                >
+                  <td class="small">
+                    <div class="fw-semibold">{{ group.name }}</div>
+                  </td>
+                  <td class="small text-muted">
+                    {{ group.type === 'b2b' ? 'B2B' : 'B2C' }}
+                  </td>
+                  <td class="small text-end">
+                    {{ Number(group.default_discount || 0).toFixed(2) }} %
+                  </td>
+                  <td class="small text-end">
+                    {{ group.payment_terms_days || 0 }} zile
+                  </td>
+                  <td class="small text-end">
+                    <span v-if="group.credit_limit != null">
+                      {{ Number(group.credit_limit).toLocaleString('ro-RO', { minimumFractionDigits: 2 }) }}
+                      RON
+                    </span>
+                    <span v-else class="text-muted">-</span>
+                  </td>
+                  <td class="text-end">
+                    <button
+                      class="btn btn-link btn-sm text-decoration-none"
+                      @click="editGroup(group)"
+                    >
+                      Editează
+                    </button>
+                    <button
+                      class="btn btn-link btn-sm text-danger text-decoration-none"
+                      @click="confirmDelete(group)"
+                    >
+                      Șterge
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
           </div>
         </div>
       </div>
 
-      <div class="col-lg-4">
-        <div class="card shadow-sm h-100">
-          <div class="card-header bg-white border-0 pb-0">
-            <h2 class="h6 mb-1">Detalii grup selectat</h2>
-            <p class="text-muted small mb-0">
-              Condiții comerciale, promoții implicite și segmentări de marketing.
-            </p>
+      <div class="col-lg-5">
+        <div class="card shadow-sm">
+          <div class="card-header py-2">
+            <span class="small text-uppercase text-muted">
+              {{ form.id ? 'Editează grup' : 'Grup nou' }}
+            </span>
           </div>
           <div class="card-body">
-            <div v-if="selectedGroup">
-              <div class="d-flex justify-content-between align-items-start mb-2">
-                <div>
-                  <div class="fw-semibold">
-                    {{ selectedGroup.name }}
-                  </div>
-                  <div class="small text-muted">
-                    ID intern: CG-{{ selectedGroup.id.toString().padStart(3, '0') }}
-                  </div>
-                </div>
-                <div class="text-end small">
-                  <span
-                    class="badge"
-                    :class="
-                      selectedGroup.type === 'B2B'
-                        ? 'bg-primary-subtle text-primary'
-                        : 'bg-success-subtle text-success'
-                    "
-                  >
-                    {{ selectedGroup.type }}
-                  </span>
-                  <div v-if="selectedGroup.isDefault" class="text-muted small mt-1">
-                    Grup implicit pentru clienții nou creați.
-                  </div>
+            <form @submit.prevent="submit">
+              <div class="mb-2">
+                <label class="form-label form-label-sm">Denumire</label>
+                <input
+                  v-model="form.name"
+                  type="text"
+                  class="form-control form-control-sm"
+                  :class="{ 'is-invalid': validationErrors.name }"
+                />
+                <div v-if="validationErrors.name" class="invalid-feedback">
+                  {{ validationErrors.name[0] }}
                 </div>
               </div>
 
-              <hr />
-
-              <div class="mb-3">
-                <h3 class="h6 mb-2">Condiții comerciale implicite</h3>
-                <ul class="small mb-2">
-                  <li>
-                    Discount standard: <strong>{{ selectedGroup.defaultDiscount }}%</strong>
-                  </li>
-                  <li>
-                    Termen de plată: <strong>{{ selectedGroup.paymentTermDays }} zile</strong>
-                  </li>
-                  <li>
-                    Limită de credit:
-                    <strong v-if="selectedGroup.creditLimit">
-                      {{ selectedGroup.creditLimit.toLocaleString('ro-RO') }}
-                      {{ selectedGroup.currency }}
-                    </strong>
-                    <span v-else class="text-muted">nesetat</span>
-                  </li>
-                </ul>
-                <p class="text-muted small mb-0">
-                  În producție, aceste setări ar fi sincronizate cu contractele din ERP și ar putea
-                  fi suprascrise punctual la nivel de client sau de companie.
-                </p>
+              <div class="mb-2">
+                <label class="form-label form-label-sm">Tip grup</label>
+                <select
+                  v-model="form.type"
+                  class="form-select form-select-sm"
+                  :class="{ 'is-invalid': validationErrors.type }"
+                >
+                  <option value="b2b">B2B</option>
+                  <option value="b2c">B2C</option>
+                </select>
+                <div v-if="validationErrors.type" class="invalid-feedback">
+                  {{ validationErrors.type[0] }}
+                </div>
               </div>
 
-              <div class="mb-3">
-                <h3 class="h6 mb-2">Promoții aplicabile</h3>
-                <div class="d-flex flex-wrap gap-1 mb-1 small">
-                  <span
-                    v-for="promo in selectedGroup.promotions"
-                    :key="promo"
-                    class="badge bg-warning-subtle text-warning border"
+              <div class="row">
+                <div class="col-6 mb-2">
+                  <label class="form-label form-label-sm">Discount default (%)</label>
+                  <input
+                    v-model.number="form.default_discount"
+                    type="number"
+                    min="0"
+                    max="90"
+                    step="0.01"
+                    class="form-control form-control-sm"
+                    :class="{ 'is-invalid': validationErrors.default_discount }"
+                  />
+                  <div
+                    v-if="validationErrors.default_discount"
+                    class="invalid-feedback"
                   >
-                    {{ promo }}
-                  </span>
-                  <span v-if="selectedGroup.promotions.length === 0" class="text-muted">
-                    Fără promoții implicite pentru acest grup.
-                  </span>
+                    {{ validationErrors.default_discount[0] }}
+                  </div>
                 </div>
-                <p class="text-muted small mb-0">
-                  Într-o implementare reală, aici s-ar lista regulile de promoții asociate grupului,
-                  cu perioadă de valabilitate și status (activă, viitoare, expirată).
-                </p>
+                <div class="col-6 mb-2">
+                  <label class="form-label form-label-sm">Termen plată (zile)</label>
+                  <input
+                    v-model.number="form.payment_terms_days"
+                    type="number"
+                    min="0"
+                    step="1"
+                    class="form-control form-control-sm"
+                    :class="{ 'is-invalid': validationErrors.payment_terms_days }"
+                  />
+                  <div
+                    v-if="validationErrors.payment_terms_days"
+                    class="invalid-feedback"
+                  >
+                    {{ validationErrors.payment_terms_days[0] }}
+                  </div>
+                </div>
               </div>
 
               <div class="mb-3">
-                <h3 class="h6 mb-2">Segmentare & landing-uri</h3>
-                <div class="d-flex flex-wrap gap-1 mb-2 small">
-                  <span
-                    v-for="tag in selectedGroup.segmentTags"
-                    :key="tag"
-                    class="badge bg-light text-secondary border"
-                  >
-                    {{ tag }}
-                  </span>
+                <label class="form-label form-label-sm">Limită credit (RON)</label>
+                <input
+                  v-model.number="form.credit_limit"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  class="form-control form-control-sm"
+                  :class="{ 'is-invalid': validationErrors.credit_limit }"
+                />
+                <div
+                  v-if="validationErrors.credit_limit"
+                  class="invalid-feedback"
+                >
+                  {{ validationErrors.credit_limit[0] }}
                 </div>
-                <p class="text-muted small mb-0">
-                  Segmentările sunt utilizate pentru a afișa bannere dedicate, landing-uri
-                  personalizate sau campanii de e-mailing direcționate către acest grup.
-                </p>
               </div>
-            </div>
 
-            <div v-else class="text-muted small">
-              Selectează un grup din listă pentru a vedea detaliile sale.
-            </div>
+              <div
+                v-if="generalError"
+                class="alert alert-danger py-1 small mb-2"
+              >
+                {{ generalError }}
+              </div>
+
+              <div class="d-flex justify-content-between align-items-center">
+                <button
+                  type="submit"
+                  class="btn btn-primary btn-sm"
+                  :disabled="saving"
+                >
+                  <span
+                    v-if="saving"
+                    class="spinner-border spinner-border-sm me-1"
+                  />
+                  {{ form.id ? 'Salvează modificările' : 'Creează grup' }}
+                </button>
+
+                <button
+                  v-if="form.id"
+                  type="button"
+                  class="btn btn-link btn-sm text-decoration-none"
+                  @click="resetForm"
+                >
+                  Anulează editarea
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       </div>
@@ -265,108 +215,126 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
-import PageHeader from '@/components/common/PageHeader.vue'
+import { ref, onMounted } from 'vue';
+import {
+  fetchCustomerGroups,
+  createCustomerGroup,
+  updateCustomerGroup,
+  deleteCustomerGroup
+} from '@/services/admin/customerGroups';
 
-const groups = ref([
-  {
-    id: 1,
-    name: 'Distribuitori naționali',
-    type: 'B2B',
-    defaultDiscount: 12,
-    paymentTermDays: 30,
-    creditLimit: 150000,
-    currency: 'RON',
-    isDefault: true,
-    promotions: ['PROMO-CONSTRUCTII-PRIMAVARA', 'BUNDLE-PROIECTE-MARI'],
-    segmentTags: ['Distribuitori', 'B2B', 'Landing-uri dedicate'],
-    notes: 'Distribuitori naționali de materiale de construcții, cu contracte cadru.'
-  },
-  {
-    id: 2,
-    name: 'Retaileri specializați',
-    type: 'B2B',
-    defaultDiscount: 8,
-    paymentTermDays: 14,
-    creditLimit: 60000,
-    currency: 'RON',
-    isDefault: false,
-    promotions: ['PROMO-OUTLET-FINISAJE'],
-    segmentTags: ['Retail', 'Showroom', 'Cross-sell finisaje'],
-    notes: 'Magazine de bricolaj și showroom-uri regionale.'
-  },
-  {
-    id: 3,
-    name: 'Clienți finali VIP',
-    type: 'B2C',
-    defaultDiscount: 5,
-    paymentTermDays: 0,
-    creditLimit: null,
-    currency: 'RON',
-    isDefault: false,
-    promotions: ['CUPON-LOYALTY-VIP'],
-    segmentTags: ['B2C', 'Frecvent', 'Newsletter premium'],
-    notes: 'Clienți finali cu volum recurent mare și comportament de loialitate ridicat.'
+const loading = ref(false);
+const saving = ref(false);
+const error = ref('');
+const generalError = ref('');
+const groups = ref([]);
+
+const form = ref({
+  id: null,
+  name: '',
+  type: 'b2b',
+  default_discount: 0,
+  payment_terms_days: 0,
+  credit_limit: null
+});
+
+const validationErrors = ref({});
+
+const loadGroups = async () => {
+  loading.value = true;
+  error.value = '';
+
+  try {
+    groups.value = await fetchCustomerGroups();
+  } catch (e) {
+    console.error('Customer groups load error', e);
+    error.value = 'Nu s-au putut încărca grupurile de clienți.';
+  } finally {
+    loading.value = false;
   }
-])
+};
 
-const searchTerm = ref('')
-const typeFilter = ref('')
-const selectedGroup = ref(groups.value[0] || null)
+const resetForm = () => {
+  form.value = {
+    id: null,
+    name: '',
+    type: 'b2b',
+    default_discount: 0,
+    payment_terms_days: 0,
+    credit_limit: null
+  };
+  validationErrors.value = {};
+  generalError.value = '';
+};
 
-const filteredGroups = computed(() => {
-  const term = searchTerm.value.trim().toLowerCase()
+const editGroup = group => {
+  form.value = {
+    id: group.id,
+    name: group.name,
+    type: group.type || 'b2b',
+    default_discount: Number(group.default_discount || 0),
+    payment_terms_days: Number(group.payment_terms_days || 0),
+    credit_limit:
+      group.credit_limit != null ? Number(group.credit_limit) : null
+  };
+  validationErrors.value = {};
+  generalError.value = '';
+};
 
-  return groups.value.filter((group) => {
-    const matchesType = !typeFilter.value || group.type === typeFilter.value
+const submit = async () => {
+  saving.value = true;
+  validationErrors.value = {};
+  generalError.value = '';
 
-    if (!term) {
-      return matchesType
+  const payload = {
+    name: form.value.name,
+    type: form.value.type,
+    default_discount: form.value.default_discount,
+    payment_terms_days: form.value.payment_terms_days,
+    credit_limit: form.value.credit_limit
+  };
+
+  try {
+    if (form.value.id) {
+      const updated = await updateCustomerGroup(form.value.id, payload);
+      const idx = groups.value.findIndex(g => g.id === updated.id);
+      if (idx !== -1) {
+        groups.value[idx] = updated;
+      }
+    } else {
+      const created = await createCustomerGroup(payload);
+      groups.value.push(created);
+      resetForm();
     }
+  } catch (e) {
+    console.error('Customer group save error', e);
+    if (e.response && e.response.status === 422) {
+      validationErrors.value = e.response.data.errors || {};
+    } else {
+      generalError.value =
+        'A apărut o eroare la salvarea grupului de clienți.';
+    }
+  } finally {
+    saving.value = false;
+  }
+};
 
-    const haystack = [
-      group.name,
-      group.notes,
-      group.promotions.join(' '),
-      group.segmentTags.join(' ')
-    ]
-      .join(' ')
-      .toLowerCase()
-
-    const matchesSearch = haystack.includes(term)
-
-    return matchesType && matchesSearch
-  })
-})
-
-const selectGroup = (group) => {
-  selectedGroup.value = group
-}
-
-const formatCommercialTerms = (group) => {
-  const parts = []
-
-  parts.push(`Discount standard ${group.defaultDiscount}%`)
-  parts.push(
-    group.paymentTermDays > 0
-      ? `termen plată ${group.paymentTermDays} zile`
-      : 'fără termen de plată (plată imediată)'
-  )
-
-  if (group.creditLimit) {
-    parts.push(
-      `limită credit ${group.creditLimit.toLocaleString('ro-RO')} ${group.currency}`
-    )
-  } else {
-    parts.push('fără limită de credit setată')
+const confirmDelete = async group => {
+  if (!confirm(`Sigur vrei să ștergi grupul "${group.name}"?`)) {
+    return;
   }
 
-  return parts.join(' · ')
-}
+  try {
+    await deleteCustomerGroup(group.id);
+    groups.value = groups.value.filter(g => g.id !== group.id);
+    if (form.value.id === group.id) {
+      resetForm();
+    }
+  } catch (e) {
+    console.error('Customer group delete error', e);
+    alert('Nu s-a putut șterge grupul (vezi dacă are clienți asociați).');
+  }
+};
 
-const onCreateGroup = () => {
-  window.alert(
-    'Demo: aici s-ar deschide un formular pentru a crea un grup nou de clienți, cu condiții comerciale implicite și promoții asociate.'
-  )
-}
+onMounted(loadGroups);
 </script>

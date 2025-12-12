@@ -1,154 +1,206 @@
 <template>
-  <div>
-    <!-- Banner pentru modul de lucru în numele unui client -->
-    <div
-      v-if="authStore.impersonatedCustomer"
-      class="bg-warning text-dark py-1 small"
-    >
-      <div class="container d-flex justify-content-between align-items-center">
-        <div>
-          Lucrezi în numele clientului
-          <strong>{{ authStore.impersonatedCustomer.name }}</strong>
-          <span v-if="authStore.impersonatedCustomer.clientType" class="ms-1">
-            ({{ authStore.impersonatedCustomer.clientType }})
-          </span>
-        </div>
-        <button
-          type="button"
-          class="btn btn-sm btn-outline-dark"
-          @click="handleStopImpersonation"
-        >
-          Ieși din modul client
-        </button>
-      </div>
-    </div>
-
-    <header class="border-bottom bg-white">
-      <nav class="navbar navbar-expand-lg navbar-light">
-        <div class="container">
-          <RouterLink class="navbar-brand fw-semibold" :to="{ name: 'home' }">
-            B2B/B2C Demo
-          </RouterLink>
-
-          <button
-            class="navbar-toggler"
-            type="button"
-            data-bs-toggle="collapse"
-            data-bs-target="#frontNavbar"
-            aria-controls="frontNavbar"
-            aria-expanded="false"
-            aria-label="Toggle navigation"
+  <div class="front-layout d-flex flex-column min-vh-100 bg-light">
+    <!-- HEADER -->
+    <header class="bg-white border-bottom">
+      <div class="container py-2 d-flex align-items-center justify-content-between gap-3">
+        <!-- Brand -->
+        <div class="d-flex align-items-center gap-2">
+          <div
+            class="rounded-circle d-flex align-items-center justify-content-center"
+            style="width: 36px; height: 36px; background: #111827; color: #ffffff; font-weight: 600;"
           >
-            <span class="navbar-toggler-icon"></span>
-          </button>
-
-          <div class="collapse navbar-collapse" id="frontNavbar">
-            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-              <li class="nav-item">
-                <RouterLink class="nav-link" :to="{ name: 'home' }">
-                  Acasă
-                </RouterLink>
-              </li>
-              <!-- Link-uri front folosind path-uri simple, pentru a evita erori de nume de rută inexistente -->
-              <li class="nav-item">
-                <RouterLink class="nav-link" to="/promotii">
-                  Promoții
-                </RouterLink>
-              </li>
-              <li class="nav-item">
-                <RouterLink class="nav-link" to="/noutati">
-                  Noutăți
-                </RouterLink>
-              </li>
-            </ul>
-
-            <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
-              <li class="nav-item me-2" v-if="authStore.user">
-                <RouterLink
-                  class="btn btn-outline-secondary btn-sm"
-                  :to="{ name: 'account-dashboard' }"
-                >
-                  Contul meu
-                </RouterLink>
-              </li>
-              <li class="nav-item" v-if="!authStore.user">
-                <RouterLink
-                  class="btn btn-outline-primary btn-sm me-2"
-                  :to="{ name: 'login' }"
-                >
-                  Autentificare
-                </RouterLink>
-                <RouterLink
-                  class="btn btn-primary btn-sm"
-                  :to="{ name: 'register' }"
-                >
-                  Creează cont
-                </RouterLink>
-              </li>
-              <li class="nav-item d-flex align-items-center" v-else>
-                <span class="me-2 small text-muted">
-                  Logat ca: <strong>{{ authStore.user.name }}</strong>
-                </span>
-                <button
-                  type="button"
-                  class="btn btn-outline-secondary btn-sm"
-                  @click="handleLogout"
-                >
-                  Delogare
-                </button>
-              </li>
-            </ul>
+            MB
+          </div>
+          <div class="d-flex flex-column lh-1">
+            <span class="small text-muted">B2B materiale profesionale</span>
+            <span class="fw-semibold">MB2B</span>
           </div>
         </div>
-      </nav>
+
+        <!-- Catalog + search (desktop) -->
+        <div class="d-none d-lg-flex align-items-center flex-grow-1 gap-2">
+          <button
+            type="button"
+            class="btn btn-outline-secondary btn-sm d-flex align-items-center gap-1"
+            @click="openCatalog"
+          >
+            <span style="font-size: 1.1rem;">☰</span>
+            <span>Catalog</span>
+          </button>
+
+          <div class="flex-grow-1 position-relative">
+            <input
+              v-model="searchQuery"
+              type="text"
+              class="form-control form-control-sm ps-3"
+              placeholder="Căutați produs, SKU sau categorie…"
+              @keyup.enter="goToSearch"
+            />
+            <button
+              type="button"
+              class="btn btn-link btn-sm position-absolute top-50 end-0 translate-middle-y me-1 text-muted"
+              @click="goToSearch"
+            >
+              🔍
+            </button>
+          </div>
+
+          <div class="d-flex align-items-center gap-2">
+            <button type="button" class="btn btn-light btn-sm">
+              RON
+            </button>
+            <div class="form-check form-switch mb-0">
+              <input
+                class="form-check-input"
+                type="checkbox"
+                id="tvaSwitch"
+                v-model="showVat"
+              />
+              <label class="form-check-label small" for="tvaSwitch">
+                TVA
+              </label>
+            </div>
+            <RouterLink
+              :to="{ name: 'become-partner' }"
+              class="btn btn-outline-secondary btn-sm d-none d-xl-inline-flex"
+            >
+              RFQ
+            </RouterLink>
+          </div>
+        </div>
+
+        <!-- Right: portal + coș -->
+        <div class="d-flex align-items-center gap-2">
+          <RouterLink
+            :to="accountLink"
+            class="btn btn-outline-secondary btn-sm"
+          >
+            Portal
+          </RouterLink>
+          <RouterLink
+            :to="{ name: 'cart' }"
+            class="btn btn-dark btn-sm d-flex align-items-center gap-1"
+          >
+            <span>🛒</span>
+            <span>Coș</span>
+          </RouterLink>
+        </div>
+      </div>
+
+      <!-- Bara de navigație secundară -->
+      <div class="border-top bg-light small">
+        <div class="container py-1 d-flex flex-wrap align-items-center gap-2">
+          <span class="text-muted me-2">NAVIGAȚIE</span>
+
+          <RouterLink
+            :to="{ name: 'static-page', params: { slug: 'despre-noi' } }"
+            class="btn btn-outline-secondary btn-sm rounded-pill px-3 py-1"
+          >
+            Despre
+          </RouterLink>
+          <RouterLink
+            :to="{ name: 'static-page', params: { slug: 'contact' } }"
+            class="btn btn-outline-secondary btn-sm rounded-pill px-3 py-1"
+          >
+            Contact
+          </RouterLink>
+          <RouterLink
+            :to="{ name: 'blog-list' }"
+            class="btn btn-outline-secondary btn-sm rounded-pill px-3 py-1"
+          >
+            Blog
+          </RouterLink>
+
+          <div class="ms-auto text-muted d-none d-md-block">
+            Suport clienți: 09–18
+          </div>
+        </div>
+      </div>
     </header>
 
-    <main>
+    <!-- CONȚINUT -->
+    <main class="flex-grow-1">
       <RouterView />
     </main>
 
-    <footer class="border-top bg-white py-4 mt-5">
-      <div class="container">
-        <div class="row">
-          <div class="col-md-6 small text-muted">
-            &copy; {{ new Date().getFullYear() }} B2B/B2C Demo – Template e-commerce.
-          </div>
-          <div class="col-md-6 text-md-end small">
-            <!-- Link-uri informative simple pe path-uri, pentru a nu depinde de nume de rută -->
-            <RouterLink class="text-muted me-3" to="/despre-noi">
-              Despre noi
-            </RouterLink>
-            <RouterLink class="text-muted me-3" to="/termeni-conditii">
-              Termeni & condiții
-            </RouterLink>
-            <RouterLink class="text-muted" to="/gdpr">
-              GDPR
-            </RouterLink>
-          </div>
+    <!-- FOOTER -->
+    <footer class="border-top bg-white small text-muted py-3 mt-4">
+      <div class="container d-flex flex-wrap justify-content-between gap-2">
+        <div>
+          &copy; {{ currentYear }} MB2B – demo B2B/B2C e-commerce.
+        </div>
+        <div class="d-flex gap-3">
+          <RouterLink
+            :to="{ name: 'static-page', params: { slug: 'termeni-conditii' } }"
+          >
+            Termeni &amp; condiții
+          </RouterLink>
+          <RouterLink
+            :to="{ name: 'static-page', params: { slug: 'gdpr' } }"
+          >
+            GDPR
+          </RouterLink>
         </div>
       </div>
     </footer>
+
+    <!-- Catalog overlay -->
+    <CategoryMegaModal
+      v-if="showCatalog"
+      @close="showCatalog = false"
+    />
   </div>
 </template>
 
 <script setup>
-import { useRouter } from 'vue-router'
-import { useAuthStore } from '@/store/auth'
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
+import { useRouter } from 'vue-router';
+import { useAuthStore } from '@/store/auth';
+import CategoryMegaModal from '@/components/catalog/CategoryMegaModal.vue';
 
-const router = useRouter()
-const authStore = useAuthStore()
+const router = useRouter();
+const authStore = useAuthStore();
 
-const handleStopImpersonation = () => {
-  if (authStore.stopImpersonation) {
-    authStore.stopImpersonation()
-  }
-  router.push({ name: 'home' })
-}
+const showCatalog = ref(false);
+const searchQuery = ref('');
+const showVat = ref(true);
 
-const handleLogout = () => {
-  if (authStore.logout) {
-    authStore.logout()
-  }
-  router.push({ name: 'home' })
-}
+const currentYear = new Date().getFullYear();
+
+const accountLink = computed(() => {
+  return authStore.isAuthenticated
+    ? { name: 'account-dashboard' }
+    : { name: 'login', query: { redirect: '/cont' } };
+});
+
+const openCatalog = () => {
+  showCatalog.value = true;
+};
+
+const goToSearch = () => {
+  if (!searchQuery.value) return;
+  router.push({
+    name: 'search-results',
+    query: { q: searchQuery.value },
+  });
+};
+
+// Permitem și altor componente (ex. Home) să deschidă catalogul
+const handleOpenCatalogEvent = () => {
+  openCatalog();
+};
+
+onMounted(() => {
+  window.addEventListener('mb2b:open-catalog', handleOpenCatalogEvent);
+});
+
+onBeforeUnmount(() => {
+  window.removeEventListener('mb2b:open-catalog', handleOpenCatalogEvent);
+});
 </script>
+
+<style scoped>
+.front-layout {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+</style>

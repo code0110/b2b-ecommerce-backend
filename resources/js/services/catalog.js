@@ -29,3 +29,5 @@ export async function searchProducts(params = {}) {
   const { data } = await api.get('/search', { params });
   return data;
 }
+export const fetchCategoryTree = () =>
+  api.get('/catalog/categories-tree').then((r) => r.data);

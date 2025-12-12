@@ -55,6 +55,8 @@ use App\Http\Controllers\Front\OrderApprovalController;
 use App\Http\Controllers\Front\HomeController;
 use App\Http\Controllers\Front\ShipmentController as FrontShipmentController;
 
+use App\Http\Controllers\Front\CategoryTreeController;
+
 // Auth
 Route::prefix('auth')->group(function () {
     Route::post('login', [AuthController::class, 'login']);
@@ -125,6 +127,8 @@ Route::prefix('cart')->group(function () {
     Route::delete('items/{itemId}', [CartController::class, 'removeItem']);
     Route::delete('/', [CartController::class, 'clear']);
 });
+// Arbore de categorii pentru front (overlay catalog)
+Route::get('catalog/categories-tree', CategoryTreeController::class);
 
 Route::prefix('checkout')->group(function () {
     Route::get('summary', [CheckoutController::class, 'summary'])->middleware('auth:sanctum');

@@ -25,18 +25,22 @@ class Category extends Model
         'is_published' => 'boolean',
     ];
 
-    public function parent(): BelongsTo
+    public function children()
     {
-        return $this->belongsTo(Category::class, 'parent_id');
+        return $this->hasMany(Category::class, 'parent_id')
+            ->orderBy('sort_order')
+            ->orderBy('name');
     }
 
-    public function children(): HasMany
+    public function parent()
     {
-        return $this->hasMany(Category::class, 'parent_id');
+        return $this->belongsTo(Category::class, 'parent_id');
     }
 
     public function products(): BelongsToMany
     {
         return $this->belongsToMany(Product::class);
     }
+
+    
 }

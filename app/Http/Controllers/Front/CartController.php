@@ -8,6 +8,7 @@ use App\Models\CartItem;
 use App\Models\Product;
 use App\Models\ProductVariant;
 use Illuminate\Http\Request;
+use App\Services\Pricing\PromotionPricingService;
 
 class CartController extends Controller
 {
@@ -75,11 +76,20 @@ class CartController extends Controller
     /**
      * GET /api/cart
      */
-    public function show(Request $request)
+    public function show(Request $request, PromotionPricingService $pricing)
     {
-        $cart = $this->resolveCart($request);
+        $cart = $this->resolveCart($request)->load('items.product', 'items.variant');
 
-        return response()->json($this->transformCart($cart));
+        $customer = optional($request->user())->customer;
+        $priced = $pricing->priceCart($cart, $customer);
+
+        return response()->json([
+            'id'        => $cart->id,
+            'items'     => $priced['items'],
+            'subtotal'  => $priced['subtotal'],
+            'discounts' => $priced['discount_total'],
+            'total'     => $priced['total'],
+        ]);
     }
 
     /**

@@ -12,7 +12,7 @@ class SearchController extends Controller
      * GET /api/search?q=...
      * Căutare simplă în produse (nume, cod intern, barcode).
      */
-    public function index(Request $request)
+    public function search(Request $request)
     {
         $q = trim((string) $request->query('q', ''));
         $page = (int) $request->query('page', 1);

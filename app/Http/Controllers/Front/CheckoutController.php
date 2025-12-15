@@ -12,22 +12,37 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use App\Notifications\OrderPlacedNotification;
 use App\Notifications\CreditBlockedNotification;
+use App\Services\Pricing\PromotionPricingService;
 
 class CheckoutController extends Controller
 {
-    public function summary(Request $request)
+    public function summary(Request $request, PromotionPricingService $pricing)
     {
-        /** @var \App\Models\User $user */
         $user = $request->user();
-        $cart = Cart::where('user_id', $user->id)->where('status', 'active')->with('items.product', 'items.variant')->firstOrFail();
+        $customer = $user->customer ?? null;
 
-        $subtotal = $cart->items->sum('total');
-        $shippingMethods = ShippingMethod::where('is_active', true)->get();
+        /** @var Cart $cart */
+        $cart = Cart::where('user_id', $user->id)
+            ->where('status', 'active')
+            ->with('items.product')
+            ->firstOrFail();
+
+        $priced = $pricing->priceCart($cart, $customer);
+
+        // aici poți adăuga taxele și transportul conform regulilor tale
+        $shippingTotal = 0.00; // TODO: calculează în funcție de reguli
+        $taxTotal = 0.00;      // TODO: calculează dacă vrei explicit
+
+        $grandTotal = $priced['total'] + $shippingTotal + $taxTotal;
 
         return response()->json([
-            'cart'             => $cart,
-            'subtotal'         => $subtotal,
-            'shipping_methods' => $shippingMethods,
+            'items'           => $priced['items'],
+            'subtotal'        => $priced['subtotal'],
+            'discount_total'  => $priced['discount_total'],
+            'shipping_total'  => $shippingTotal,
+            'tax_total'       => $taxTotal,
+            'grand_total'     => $grandTotal,
+            // poți include și promoțiile aplicate la nivel de coș dacă extinzi engine-ul
         ]);
     }
 

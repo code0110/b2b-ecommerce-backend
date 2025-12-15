@@ -64,13 +64,87 @@ class CatalogController extends Controller
         ]);
     }
 
-    public function product($slug)
+    public function product(string $slug, Request $request, PromotionPricingService $pricing)
     {
-        $product = Product::where('slug', $slug)
-            ->with(['brand', 'mainCategory', 'images', 'variants', 'attributes.attribute', 'related.relatedProduct'])
-            ->firstOrFail();
+        $customer = optional($request->user())->customer;
 
-        return $product;
+        $product = Product::query()
+    ->where('slug', $slug)
+    ->where('status', 'published')
+    ->with([
+        'brand',
+        'mainCategory',
+        'categories',
+        'images',
+        'variants',
+        'attributes',
+        'documents',
+        'relatedProducts',
+        'complementaryProducts',
+    ])
+    ->firstOrFail();
+
+
+        // pricing principal produs
+        $pricingData = $pricing->calculateProductPrice($product, $customer);
+
+        $productArray = $product->toArray();
+        $productArray['price']            = $pricingData['price'];
+        $productArray['promoPrice']       = $pricingData['promo_price'];
+        $productArray['hasDiscount']      = $pricingData['has_discount'];
+        $productArray['discountPercent']  = $pricingData['discount_percent'];
+        $productArray['appliedPromotion'] = $pricingData['applied_promotion'];
+
+        // formatare minimală pentru relationships (imagini, documente etc.)
+        $productArray['brand'] = $product->brand ? [
+            'id'   => $product->brand->id,
+            'name' => $product->brand->name,
+            'slug' => $product->brand->slug ?? null,
+        ] : null;
+
+        $productArray['category'] = $product->mainCategory ? [
+    'id'   => $product->mainCategory->id,
+    'name' => $product->mainCategory->name,
+    'slug' => $product->mainCategory->slug ?? null,
+] : null;
+
+        $productArray['images'] = $product->images?->map(function ($img) {
+            return [
+                'id'       => $img->id,
+                'url'      => $img->url ?? $img->path ?? null,
+                'is_main'  => (bool) ($img->is_main ?? false),
+                'position' => $img->position ?? 0,
+            ];
+        })->values() ?? [];
+
+        $productArray['documents'] = $product->documents?->map(function ($doc) {
+            return [
+                'id'       => $doc->id,
+                'name'     => $doc->name,
+                'type'     => $doc->type,
+                'url'      => $doc->url ?? null,
+                'is_locked'=> (bool) ($doc->is_locked ?? false),
+            ];
+        })->values() ?? [];
+
+        // produse similare / complementare cu pricing
+        $relatedProducts = $product->relatedProducts
+            ? $product->relatedProducts->map(function (Product $p) use ($pricing, $customer) {
+                return $pricing->formatProductForFrontend($p, $customer);
+            })->values()
+            : [];
+
+        $complementaryProducts = $product->complementaryProducts
+            ? $product->complementaryProducts->map(function (Product $p) use ($pricing, $customer) {
+                return $pricing->formatProductForFrontend($p, $customer);
+            })->values()
+            : [];
+
+        return response()->json([
+            'product'                => $productArray,
+            'related_products'       => $relatedProducts,
+            'complementary_products' => $complementaryProducts,
+        ]);
     }
 
     public function brands()

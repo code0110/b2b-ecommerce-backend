@@ -44,15 +44,8 @@ class User extends Authenticatable
         return $this->hasMany(Order::class, 'placed_by_user_id');
     }
 
-    public function roles()
-{
-    return $this->belongsToMany(\App\Models\Role::class, 'role_user');
-}
 
-public function hasRole(string $code): bool
-{
-    return $this->roles()->where('code', $code)->exists();
-}
+
 
 public function hasAnyRole(array $codes): bool
 {
@@ -85,5 +78,20 @@ public function requiresOrderApproval(): bool
 {
     return (bool) $this->requires_approval;
 }
+
+
+public function roles(): BelongsToMany
+    {
+        return $this->belongsToMany(Role::class, 'role_user');
+    }
+
+    public function hasRole(string|array $roles): bool
+    {
+        $roles = (array) $roles;
+
+        return $this->roles()
+            ->whereIn('slug', $roles)
+            ->exists();
+    }
 
 }

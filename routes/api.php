@@ -42,8 +42,10 @@ use App\Http\Controllers\Front\QuickOrderController;
 use App\Http\Controllers\Admin\QuoteController as AdminQuoteController;
 use App\Http\Controllers\Admin\ErpController;
 use App\Http\Controllers\Admin\ShipmentController;
-use App\Http\Controllers\Admin\RoleController;
-use App\Http\Controllers\Admin\PermissionController;
+use App\Http\Controllers\Admin\UserController as AdminUserController;
+use App\Http\Controllers\Admin\RoleController as AdminRoleController;
+use App\Http\Controllers\Admin\PermissionController as AdminPermissionController;
+
 use App\Http\Controllers\Admin\AuditLogController;
 use App\Http\Controllers\Admin\InvoiceController as AdminInvoiceController;
 use App\Http\Controllers\Front\HomeController;
@@ -271,11 +273,16 @@ Route::prefix('admin')
         // Promotions
         Route::apiResource('promotions', \App\Http\Controllers\Admin\PromotionController::class);
 
-        // Roles
-        Route::apiResource('roles', \App\Http\Controllers\Admin\RoleController::class);
 
-        // Permissions
-        Route::apiResource('permissions', \App\Http\Controllers\Admin\PermissionController::class);
+// Users (admin)
+Route::apiResource('users', AdminUserController::class);
+
+// Roles
+Route::apiResource('roles', AdminRoleController::class);
+
+// Permissions
+Route::apiResource('permissions', AdminPermissionController::class);
+
 
         // Invoices
         Route::apiResource('invoices', \App\Http\Controllers\Admin\InvoiceController::class);

@@ -66,7 +66,7 @@ import AccountLayout from '@/layouts/AccountLayout.vue';
 // sus, lângă celelalte importuri Admin
 import AdminOrdersList from '@/views/admin/orders/OrderList.vue';
 import AdminOrderDetails from '@/views/admin/orders/OrderDetails.vue';
-
+import AdminUsers from '@/views/admin/settings/Users.vue';
 
 import { useAuthStore } from '@/store/auth'
 
@@ -387,6 +387,11 @@ const router = createRouter({
           name: 'admin-collections',
           component: Collections
         },
+        {
+  path: 'settings/users',
+  name: 'admin-users',
+  component: AdminUsers
+},
         {
           path: 'settings/roles-permissions',
           name: 'admin-roles-permissions',

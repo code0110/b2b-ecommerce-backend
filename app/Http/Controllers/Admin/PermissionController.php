@@ -12,51 +12,67 @@ class PermissionController extends Controller
     {
         $query = Permission::query();
 
-        if ($module = $request->get('module')) {
+        if ($module = $request->query('module')) {
             $query->where('module', $module);
         }
 
-        return $query->orderBy('module')->orderBy('code')->get();
+        if ($search = $request->query('search')) {
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('code', 'like', "%{$search}%");
+            });
+        }
+
+        $permissions = $query->orderBy('module')->orderBy('code')->get();
+
+        return response()->json($permissions);
     }
 
     public function store(Request $request)
     {
         $data = $request->validate([
-            'name'        => ['required', 'string', 'max:191'],
-            'code'        => ['required', 'string', 'max:191', 'unique:permissions,code'],
+            'name'        => ['required', 'string', 'max:255'],
+            'code'        => ['required', 'string', 'max:255', 'unique:permissions,code'],
             'module'      => ['nullable', 'string', 'max:100'],
-            'description' => ['nullable', 'string'],
+            'description' => ['nullable', 'string', 'max:255'],
         ]);
 
-        $perm = Permission::create($data);
+        $permission = Permission::create($data);
 
-        return response()->json($perm, 201);
+        return response()->json($permission, 201);
     }
 
     public function show(Permission $permission)
     {
-        return $permission;
+        return response()->json($permission);
     }
 
     public function update(Request $request, Permission $permission)
     {
         $data = $request->validate([
-            'name'        => ['sometimes', 'string', 'max:191'],
-            'code'        => ['sometimes', 'string', 'max:191', 'unique:permissions,code,' . $permission->id],
+            'name'        => ['sometimes', 'required', 'string', 'max:255'],
+            'code'        => ['sometimes', 'required', 'string', 'max:255', "unique:permissions,code,{$permission->id}"],
             'module'      => ['nullable', 'string', 'max:100'],
-            'description' => ['nullable', 'string'],
+            'description' => ['nullable', 'string', 'max:255'],
         ]);
 
-        $permission->update($data);
+        $permission->fill($data);
+        $permission->save();
 
         return response()->json($permission);
     }
 
     public function destroy(Permission $permission)
     {
-        $permission->roles()->detach();
+        // opțional: verifici dacă e folosită în roluri și blochezi.
+        if ($permission->roles()->exists()) {
+            return response()->json([
+                'message' => 'Permisiunea este asociată unor roluri și nu poate fi ștearsă.',
+            ], 422);
+        }
+
         $permission->delete();
 
-        return response()->json(['message' => 'Deleted.']);
+        return response()->json(null, 204);
     }
 }

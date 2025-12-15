@@ -11,21 +11,29 @@ class RoleController extends Controller
 {
     public function index()
     {
-        return Role::with('permissions')->orderBy('name')->get();
+        $roles = Role::with('permissions')->orderBy('id')->get();
+
+        return response()->json(
+            $roles->map(function (Role $role) {
+                return $this->transformRole($role);
+            })
+        );
     }
 
     public function store(Request $request)
     {
         $data = $request->validate([
-            'name'        => ['required', 'string', 'max:191'],
-            'code'        => ['required', 'string', 'max:100', 'unique:roles,code'],
-            'description' => ['nullable', 'string'],
-            'is_system'   => ['boolean'],
-            'permission_ids' => ['nullable', 'array'],
+            'slug'          => ['required', 'string', 'max:255', 'unique:roles,slug'],
+            'name'          => ['required', 'string', 'max:255'],
+            'code'          => ['required', 'string', 'max:255', 'unique:roles,code'],
+            'description'   => ['nullable', 'string', 'max:255'],
+            'is_system'     => ['nullable', 'boolean'],
+            'permission_ids'=> ['nullable', 'array'],
             'permission_ids.*' => ['integer', 'exists:permissions,id'],
         ]);
 
         $role = Role::create([
+            'slug'        => $data['slug'],
             'name'        => $data['name'],
             'code'        => $data['code'],
             'description' => $data['description'] ?? null,
@@ -36,48 +44,81 @@ class RoleController extends Controller
             $role->permissions()->sync($data['permission_ids']);
         }
 
-        return response()->json($role->load('permissions'), 201);
+        return response()->json($this->transformRole($role->fresh('permissions')), 201);
     }
 
     public function show(Role $role)
     {
-        return $role->load('permissions');
+        $role->load('permissions');
+
+        return response()->json($this->transformRole($role));
     }
 
     public function update(Request $request, Role $role)
     {
         $data = $request->validate([
-            'name'        => ['sometimes', 'string', 'max:191'],
-            'code'        => ['sometimes', 'string', 'max:100', 'unique:roles,code,' . $role->id],
-            'description' => ['nullable', 'string'],
-            'is_system'   => ['boolean'],
-            'permission_ids' => ['nullable', 'array'],
+            'slug'          => ['sometimes', 'required', 'string', 'max:255', "unique:roles,slug,{$role->id}"],
+            'name'          => ['sometimes', 'required', 'string', 'max:255'],
+            'code'          => ['sometimes', 'required', 'string', 'max:255', "unique:roles,code,{$role->id}"],
+            'description'   => ['nullable', 'string', 'max:255'],
+            'is_system'     => ['nullable', 'boolean'],
+            'permission_ids'=> ['nullable', 'array'],
             'permission_ids.*' => ['integer', 'exists:permissions,id'],
         ]);
 
-        if ($role->is_system && isset($data['code']) && $data['code'] !== $role->code) {
-            return response()->json(['message' => 'Nu poți modifica codul unui rol de sistem.'], 422);
+        // opțional: blocăm modificarea slug/code pentru rolurile critice
+        if ($role->is_system) {
+            unset($data['slug'], $data['code'], $data['is_system']);
         }
 
-        $role->update($data);
+        $role->fill($data);
+        $role->save();
 
         if (array_key_exists('permission_ids', $data)) {
             $role->permissions()->sync($data['permission_ids'] ?? []);
         }
 
-        return response()->json($role->load('permissions'));
+        return response()->json($this->transformRole($role->fresh('permissions')));
     }
 
     public function destroy(Role $role)
     {
         if ($role->is_system) {
-            return response()->json(['message' => 'Nu poți șterge un rol de sistem.'], 422);
+            return response()->json([
+                'message' => 'Rolurile de sistem nu pot fi șterse.',
+            ], 422);
+        }
+
+        if ($role->users()->exists()) {
+            return response()->json([
+                'message' => 'Rolul are utilizatori alocați și nu poate fi șters.',
+            ], 422);
         }
 
         $role->permissions()->detach();
-        $role->users()->detach();
         $role->delete();
 
-        return response()->json(['message' => 'Deleted.']);
+        return response()->json(null, 204);
+    }
+
+    protected function transformRole(Role $role): array
+    {
+        return [
+            'id'          => $role->id,
+            'slug'        => $role->slug,
+            'name'        => $role->name,
+            'code'        => $role->code,
+            'description' => $role->description,
+            'is_system'   => (bool) $role->is_system,
+            'created_at'  => optional($role->created_at)->toDateTimeString(),
+            'permissions' => $role->permissions->map(function (Permission $p) {
+                return [
+                    'id'    => $p->id,
+                    'name'  => $p->name,
+                    'code'  => $p->code,
+                    'module'=> $p->module,
+                ];
+            })->values(),
+        ];
     }
 }

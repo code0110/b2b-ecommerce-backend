@@ -1,7 +1,17 @@
-// resources/js/services/admin/permissions.js
-import { adminApi } from '@/services/http'
+import { adminApi } from '@/services/http';
 
-export async function fetchPermissions(params = {}) {
-  const { data } = await adminApi.get('/permissions', { params })
-  return data
+export function fetchPermissions(params = {}) {
+  return adminApi.get('/permissions', { params }).then(r => r.data);
+}
+
+export function createPermission(payload) {
+  return adminApi.post('/permissions', payload).then(r => r.data);
+}
+
+export function updatePermission(id, payload) {
+  return adminApi.put(`/permissions/${id}`, payload).then(r => r.data);
+}
+
+export function deletePermission(id) {
+  return adminApi.delete(`/permissions/${id}`);
 }

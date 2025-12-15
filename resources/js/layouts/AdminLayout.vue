@@ -69,6 +69,30 @@
           Încasări
         </RouterLink>
 
+
+        <li class="nav-item">
+  <RouterLink
+    :to="{ name: 'admin-users' }"
+    class="nav-link"
+    active-class="active"
+  >
+    <i class="bi bi-people me-2"></i>
+    <span>Utilizatori</span>
+  </RouterLink>
+</li>
+
+<li class="nav-item">
+  <RouterLink
+    :to="{ name: 'admin-roles-permissions' }"
+    class="nav-link"
+    active-class="active"
+  >
+    <i class="bi bi-shield-lock me-2"></i>
+    <span>Roluri & permisiuni</span>
+  </RouterLink>
+</li>
+
+
         <span class="text-uppercase text-muted mt-3 mb-2">Setări</span>
         <RouterLink class="nav-link text-white" :to="{ name: 'admin-roles-permissions' }">
           Roluri & permisiuni

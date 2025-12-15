@@ -35,17 +35,19 @@ class Product extends Model
     ];
 
     protected $casts = [
-        'list_price' => 'float',
-        'rrp_price' => 'float',
-        'vat_rate' => 'float',
-        'price_override' => 'float',
-        'stock_qty' => 'integer',
-        'supplier_stock_qty' => 'integer',
-        'lead_time_days' => 'integer',
-        'is_new' => 'boolean',
-        'is_promo' => 'boolean',
-        'is_best_seller' => 'boolean',
+        'list_price'          => 'float',
+        'rrp_price'           => 'float',
+        'vat_rate'            => 'float',
+        'price_override'      => 'float',
+        'stock_qty'           => 'integer',
+        'supplier_stock_qty'  => 'integer',
+        'lead_time_days'      => 'integer',
+        'is_new'              => 'boolean',
+        'is_promo'            => 'boolean',
+        'is_best_seller'      => 'boolean',
     ];
+
+    /* ---------- RELAȚII ---------- */
 
     public function mainCategory(): BelongsTo
     {
@@ -77,8 +79,28 @@ class Product extends Model
         return $this->hasMany(AttributeValue::class);
     }
 
-    public function related(): HasMany
+    /**
+     * Produse asociate (relație pivot simplă)
+     * – „similar”, „cross_sell”, „up_sell”
+     */
+    public function relatedProducts(): HasMany
     {
         return $this->hasMany(RelatedProduct::class);
+    }
+
+    /**
+     * Alias pentru compatibilitate dacă undeva în cod se folosește `related()`.
+     */
+    public function related(): HasMany
+    {
+        return $this->relatedProducts();
+    }
+
+    /**
+     * Documente atașate produsului (fișe tehnice, certificate, manuale etc.)
+     */
+    public function documents(): HasMany
+    {
+        return $this->hasMany(ProductDocument::class);
     }
 }

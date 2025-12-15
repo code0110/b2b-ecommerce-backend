@@ -1,179 +1,283 @@
 <template>
-  <div class="container">
-    <PageHeader
-      title="Comenzi recurente"
-      subtitle="Gestionează șabloane de comenzi pe care le poți reutiliza periodic."
-    />
-
-    <div class="row g-3">
-      <div class="col-lg-8">
-        <div class="card shadow-sm">
-          <div class="card-header py-2">
-            <strong>Șabloane disponibile</strong>
-          </div>
-          <div class="card-body small p-0">
-            <div class="table-responsive">
-              <table class="table table-sm align-middle mb-0">
-                <thead class="table-light">
-                  <tr>
-                    <th>Denumire șablon</th>
-                    <th>Descriere</th>
-                    <th class="text-end">Total estimat</th>
-                    <th>Ultima utilizare</th>
-                    <th></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr v-if="templates.length === 0">
-                    <td colspan="5" class="text-center text-muted py-4">
-                      Nu ai definite încă șabloane de comenzi recurente.
-                    </td>
-                  </tr>
-                  <tr
-                    v-for="tpl in templates"
-                    :key="tpl.id"
-                  >
-                    <td class="small">
-                      <div class="fw-semibold">{{ tpl.name }}</div>
-                    </td>
-                    <td class="small text-muted">
-                      {{ tpl.description }}
-                    </td>
-                    <td class="text-end small">
-                      <strong>{{ formatMoney(tpl.totalGross, tpl.currency) }}</strong>
-                    </td>
-                    <td class="small">
-                      {{ formatDate(tpl.lastUsedAt) }}
-                    </td>
-                    <td class="text-end">
-                      <button
-                        type="button"
-                        class="btn btn-outline-secondary btn-sm me-1"
-                        @click="selectedTemplate = tpl"
-                      >
-                        Detalii
-                      </button>
-                      <button
-                        type="button"
-                        class="btn btn-primary btn-sm"
-                        @click="applyTemplateToCart(tpl)"
-                      >
-                        Folosește în coș
-                      </button>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-          <div class="card-footer small text-muted">
-            Șabloanele pot fi generate manual sau pornind de la comenzi existente (ex.: „Salvează
-            comanda ca șablon”). În backend se poate configura și o recurență automată (lunar,
-            săptămânal etc.).
-          </div>
-        </div>
-      </div>
-
-      <div class="col-lg-4">
-        <div v-if="selectedTemplate" class="card shadow-sm mb-3">
-          <div class="card-header py-2">
-            <strong>Detalii șablon</strong>
-          </div>
-          <div class="card-body small">
-            <h6 class="mb-1">{{ selectedTemplate.name }}</h6>
-            <p class="text-muted mb-2">
-              {{ selectedTemplate.description }}
-            </p>
-            <div class="table-responsive mb-2">
-              <table class="table table-sm align-middle mb-0">
-                <thead class="table-light">
-                  <tr>
-                    <th>Produs</th>
-                    <th>Cod</th>
-                    <th class="text-center">Cantitate</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr
-                    v-for="line in selectedTemplate.lines"
-                    :key="line.productId + '-' + line.code"
-                  >
-                    <td class="small">{{ line.name }}</td>
-                    <td class="small text-muted">{{ line.code }}</td>
-                    <td class="text-center small">
-                      {{ line.qty }} {{ line.unit }}
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-            <p class="small text-muted mb-0">
-              În implementarea reală, la aplicarea șablonului se vor verifica automat stocurile și
-              prețurile actuale și, unde este cazul, se vor propune alternative pentru produsele
-              indisponibile.
-            </p>
-          </div>
-        </div>
-
-        <div class="card shadow-sm">
-          <div class="card-body small text-muted">
-            <h6>Utilizare practică</h6>
-            <ul class="mb-0">
-              <li>Recomandat pentru clienți B2B cu comenzi recurente (lunare/săptămânale).</li>
-              <li>Poate fi folosit de agenți pentru a reînnoi rapid comenzile clienților lor.</li>
-              <li>Corelat cu condițiile comerciale și limitele de credit ale clientului.</li>
-            </ul>
-          </div>
-        </div>
-
-        <p v-if="infoMessage" class="small text-muted mt-2 mb-0">
-          {{ infoMessage }}
+  <div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <div>
+        <h1 class="h5 mb-1">Comenzi recurente</h1>
+        <p class="small text-muted mb-0">
+          Salvează liste de produse frecvente și adaugă-le rapid în coș.
         </p>
       </div>
+      <button
+        type="button"
+        class="btn btn-primary btn-sm"
+        @click="startCreate"
+      >
+        Template nou
+      </button>
+    </div>
+
+    <div v-if="error" class="alert alert-danger small mb-3">
+      {{ error }}
+    </div>
+
+    <div v-if="loading" class="text-center py-4">
+      <div class="spinner-border spinner-border-sm" role="status" />
+      <div class="small text-muted mt-2">
+        Se încarcă template-urile...
+      </div>
+    </div>
+
+    <div v-else>
+      <div v-if="templates.length === 0" class="alert alert-info small">
+        Nu există template-uri de comenzi salvate.
+      </div>
+
+      <div v-else class="card shadow-sm mb-3">
+        <div class="table-responsive">
+          <table class="table table-sm align-middle mb-0">
+            <thead>
+              <tr class="small text-muted">
+                <th>Nume template</th>
+                <th>Nr. produse</th>
+                <th>Ultima utilizare</th>
+                <th class="text-end">Acțiuni</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="tpl in templates" :key="tpl.id">
+                <td>{{ tpl.name }}</td>
+                <td>{{ tpl.lines_count ?? (tpl.lines?.length || 0) }}</td>
+                <td>
+                  {{
+                    tpl.last_used_at
+                      ? formatDateTime(tpl.last_used_at)
+                      : 'Niciodată'
+                  }}
+                </td>
+                <td class="text-end">
+                  <div class="btn-group btn-group-sm">
+                    <button
+                      type="button"
+                      class="btn btn-outline-secondary btn-sm"
+                      @click="editTemplate(tpl)"
+                    >
+                      Editează
+                    </button>
+                    <button
+                      type="button"
+                      class="btn btn-outline-primary btn-sm"
+                      @click="addToCart(tpl)"
+                    >
+                      Adaugă în coș
+                    </button>
+                    <button
+                      type="button"
+                      class="btn btn-outline-danger btn-sm"
+                      @click="confirmDelete(tpl)"
+                    >
+                      Șterge
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Formular add/edit template -->
+      <div v-if="editingTemplate" class="card shadow-sm">
+        <div class="card-body small">
+          <div class="d-flex justify-content-between mb-2">
+            <h2 class="h6 mb-0">
+              {{ editingTemplate.id ? 'Editează template' : 'Template nou' }}
+            </h2>
+            <button
+              type="button"
+              class="btn btn-outline-secondary btn-sm"
+              @click="editingTemplate = null"
+            >
+              Renunță
+            </button>
+          </div>
+
+          <form class="vstack gap-3" @submit.prevent="submitTemplate">
+            <div class="row g-2">
+              <div class="col-md-6">
+                <label class="form-label form-label-sm">Nume template</label>
+                <input
+                  v-model="editingTemplate.name"
+                  type="text"
+                  class="form-control form-control-sm"
+                  required
+                />
+              </div>
+              <div class="col-md-6">
+                <label class="form-label form-label-sm">Observații interne</label>
+                <input
+                  v-model="editingTemplate.notes"
+                  type="text"
+                  class="form-control form-control-sm"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label class="form-label form-label-sm">Produse</label>
+              <p class="text-muted small mb-2">
+                Lista de produse este generată din comenzile tale – editarea linilor se poate
+                face în admin sau printr-un ecran dedicat (de implementat separat dacă e
+                nevoie).
+              </p>
+              <ul class="list-unstyled mb-0">
+                <li
+                  v-for="line in editingTemplate.lines || []"
+                  :key="line.id || line.product_id"
+                  class="d-flex justify-content-between align-items-center border rounded p-2 mb-1"
+                >
+                  <div>
+                    {{ line.product_name }}
+                    <span class="text-muted">
+                      ({{ line.product_code }})
+                    </span>
+                  </div>
+                  <div>
+                    x {{ line.quantity }}
+                  </div>
+                </li>
+                <li
+                  v-if="!editingTemplate.lines || editingTemplate.lines.length === 0"
+                  class="text-muted"
+                >
+                  Momentan nu sunt linii afișate (se preiau de regulă dintr-o comandă
+                  existentă).
+                </li>
+              </ul>
+            </div>
+
+            <div class="d-flex justify-content-end">
+              <button
+                type="submit"
+                class="btn btn-primary btn-sm"
+                :disabled="saving"
+              >
+                <span
+                  v-if="saving"
+                  class="spinner-border spinner-border-sm me-1"
+                ></span>
+                Salvează template
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+
     </div>
   </div>
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
-import PageHeader from '@/components/common/PageHeader.vue'
-import { useAccountProfileStore } from '@/store/accountProfile'
-import { useCartStore } from '@/store/cart'
-import { useProductsStore } from '@/store/products'
+import { ref, onMounted } from 'vue';
+import {
+  fetchOrderTemplates,
+  createOrderTemplate,
+  updateOrderTemplate,
+  deleteOrderTemplate,
+  triggerTemplateToCart,
+} from '@/services/account/recurringOrders';
 
-const profileStore = useAccountProfileStore()
-const cartStore = useCartStore()
-const productsStore = useProductsStore()
+const loading = ref(false);
+const saving = ref(false);
+const error = ref('');
 
-const templates = computed(() => profileStore.allTemplates)
-const selectedTemplate = ref(null)
-const infoMessage = ref('')
+const templates = ref([]);
+const editingTemplate = ref(null);
 
-const formatMoney = (value, currency = 'RON') => {
-  const val = Number(value || 0)
-  return val.toLocaleString('ro-RO', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ' + currency
-}
+const formatDateTime = (value) => {
+  if (!value) return '';
+  return new Date(value).toLocaleString('ro-RO');
+};
 
-const formatDate = (iso) => {
-  if (!iso) return '-'
-  const d = new Date(iso)
-  if (Number.isNaN(d.getTime())) return iso
-  return d.toLocaleDateString('ro-RO', { year: 'numeric', month: '2-digit', day: '2-digit' })
-}
+const loadTemplates = async () => {
+  loading.value = true;
+  error.value = '';
 
-const applyTemplateToCart = (tpl) => {
-  if (!tpl || !tpl.lines || !tpl.lines.length) return
+  try {
+    const data = await fetchOrderTemplates();
+    templates.value = data.data ?? data;
+  } catch (e) {
+    console.error(e);
+    error.value =
+      e?.response?.data?.message ||
+      'Nu am putut încărca template-urile.';
+  } finally {
+    loading.value = false;
+  }
+};
 
-  tpl.lines.forEach((line) => {
-    const prod = productsStore.getById(line.productId)
-    if (prod) {
-      cartStore.addItem(prod.id, Number(line.qty || 0))
+const startCreate = () => {
+  editingTemplate.value = {
+    id: null,
+    name: '',
+    notes: '',
+    lines: [],
+  };
+};
+
+const editTemplate = (tpl) => {
+  editingTemplate.value = { ...tpl };
+};
+
+const submitTemplate = async () => {
+  if (!editingTemplate.value) return;
+  saving.value = true;
+  error.value = '';
+
+  try {
+    const payload = { ...editingTemplate.value };
+    if (payload.id) {
+      await updateOrderTemplate(payload.id, payload);
+    } else {
+      await createOrderTemplate(payload);
     }
-  })
+    editingTemplate.value = null;
+    await loadTemplates();
+  } catch (e) {
+    console.error(e);
+    error.value =
+      e?.response?.data?.message ||
+      'Nu am putut salva template-ul.';
+  } finally {
+    saving.value = false;
+  }
+};
 
-  infoMessage.value =
-    'Template: șablonul "' +
-    tpl.name +
-    '" a fost aplicat în coș. În implementarea reală se va crea fie un draft de comandă, fie o comandă programată recurent.'
-}
+const addToCart = async (tpl) => {
+  try {
+    await triggerTemplateToCart(tpl.id);
+    alert(
+      'Produsele din acest template au fost adăugate în coș.'
+    );
+  } catch (e) {
+    console.error(e);
+    error.value =
+      e?.response?.data?.message ||
+      'Nu am putut adăuga în coș.';
+  }
+};
+
+const confirmDelete = async (tpl) => {
+  if (!window.confirm('Sigur dorești să ștergi acest template?')) return;
+  try {
+    await deleteOrderTemplate(tpl.id);
+    await loadTemplates();
+  } catch (e) {
+    console.error(e);
+    error.value =
+      e?.response?.data?.message ||
+      'Nu am putut șterge template-ul.';
+  }
+};
+
+onMounted(loadTemplates);
 </script>

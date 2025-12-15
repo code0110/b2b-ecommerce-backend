@@ -1,141 +1,227 @@
 <template>
   <div class="container py-4">
-    <h2 class="mb-1">Promoții & oferte personalizate</h2>
-    <p class="text-muted mb-3">
-      În această secțiune se afișează promoțiile active pentru clientul curent,
-      ținând cont de tip (B2B/B2C), grupuri de clienți și eventuale oferte dedicate.
-    </p>
-
-    <div class="alert alert-info small" v-if="frontClientType">
+    <div class="d-flex justify-content-between align-items-center mb-3">
       <div>
-        Client activ:
-        <strong>{{ frontCustomerName }}</strong>
-        <span class="badge bg-secondary ms-2">{{ frontClientType }}</span>
-      </div>
-      <div class="mt-1" v-if="isImpersonating">
-        Lucrezi în modul de impersonare – promoțiile afișate sunt cele ale
-        clientului în numele căruia lucrezi.
-      </div>
-      <div class="mt-1 text-muted" v-else>
-        Client autentificat direct în platformă.
+        <h1 class="h5 mb-1">Ofertele mele</h1>
+        <p class="small text-muted mb-0">
+          Cereri de ofertă și oferte comerciale legate de comenzi.
+        </p>
       </div>
     </div>
 
-    <div class="alert alert-warning small" v-else>
-      Nu există un client activ în front. Autentifică-te ca B2B/B2C sau
-      pornește o impersonare din zona de administrare.
+    <div v-if="error" class="alert alert-danger small mb-3">
+      {{ error }}
     </div>
 
-    <div class="row g-3 mt-3">
-      <div class="col-md-6 col-lg-4" v-for="offer in visibleOffers" :key="offer.id">
-        <div class="card h-100 shadow-sm">
-          <div class="card-body d-flex flex-column">
-            <h5 class="card-title mb-1">{{ offer.title }}</h5>
-            <h6 class="card-subtitle mb-2 text-muted small">
-              {{ offer.segmentLabel }}
-            </h6>
-            <p class="card-text small flex-grow-1">
-              {{ offer.description }}
-            </p>
-            <div class="mt-2 small text-muted">
-              Perioadă:
-              <strong>{{ offer.period }}</strong>
+    <div v-if="loading" class="text-center py-4">
+      <div class="spinner-border spinner-border-sm" role="status" />
+      <div class="small text-muted mt-2">
+        Se încarcă ofertele...
+      </div>
+    </div>
+
+    <div v-else>
+      <div v-if="offers.length === 0" class="alert alert-info small">
+        Nu există oferte înregistrate.
+      </div>
+
+      <div v-else class="card shadow-sm">
+        <div class="table-responsive">
+          <table class="table table-sm align-middle mb-0">
+            <thead>
+              <tr class="small text-muted">
+                <th>Nr. ofertă</th>
+                <th>Data</th>
+                <th>Status</th>
+                <th>Comandă asociată</th>
+                <th class="text-end">Valoare</th>
+                <th class="text-end">Acțiuni</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="offer in offers" :key="offer.id">
+                <td>{{ offer.number }}</td>
+                <td>{{ formatDate(offer.created_at) }}</td>
+                <td>
+                  <span class="badge bg-light text-dark border">
+                    {{ offer.status_label || offer.status }}
+                  </span>
+                </td>
+                <td>
+                  <RouterLink
+                    v-if="offer.order_id"
+                    :to="`/cont/comenzi/${offer.order_id}`"
+                    class="text-decoration-none"
+                  >
+                    #{{ offer.order_number || offer.order_id }}
+                  </RouterLink>
+                  <span v-else class="text-muted small">–</span>
+                </td>
+                <td class="text-end">
+                  {{ formatMoney(offer.total) }}
+                </td>
+                <td class="text-end">
+                  <button
+                    type="button"
+                    class="btn btn-outline-secondary btn-sm"
+                    @click="viewOffer(offer)"
+                  >
+                    Detalii
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Modal simplu pentru detalii ofertă -->
+      <div
+        v-if="selectedOffer"
+        class="modal fade show"
+        style="display: block; background-color: rgba(0,0,0,.4);"
+        tabindex="-1"
+        role="dialog"
+      >
+        <div class="modal-dialog modal-lg" role="document">
+          <div class="modal-content">
+            <div class="modal-header py-2">
+              <h5 class="modal-title small">
+                Ofertă #{{ selectedOffer.number }}
+              </h5>
+              <button
+                type="button"
+                class="btn-close"
+                @click="selectedOffer = null"
+              ></button>
             </div>
-            <div class="mt-2">
-              <span
-                v-for="tag in offer.tags"
-                :key="tag"
-                class="badge bg-light text-dark me-1 mb-1"
+            <div class="modal-body small">
+              <p class="mb-1">
+                <strong>Status:</strong>
+                {{ selectedOffer.status_label || selectedOffer.status }}
+              </p>
+              <p class="mb-2">
+                <strong>Data:</strong>
+                {{ formatDate(selectedOffer.created_at) }}
+              </p>
+              <div v-if="selectedOffer.lines && selectedOffer.lines.length">
+                <div class="table-responsive">
+                  <table class="table table-sm align-middle mb-0">
+                    <thead>
+                      <tr class="text-muted">
+                        <th>Produs</th>
+                        <th>Cod</th>
+                        <th class="text-end">Cantitate</th>
+                        <th class="text-end">Preț</th>
+                        <th class="text-end">Total</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr
+                        v-for="line in selectedOffer.lines"
+                        :key="line.id"
+                      >
+                        <td>{{ line.product_name }}</td>
+                        <td>{{ line.product_code }}</td>
+                        <td class="text-end">{{ line.quantity }}</td>
+                        <td class="text-end">
+                          {{ formatMoney(line.unit_price) }}
+                        </td>
+                        <td class="text-end">
+                          {{ formatMoney(line.line_total) }}
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+                <div class="text-end mt-2">
+                  <div>
+                    Subtotal:
+                    <strong>
+                      {{ formatMoney(selectedOffer.subtotal) }}
+                    </strong>
+                  </div>
+                  <div>
+                    Total:
+                    <strong>
+                      {{ formatMoney(selectedOffer.total) }}
+                    </strong>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="modal-footer py-2">
+              <button
+                type="button"
+                class="btn btn-secondary btn-sm"
+                @click="selectedOffer = null"
               >
-                {{ tag }}
-              </span>
+                Închide
+              </button>
             </div>
           </div>
         </div>
       </div>
-      <div v-if="!visibleOffers.length" class="col-12">
-        <div class="alert alert-light border small mb-0">
-          Nu există oferte demo de afișat pentru segmentul curent.
-        </div>
-      </div>
+
+      <!-- backdrop bootstrap-style -->
+      <div
+        v-if="selectedOffer"
+        class="modal-backdrop fade show"
+      ></div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { computed } from 'vue'
-import { useAuthStore } from '@/store/auth'
+import { ref, onMounted } from 'vue';
+import { fetchOffers, fetchOffer } from '@/services/account/offers';
 
-const authStore = useAuthStore()
+const loading = ref(false);
+const error = ref('');
+const offers = ref([]);
+const selectedOffer = ref(null);
 
-const isImpersonating = computed(() => !!authStore.impersonatedCustomer)
+const formatMoney = (value) => {
+  if (!value) value = 0;
+  return Number(value).toLocaleString('ro-RO', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+};
 
-const frontClientType = computed(() => {
-  if (authStore.impersonatedCustomer?.clientType) {
-    return authStore.impersonatedCustomer.clientType
-  }
-  if (authStore.user?.role === 'b2b') return 'B2B'
-  if (authStore.user?.role === 'b2c') return 'B2C'
-  return null
-})
+const formatDate = (value) => {
+  if (!value) return '';
+  return new Date(value).toLocaleDateString('ro-RO');
+};
 
-const frontCustomerName = computed(() => {
-  if (authStore.impersonatedCustomer?.name) {
-    return authStore.impersonatedCustomer.name
-  }
-  if (authStore.user && (authStore.user.role === 'b2b' || authStore.user.role === 'b2c')) {
-    return authStore.user.name
-  }
-  return null
-})
+const loadOffers = async () => {
+  loading.value = true;
+  error.value = '';
 
-const isB2B = computed(() => frontClientType.value === 'B2B')
-const isB2C = computed(() => frontClientType.value === 'B2C')
+  try {
+    const data = await fetchOffers();
+    offers.value = data.data ?? data;
+  } catch (e) {
+    console.error(e);
+    error.value =
+      e?.response?.data?.message ||
+      'Nu am putut încărca ofertele.';
+  } finally {
+    loading.value = false;
+  }
+};
 
-// Demo static offers
-const allOffers = [
-  {
-    id: 1,
-    title: 'Discount volum pentru materiale de construcții',
-    segment: 'B2B',
-    segmentLabel: 'B2B – Distribuitori & Retaileri',
-    description:
-      'Pentru comenzi peste 10.000 RON pe lună, se acordă un discount suplimentar de 3% pe întregul portofoliu de produse eligibile.',
-    period: '01.01 – 31.03',
-    tags: ['discount procentual', 'B2B', 'volum']
-  },
-  {
-    id: 2,
-    title: 'Transport gratuit peste 500 RON',
-    segment: 'ALL',
-    segmentLabel: 'B2B & B2C',
-    description:
-      'Pentru orice comandă cu valoare totală peste 500 RON, transportul este gratuit prin curier partener.',
-    period: 'campanie continuă',
-    tags: ['transport gratuit', 'B2B', 'B2C']
-  },
-  {
-    id: 3,
-    title: 'Pachet promoțional unelte DIY',
-    segment: 'B2C',
-    segmentLabel: 'B2C – Clienți finali',
-    description:
-      'La achiziția a oricăror 3 produse din gama DIY, primești 15% discount pe produsul cu valoarea cea mai mică.',
-    period: '15.02 – 15.04',
-    tags: ['pachet promoțional', 'B2C']
+const viewOffer = async (offer) => {
+  try {
+    const data = await fetchOffer(offer.id);
+    selectedOffer.value = data.offer ?? data;
+  } catch (e) {
+    console.error(e);
+    error.value =
+      e?.response?.data?.message ||
+      'Nu am putut încărca detaliile ofertei.';
   }
-]
+};
 
-const visibleOffers = computed(() => {
-  if (!frontClientType.value) {
-    return []
-  }
-  if (isB2B.value) {
-    return allOffers.filter(o => o.segment === 'B2B' || o.segment === 'ALL')
-  }
-  if (isB2C.value) {
-    return allOffers.filter(o => o.segment === 'B2C' || o.segment === 'ALL')
-  }
-  return allOffers.filter(o => o.segment === 'ALL')
-})
+onMounted(loadOffers);
 </script>

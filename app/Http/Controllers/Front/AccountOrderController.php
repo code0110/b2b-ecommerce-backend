@@ -8,64 +8,38 @@ use Illuminate\Http\Request;
 
 class AccountOrderController extends Controller
 {
-    /**
-     * Listă comenzi pentru un client (B2B/B2C).
-     *
-     * Pentru simplificare în dev, primim user_id din query.
-     * În producție, îl vei lua din $request->user().
-     */
     public function index(Request $request)
     {
-        $userId = (int) $request->input('user_id');
+        $user = $request->user();
+        $customer = $user->customer;
 
-        if (!$userId) {
-            return response()->json([
-                'message' => 'user_id este obligatoriu pentru această rută (dev mode).',
-            ], 400);
-        }
-
-        $query = Order::query()
-            ->where('placed_by_user_id', $userId)
+        $query = Order::with(['items.product', 'shippingMethod'])
+            ->where('customer_id', $customer?->id)
             ->orderByDesc('created_at');
 
-        // filtre opționale
-        if ($status = $request->input('status')) {
+        if ($status = $request->get('status')) {
             $query->where('status', $status);
         }
 
-        if ($paymentStatus = $request->input('payment_status')) {
-            $query->where('payment_status', $paymentStatus);
-        }
-
-        $perPage = min((int) $request->input('per_page', 20), 100);
-
-        $orders = $query->paginate($perPage);
+        $orders = $query->paginate(10);
 
         return response()->json($orders);
     }
 
-    /**
-     * Detaliu de comandă pentru un client.
-     */
-    public function show(int $id, Request $request)
+    public function show(Request $request, Order $order)
     {
-        $userId = (int) $request->input('user_id');
+        $user = $request->user();
+        $customer = $user->customer;
 
-        if (!$userId) {
-            return response()->json([
-                'message' => 'user_id este obligatoriu pentru această rută (dev mode).',
-            ], 400);
+        if ($order->customer_id !== $customer?->id) {
+            abort(403);
         }
 
-        $order = Order::query()
-            ->with([
-                'items.product',
-                'invoices',
-                'shipments',
-            ])
-            ->where('id', $id)
-            ->where('user_id', $userId)
-            ->firstOrFail();
+        $order->load([
+            'items.product',
+            'items.variant',
+            'shippingMethod',
+        ]);
 
         return response()->json($order);
     }

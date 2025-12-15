@@ -22,16 +22,11 @@ class Invoice extends Model
         'total',
         'currency',
         'pdf_url',
-        'meta',
     ];
 
     protected $casts = [
         'issue_date' => 'date',
         'due_date'   => 'date',
-        'subtotal'   => 'float',
-        'tax_total'  => 'float',
-        'total'      => 'float',
-        'meta'       => 'array',
     ];
 
     public function customer(): BelongsTo

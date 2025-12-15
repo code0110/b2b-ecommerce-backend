@@ -38,29 +38,33 @@ use App\Http\Controllers\Front\BlogController as FrontBlogController;
 use App\Http\Controllers\Front\SearchController;
 use App\Http\Controllers\Front\ProductToolsController;
 use App\Http\Controllers\Front\QuickOrderController;
-use App\Http\Controllers\Front\OrderTemplateController;
 
-use App\Http\Controllers\Front\NotificationController;
-
-use App\Http\Controllers\Front\QuoteController;
 use App\Http\Controllers\Admin\QuoteController as AdminQuoteController;
 use App\Http\Controllers\Admin\ErpController;
 use App\Http\Controllers\Admin\ShipmentController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\PermissionController;
 use App\Http\Controllers\Admin\AuditLogController;
-use App\Http\Controllers\Front\InvoiceController as FrontInvoiceController;
 use App\Http\Controllers\Admin\InvoiceController as AdminInvoiceController;
-use App\Http\Controllers\Front\CompanyUserController;
-use App\Http\Controllers\Front\OrderApprovalController;
 use App\Http\Controllers\Front\HomeController;
-use App\Http\Controllers\Front\ShipmentController as FrontShipmentController;
 
 use App\Http\Controllers\Front\CategoryTreeController;
 use App\Http\Controllers\Front\CatalogCategoryController;
 use App\Http\Controllers\Front\PromotionController as FrontPromotionController;
 use App\Http\Controllers\Front\CatalogHighlightController;
 use App\Http\Controllers\Front\AccountOrderController;
+
+
+use App\Http\Controllers\Front\AccountDashboardController;
+use App\Http\Controllers\Front\AddressController as AccountAddressController;
+use App\Http\Controllers\Front\OrderTemplateController;
+use App\Http\Controllers\Front\CompanyUserController;
+use App\Http\Controllers\Front\OrderApprovalController;
+use App\Http\Controllers\Front\ShipmentController as FrontShipmentController;
+use App\Http\Controllers\Front\InvoiceController as FrontInvoiceController;
+use App\Http\Controllers\Front\NotificationController;
+use App\Http\Controllers\Front\QuoteController;
+
 
 // Auth
 Route::prefix('auth')->group(function () {
@@ -157,9 +161,48 @@ Route::prefix('checkout')->group(function () {
 Route::middleware('auth:sanctum')->group(function () {
 
     Route::prefix('account')->group(function () {
-    Route::get('orders', [AccountOrderController::class, 'index']);
-    Route::get('orders/{order}', [AccountOrderController::class, 'show']);
-});
+        // Dashboard cont
+        Route::get('dashboard', [AccountDashboardController::class, 'overview']);
+
+        // Comenzi (cont client)
+        Route::get('orders', [AccountOrderController::class, 'index']);
+        Route::get('orders/{order}', [AccountOrderController::class, 'show']);
+
+        // Adrese
+        Route::get('addresses', [AccountAddressController::class, 'index']);
+        Route::post('addresses', [AccountAddressController::class, 'store']);
+        Route::put('addresses/{address}', [AccountAddressController::class, 'update']);
+        Route::delete('addresses/{address}', [AccountAddressController::class, 'destroy']);
+
+        // Facturi (alias pentru FrontInvoiceController)
+        Route::get('invoices', [FrontInvoiceController::class, 'index']);
+        Route::get('invoices/{invoice}', [FrontInvoiceController::class, 'show']);
+
+        // Notificări
+        Route::get('notifications', [NotificationController::class, 'index']);
+        Route::get('notifications/unread-count', [NotificationController::class, 'unreadCount']);
+        Route::post('notifications/{notification}/read', [NotificationController::class, 'markAsRead']);
+        Route::post('notifications/read-all', [NotificationController::class, 'markAllAsRead']);
+
+        // Oferte (quotes) – tab-ul de “Oferte” din cont
+        Route::get('offers', [QuoteController::class, 'index']);
+        Route::get('offers/{quoteRequest}', [QuoteController::class, 'show']);
+
+        // Comenzi recurente / template-uri de comenzi
+        Route::get('order-templates', [OrderTemplateController::class, 'index']);
+        Route::get('order-templates/{orderTemplate}', [OrderTemplateController::class, 'show']);
+        Route::post('order-templates', [OrderTemplateController::class, 'store']);
+        Route::put('order-templates/{orderTemplate}', [OrderTemplateController::class, 'update']);
+        Route::delete('order-templates/{orderTemplate}', [OrderTemplateController::class, 'destroy']);
+        Route::post('order-templates/{orderTemplate}/add-to-cart', [OrderTemplateController::class, 'addToCart']);
+
+        // Utilizatori companie (multi-user B2B)
+        Route::get('company-users', [CompanyUserController::class, 'index']);
+        Route::post('company-users', [CompanyUserController::class, 'store']);
+        Route::put('company-users/{user}', [CompanyUserController::class, 'update']);
+        Route::delete('company-users/{user}', [CompanyUserController::class, 'destroy']);
+    });
+
     Route::get('orders', [OrderController::class, 'index']);
     Route::get('orders/{id}', [OrderController::class, 'show']);
     Route::post('orders/{id}/reorder', [OrderController::class, 'reorder']);
@@ -237,6 +280,18 @@ Route::prefix('admin')
         // Invoices
         Route::apiResource('invoices', \App\Http\Controllers\Admin\InvoiceController::class);
 
+        // Tickets
+Route::apiResource('tickets', AdminTicketController::class)->only(['index', 'show', 'update']);
+
+// Sales representatives
+Route::apiResource('sales-representatives', AdminSalesRepController::class);
+
+// Partner requests
+Route::apiResource('partner-requests', AdminPartnerRequestController::class)->only(['index', 'show', 'update']);
+
+// Payments
+Route::apiResource('payments', AdminPaymentController::class)->only(['index', 'show', 'store', 'update']);
+
         // Quotes / oferte
         Route::apiResource('quotes', \App\Http\Controllers\Admin\QuoteController::class)->only(['index', 'show', 'update']);
         Route::post('quotes/{quoteRequest}/convert-to-order', [\App\Http\Controllers\Admin\QuoteController::class, 'convertToOrder']);
@@ -266,20 +321,12 @@ Route::prefix('admin')
         Route::put('orders/{order}', [AdminOrderController::class, 'update']);
         Route::post('orders/{order}/status', [AdminOrderController::class, 'updateStatus']);
         Route::post('orders/{order}/payment-status', [AdminOrderController::class, 'updatePaymentStatus']);
+
+
     });
 
 
-    // Tickets
-Route::apiResource('tickets', AdminTicketController::class)->only(['index', 'show', 'update']);
-
-// Sales representatives
-Route::apiResource('sales-representatives', AdminSalesRepController::class);
-
-// Partner requests
-Route::apiResource('partner-requests', AdminPartnerRequestController::class)->only(['index', 'show', 'update']);
-
-// Payments
-Route::apiResource('payments', AdminPaymentController::class)->only(['index', 'show', 'store', 'update']);
+    
 
 // Blog
 Route::apiResource('blog-posts', AdminBlogController::class);

@@ -14,10 +14,6 @@ class OrderTemplateItem extends Model
         'quantity',
     ];
 
-    protected $casts = [
-        'quantity' => 'float',
-    ];
-
     public function template(): BelongsTo
     {
         return $this->belongsTo(OrderTemplate::class, 'order_template_id');
@@ -26,5 +22,10 @@ class OrderTemplateItem extends Model
     public function product(): BelongsTo
     {
         return $this->belongsTo(Product::class);
+    }
+
+    public function variant(): BelongsTo
+    {
+        return $this->belongsTo(ProductVariant::class, 'product_variant_id');
     }
 }

@@ -27,6 +27,8 @@ import BlogPost from '@/views/front/content/BlogPost.vue'
 import StaticPage from '@/views/front/content/StaticPage.vue'
 import BecomePartner from '@/views/front/BecomePartner.vue'
 
+
+
 // Account
 import AccountDashboard from '@/views/account/AccountDashboard.vue'
 import Orders from '@/views/account/Orders.vue'

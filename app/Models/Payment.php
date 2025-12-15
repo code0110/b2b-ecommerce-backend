@@ -22,7 +22,6 @@ class Payment extends Model
     ];
 
     protected $casts = [
-        'amount'       => 'float',
         'payment_date' => 'datetime',
     ];
 

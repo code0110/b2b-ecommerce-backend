@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Front;
 
 use App\Http\Controllers\Controller;
+use App\Models\Order;
 use App\Models\Shipment;
 use Illuminate\Http\Request;
 
@@ -10,39 +11,28 @@ class ShipmentController extends Controller
 {
     public function index(Request $request)
     {
-        $user = $request->user();
+        $customer = $request->user()->customer;
 
-        $query = Shipment::with('order')
-            ->whereHas('order', function ($q) use ($user) {
-                $q->where('customer_id', $user->customer_id);
-            });
+        $shipments = Shipment::with('order')
+            ->whereHas('order', function ($q) use ($customer) {
+                $q->where('customer_id', $customer?->id);
+            })
+            ->orderByDesc('created_at')
+            ->paginate(10);
 
-        if ($orderId = $request->get('order_id')) {
-            $query->where('order_id', $orderId);
-        }
-
-        if ($courier = $request->get('courier')) {
-            $query->where('courier', $courier);
-        }
-
-        if ($status = $request->get('status')) {
-            $query->where('status', $status);
-        }
-
-        return $query->orderByDesc('created_at')->paginate(20);
+        return response()->json($shipments);
     }
 
-    public function show($id, Request $request)
+    public function show(Request $request, Shipment $shipment)
     {
-        $user = $request->user();
+        $customer = $request->user()->customer;
 
-        $shipment = Shipment::with('order')
-            ->where('id', $id)
-            ->whereHas('order', function ($q) use ($user) {
-                $q->where('customer_id', $user->customer_id);
-            })
-            ->firstOrFail();
+        $shipment->load('order');
 
-        return $shipment;
+        if ($shipment->order->customer_id !== $customer?->id) {
+            abort(403);
+        }
+
+        return response()->json($shipment);
     }
 }

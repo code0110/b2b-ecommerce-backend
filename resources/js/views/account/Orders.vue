@@ -1,321 +1,298 @@
 <template>
-  <div class="account-orders py-3">
-    <div class="d-flex justify-content-between align-items-center mb-3">
+  <div class="container py-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-3">
       <div>
         <h1 class="h5 mb-1">Comenzile mele</h1>
-        <p class="text-muted small mb-0">
-          Vezi istoricul comenzilor plasate în platformă.
+        <p class="small text-muted mb-0">
+          Vezi istoricul comenzilor și plasează din nou comenzi frecvente.
         </p>
       </div>
     </div>
 
-    <!-- Filtre simple -->
     <div class="card mb-3">
-      <div class="card-body py-2">
-        <div class="row g-2 align-items-end">
+      <div class="card-body small">
+        <form class="row g-2" @submit.prevent="reload">
           <div class="col-md-3">
-            <label class="small text-muted mb-1">Status comandă</label>
+            <label class="form-label form-label-sm">Nr. comandă</label>
+            <input
+              v-model="filters.number"
+              type="text"
+              class="form-control form-control-sm"
+            />
+          </div>
+          <div class="col-md-3">
+            <label class="form-label form-label-sm">Status</label>
             <select
               v-model="filters.status"
               class="form-select form-select-sm"
-              @change="reload"
             >
-              <option value="">Toate</option>
-              <option value="pending">În așteptare</option>
+              <option value="">Toate statusurile</option>
+              <option value="new">Nouă</option>
               <option value="processing">În procesare</option>
+              <option value="shipped">Expediată</option>
               <option value="completed">Finalizată</option>
               <option value="cancelled">Anulată</option>
             </select>
           </div>
           <div class="col-md-3">
-            <label class="small text-muted mb-1">Status plată</label>
-            <select
-              v-model="filters.payment_status"
-              class="form-select form-select-sm"
-              @change="reload"
-            >
-              <option value="">Toate</option>
-              <option value="pending">În așteptare</option>
-              <option value="paid">Plătită</option>
-              <option value="failed">Eșuată</option>
-              <option value="cancelled">Anulată</option>
-            </select>
-          </div>
-          <div class="col-md-3">
-            <label class="small text-muted mb-1">Nr. comandă / referință</label>
+            <label class="form-label form-label-sm">De la</label>
             <input
-              v-model="filters.search"
-              type="text"
+              v-model="filters.from"
+              type="date"
               class="form-control form-control-sm"
-              placeholder="Caută în număr / referință"
-              @keyup.enter="reload"
             />
           </div>
-          <div class="col-md-3 d-flex justify-content-md-end gap-2">
-            <button
-              type="button"
-              class="btn btn-outline-secondary btn-sm"
-              @click="reload"
-            >
-              Aplică filtre
-            </button>
-            <button
-              v-if="hasActiveFilters"
-              type="button"
-              class="btn btn-link btn-sm text-decoration-none"
-              @click="resetFilters"
-            >
-              Resetează
-            </button>
+          <div class="col-md-3">
+            <label class="form-label form-label-sm">Până la</label>
+            <div class="input-group input-group-sm">
+              <input
+                v-model="filters.to"
+                type="date"
+                class="form-control form-control-sm"
+              />
+              <button class="btn btn-primary btn-sm" type="submit">
+                Filtrează
+              </button>
+            </div>
           </div>
+        </form>
+      </div>
+    </div>
+
+    <div v-if="error" class="alert alert-danger small mb-3">
+      {{ error }}
+    </div>
+
+    <div v-if="loading" class="text-center py-4">
+      <div class="spinner-border spinner-border-sm" role="status" />
+      <div class="small text-muted mt-2">
+        Se încarcă comenzile...
+      </div>
+    </div>
+
+    <div v-else>
+      <div v-if="orders.length === 0" class="alert alert-info small">
+        Nu ai comenzi pentru filtrarea selectată.
+      </div>
+
+      <div v-else class="card shadow-sm">
+        <div class="table-responsive">
+          <table class="table table-sm align-middle mb-0">
+            <thead>
+              <tr class="small text-muted">
+                <th>Nr. comandă</th>
+                <th>Data</th>
+                <th>Status</th>
+                <th>Plată</th>
+                <th class="text-end">Total</th>
+                <th class="text-end">Acțiuni</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="order in orders" :key="order.id">
+                <td>{{ order.number }}</td>
+                <td>{{ formatDate(order.created_at) }}</td>
+                <td>
+                  <span class="badge bg-light text-dark border">
+                    {{ order.status_label || order.status }}
+                  </span>
+                </td>
+                <td>
+                  <span class="badge bg-light text-dark border">
+                    {{ order.payment_status_label || order.payment_status }}
+                  </span>
+                </td>
+                <td class="text-end">
+                  {{ formatMoney(order.total) }}
+                </td>
+                <td class="text-end">
+                  <div class="btn-group btn-group-sm">
+                    <RouterLink
+                      :to="`/cont/comenzi/${order.id}`"
+                      class="btn btn-outline-secondary btn-sm"
+                    >
+                      Detalii
+                    </RouterLink>
+                    <button
+                      type="button"
+                      class="btn btn-outline-primary btn-sm"
+                      @click="handleReorder(order)"
+                    >
+                      Comandă din nou
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Paginare simplă -->
+        <div
+          v-if="meta.last_page > 1"
+          class="card-footer py-2"
+        >
+          <nav class="d-flex justify-content-between align-items-center small">
+            <span>
+              Pagina {{ meta.current_page }} din {{ meta.last_page }}
+            </span>
+            <ul class="pagination pagination-sm mb-0">
+              <li
+                class="page-item"
+                :class="{ disabled: meta.current_page <= 1 }"
+              >
+                <button
+                  class="page-link"
+                  type="button"
+                  @click="changePage(meta.current_page - 1)"
+                >
+                  «
+                </button>
+              </li>
+              <li
+                class="page-item"
+                v-for="page in pages"
+                :key="page"
+                :class="{ active: page === meta.current_page }"
+              >
+                <button
+                  class="page-link"
+                  type="button"
+                  @click="changePage(page)"
+                >
+                  {{ page }}
+                </button>
+              </li>
+              <li
+                class="page-item"
+                :class="{ disabled: meta.current_page >= meta.last_page }"
+              >
+                <button
+                  class="page-link"
+                  type="button"
+                  @click="changePage(meta.current_page + 1)"
+                >
+                  »
+                </button>
+              </li>
+            </ul>
+          </nav>
         </div>
       </div>
     </div>
 
-    <!-- Conținut -->
-    <div v-if="loading" class="text-muted small py-3">
-      Se încarcă comenzile...
-    </div>
-    <div v-else-if="error" class="alert alert-danger small py-2">
-      {{ error }}
-    </div>
-
-    <div v-else>
-      <div v-if="orders.data.length" class="table-responsive">
-        <table class="table table-sm align-middle mb-0">
-          <thead>
-            <tr class="small text-muted">
-              <th>Nr. comandă</th>
-              <th>Data</th>
-              <th>Status</th>
-              <th>Status plată</th>
-              <th class="text-end">Total</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr
-              v-for="order in orders.data"
-              :key="order.id"
-              class="small"
-            >
-              <td>
-                {{ displayOrderNumber(order) }}
-              </td>
-              <td>
-                {{ formatDate(order.created_at) }}
-              </td>
-              <td>
-                <span class="badge bg-light text-dark">
-                  {{ order.status || 'nedefinit' }}
-                </span>
-              </td>
-              <td>
-                <span
-                  class="badge"
-                  :class="paymentBadgeClass(order.payment_status)"
-                >
-                  {{ order.payment_status || 'nedefinit' }}
-                </span>
-              </td>
-              <td class="text-end">
-                {{ formatMoney(order.total || order.grand_total || 0) }} RON
-              </td>
-              <td class="text-end">
-                <RouterLink
-                  :to="{
-                    name: 'account-order-details',
-                    params: { id: order.id }
-                  }"
-                  class="btn btn-outline-primary btn-sm"
-                >
-                  Detalii
-                </RouterLink>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      <div v-else class="alert alert-light border small">
-        Nu ai încă nicio comandă înregistrată.
-      </div>
-
-      <!-- Pagination -->
-      <nav
-        v-if="orders.meta && orders.meta.last_page > 1"
-        class="mt-3"
-      >
-        <ul class="pagination pagination-sm mb-0">
-          <li
-            class="page-item"
-            :class="{ disabled: orders.meta.current_page === 1 }"
-          >
-            <button
-              class="page-link"
-              type="button"
-              @click="changePage(orders.meta.current_page - 1)"
-            >
-              «
-            </button>
-          </li>
-
-          <li
-            v-for="page in pages"
-            :key="page"
-            class="page-item"
-            :class="{ active: page === orders.meta.current_page }"
-          >
-            <button
-              class="page-link"
-              type="button"
-              @click="changePage(page)"
-            >
-              {{ page }}
-            </button>
-          </li>
-
-          <li
-            class="page-item"
-            :class="{ disabled: orders.meta.current_page === orders.meta.last_page }"
-          >
-            <button
-              class="page-link"
-              type="button"
-              @click="changePage(orders.meta.current_page + 1)"
-            >
-              »
-            </button>
-          </li>
-        </ul>
-      </nav>
+    <div
+      v-if="reorderMessage"
+      class="alert alert-success alert-dismissible fade show small mt-3"
+      role="alert"
+    >
+      {{ reorderMessage }}
+      <button
+        type="button"
+        class="btn-close btn-close-white"
+        aria-label="Close"
+        @click="reorderMessage = ''"
+      ></button>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted } from 'vue';
-import { useAuthStore } from '@/store/auth';
-import { fetchAccountOrders } from '@/services/account';
-
-const authStore = useAuthStore();
+import { ref, computed, onMounted } from 'vue';
+import { fetchOrders, reorderOrder } from '@/services/account/orders';
 
 const loading = ref(false);
 const error = ref('');
-
-const orders = reactive({
-  data: [],
-  meta: null,
+const orders = ref([]);
+const meta = ref({
+  current_page: 1,
+  last_page: 1,
+  total: 0,
 });
 
-const filters = reactive({
+const filters = ref({
+  number: '',
   status: '',
-  payment_status: '',
-  search: '',
-  page: 1,
+  from: '',
+  to: '',
 });
 
-const hasActiveFilters = computed(() => {
-  return !!(filters.status || filters.payment_status || filters.search);
-});
+const reorderMessage = ref('');
 
 const pages = computed(() => {
-  if (!orders.meta) return [];
-  const total = orders.meta.last_page;
-  const current = orders.meta.current_page;
-  const arr = [];
+  const last = meta.value.last_page || 1;
+  const current = meta.value.current_page || 1;
+  const items = [];
   const start = Math.max(1, current - 2);
-  const end = Math.min(total, current + 2);
-
-  for (let i = start; i <= end; i += 1) {
-    arr.push(i);
-  }
-
-  return arr;
+  const end = Math.min(last, current + 2);
+  for (let p = start; p <= end; p += 1) items.push(p);
+  return items;
 });
 
-const formatDate = (value) => {
-  if (!value) return '';
-  return new Date(value).toLocaleString('ro-RO');
-};
-
 const formatMoney = (value) => {
-  return (Number(value) || 0).toLocaleString('ro-RO', {
+  if (!value) value = 0;
+  return Number(value).toLocaleString('ro-RO', {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   });
 };
 
-const displayOrderNumber = (order) => {
-  return order.number || order.order_number || `#${order.id}`;
-};
-
-const paymentBadgeClass = (status) => {
-  switch (status) {
-    case 'paid':
-      return 'bg-success';
-    case 'failed':
-      return 'bg-danger';
-    case 'pending':
-      return 'bg-warning text-dark';
-    default:
-      return 'bg-light text-dark';
-  }
+const formatDate = (value) => {
+  if (!value) return '';
+  return new Date(value).toLocaleDateString('ro-RO');
 };
 
 const loadOrders = async () => {
-  const userId = authStore.user?.id;
-  if (!userId) {
-    error.value = 'Nu există un utilizator autentificat.';
-    return;
-  }
-
   loading.value = true;
   error.value = '';
 
   try {
-    const data = await fetchAccountOrders(userId, {
-      status: filters.status || undefined,
-      payment_status: filters.payment_status || undefined,
-      page: filters.page,
-      // poți extinde cu search când implementezi filtrul în backend
-    });
+    const params = {
+      page: meta.value.current_page,
+    };
+    if (filters.value.number) params.number = filters.value.number;
+    if (filters.value.status) params.status = filters.value.status;
+    if (filters.value.from) params.from = filters.value.from;
+    if (filters.value.to) params.to = filters.value.to;
 
-    orders.data = data.data || [];
-    orders.meta = data.meta || null;
+    const data = await fetchOrders(params);
+    const source = data.data ?? data;
+
+    orders.value = source.data ?? source;
+    meta.value = source.meta ?? data.meta ?? meta.value;
   } catch (e) {
     console.error(e);
-    error.value = 'Nu s-au putut încărca comenzile.';
+    error.value =
+      e?.response?.data?.message ||
+      'Nu am putut încărca lista de comenzi.';
   } finally {
     loading.value = false;
   }
 };
 
 const reload = () => {
-  filters.page = 1;
-  loadOrders();
-};
-
-const resetFilters = () => {
-  filters.status = '';
-  filters.payment_status = '';
-  filters.search = '';
-  filters.page = 1;
+  meta.value.current_page = 1;
   loadOrders();
 };
 
 const changePage = (page) => {
-  if (!orders.meta) return;
-  if (page < 1 || page > orders.meta.last_page) return;
-  filters.page = page;
+  if (page < 1 || page > meta.value.last_page) return;
+  meta.value.current_page = page;
   loadOrders();
+};
+
+const handleReorder = async (order) => {
+  try {
+    await reorderOrder(order.id);
+    reorderMessage.value =
+      'Produsele din această comandă au fost adăugate în coș.';
+  } catch (e) {
+    console.error(e);
+    error.value =
+      e?.response?.data?.message ||
+      'Nu am putut re-plasa această comandă.';
+  }
 };
 
 onMounted(loadOrders);
 </script>
-
-<style scoped>
-.account-orders {
-  max-width: 1000px;
-}
-</style>

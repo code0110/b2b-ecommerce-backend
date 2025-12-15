@@ -10,32 +10,28 @@ class InvoiceController extends Controller
 {
     public function index(Request $request)
     {
-        $user = $request->user();
+        $customer = $request->user()->customer;
 
-        $query = Invoice::where('customer_id', $user->customer_id);
-
-        if ($type = $request->get('type')) {
-            $query->where('type', $type);
-        }
+        $query = Invoice::where('customer_id', $customer?->id)
+            ->orderByDesc('issue_date');
 
         if ($status = $request->get('status')) {
             $query->where('status', $status);
         }
 
-        $query->orderByDesc('issue_date')->orderByDesc('id');
+        $invoices = $query->paginate(10);
 
-        return $query->paginate(20);
+        return response()->json($invoices);
     }
 
-    public function show($id, Request $request)
+    public function show(Request $request, Invoice $invoice)
     {
-        $user = $request->user();
+        $customer = $request->user()->customer;
 
-        $invoice = Invoice::where('customer_id', $user->customer_id)
-            ->where('id', $id)
-            ->with('order')
-            ->firstOrFail();
+        if ($invoice->customer_id !== $customer?->id) {
+            abort(403);
+        }
 
-        return $invoice;
+        return response()->json($invoice);
     }
 }

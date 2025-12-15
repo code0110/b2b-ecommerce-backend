@@ -1,252 +1,269 @@
 <template>
-  <div class="container">
-    <PageHeader
-      title="Utilizatori companie"
-      subtitle="Administrează utilizatorii asociați contului tău B2B și rolurile acestora."
-    />
+  <div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <div>
+        <h1 class="h5 mb-1">Utilizatori companie</h1>
+        <p class="small text-muted mb-0">
+          Invite și gestionează utilizatori în contul companiei (doar pentru B2B).
+        </p>
+      </div>
+      <button
+        type="button"
+        class="btn btn-primary btn-sm"
+        @click="startInvite"
+      >
+        Invită utilizator nou
+      </button>
+    </div>
 
-    <div class="row g-3">
-      <div class="col-lg-8">
-        <div class="card shadow-sm">
-          <div class="card-header py-2 d-flex justify-content-between align-items-center">
-            <strong>Utilizatori activi</strong>
-            <button
-              type="button"
-              class="btn btn-outline-secondary btn-sm"
-              @click="showInvite = !showInvite"
-            >
-              + Invită utilizator
-            </button>
-          </div>
-          <div class="card-body small">
-            <div class="table-responsive">
-              <table class="table table-sm align-middle mb-0">
-                <thead class="table-light">
-                  <tr>
-                    <th>Nume</th>
-                    <th>Email</th>
-                    <th>Rol intern</th>
-                    <th class="text-center">Trebuie aprobare</th>
-                    <th>Status</th>
-                    <th>Invitat / activat</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr v-if="companyUsers.length === 0">
-                    <td colspan="6" class="text-center text-muted py-4">
-                      Nu există utilizatori definiți pentru această companie.
-                    </td>
-                  </tr>
-                  <tr
-                    v-for="user in companyUsers"
-                    :key="user.id"
-                  >
-                    <td class="small">{{ user.name }}</td>
-                    <td class="small">
-                      <a :href="'mailto:' + user.email">
-                        {{ user.email }}
-                      </a>
-                    </td>
-                    <td class="small">
-                      {{ roleLabel(user.role) }}
-                    </td>
-                    <td class="text-center">
-                      <span
-                        v-if="user.mustApprove"
-                        class="badge bg-warning text-dark"
-                      >
-                        Da
-                      </span>
-                      <span
-                        v-else
-                        class="badge bg-success"
-                      >
-                        Nu
-                      </span>
-                    </td>
-                    <td class="small">
-                      <span
-                        :class="['badge', statusBadgeClass(user.status)]"
-                      >
-                        {{ statusLabel(user.status) }}
-                      </span>
-                    </td>
-                    <td class="small">
-                      <div>
-                        Invitat: {{ formatDate(user.invitedAt) }}
-                      </div>
-                      <div v-if="user.activatedAt">
-                        Activat: {{ formatDate(user.activatedAt) }}
-                      </div>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
+    <div v-if="error" class="alert alert-danger small mb-3">
+      {{ error }}
+    </div>
 
-            <p class="small text-muted mt-2 mb-0">
-              Rolurile interne (administrator, cumpărător, aprobator) pot controla cine poate plasa
-              comenzi și cine trebuie să le aprobe înainte de trimitere către furnizor.
-            </p>
-          </div>
+    <div v-if="loading" class="text-center py-4">
+      <div class="spinner-border spinner-border-sm" role="status" />
+      <div class="small text-muted mt-2">
+        Se încarcă utilizatorii companiei...
+      </div>
+    </div>
+
+    <div v-else>
+      <div v-if="users.length === 0" class="alert alert-info small">
+        Nu există alți utilizatori în contul companiei.
+      </div>
+
+      <div v-else class="card shadow-sm mb-3">
+        <div class="table-responsive">
+          <table class="table table-sm align-middle mb-0">
+            <thead>
+              <tr class="small text-muted">
+                <th>Nume</th>
+                <th>Email</th>
+                <th>Rol intern</th>
+                <th>Status</th>
+                <th class="text-end">Acțiuni</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="u in users" :key="u.id">
+                <td>{{ u.name }}</td>
+                <td>{{ u.email }}</td>
+                <td>{{ roleLabel(u.internal_role) }}</td>
+                <td>
+                  <span class="badge bg-light text-dark border">
+                    {{ u.status_label || u.status }}
+                  </span>
+                </td>
+                <td class="text-end">
+                  <div class="btn-group btn-group-sm">
+                    <button
+                      type="button"
+                      class="btn btn-outline-secondary btn-sm"
+                      @click="startEdit(u)"
+                    >
+                      Editează
+                    </button>
+                    <button
+                      v-if="!u.is_owner"
+                      type="button"
+                      class="btn btn-outline-danger btn-sm"
+                      @click="confirmDelete(u)"
+                    >
+                      Șterge
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
 
-      <div class="col-lg-4">
-        <div
-          v-if="showInvite"
-          class="card shadow-sm mb-3"
-        >
-          <div class="card-header py-2">
-            <strong>Invită utilizator nou</strong>
+      <!-- Formular add/edit -->
+      <div v-if="editingUser" class="card shadow-sm">
+        <div class="card-body small">
+          <div class="d-flex justify-content-between mb-2">
+            <h2 class="h6 mb-0">
+              {{ editingUser.id ? 'Editează utilizator' : 'Invită utilizator' }}
+            </h2>
+            <button
+              type="button"
+              class="btn btn-outline-secondary btn-sm"
+              @click="editingUser = null"
+            >
+              Renunță
+            </button>
           </div>
-          <div class="card-body small">
-            <form @submit.prevent="onInvite">
-              <div class="mb-2">
-                <label class="form-label text-muted">Nume</label>
-                <input
-                  v-model="inviteForm.name"
-                  type="text"
-                  class="form-control form-control-sm"
-                  required
-                />
-              </div>
-              <div class="mb-2">
-                <label class="form-label text-muted">Email</label>
-                <input
-                  v-model="inviteForm.email"
-                  type="email"
-                  class="form-control form-control-sm"
-                  required
-                />
-              </div>
-              <div class="mb-2">
-                <label class="form-label text-muted">Rol intern</label>
-                <select
-                  v-model="inviteForm.role"
-                  class="form-select form-select-sm"
-                >
-                  <option value="buyer">Poate plasa comenzi</option>
-                  <option value="approver">Trebuie să aprobe comenzi</option>
-                  <option value="admin">Administrator cont</option>
-                </select>
-              </div>
-              <div class="form-check mb-2">
-                <input
-                  id="mustApprove"
-                  v-model="inviteForm.mustApprove"
-                  class="form-check-input"
-                  type="checkbox"
-                />
-                <label class="form-check-label small" for="mustApprove">
-                  Comenzile acestui utilizator trebuie aprobate de un administrator / director.
-                </label>
-              </div>
-              <div class="d-flex justify-content-end">
-                <button type="submit" class="btn btn-primary btn-sm">
-                  Trimite invitație
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
 
-        <div class="card shadow-sm">
-          <div class="card-body small text-muted">
-            <h6>Flux recomandat multi-user B2B</h6>
-            <ol class="mb-0">
-              <li>Administratorul contului invită utilizatorii interni.</li>
-              <li>Utilizatorii primesc un e-mail cu link de activare.</li>
-              <li>În funcție de rol, pot plasa comenzi sau trebuie să le trimită spre aprobare.</li>
-              <li>Istoricul acțiunilor utilizatorilor se regăsește în audit log și fișa clientului.</li>
-            </ol>
-          </div>
-        </div>
+          <form class="row g-2" @submit.prevent="submitUser">
+            <div class="col-md-4">
+              <label class="form-label form-label-sm">Nume</label>
+              <input
+                v-model="editingUser.name"
+                type="text"
+                class="form-control form-control-sm"
+                required
+              />
+            </div>
+            <div class="col-md-4">
+              <label class="form-label form-label-sm">Email</label>
+              <input
+                v-model="editingUser.email"
+                type="email"
+                class="form-control form-control-sm"
+                required
+              />
+            </div>
+            <div class="col-md-4">
+              <label class="form-label form-label-sm">Rol intern</label>
+              <select
+                v-model="editingUser.internal_role"
+                class="form-select form-select-sm"
+                required
+              >
+                <option value="buyer">Poate plasa comenzi</option>
+                <option value="requester">Solicită aprobare</option>
+                <option value="approver">Aprobă comenzi</option>
+                <option value="viewer">Doar vizualizare</option>
+              </select>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label form-label-sm">Telefon</label>
+              <input
+                v-model="editingUser.phone"
+                type="text"
+                class="form-control form-control-sm"
+              />
+            </div>
+            <div class="col-md-8">
+              <label class="form-label form-label-sm">Observații</label>
+              <input
+                v-model="editingUser.notes"
+                type="text"
+                class="form-control form-control-sm"
+              />
+            </div>
 
-        <p v-if="infoMessage" class="small text-muted mt-2 mb-0">
-          {{ infoMessage }}
-        </p>
+            <div class="col-12 d-flex justify-content-end">
+              <button
+                type="submit"
+                class="btn btn-primary btn-sm"
+                :disabled="saving"
+              >
+                <span
+                  v-if="saving"
+                  class="spinner-border spinner-border-sm me-1"
+                ></span>
+                Salvează
+              </button>
+            </div>
+          </form>
+
+        </div>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { computed, reactive, ref } from 'vue'
-import PageHeader from '@/components/common/PageHeader.vue'
-import { useAccountProfileStore } from '@/store/accountProfile'
+import { ref, onMounted } from 'vue';
+import {
+  fetchCompanyUsers,
+  inviteCompanyUser,
+  updateCompanyUser,
+  deleteCompanyUser,
+} from '@/services/account/companyUsers';
 
-const store = useAccountProfileStore()
-
-const companyUsers = computed(() => store.companyUsers)
-const showInvite = ref(false)
-const infoMessage = ref('')
-
-const inviteForm = reactive({
-  name: '',
-  email: '',
-  role: 'buyer',
-  mustApprove: false
-})
+const loading = ref(false);
+const saving = ref(false);
+const error = ref('');
+const users = ref([]);
+const editingUser = ref(null);
 
 const roleLabel = (role) => {
   switch (role) {
-    case 'admin':
-      return 'Administrator cont'
-    case 'approver':
-      return 'Aprobator comenzi'
     case 'buyer':
+      return 'Poate plasa comenzi';
+    case 'requester':
+      return 'Solicită aprobare';
+    case 'approver':
+      return 'Aprobă comenzi';
+    case 'viewer':
+      return 'Doar vizualizare';
     default:
-      return 'Cumpărător'
+      return role || '-';
   }
-}
+};
 
-const statusLabel = (status) => {
-  switch (status) {
-    case 'active':
-      return 'Activ'
-    case 'pending':
-      return 'În așteptare'
-    case 'disabled':
-      return 'Dezactivat'
-    default:
-      return status
+const loadUsers = async () => {
+  loading.value = true;
+  error.value = '';
+
+  try {
+    const data = await fetchCompanyUsers();
+    users.value = data.data ?? data;
+  } catch (e) {
+    console.error(e);
+    error.value =
+      e?.response?.data?.message ||
+      'Nu am putut încărca utilizatorii companiei.';
+  } finally {
+    loading.value = false;
   }
-}
+};
 
-const statusBadgeClass = (status) => {
-  switch (status) {
-    case 'active':
-      return 'bg-success'
-    case 'pending':
-      return 'bg-warning text-dark'
-    case 'disabled':
-      return 'bg-secondary'
-    default:
-      return 'bg-light text-dark'
+const startInvite = () => {
+  editingUser.value = {
+    id: null,
+    name: '',
+    email: '',
+    internal_role: 'buyer',
+    phone: '',
+    notes: '',
+  };
+};
+
+const startEdit = (u) => {
+  editingUser.value = { ...u };
+};
+
+const submitUser = async () => {
+  if (!editingUser.value) return;
+
+  saving.value = true;
+  error.value = '';
+
+  try {
+    const payload = { ...editingUser.value };
+    if (payload.id) {
+      await updateCompanyUser(payload.id, payload);
+    } else {
+      await inviteCompanyUser(payload);
+    }
+    editingUser.value = null;
+    await loadUsers();
+  } catch (e) {
+    console.error(e);
+    error.value =
+      e?.response?.data?.message ||
+      'Nu am putut salva utilizatorul.';
+  } finally {
+    saving.value = false;
   }
-}
+};
 
-const formatDate = (iso) => {
-  if (!iso) return '-'
-  const d = new Date(iso)
-  if (Number.isNaN(d.getTime())) return iso
-  return d.toLocaleDateString('ro-RO', { year: 'numeric', month: '2-digit', day: '2-digit' })
-}
-
-const onInvite = () => {
-  if (!inviteForm.name || !inviteForm.email) {
-    infoMessage.value = 'Completează numele și e-mailul pentru a invita un utilizator nou.'
-    return
+const confirmDelete = async (u) => {
+  if (!window.confirm('Sigur dorești să ștergi acest utilizator?')) return;
+  try {
+    await deleteCompanyUser(u.id);
+    await loadUsers();
+  } catch (e) {
+    console.error(e);
+    error.value =
+      e?.response?.data?.message ||
+      'Nu am putut șterge utilizatorul.';
   }
-  const user = store.inviteUser({ ...inviteForm })
-  infoMessage.value =
-    'Template: invitația pentru ' +
-    user.email +
-    ' a fost generată. În implementarea reală se va trimite un e-mail cu link de activare și se va înregistra statusul în backend.'
-  // resetare parțială formular
-  inviteForm.name = ''
-  inviteForm.email = ''
-  inviteForm.mustApprove = false
-}
+};
+
+onMounted(loadUsers);
 </script>

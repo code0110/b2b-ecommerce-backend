@@ -9,9 +9,18 @@ use App\Models\Product;
 use App\Models\ProductVariant;
 use Illuminate\Http\Request;
 use App\Services\Pricing\PromotionPricingService;
+use App\Services\Pricing\PromotionEngine;
+use App\Models\Customer;
 
 class CartController extends Controller
 {
+
+    protected PromotionEngine $promotionEngine;
+
+    public function __construct(PromotionEngine $promotionEngine)
+    {
+        $this->promotionEngine = $promotionEngine;
+    }
     /**
      * Coș-ul este legat de:
      *  - user_id (dacă e logat via Sanctum sau sesiune web)
@@ -76,21 +85,24 @@ class CartController extends Controller
     /**
      * GET /api/cart
      */
-    public function show(Request $request, PromotionPricingService $pricing)
-{
-    $cart = $this->resolveCart($request);
+        public function show(Request $request)
+    {
+        $cart = $this->resolveCart($request);
 
-    $cart->loadMissing([
-        'items.product.mainCategory',
-        'items.product.brand',
-    ]);
+        $user     = $request->user();
+        $customer = $user?->customer ?? null;
 
-    $customer = $this->resolveCustomerFromUser($request->user());
+        $pricing = $this->promotionEngine->enrichCart($cart, $user, $customer);
 
-    $priced = $pricing->priceCart($cart, $customer);
+        return response()->json([
+            'id'             => $cart->id,
+            'items'          => $pricing['items'],
+            'subtotal'       => $pricing['subtotal'],
+            'discount_total' => $pricing['discount_total'],
+            'total'          => $pricing['total'],
+        ]);
+    }
 
-    return response()->json($priced);
-}
 
 
     /**

@@ -8,9 +8,14 @@ use App\Models\Category;
 use App\Models\Brand;
 use App\Models\Promotion;
 use Illuminate\Http\Request;
+use App\Services\Pricing\PromotionEngine;
+use App\Models\Customer;
 
 class CatalogController extends Controller
 {
+    public function __construct(
+        protected PromotionEngine $promotionEngine
+    ){}
     public function home()
     {
         return response()->json([

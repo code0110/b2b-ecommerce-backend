@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Gazdă: localhost
--- Timp de generare: dec. 12, 2025 la 01:57 PM
+-- Timp de generare: dec. 15, 2025 la 02:23 PM
 -- Versiune server: 8.0.44
 -- Versiune PHP: 8.2.28
 
@@ -568,7 +568,9 @@ INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES
 (32, '2025_12_11_131517_add_b2b_fields_to_users_table', 1),
 (33, '2025_12_11_131550_add_approval_fields_to_orders_table', 1),
 (34, '2025_12_11_132905_add_flags_to_products_table', 1),
-(35, '2025_12_11_165414_add_slug_to_roles_table', 2);
+(35, '2025_12_11_165414_add_slug_to_roles_table', 2),
+(36, '2025_12_15_094116_add_price_to_products_table', 3),
+(37, '2025_12_15_141740_create_product_documents_table', 4);
 
 -- --------------------------------------------------------
 
@@ -813,7 +815,8 @@ CREATE TABLE `personal_access_tokens` (
 INSERT INTO `personal_access_tokens` (`id`, `tokenable_type`, `tokenable_id`, `name`, `token`, `abilities`, `last_used_at`, `expires_at`, `created_at`, `updated_at`) VALUES
 (2, 'App\\Models\\User', 1, 'spa', 'cd12d255ddaf85693ca3e2b2a72d9edfc39f393c9b371f901eec43686a4fdece', '[\"*\"]', NULL, NULL, '2025-12-11 15:03:13', '2025-12-11 15:03:13'),
 (4, 'App\\Models\\User', 1, 'spa', 'a5d73e2c38cc9f10c87f326525372a73d950797a198d0bf24a03216e9775dabb', '[\"*\"]', '2025-12-12 08:45:56', NULL, '2025-12-12 05:14:17', '2025-12-12 08:45:56'),
-(5, 'App\\Models\\User', 1, 'spa', '8d6fdb14811b400544e975de3ed9cbec0c6f22b1f53d03854bb2f5d173112f29', '[\"*\"]', '2025-12-12 11:56:54', NULL, '2025-12-12 09:00:05', '2025-12-12 11:56:54');
+(5, 'App\\Models\\User', 1, 'spa', '8d6fdb14811b400544e975de3ed9cbec0c6f22b1f53d03854bb2f5d173112f29', '[\"*\"]', '2025-12-15 12:19:01', NULL, '2025-12-12 09:00:05', '2025-12-15 12:19:01'),
+(7, 'App\\Models\\User', 4, 'spa', '7c2bf917a8ac02628e170bf693e2baad078a51979240ea4f7341ca335cc18883', '[\"*\"]', '2025-12-15 11:44:46', NULL, '2025-12-15 11:44:45', '2025-12-15 11:44:46');
 
 -- --------------------------------------------------------
 
@@ -824,6 +827,7 @@ INSERT INTO `personal_access_tokens` (`id`, `tokenable_type`, `tokenable_id`, `n
 CREATE TABLE `products` (
   `id` bigint UNSIGNED NOT NULL,
   `name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `price` decimal(12,2) NOT NULL DEFAULT '0.00',
   `slug` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `internal_code` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `barcode` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
@@ -855,8 +859,8 @@ CREATE TABLE `products` (
 -- Eliminarea datelor din tabel `products`
 --
 
-INSERT INTO `products` (`id`, `name`, `slug`, `internal_code`, `barcode`, `erp_id`, `short_description`, `long_description`, `main_category_id`, `brand_id`, `status`, `sort_order`, `list_price`, `rrp_price`, `vat_rate`, `price_override`, `stock_status`, `stock_qty`, `supplier_stock_qty`, `lead_time_days`, `is_new`, `is_recommended`, `is_on_sale`, `is_promo`, `is_best_seller`, `created_at`, `updated_at`) VALUES
-(1, 'sdfsdf', 'produs', '111', NULL, '12', 'dsf', 'sdfsdfsdfsdf', 1, NULL, 'published', 0, 12.00, 0.00, 19.00, NULL, 'in_stock', 0, 0, 0, 0, 0, 0, 0, 0, '2025-12-12 05:30:42', '2025-12-12 07:08:54');
+INSERT INTO `products` (`id`, `name`, `price`, `slug`, `internal_code`, `barcode`, `erp_id`, `short_description`, `long_description`, `main_category_id`, `brand_id`, `status`, `sort_order`, `list_price`, `rrp_price`, `vat_rate`, `price_override`, `stock_status`, `stock_qty`, `supplier_stock_qty`, `lead_time_days`, `is_new`, `is_recommended`, `is_on_sale`, `is_promo`, `is_best_seller`, `created_at`, `updated_at`) VALUES
+(1, 'sdfsdf', 0.00, 'produs', '111', NULL, '12', 'dsf', 'sdfsdfsdfsdf', 2, NULL, 'published', 0, 12.00, 0.00, 19.00, NULL, 'in_stock', 0, 0, 0, 0, 0, 0, 0, 0, '2025-12-12 05:30:42', '2025-12-15 07:49:30');
 
 -- --------------------------------------------------------
 
@@ -869,6 +873,22 @@ CREATE TABLE `product_comparisons` (
   `user_id` bigint UNSIGNED DEFAULT NULL,
   `session_key` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `product_id` bigint UNSIGNED NOT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Structură tabel pentru tabel `product_documents`
+--
+
+CREATE TABLE `product_documents` (
+  `id` bigint UNSIGNED NOT NULL,
+  `product_id` bigint UNSIGNED NOT NULL,
+  `path` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `type` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `visibility` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'public',
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -943,6 +963,9 @@ CREATE TABLE `promotions` (
   `is_exclusive` tinyint(1) NOT NULL DEFAULT '0',
   `is_iterative` tinyint(1) NOT NULL DEFAULT '0',
   `bonus_type` enum('free_item','discount_value','discount_percent') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'discount_percent',
+  `discount_percent` decimal(8,2) DEFAULT NULL,
+  `discount_value` decimal(15,2) DEFAULT NULL,
+  `applies_to` enum('all','categories','brands','products') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'all',
   `min_cart_total` decimal(15,2) NOT NULL DEFAULT '0.00',
   `min_qty_per_product` int NOT NULL DEFAULT '0',
   `customer_type` enum('b2b','b2c','both') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'both',
@@ -955,10 +978,10 @@ CREATE TABLE `promotions` (
 -- Eliminarea datelor din tabel `promotions`
 --
 
-INSERT INTO `promotions` (`id`, `name`, `slug`, `short_description`, `description`, `hero_image`, `banner_image`, `mobile_image`, `start_at`, `end_at`, `status`, `is_exclusive`, `is_iterative`, `bonus_type`, `min_cart_total`, `min_qty_per_product`, `customer_type`, `logged_in_only`, `created_at`, `updated_at`) VALUES
-(1, 'promo 1', 'promo1', 'sdf', 'sdf', NULL, NULL, NULL, '2025-12-11 22:00:00', '2025-12-30 22:00:00', 'active', 0, 0, 'discount_percent', 10.00, 1, 'both', 1, '2025-12-12 07:12:05', '2025-12-12 07:12:05'),
-(2, 'Scule electrice -10% pentru parteneri', 'scule-electrice-10-procent', 'Reducere 10% la toată gama de scule electrice pentru clienți B2B.', 'Campanie dedicată partenerilor B2B: reducere 10% la sculele electrice selectate (bormașini, ciocane rotopercutoare, polizoare).', NULL, NULL, NULL, '2025-12-07 13:56:40', '2026-01-01 13:56:40', 'active', 0, 1, 'discount_percent', 500.00, 1, 'b2b', 1, '2025-12-12 13:56:40', '2025-12-12 13:56:40'),
-(3, 'Echipamente de protecție – pachet avantajos', 'echipamente-protectie-pachet', 'Prețuri speciale la pachete de mănuși și echipamente de protecție.', 'Pachete avantajoase pentru echiparea rapidă a echipelor din teren: mănuși de protecție, ochelari, cască și încălțăminte.', NULL, NULL, NULL, '2025-12-10 13:56:40', '2026-01-11 13:56:40', 'active', 0, 0, 'discount_value', 300.00, 5, 'both', 0, '2025-12-12 13:56:40', '2025-12-12 13:56:40');
+INSERT INTO `promotions` (`id`, `name`, `slug`, `short_description`, `description`, `hero_image`, `banner_image`, `mobile_image`, `start_at`, `end_at`, `status`, `is_exclusive`, `is_iterative`, `bonus_type`, `discount_percent`, `discount_value`, `applies_to`, `min_cart_total`, `min_qty_per_product`, `customer_type`, `logged_in_only`, `created_at`, `updated_at`) VALUES
+(1, 'promo 1', 'promo1', 'sdf', 'sdf', NULL, NULL, NULL, '2025-12-11 22:00:00', '2025-12-30 22:00:00', 'active', 0, 0, 'discount_percent', NULL, NULL, 'all', 10.00, 1, 'both', 1, '2025-12-12 07:12:05', '2025-12-12 07:12:05'),
+(2, 'Scule electrice -10% pentru parteneri', 'scule-electrice-10-procent', 'Reducere 10% la toată gama de scule electrice pentru clienți B2B.', 'Campanie dedicată partenerilor B2B: reducere 10% la sculele electrice selectate (bormașini, ciocane rotopercutoare, polizoare).', NULL, NULL, NULL, '2025-12-07 13:56:40', '2026-01-01 13:56:40', 'active', 0, 1, 'discount_percent', NULL, NULL, 'all', 500.00, 1, 'b2b', 1, '2025-12-12 13:56:40', '2025-12-12 13:56:40'),
+(3, 'Echipamente de protecție – pachet avantajos', 'echipamente-protectie-pachet', 'Prețuri speciale la pachete de mănuși și echipamente de protecție.', 'Pachete avantajoase pentru echiparea rapidă a echipelor din teren: mănuși de protecție, ochelari, cască și încălțăminte.', NULL, NULL, NULL, '2025-12-10 13:56:40', '2026-01-11 13:56:40', 'active', 0, 0, 'discount_value', NULL, NULL, 'all', 300.00, 5, 'both', 0, '2025-12-12 13:56:40', '2025-12-12 13:56:40');
 
 -- --------------------------------------------------------
 
@@ -1078,7 +1101,9 @@ CREATE TABLE `role_user` (
 --
 
 INSERT INTO `role_user` (`role_id`, `user_id`) VALUES
-(1, 1);
+(1, 1),
+(3, 3),
+(4, 4);
 
 -- --------------------------------------------------------
 
@@ -1239,7 +1264,9 @@ CREATE TABLE `users` (
 
 INSERT INTO `users` (`id`, `customer_id`, `first_name`, `last_name`, `email`, `phone`, `email_verified_at`, `password`, `is_active`, `remember_token`, `company_role`, `requires_approval`, `created_at`, `updated_at`) VALUES
 (1, 4, 'binar', 'cod', 'cod.binar@gmail.com', '+40758880618', NULL, '$2y$12$QGDQEF22w6jLDSkNQHjoOuRWIy25dUd1Xc2GxQaQBU.7MHx8Tv/kW', 1, NULL, NULL, 0, '2025-12-11 14:50:24', '2025-12-11 14:50:24'),
-(2, 3, 'binar', 'cod', 'client@metal-rom.ro', '+40758880618', NULL, '$2y$12$QGDQEF22w6jLDSkNQHjoOuRWIy25dUd1Xc2GxQaQBU.7MHx8Tv/kW', 1, NULL, NULL, 0, '2025-12-11 14:50:24', '2025-12-11 14:50:24');
+(2, 3, 'binar', 'cod', 'client@metal-rom.ro', '+40758880618', NULL, '$2y$12$QGDQEF22w6jLDSkNQHjoOuRWIy25dUd1Xc2GxQaQBU.7MHx8Tv/kW', 1, NULL, NULL, 0, '2025-12-11 14:50:24', '2025-12-11 14:50:24'),
+(3, NULL, 'test', 'test', 'test@test.com', '0758880618', NULL, '$2y$12$SF6bZo8RL0ZsmwrHmTweouDi2VMdjfGSdoNxRIHhwnphoLFQ84B1m', 1, NULL, NULL, 0, '2025-12-15 11:43:06', '2025-12-15 11:43:06'),
+(4, NULL, 'agent', 'test', 'agent@test.com', '0758880618', NULL, '$2y$12$EQtPcnuAvXnDdeCjbHwF1uwJgAOmaoF2nJf/1CdHHCBDDO85UmAa6', 1, NULL, NULL, 0, '2025-12-15 11:44:29', '2025-12-15 11:44:29');
 
 --
 -- Indexuri pentru tabele eliminate
@@ -1541,6 +1568,13 @@ ALTER TABLE `product_comparisons`
   ADD KEY `product_comparisons_product_id_foreign` (`product_id`);
 
 --
+-- Indexuri pentru tabele `product_documents`
+--
+ALTER TABLE `product_documents`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `product_documents_product_id_foreign` (`product_id`);
+
+--
 -- Indexuri pentru tabele `product_images`
 --
 ALTER TABLE `product_images`
@@ -1775,7 +1809,7 @@ ALTER TABLE `jobs`
 -- AUTO_INCREMENT pentru tabele `migrations`
 --
 ALTER TABLE `migrations`
-  MODIFY `id` int UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=36;
+  MODIFY `id` int UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=38;
 
 --
 -- AUTO_INCREMENT pentru tabele `orders`
@@ -1829,18 +1863,24 @@ ALTER TABLE `permissions`
 -- AUTO_INCREMENT pentru tabele `personal_access_tokens`
 --
 ALTER TABLE `personal_access_tokens`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
 
 --
 -- AUTO_INCREMENT pentru tabele `products`
 --
 ALTER TABLE `products`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT pentru tabele `product_comparisons`
 --
 ALTER TABLE `product_comparisons`
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT pentru tabele `product_documents`
+--
+ALTER TABLE `product_documents`
   MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
@@ -1931,7 +1971,7 @@ ALTER TABLE `ticket_messages`
 -- AUTO_INCREMENT pentru tabele `users`
 --
 ALTER TABLE `users`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
 -- Constrângeri pentru tabele eliminate
@@ -2067,6 +2107,12 @@ ALTER TABLE `products`
 ALTER TABLE `product_comparisons`
   ADD CONSTRAINT `product_comparisons_product_id_foreign` FOREIGN KEY (`product_id`) REFERENCES `products` (`id`) ON DELETE CASCADE,
   ADD CONSTRAINT `product_comparisons_user_id_foreign` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL;
+
+--
+-- Constrângeri pentru tabele `product_documents`
+--
+ALTER TABLE `product_documents`
+  ADD CONSTRAINT `product_documents_product_id_foreign` FOREIGN KEY (`product_id`) REFERENCES `products` (`id`) ON DELETE CASCADE;
 
 --
 -- Constrângeri pentru tabele `product_images`

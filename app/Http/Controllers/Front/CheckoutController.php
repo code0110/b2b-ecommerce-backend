@@ -19,13 +19,20 @@ class CheckoutController extends Controller
     public function summary(Request $request, PromotionPricingService $pricing)
     {
         $user = $request->user();
-        $customer = $user->customer ?? null;
 
         /** @var Cart $cart */
-        $cart = Cart::where('user_id', $user->id)
+        $cart = Cart::with(['items.product.mainCategory', 'items.product.brand'])
+            ->where('user_id', $user->id)
             ->where('status', 'active')
-            ->with('items.product')
-            ->firstOrFail();
+            ->first();
+
+        if (!$cart) {
+            return response()->json([
+                'message' => 'Coșul este gol.',
+            ], 400);
+        }
+
+        $customer = $this->resolveCustomerFromUser($user);
 
         $priced = $pricing->priceCart($cart, $customer);
 

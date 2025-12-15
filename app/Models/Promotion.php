@@ -3,7 +3,11 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Support\Carbon;
+use App\Models\Product;
+use App\Models\User;
 
 class Promotion extends Model
 {
@@ -20,45 +24,178 @@ class Promotion extends Model
         'status',
         'is_exclusive',
         'is_iterative',
-        'bonus_type',
+        'bonus_type',       // gratuitate / value / percent etc.
         'min_cart_total',
         'min_qty_per_product',
-        'customer_type',
+        'customer_type',    // b2b / b2c / both
         'logged_in_only',
+        'discount_type',    // <--- presupun: 'percent' | 'fixed'
+        'discount_value',   // <--- presupun: numeric
     ];
 
     protected $casts = [
-        'start_at' => 'datetime',
-        'end_at' => 'datetime',
-        'is_exclusive' => 'boolean',
-        'is_iterative' => 'boolean',
-        'min_cart_total' => 'float',
+        'start_at'          => 'datetime',
+        'end_at'            => 'datetime',
+        'is_exclusive'      => 'boolean',
+        'is_iterative'      => 'boolean',
+        'logged_in_only'    => 'boolean',
+        'min_cart_total'    => 'float',
         'min_qty_per_product' => 'integer',
-        'logged_in_only' => 'boolean',
+        'discount_value'    => 'float',
     ];
 
-    public function customerGroups(): BelongsToMany
-    {
-        return $this->belongsToMany(CustomerGroup::class);
-    }
+    /* ==== Relații simple pentru segmentare ==== */
 
-    public function customers(): BelongsToMany
+    public function products(): BelongsToMany
     {
-        return $this->belongsToMany(Customer::class);
+        return $this->belongsToMany(Product::class, 'promotion_product');
     }
 
     public function categories(): BelongsToMany
     {
-        return $this->belongsToMany(Category::class);
+        return $this->belongsToMany(Category::class, 'promotion_category');
     }
 
     public function brands(): BelongsToMany
     {
-        return $this->belongsToMany(Brand::class);
+        return $this->belongsToMany(Brand::class, 'promotion_brand');
     }
 
-    public function products(): BelongsToMany
+    public function customerGroups(): BelongsToMany
     {
-        return $this->belongsToMany(Product::class);
+        return $this->belongsToMany(CustomerGroup::class, 'promotion_customer_group');
+    }
+
+    public function customers(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'promotion_customer');
+    }
+
+    /* ==== Scope: promoții active acum ==== */
+    public function scopeActive(Builder $query): Builder
+    {
+        $now = Carbon::now();
+
+        return $query->where('status', 'active')
+            ->where(function ($q) use ($now) {
+                $q->whereNull('start_at')
+                  ->orWhere('start_at', '<=', $now);
+            })
+            ->where(function ($q) use ($now) {
+                $q->whereNull('end_at')
+                  ->orWhere('end_at', '>=', $now);
+            });
+    }
+
+    /* ==== Verifică dacă promoția se aplică pe un anumit client ==== */
+    public function appliesToCustomer(?User $user): bool
+    {
+        if ($this->logged_in_only && !$user) {
+            return false;
+        }
+
+        if ($this->customer_type && $this->customer_type !== 'both') {
+            if (!$user) {
+                return false;
+            }
+
+            // presupunem că user-ul are ceva de genul $user->customer_type = 'b2b' / 'b2c'
+            if ($user->customer_type && $user->customer_type !== $this->customer_type) {
+                return false;
+            }
+        }
+
+        if ($user) {
+            if ($this->customers()->exists()) {
+                if (!$this->customers()->where('users.id', $user->id)->exists()) {
+                    return false;
+                }
+            }
+
+            if ($this->customerGroups()->exists()) {
+                $groupId = $user->customer_group_id ?? null;
+                if (!$groupId) {
+                    return false;
+                }
+
+                if (!$this->customerGroups()->where('customer_groups.id', $groupId)->exists()) {
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    }
+
+    /* ==== Verifică dacă promoția se aplică pe un produs ==== */
+    public function appliesToProduct(Product $product): bool
+    {
+        if ($this->products()->exists() &&
+            !$this->products()->where('products.id', $product->id)->exists()) {
+            return false;
+        }
+
+        if ($this->brands()->exists()) {
+            if (!$product->brand_id) {
+                return false;
+            }
+
+            if (!$this->brands()->where('brands.id', $product->brand_id)->exists()) {
+                return false;
+            }
+        }
+
+        if ($this->categories()->exists()) {
+            $categoryIds = collect([
+                $product->main_category_id,
+                ...($product->categories()->pluck('categories.id')->all() ?? []),
+            ])->filter()->unique();
+
+            if ($categoryIds->isEmpty()) {
+                return false;
+            }
+
+            if (!$this->categories()->whereIn('categories.id', $categoryIds)->exists()) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * Calculează discount-ul pentru o linie simplă
+     * în funcție de discount_type și discount_value.
+     *
+     * Returnează:
+     *  [
+     *    'discount_amount' => float,
+     *    'final_unit_price' => float,
+     *  ]
+     */
+    public function calculateLineDiscount(float $unitPrice, int $qty): array
+    {
+        if (!$this->discount_type || !$this->discount_value) {
+            return [
+                'discount_amount'   => 0.0,
+                'final_unit_price'  => $unitPrice,
+            ];
+        }
+
+        $discountPerUnit = 0.0;
+
+        if ($this->discount_type === 'percent') {
+            $discountPerUnit = $unitPrice * ($this->discount_value / 100);
+        } elseif ($this->discount_type === 'fixed') {
+            $discountPerUnit = $this->discount_value;
+        }
+
+        // asigurare să nu fie negativ
+        $finalUnitPrice = max(0, $unitPrice - $discountPerUnit);
+
+        return [
+            'discount_amount'   => $discountPerUnit * $qty,
+            'final_unit_price'  => $finalUnitPrice,
+        ];
     }
 }

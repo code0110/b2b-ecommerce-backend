@@ -77,20 +77,21 @@ class CartController extends Controller
      * GET /api/cart
      */
     public function show(Request $request, PromotionPricingService $pricing)
-    {
-        $cart = $this->resolveCart($request)->load('items.product', 'items.variant');
+{
+    $cart = $this->resolveCart($request);
 
-        $customer = optional($request->user())->customer;
-        $priced = $pricing->priceCart($cart, $customer);
+    $cart->loadMissing([
+        'items.product.mainCategory',
+        'items.product.brand',
+    ]);
 
-        return response()->json([
-            'id'        => $cart->id,
-            'items'     => $priced['items'],
-            'subtotal'  => $priced['subtotal'],
-            'discounts' => $priced['discount_total'],
-            'total'     => $priced['total'],
-        ]);
-    }
+    $customer = $this->resolveCustomerFromUser($request->user());
+
+    $priced = $pricing->priceCart($cart, $customer);
+
+    return response()->json($priced);
+}
+
 
     /**
      * POST /api/cart/items

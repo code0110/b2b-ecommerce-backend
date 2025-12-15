@@ -14,6 +14,18 @@
           Notificări
         </RouterLink>
 
+        <li class="nav-item">
+  <RouterLink
+    :to="{ name: 'admin-orders' }"
+    class="nav-link"
+    active-class="active"
+  >
+    <i class="bi bi-bag-check me-2"></i>
+    <span>Comenzi</span>
+  </RouterLink>
+</li>
+
+
         <span class="text-uppercase text-muted mt-3 mb-2">Catalog</span>
         <RouterLink class="nav-link text-white" :to="{ name: 'admin-products' }">
           Produse

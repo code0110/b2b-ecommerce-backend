@@ -43,7 +43,6 @@ import AccountNotifications from '@/views/account/AccountNotifications.vue'
 
 // Admin
 import AdminDashboard from '@/views/admin/Dashboard.vue'
-import OrderListAdmin from '@/views/admin/orders/OrderList.vue';
 import ProductList from '@/views/admin/products/ProductList.vue'
 import ProductForm from '@/views/admin/products/ProductForm.vue'
 import CategoryListAdmin from '@/views/admin/categories/CategoryList.vue'
@@ -63,6 +62,11 @@ import RolesPermissions from '@/views/admin/settings/RolesPermissions.vue'
 import AuditLog from '@/views/admin/settings/AuditLog.vue'
 import OfferList from '@/views/admin/offers/OfferList.vue'
 import PartnerRequests from '@/views/admin/partners/PartnerRequests.vue'
+import AccountLayout from '@/layouts/AccountLayout.vue';
+// sus, lângă celelalte importuri Admin
+import AdminOrdersList from '@/views/admin/orders/OrderList.vue';
+import AdminOrderDetails from '@/views/admin/orders/OrderDetails.vue';
+
 
 import { useAuthStore } from '@/store/auth'
 
@@ -186,10 +190,15 @@ const router = createRouter({
       ]
     },
 
-    // Cont client (se afișează în același layout front)
+   // Cont client (layout dedicat în interiorul FrontLayout)
+{
+  path: '/cont',
+  component: FrontLayout,
+  children: [
     {
-      path: '/cont',
-      component: FrontLayout,
+      path: '',
+      component: AccountLayout,
+      meta: { requiresAuth: true },
       children: [
         {
           path: '',
@@ -252,7 +261,9 @@ const router = createRouter({
           meta: { requiresAuth: true }
         }
       ]
-    },
+    }
+  ]
+},
 
     // Admin
     {
@@ -271,10 +282,16 @@ const router = createRouter({
           component: AdminNotifications
         },
         {
-          path: 'orders',
-          name: 'admin-orders',
-          component: OrderListAdmin,
-        },
+  path: 'orders',
+  name: 'admin-orders',
+  component: AdminOrdersList
+},
+{
+  path: 'orders/:id',
+  name: 'admin-order-details',
+  component: AdminOrderDetails
+},
+
         {
           path: 'products',
           name: 'admin-products',

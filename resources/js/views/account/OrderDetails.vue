@@ -1,288 +1,498 @@
 <template>
-  <div class="container py-4">
-    <div class="mb-3">
-      <RouterLink
-        to="/cont/comenzi"
-        class="btn btn-outline-secondary btn-sm"
-      >
-        ← Înapoi la comenzi
-      </RouterLink>
+  <div class="container-fluid py-3" v-if="loaded">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <div>
+        <h1 class="h4 mb-1">
+          Comandă
+          <span class="text-muted">#{{ order.order_number }}</span>
+        </h1>
+        <p class="text-muted small mb-0">
+          Plasată {{ order.placed_at || order.created_at }}
+          ·
+          {{ customer ? customer.name : 'Client necunoscut' }}
+          ({{ customer && customer.type ? customer.type.toUpperCase() : '—' }})
+        </p>
+      </div>
+      <div class="d-flex gap-2">
+        <RouterLink
+          :to="{ name: 'admin-orders', query: $route.query }"
+          class="btn btn-outline-secondary btn-sm"
+        >
+          ← Înapoi la listă
+        </RouterLink>
+      </div>
     </div>
 
-    <div v-if="error" class="alert alert-danger small mb-3">
+    <div v-if="error" class="alert alert-danger">
       {{ error }}
     </div>
 
-    <div v-if="loading" class="text-center py-4">
-      <div class="spinner-border spinner-border-sm" role="status" />
-      <div class="small text-muted mt-2">Se încarcă detaliile comenzii...</div>
-    </div>
+    <div v-else class="row g-3">
+      <!-- Stânga: status & client -->
+      <div class="col-lg-4">
+        <!-- Status comandă -->
+        <div class="card mb-3">
+          <div class="card-header py-2 d-flex justify-content-between align-items-center">
+            <span class="small text-uppercase text-muted fw-semibold">Status comandă</span>
+          </div>
+          <div class="card-body">
+            <div class="mb-2">
+              <div class="small text-muted mb-1">Status curent</div>
+              <span :class="['badge', statusBadgeClass(order.status)]">
+                {{ statusLabel(order.status) }}
+              </span>
+            </div>
+            <div class="mb-3">
+              <label class="form-label form-label-sm">Modifică status</label>
+              <select
+                v-model="statusForm.status"
+                class="form-select form-select-sm mb-2"
+              >
+                <option value="pending">În așteptare</option>
+                <option value="processing">În procesare</option>
+                <option value="completed">Finalizată</option>
+                <option value="cancelled">Anulată</option>
+                <option value="awaiting_payment">Așteaptă plată</option>
+                <option value="on_hold">On hold</option>
+              </select>
+              <input
+                v-if="statusForm.status === 'cancelled'"
+                v-model="statusForm.cancel_reason"
+                type="text"
+                class="form-control form-control-sm mb-2"
+                placeholder="Motiv anulare (opțional)"
+              >
+              <button
+                class="btn btn-primary btn-sm w-100"
+                type="button"
+                :disabled="statusLoading"
+                @click="submitStatus"
+              >
+                <span
+                  v-if="statusLoading"
+                  class="spinner-border spinner-border-sm me-1"
+                ></span>
+                Salvează status
+              </button>
+            </div>
+          </div>
+        </div>
 
-    <div v-else-if="order" class="row g-3">
-      <div class="col-lg-8">
-        <div class="card shadow-sm mb-3">
+        <!-- Status plată -->
+        <div class="card mb-3">
+          <div class="card-header py-2">
+            <span class="small text-uppercase text-muted fw-semibold">Status plată</span>
+          </div>
+          <div class="card-body">
+            <div class="mb-2">
+              <div class="small text-muted mb-1">Status curent</div>
+              <span :class="['badge', paymentStatusBadgeClass(order.payment_status)]">
+                {{ paymentStatusLabel(order.payment_status) }}
+              </span>
+            </div>
+            <div class="mb-3">
+              <label class="form-label form-label-sm">Modifică status plată</label>
+              <select
+                v-model="paymentForm.payment_status"
+                class="form-select form-select-sm mb-2"
+              >
+                <option value="pending">Neplătită</option>
+                <option value="paid">Plătită</option>
+                <option value="failed">Eșuată</option>
+                <option value="refunded">Rambursată</option>
+                <option value="partially_paid">Parțial plătită</option>
+              </select>
+              <input
+                v-model="paymentForm.payment_method"
+                type="text"
+                class="form-control form-control-sm mb-2"
+                placeholder="Metodă plată (card/OP/chs/bo/cec)"
+              >
+              <button
+                class="btn btn-outline-primary btn-sm w-100"
+                type="button"
+                :disabled="paymentLoading"
+                @click="submitPaymentStatus"
+              >
+                <span
+                  v-if="paymentLoading"
+                  class="spinner-border spinner-border-sm me-1"
+                ></span>
+                Salvează status plată
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Info client -->
+        <div class="card">
+          <div class="card-header py-2">
+            <span class="small text-uppercase text-muted fw-semibold">Client</span>
+          </div>
           <div class="card-body small">
-            <div class="d-flex justify-content-between">
+            <div v-if="customer">
+              <div class="fw-semibold mb-1">
+                {{ customer.name }}
+              </div>
+              <div class="text-muted mb-1">
+                {{ customer.email }} · {{ customer.phone || '—' }}
+              </div>
+              <div class="mb-1">
+                Tip client:
+                <span
+                  class="badge"
+                  :class="customer.type === 'b2b' ? 'bg-primary' : 'bg-secondary'"
+                >
+                  {{ customer.type ? customer.type.toUpperCase() : '' }}
+                </span>
+              </div>
+              <div class="mb-1">
+                Termen plată: <strong>{{ customer.payment_terms_days }} zile</strong>
+              </div>
               <div>
-                <h1 class="h5 mb-1">
-                  Comanda #{{ order.number }}
-                </h1>
-                <div class="text-muted">
-                  Plasată la {{ formatDateTime(order.created_at) }}
+                Credit:
+                <strong>{{ formatMoney(customer.credit_limit) }} RON</strong>
+                · Sold curent:
+                <strong>{{ formatMoney(customer.current_balance) }} RON</strong>
+              </div>
+            </div>
+            <div v-else class="text-muted">
+              Client indisponibil (șters sau nealocat).
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Dreapta: rezumat, adrese și articole -->
+      <div class="col-lg-8">
+        <!-- Rezumat comandă -->
+        <div class="card mb-3">
+          <div class="card-body small">
+            <div class="row">
+              <div class="col-md-4 mb-2 mb-md-0">
+                <div class="text-muted mb-1">Date comandă</div>
+                <div>Nr. comandă: <strong>{{ order.order_number }}</strong></div>
+                <div>Plasată: <strong>{{ order.placed_at || order.created_at }}</strong></div>
+                <div v-if="order.cancelled_at">
+                  Anulată: <strong>{{ order.cancelled_at }}</strong>
+                </div>
+                <div v-if="order.cancel_reason">
+                  Motiv anulare: <strong>{{ order.cancel_reason }}</strong>
                 </div>
               </div>
-              <div class="text-end">
-                <div>
-                  <span class="badge bg-light text-dark border">
-                    {{ order.status_label || order.status }}
-                  </span>
+              <div class="col-md-5 mb-2 mb-md-0">
+                <div class="text-muted mb-1">Adrese</div>
+                <div class="d-flex gap-3">
+                  <div class="flex-grow-1">
+                    <div class="fw-semibold mb-1">Facturare</div>
+                    <div v-if="billingAddress">
+                      <div>{{ billingAddress.contact_name || (customer && customer.name) }}</div>
+                      <div>{{ billingAddress.street }}</div>
+                      <div>{{ billingAddress.postal_code }} {{ billingAddress.city }}</div>
+                      <div>{{ billingAddress.county }}</div>
+                      <div>{{ billingAddress.phone }}</div>
+                    </div>
+                    <div v-else class="text-muted">
+                      —
+                    </div>
+                  </div>
+                  <div class="flex-grow-1">
+                    <div class="fw-semibold mb-1">Livrare</div>
+                    <div v-if="shippingAddress">
+                      <div>{{ shippingAddress.contact_name || (customer && customer.name) }}</div>
+                      <div>{{ shippingAddress.street }}</div>
+                      <div>{{ shippingAddress.postal_code }} {{ shippingAddress.city }}</div>
+                      <div>{{ shippingAddress.county }}</div>
+                      <div>{{ shippingAddress.phone }}</div>
+                    </div>
+                    <div v-else class="text-muted">
+                      —
+                    </div>
+                  </div>
                 </div>
-                <div class="mt-1">
-                  <span class="badge bg-light text-dark border">
-                    Plată: {{ order.payment_status_label || order.payment_status }}
-                  </span>
+              </div>
+              <div class="col-md-3 text-md-end">
+                <div class="text-muted mb-1">Total comandă</div>
+                <div class="fs-5 fw-semibold">
+                  {{ formatMoney(order.grand_total) }} RON
+                </div>
+                <div class="small text-muted">
+                  {{ order.total_items }} linii ·
+                  TVA: {{ formatMoney(order.tax_total) }} RON
+                </div>
+                <div v-if="order.discount_total > 0" class="small text-success">
+                  Discount: -{{ formatMoney(order.discount_total) }} RON
+                </div>
+                <div class="small">
+                  Transport: {{ formatMoney(order.shipping_total) }} RON
                 </div>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- Linii comandă -->
-        <div class="card shadow-sm">
-          <div class="card-body small">
-            <h2 class="h6 mb-3">Produse comandate</h2>
-
-            <div class="table-responsive">
-              <table class="table table-sm align-middle mb-0">
-                <thead>
-                  <tr class="text-muted">
+        <!-- Articole comandă -->
+        <div class="card">
+          <div class="card-header py-2 d-flex justify-content-between align-items-center">
+            <span class="small text-uppercase text-muted fw-semibold">
+              Articole comandă ({{ items.length }})
+            </span>
+          </div>
+          <div class="card-body p-0">
+            <div v-if="items.length === 0" class="text-center py-4 text-muted small">
+              Nu există linii de comandă.
+            </div>
+            <div v-else class="table-responsive">
+              <table class="table table-sm mb-0 align-middle">
+                <thead class="table-light">
+                  <tr>
                     <th>Produs</th>
-                    <th>Cod</th>
-                    <th class="text-end">Cantitate</th>
-                    <th class="text-end">Preț unitar</th>
-                    <th class="text-end">Total linie</th>
+                    <th style="width: 120px;">Cod</th>
+                    <th style="width: 80px;" class="text-end">Cant.</th>
+                    <th style="width: 110px;" class="text-end">Preț unitar</th>
+                    <th style="width: 110px;" class="text-end">Discount</th>
+                    <th style="width: 110px;" class="text-end">TVA</th>
+                    <th style="width: 110px;" class="text-end">Total linie</th>
                   </tr>
                 </thead>
                 <tbody>
-                  <tr v-for="line in order.lines" :key="line.id">
+                  <tr v-for="item in items" :key="item.id">
                     <td>
-                      <RouterLink
-                        v-if="line.product_slug"
-                        :to="`/produs/${line.product_slug}`"
-                        class="text-decoration-none"
-                      >
-                        {{ line.product_name }}
-                      </RouterLink>
-                      <span v-else>{{ line.product_name }}</span>
+                      <div class="fw-semibold">{{ item.product_name }}</div>
                     </td>
-                    <td>{{ line.product_code }}</td>
-                    <td class="text-end">
-                      {{ line.quantity }}
-                      <span v-if="line.unit" class="text-muted">
-                        {{ line.unit }}
-                      </span>
+                    <td>
+                      <span class="small text-muted">{{ item.sku }}</span>
                     </td>
                     <td class="text-end">
-                      {{ formatMoney(line.unit_price) }}
+                      {{ item.quantity }}
                     </td>
                     <td class="text-end">
-                      {{ formatMoney(line.line_total) }}
+                      {{ formatMoney(item.unit_price) }}
+                    </td>
+                    <td class="text-end text-success">
+                      {{ item.discount_amount > 0 ? '-' + formatMoney(item.discount_amount) : '—' }}
+                    </td>
+                    <td class="text-end">
+                      {{ formatMoney(item.tax_amount) }}
+                    </td>
+                    <td class="text-end fw-semibold">
+                      {{ formatMoney(item.total) }}
                     </td>
                   </tr>
                 </tbody>
+                <tfoot class="table-light">
+                  <tr>
+                    <th colspan="6" class="text-end">Subtotal</th>
+                    <th class="text-end">{{ formatMoney(order.subtotal) }}</th>
+                  </tr>
+                  <tr v-if="order.discount_total > 0">
+                    <th colspan="6" class="text-end">Discount total</th>
+                    <th class="text-end text-success">
+                      -{{ formatMoney(order.discount_total) }}
+                    </th>
+                  </tr>
+                  <tr>
+                    <th colspan="6" class="text-end">TVA</th>
+                    <th class="text-end">{{ formatMoney(order.tax_total) }}</th>
+                  </tr>
+                  <tr>
+                    <th colspan="6" class="text-end">Transport</th>
+                    <th class="text-end">{{ formatMoney(order.shipping_total) }}</th>
+                  </tr>
+                  <tr>
+                    <th colspan="6" class="text-end">Total comandă</th>
+                    <th class="text-end">{{ formatMoney(order.grand_total) }}</th>
+                  </tr>
+                </tfoot>
               </table>
             </div>
-
-            <div class="d-flex justify-content-between mt-3">
-              <button
-                type="button"
-                class="btn btn-outline-primary btn-sm"
-                @click="handleReorder"
-              >
-                Comandă din nou
-              </button>
-              <div class="text-end">
-                <div>
-                  Subtotal:
-                  <strong>{{ formatMoney(order.subtotal) }}</strong>
-                </div>
-                <div v-if="order.discount_total && order.discount_total > 0">
-                  Discount:
-                  <strong>-{{ formatMoney(order.discount_total) }}</strong>
-                </div>
-                <div>
-                  Transport:
-                  <strong>{{ formatMoney(order.shipping_total) }}</strong>
-                </div>
-                <div class="h6 mt-1 mb-0">
-                  Total:
-                  <strong>{{ formatMoney(order.total) }}</strong>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Facturi asociate -->
-        <div v-if="order.invoices && order.invoices.length" class="card shadow-sm mt-3">
-          <div class="card-body small">
-            <h2 class="h6 mb-2">Documente asociate</h2>
-            <ul class="list-unstyled mb-0">
-              <li
-                v-for="inv in order.invoices"
-                :key="inv.id"
-                class="d-flex justify-content-between align-items-center mb-1"
-              >
-                <div>
-                  {{ inv.number }} – {{ formatDate(inv.issue_date) }}
-                  <span class="text-muted">
-                    ({{ formatMoney(inv.total) }})
-                  </span>
-                </div>
-                <div>
-                  <a
-                    v-if="inv.pdf_url"
-                    :href="inv.pdf_url"
-                    target="_blank"
-                    rel="noopener"
-                    class="btn btn-outline-secondary btn-sm"
-                  >
-                    Descarcă PDF
-                  </a>
-                </div>
-              </li>
-            </ul>
-          </div>
-        </div>
-
-      </div>
-
-      <!-- Col dreapta: adrese & info plată/livrare -->
-      <div class="col-lg-4">
-        <div class="card shadow-sm mb-3">
-          <div class="card-body small">
-            <h2 class="h6 mb-2">Livrare</h2>
-            <p class="mb-1">
-              <strong>Metodă:</strong>
-              {{ order.shipping_method_label || order.shipping_method }}
-            </p>
-            <p class="mb-1">
-              <strong>Adresă livrare:</strong><br />
-              {{ formatAddress(order.shipping_address) }}
-            </p>
-            <p class="mb-0" v-if="order.tracking_number">
-              <strong>AWB:</strong> {{ order.tracking_number }}
-            </p>
-          </div>
-        </div>
-
-        <div class="card shadow-sm mb-3">
-          <div class="card-body small">
-            <h2 class="h6 mb-2">Facturare & plată</h2>
-            <p class="mb-1">
-              <strong>Metodă plată:</strong>
-              {{ order.payment_method_label || order.payment_method }}
-            </p>
-            <p class="mb-1">
-              <strong>Adresă facturare:</strong><br />
-              {{ formatAddress(order.billing_address) }}
-            </p>
-            <p class="mb-0" v-if="order.due_date">
-              <strong>Scadență:</strong> {{ formatDate(order.due_date) }}
-            </p>
-          </div>
-        </div>
-
-        <div v-if="order.customer_note" class="card shadow-sm">
-          <div class="card-body small">
-            <h2 class="h6 mb-2">Observații client</h2>
-            <p class="mb-0">
-              {{ order.customer_note }}
-            </p>
           </div>
         </div>
 
       </div>
     </div>
+  </div>
 
-    <div v-else-if="!loading" class="alert alert-warning small">
-      Comanda nu a fost găsită.
+  <div v-else class="container-fluid py-3">
+    <div class="text-center text-muted py-5">
+      Se încarcă detaliile comenzii…
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { onMounted, reactive, ref } from 'vue';
 import { useRoute } from 'vue-router';
-import { fetchOrder, reorderOrder } from '@/services/account/orders';
+import {
+  fetchOrder,
+  updateOrderStatus,
+  updateOrderPaymentStatus,
+} from '@/services/admin/orders';
 
 const route = useRoute();
 
-const order = ref(null);
-const loading = ref(false);
+const loaded = ref(false);
 const error = ref('');
 
-const formatMoney = (value) => {
-  if (!value) value = 0;
-  return Number(value).toLocaleString('ro-RO', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
-};
+const order = reactive({});
+const customer = ref(null);
+const billingAddress = ref(null);
+const shippingAddress = ref(null);
+const items = ref([]);
 
-const formatDate = (value) => {
-  if (!value) return '';
-  return new Date(value).toLocaleDateString('ro-RO');
-};
+const statusForm = reactive({
+  status: 'pending',
+  cancel_reason: '',
+});
+const statusLoading = ref(false);
 
-const formatDateTime = (value) => {
-  if (!value) return '';
-  return new Date(value).toLocaleString('ro-RO');
-};
-
-const formatAddress = (addr) => {
-  if (!addr) return '-';
-  const parts = [
-    addr.name,
-    addr.company_name,
-    addr.street,
-    addr.city,
-    addr.county,
-    addr.zip,
-    addr.country,
-  ].filter(Boolean);
-  return parts.join(', ');
-};
+const paymentForm = reactive({
+  payment_status: 'pending',
+  payment_method: '',
+});
+const paymentLoading = ref(false);
 
 const loadOrder = async () => {
-  loading.value = true;
+  loaded.value = false;
   error.value = '';
 
   try {
     const id = route.params.id;
     const data = await fetchOrder(id);
-    order.value = data.order ?? data;
+
+    Object.assign(order, data.order || {});
+    customer.value = data.customer || null;
+    billingAddress.value = data.billing_address || null;
+    shippingAddress.value = data.shipping_address || null;
+    items.value = data.items || [];
+
+    statusForm.status = order.status;
+    statusForm.cancel_reason = order.cancel_reason || '';
+    paymentForm.payment_status = order.payment_status;
+    paymentForm.payment_method = order.payment_method || '';
   } catch (e) {
-    console.error(e);
-    error.value =
-      e?.response?.data?.message ||
-      'Nu am putut încărca detaliile comenzii.';
+    console.error('Admin order details error', e);
+    error.value = 'Nu s-au putut încărca detaliile comenzii.';
   } finally {
-    loading.value = false;
+    loaded.value = true;
   }
 };
 
-const handleReorder = async () => {
-  if (!order.value) return;
+const submitStatus = async () => {
+  if (!order.id) return;
+  statusLoading.value = true;
+  error.value = '';
+
   try {
-    await reorderOrder(order.value.id);
-    alert(
-      'Produsele din această comandă au fost adăugate în coș.'
-    );
+    const data = await updateOrderStatus(order.id, {
+      status: statusForm.status,
+      cancel_reason: statusForm.cancel_reason,
+    });
+
+    Object.assign(order, data.order || {});
   } catch (e) {
-    console.error(e);
-    alert('Nu am putut re-plasa comanda.');
+    console.error('Update status error', e);
+    error.value = 'Nu s-a putut actualiza statusul comenzii.';
+  } finally {
+    statusLoading.value = false;
   }
+};
+
+const submitPaymentStatus = async () => {
+  if (!order.id) return;
+  paymentLoading.value = true;
+  error.value = '';
+
+  try {
+    const data = await updateOrderPaymentStatus(order.id, {
+      payment_status: paymentForm.payment_status,
+      payment_method: paymentForm.payment_method,
+    });
+
+    Object.assign(order, data.order || {});
+  } catch (e) {
+    console.error('Update payment status error', e);
+    error.value = 'Nu s-a putut actualiza statusul plății.';
+  } finally {
+    paymentLoading.value = false;
+  }
+};
+
+const statusLabel = (status) => {
+  switch (status) {
+    case 'pending':
+      return 'În așteptare';
+    case 'processing':
+      return 'În procesare';
+    case 'completed':
+      return 'Finalizată';
+    case 'cancelled':
+      return 'Anulată';
+    case 'awaiting_payment':
+      return 'Așteaptă plată';
+    case 'on_hold':
+      return 'On hold';
+    default:
+      return status || '—';
+  }
+};
+
+const statusBadgeClass = (status) => {
+  switch (status) {
+    case 'pending':
+      return 'bg-warning text-dark';
+    case 'processing':
+      return 'bg-info text-dark';
+    case 'completed':
+      return 'bg-success';
+    case 'cancelled':
+      return 'bg-danger';
+    case 'awaiting_payment':
+      return 'bg-secondary';
+    case 'on_hold':
+      return 'bg-dark';
+    default:
+      return 'bg-light text-dark';
+  }
+};
+
+const paymentStatusLabel = (status) => {
+  switch (status) {
+    case 'pending':
+      return 'Neplătită';
+    case 'paid':
+      return 'Plătită';
+    case 'failed':
+      return 'Eșuată';
+    case 'refunded':
+      return 'Rambursată';
+    case 'partially_paid':
+      return 'Parțial plătită';
+    default:
+      return status || '—';
+  }
+};
+
+const paymentStatusBadgeClass = (status) => {
+  switch (status) {
+    case 'pending':
+      return 'bg-warning text-dark';
+    case 'paid':
+      return 'bg-success';
+    case 'failed':
+      return 'bg-danger';
+    case 'refunded':
+      return 'bg-info text-dark';
+    case 'partially_paid':
+      return 'bg-primary';
+    default:
+      return 'bg-light text-dark';
+  }
+};
+
+const formatMoney = (value) => {
+  const num = Number(value) || 0;
+  return num.toLocaleString('ro-RO', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 };
 
 onMounted(loadOrder);

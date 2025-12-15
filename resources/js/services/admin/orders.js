@@ -1,19 +1,22 @@
 // resources/js/services/admin/orders.js
-import { adminApi } from '../http';
+import  adminApi  from '@/services/http';
 
-export const fetchAdminOrders = (params = {}) =>
-  adminApi.get('/orders', { params }).then((r) => r.data);
+export function fetchOrders(params = {}) {
+  return adminApi.get('/orders', { params }).then(response => response.data);
+}
 
-export const fetchAdminOrder = (id) =>
-  adminApi.get(`/orders/${id}`).then((r) => r.data);
+export function fetchOrder(id) {
+  return adminApi.get(`/orders/${id}`).then(response => response.data);
+}
 
-export const updateAdminOrder = (id, payload) =>
-  adminApi.put(`/orders/${id}`, payload).then((r) => r.data);
+export function updateOrder(id, payload) {
+  return adminApi.put(`/orders/${id}`, payload).then(response => response.data);
+}
 
-export const updateAdminOrderStatus = (id, status) =>
-  adminApi.post(`/orders/${id}/status`, { status }).then((r) => r.data);
+export function updateOrderStatus(id, payload) {
+  return adminApi.post(`/orders/${id}/status`, payload).then(response => response.data);
+}
 
-export const updateAdminOrderPaymentStatus = (id, paymentStatus) =>
-  adminApi
-    .post(`/orders/${id}/payment-status`, { payment_status: paymentStatus })
-    .then((r) => r.data);
+export function updateOrderPaymentStatus(id, payload) {
+  return adminApi.post(`/orders/${id}/payment-status`, payload).then(response => response.data);
+}

@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Gazdă: localhost
--- Timp de generare: dec. 15, 2025 la 02:23 PM
+-- Timp de generare: dec. 15, 2025 la 03:01 PM
 -- Versiune server: 8.0.44
 -- Versiune PHP: 8.2.28
 
@@ -815,7 +815,7 @@ CREATE TABLE `personal_access_tokens` (
 INSERT INTO `personal_access_tokens` (`id`, `tokenable_type`, `tokenable_id`, `name`, `token`, `abilities`, `last_used_at`, `expires_at`, `created_at`, `updated_at`) VALUES
 (2, 'App\\Models\\User', 1, 'spa', 'cd12d255ddaf85693ca3e2b2a72d9edfc39f393c9b371f901eec43686a4fdece', '[\"*\"]', NULL, NULL, '2025-12-11 15:03:13', '2025-12-11 15:03:13'),
 (4, 'App\\Models\\User', 1, 'spa', 'a5d73e2c38cc9f10c87f326525372a73d950797a198d0bf24a03216e9775dabb', '[\"*\"]', '2025-12-12 08:45:56', NULL, '2025-12-12 05:14:17', '2025-12-12 08:45:56'),
-(5, 'App\\Models\\User', 1, 'spa', '8d6fdb14811b400544e975de3ed9cbec0c6f22b1f53d03854bb2f5d173112f29', '[\"*\"]', '2025-12-15 12:19:01', NULL, '2025-12-12 09:00:05', '2025-12-15 12:19:01'),
+(5, 'App\\Models\\User', 1, 'spa', '8d6fdb14811b400544e975de3ed9cbec0c6f22b1f53d03854bb2f5d173112f29', '[\"*\"]', '2025-12-15 12:43:13', NULL, '2025-12-12 09:00:05', '2025-12-15 12:43:13'),
 (7, 'App\\Models\\User', 4, 'spa', '7c2bf917a8ac02628e170bf693e2baad078a51979240ea4f7341ca335cc18883', '[\"*\"]', '2025-12-15 11:44:46', NULL, '2025-12-15 11:44:45', '2025-12-15 11:44:46');
 
 -- --------------------------------------------------------
@@ -963,6 +963,7 @@ CREATE TABLE `promotions` (
   `is_exclusive` tinyint(1) NOT NULL DEFAULT '0',
   `is_iterative` tinyint(1) NOT NULL DEFAULT '0',
   `bonus_type` enum('free_item','discount_value','discount_percent') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'discount_percent',
+  `discount_type` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `discount_percent` decimal(8,2) DEFAULT NULL,
   `discount_value` decimal(15,2) DEFAULT NULL,
   `applies_to` enum('all','categories','brands','products') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'all',
@@ -978,10 +979,10 @@ CREATE TABLE `promotions` (
 -- Eliminarea datelor din tabel `promotions`
 --
 
-INSERT INTO `promotions` (`id`, `name`, `slug`, `short_description`, `description`, `hero_image`, `banner_image`, `mobile_image`, `start_at`, `end_at`, `status`, `is_exclusive`, `is_iterative`, `bonus_type`, `discount_percent`, `discount_value`, `applies_to`, `min_cart_total`, `min_qty_per_product`, `customer_type`, `logged_in_only`, `created_at`, `updated_at`) VALUES
-(1, 'promo 1', 'promo1', 'sdf', 'sdf', NULL, NULL, NULL, '2025-12-11 22:00:00', '2025-12-30 22:00:00', 'active', 0, 0, 'discount_percent', NULL, NULL, 'all', 10.00, 1, 'both', 1, '2025-12-12 07:12:05', '2025-12-12 07:12:05'),
-(2, 'Scule electrice -10% pentru parteneri', 'scule-electrice-10-procent', 'Reducere 10% la toată gama de scule electrice pentru clienți B2B.', 'Campanie dedicată partenerilor B2B: reducere 10% la sculele electrice selectate (bormașini, ciocane rotopercutoare, polizoare).', NULL, NULL, NULL, '2025-12-07 13:56:40', '2026-01-01 13:56:40', 'active', 0, 1, 'discount_percent', NULL, NULL, 'all', 500.00, 1, 'b2b', 1, '2025-12-12 13:56:40', '2025-12-12 13:56:40'),
-(3, 'Echipamente de protecție – pachet avantajos', 'echipamente-protectie-pachet', 'Prețuri speciale la pachete de mănuși și echipamente de protecție.', 'Pachete avantajoase pentru echiparea rapidă a echipelor din teren: mănuși de protecție, ochelari, cască și încălțăminte.', NULL, NULL, NULL, '2025-12-10 13:56:40', '2026-01-11 13:56:40', 'active', 0, 0, 'discount_value', NULL, NULL, 'all', 300.00, 5, 'both', 0, '2025-12-12 13:56:40', '2025-12-12 13:56:40');
+INSERT INTO `promotions` (`id`, `name`, `slug`, `short_description`, `description`, `hero_image`, `banner_image`, `mobile_image`, `start_at`, `end_at`, `status`, `is_exclusive`, `is_iterative`, `bonus_type`, `discount_type`, `discount_percent`, `discount_value`, `applies_to`, `min_cart_total`, `min_qty_per_product`, `customer_type`, `logged_in_only`, `created_at`, `updated_at`) VALUES
+(1, 'promo 1', 'promo1', 'sdf', 'sdf', NULL, NULL, NULL, '2025-12-11 22:00:00', '2025-12-30 22:00:00', 'active', 0, 0, 'discount_percent', NULL, NULL, NULL, 'all', 10.00, 1, 'both', 1, '2025-12-12 07:12:05', '2025-12-12 07:12:05'),
+(2, 'Scule electrice -10% pentru parteneri', 'scule-electrice-10-procent', 'Reducere 10% la toată gama de scule electrice pentru clienți B2B.', 'Campanie dedicată partenerilor B2B: reducere 10% la sculele electrice selectate (bormașini, ciocane rotopercutoare, polizoare).', NULL, NULL, NULL, '2025-12-07 13:56:40', '2026-01-01 13:56:40', 'active', 0, 1, 'discount_percent', NULL, NULL, NULL, 'all', 500.00, 1, 'b2b', 1, '2025-12-12 13:56:40', '2025-12-12 13:56:40'),
+(3, 'Echipamente de protecție – pachet avantajos', 'echipamente-protectie-pachet', 'Prețuri speciale la pachete de mănuși și echipamente de protecție.', 'Pachete avantajoase pentru echiparea rapidă a echipelor din teren: mănuși de protecție, ochelari, cască și încălțăminte.', NULL, NULL, NULL, '2025-12-10 13:56:40', '2026-01-11 13:56:40', 'active', 0, 0, 'discount_value', NULL, NULL, NULL, 'all', 300.00, 5, 'both', 0, '2025-12-12 13:56:40', '2025-12-12 13:56:40');
 
 -- --------------------------------------------------------
 

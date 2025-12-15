@@ -1,150 +1,180 @@
 <template>
-  <div class="py-3">
-    <div class="container">
-      <h1 class="h5 mb-2">
-        Rezultate căutare
-      </h1>
-      <p class="text-muted small mb-3">
-        Termen căutat: <strong>"{{ query }}"</strong>
-      </p>
-
-      <div class="row mb-3">
-        <div class="col-md-6">
-          <input
-            v-model="localQuery"
-            type="text"
-            class="form-control form-control-sm"
-            placeholder="Refaceți căutarea..."
-            @keyup.enter="doSearch"
-          />
-        </div>
-        <div class="col-md-3">
-          <button
-            type="button"
-            class="btn btn-outline-secondary btn-sm"
-            @click="doSearch"
-          >
-            Caută
-          </button>
-        </div>
+  <div class="container py-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-3">
+      <div>
+        <h1 class="h5 mb-1">Rezultate căutare</h1>
+        <p class="small text-muted mb-0">
+          Căutare după: <strong>"{{ query || '' }}"</strong>
+        </p>
       </div>
-
-      <div v-if="loading" class="text-muted small py-3">
-        Se caută produse...
+      <div v-if="total > 0" class="small text-muted mt-2 mt-md-0">
+        {{ total }} rezultat{{ total === 1 ? '' : 'e' }}
       </div>
-      <div v-else-if="error" class="alert alert-danger small py-2">
-        {{ error }}
-      </div>
+    </div>
 
-      <div v-else>
-        <!-- Sugestii categorii / branduri -->
-        <div class="row mb-3" v-if="categories.length || brands.length">
-          <div class="col-md-6" v-if="categories.length">
-            <div class="small fw-semibold mb-1">Categorii</div>
-            <div class="d-flex flex-wrap gap-2 small">
-              <RouterLink
-                v-for="cat in categories"
-                :key="cat.id"
-                :to="`/categorie/${cat.slug}`"
-                class="badge rounded-pill text-bg-light text-decoration-none"
-              >
-                {{ cat.name }}
-              </RouterLink>
-            </div>
+    <div class="card mb-3">
+      <div class="card-body">
+        <form class="row g-2" @submit.prevent="handleSubmit">
+          <div class="col-md-10">
+            <input
+              v-model="searchInput"
+              type="text"
+              class="form-control form-control-sm"
+              placeholder="Caută după denumire, cod intern, cod de bare..."
+            />
           </div>
-          <div class="col-md-6" v-if="brands.length">
-            <div class="small fw-semibold mb-1">Branduri</div>
-            <div class="d-flex flex-wrap gap-2 small">
-              <span
-                v-for="brand in brands"
-                :key="brand.id"
-                class="badge rounded-pill text-bg-light"
-              >
-                {{ brand.name }}
-              </span>
-            </div>
+          <div class="col-md-2 text-md-end">
+            <button class="btn btn-primary btn-sm w-100" type="submit">
+              Caută
+            </button>
           </div>
-        </div>
+        </form>
+      </div>
+    </div>
 
-        <!-- Produse -->
-        <div class="row g-3">
-          <div
-            v-for="p in products.data"
-            :key="p.id"
-            class="col-lg-3 col-md-4 col-sm-6"
-          >
-            <div class="card h-100">
-              <div class="card-body d-flex flex-column">
-                <div class="small text-muted mb-1">
-                  {{ p.main_category?.name || 'Categorie' }}
+    <div v-if="error" class="alert alert-danger py-2 mb-3">
+      {{ error }}
+    </div>
+
+    <div v-if="loading" class="text-center py-4">
+      <div class="spinner-border spinner-border-sm" role="status" />
+      <div class="small text-muted mt-2">Se caută produse...</div>
+    </div>
+
+    <div v-else>
+      <div v-if="!query" class="alert alert-info py-2">
+        Introdu un termen de căutare pentru a vedea rezultate.
+      </div>
+
+      <div v-else-if="products.length === 0" class="alert alert-warning py-2">
+        Nu am găsit produse pentru termenul introdus.
+      </div>
+
+      <div v-else class="row g-3">
+        <div
+          v-for="product in products"
+          :key="product.id"
+          class="col-md-3 col-sm-6"
+        >
+          <div class="card h-100">
+            <div class="card-body d-flex flex-column">
+              <div class="small text-muted mb-1">
+                {{ product.category || 'Categorie nespecificată' }}
+              </div>
+              <h2 class="h6 mb-1">{{ product.name }}</h2>
+              <div class="small text-muted mb-2">{{ product.code }}</div>
+              <div class="mt-auto">
+                <div class="fw-semibold mb-1">
+                  {{ formatPrice(product.price) }} RON
                 </div>
-                <h2 class="h6 mb-1">{{ p.name }}</h2>
-                <div class="small text-muted mb-2">
-                  {{ p.code || p.sku }}
-                </div>
-                <div class="mt-auto">
-                  <div class="fw-semibold mb-1">
-                    {{ formatMoney(p.promo_price || p.price || p.list_price || 0) }}
-                    RON
-                  </div>
-                  <RouterLink
-                    :to="`/produs/${p.slug}`"
-                    class="btn btn-outline-primary btn-sm"
-                  >
-                    Detalii
-                  </RouterLink>
-                </div>
+                <RouterLink
+                  :to="`/produs/${product.slug}`"
+                  class="btn btn-outline-secondary btn-sm"
+                >
+                  Detalii produs
+                </RouterLink>
               </div>
             </div>
           </div>
-
-          <div v-if="!products.data.length" class="col-12">
-            <div class="alert alert-light border small mb-0">
-              Nu am găsit produse pentru acest termen de căutare.
-            </div>
-          </div>
         </div>
       </div>
+
+      <!-- Paginare minimală (dacă vrei să o folosești mai târziu) -->
+      <nav
+        v-if="meta.last_page > 1"
+        class="mt-3"
+        aria-label="Pagini rezultate căutare"
+      >
+        <ul class="pagination pagination-sm mb-0">
+          <li
+            class="page-item"
+            :class="{ disabled: meta.current_page <= 1 }"
+          >
+            <button
+              class="page-link"
+              type="button"
+              @click="changePage(meta.current_page - 1)"
+            >
+              «
+            </button>
+          </li>
+
+          <li
+            v-for="page in pages"
+            :key="page"
+            class="page-item"
+            :class="{ active: page === meta.current_page }"
+          >
+            <button
+              class="page-link"
+              type="button"
+              @click="changePage(page)"
+            >
+              {{ page }}
+            </button>
+          </li>
+
+          <li
+            class="page-item"
+            :class="{ disabled: meta.current_page >= meta.last_page }"
+          >
+            <button
+              class="page-link"
+              type="button"
+              @click="changePage(meta.current_page + 1)"
+            >
+              »
+            </button>
+          </li>
+        </ul>
+      </nav>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, watch, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { searchCatalog } from '@/services/search';
+import { searchProducts } from '@/services/catalog';
 
 const route = useRoute();
 const router = useRouter();
 
-const query = ref('');
-const localQuery = ref('');
+const query = ref(route.query.q || '');
+const searchInput = ref(query.value);
+
+const products = ref([]);
 const loading = ref(false);
 const error = ref('');
 
-const products = reactive({
-  data: [],
-  meta: null,
+const meta = ref({
+  total: 0,
+  current_page: 1,
+  last_page: 1,
 });
 
-const categories = ref([]);
-const brands = ref([]);
+const total = computed(() => meta.value.total);
 
-const formatMoney = (value) =>
-  (Number(value) || 0).toLocaleString('ro-RO', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
+const pages = computed(() => {
+  const last = meta.value.last_page || 1;
+  const current = meta.value.current_page || 1;
 
-const load = async () => {
-  query.value = (route.query.q || '').toString();
-  localQuery.value = query.value;
+  const result = [];
+  const start = Math.max(1, current - 2);
+  const end = Math.min(last, current + 2);
 
-  if (!query.value) {
-    products.data = [];
-    products.meta = null;
-    categories.value = [];
-    brands.value = [];
+  for (let p = start; p <= end; p += 1) {
+    result.push(p);
+  }
+  return result;
+});
+
+const loadResults = async () => {
+  const q = query.value?.toString().trim();
+
+  if (!q) {
+    products.value = [];
+    meta.value = { total: 0, current_page: 1, last_page: 1 };
     return;
   }
 
@@ -152,32 +182,57 @@ const load = async () => {
   error.value = '';
 
   try {
-    const data = await searchCatalog({ q: query.value });
-    products.data = data.products?.data || [];
-    products.meta = data.products?.meta || null;
-    categories.value = data.categories || [];
-    brands.value = data.brands || [];
+    const data = await searchProducts({
+      q,
+      page: meta.value.current_page,
+    });
+
+    products.value = data.data ?? [];
+    meta.value = data.meta ?? {
+      total: 0,
+      current_page: 1,
+      last_page: 1,
+    };
   } catch (e) {
     console.error(e);
-    error.value = 'A apărut o problemă la căutare.';
+    error.value = 'A apărut o eroare la căutare.';
   } finally {
     loading.value = false;
   }
 };
 
-const doSearch = () => {
-  router.push({
+const handleSubmit = () => {
+  query.value = searchInput.value;
+  meta.value.current_page = 1;
+  router.replace({
     name: 'search-results',
-    query: { q: localQuery.value || '' },
+    query: { q: query.value || undefined },
   });
+  loadResults();
 };
 
+const changePage = (page) => {
+  if (page < 1 || page > meta.value.last_page) return;
+  meta.value.current_page = page;
+  loadResults();
+};
+
+const formatPrice = (value) => {
+  if (typeof value !== 'number') return value;
+  return value.toLocaleString('ro-RO', { minimumFractionDigits: 2 });
+};
+
+// inițial
+onMounted(loadResults);
+
+// reîncarcă dacă se schimbă q în URL
 watch(
   () => route.query.q,
-  () => {
-    load();
-  },
+  (newQ) => {
+    query.value = newQ || '';
+    searchInput.value = query.value;
+    meta.value.current_page = 1;
+    loadResults();
+  }
 );
-
-onMounted(load);
 </script>

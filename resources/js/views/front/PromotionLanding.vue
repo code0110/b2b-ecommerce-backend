@@ -1,148 +1,165 @@
 <template>
-  <div class="py-3">
-    <div class="container">
-      <RouterLink to="/promotii" class="small text-muted text-decoration-none">
-        ← Înapoi la promoții
-      </RouterLink>
+  <div class="container py-4">
+    <div v-if="error" class="alert alert-danger py-2 mb-3">
+      {{ error }}
+    </div>
 
-      <div class="row mt-2">
-        <div class="col-md-8">
-          <h1 class="h4 mb-1">
-            {{ promotion?.name || 'Promoție' }}
-          </h1>
-          <p class="text-muted small mb-2">
-            {{ promotion?.short_description }}
+    <div v-if="loading" class="text-center py-5">
+      <div class="spinner-border spinner-border-sm" role="status" />
+      <div class="small text-muted mt-2">Se încarcă promoția...</div>
+    </div>
+
+    <div v-else-if="promotion">
+      <!-- Hero / header promoție -->
+      <div class="row align-items-center mb-4">
+        <div class="col-md-7">
+          <h1 class="h4 mb-1">{{ promotion.name }}</h1>
+          <p class="text-muted mb-2">
+            {{ promotion.short_description }}
           </p>
-          <div class="small mb-2">
-            <strong>Perioadă:</strong>
-            {{ formatPeriod(promotion) }}
-          </div>
-          <div class="small text-muted mb-3">
-            Segment: {{ formatCustomerType(promotion?.customer_type) }}
-          </div>
-          <p v-if="promotion?.description" class="mb-3">
-            {{ promotion.description }}
+          <p class="small mb-1" v-if="promotion.period">
+            <strong>Perioadă:</strong> {{ promotion.period }}
           </p>
+          <p class="small text-muted mb-3">
+            Segment: {{ promotion.segmentLabel }}
+          </p>
+          <RouterLink
+            to="/promotii"
+            class="btn btn-outline-secondary btn-sm"
+          >
+            ← Înapoi la lista de promoții
+          </RouterLink>
+        </div>
+        <div class="col-md-5">
+          <div v-if="promotion.hero_image" class="border rounded overflow-hidden">
+            <img
+              :src="promotion.hero_image"
+              :alt="promotion.name"
+              class="img-fluid w-100"
+            />
+          </div>
         </div>
       </div>
 
-      <hr class="my-3" />
-
-      <div class="d-flex justify-content-between align-items-center mb-2">
-        <h2 class="h6 mb-0">Produse incluse în promoție</h2>
+      <!-- Descriere detaliată -->
+      <div
+        v-if="promotion.description"
+        class="card mb-4"
+      >
+        <div class="card-body">
+          <h2 class="h6 mb-3">Detalii campanie</h2>
+          <div
+            class="small"
+            v-html="promotion.description"
+          />
+        </div>
       </div>
 
-      <div v-if="loading" class="text-muted small py-3">
-        Se încarcă promoția...
-      </div>
-      <div v-else-if="error" class="alert alert-danger small py-2">
-        {{ error }}
-      </div>
+      <!-- Produse incluse în promoție -->
+      <div>
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <h2 class="h6 mb-0">Produse incluse în promoție</h2>
+          <span class="small text-muted">
+            {{ products.length }} produs{{ products.length === 1 ? '' : 'e' }}
+          </span>
+        </div>
 
-      <div v-else class="row g-3">
-        <div
-          v-for="p in products.data"
-          :key="p.id"
-          class="col-lg-3 col-md-4 col-sm-6"
-        >
-          <div class="card h-100">
-            <div class="card-body d-flex flex-column">
-              <div class="small text-muted mb-1">
-                {{ p.main_category?.name || 'Categorie' }}
-              </div>
-              <h3 class="h6 mb-1">{{ p.name }}</h3>
-              <div class="small text-muted mb-2">
-                {{ p.code || p.sku }}
-              </div>
-              <div class="mt-auto">
-                <div class="small text-muted" v-if="p.promo_price">
-                  <span class="text-decoration-line-through me-1">
-                    {{ formatMoney(p.price || p.list_price || 0) }}
-                  </span>
-                  <span class="fw-semibold">
-                    {{ formatMoney(p.promo_price) }} RON
+        <div v-if="products.length === 0" class="alert alert-info py-2">
+          Nu sunt produse asociate acestei promoții în acest moment.
+        </div>
+
+        <div class="row g-3">
+          <div
+            v-for="product in products"
+            :key="product.id"
+            class="col-md-3 col-sm-6"
+          >
+            <div class="card h-100 shadow-sm">
+              <div class="card-body d-flex flex-column">
+                <div class="d-flex justify-content-between align-items-start mb-1">
+                  <div class="small text-muted">
+                    {{ product.category || 'Categorie nespecificată' }}
+                  </div>
+                  <span
+                    v-if="product.is_new"
+                    class="badge bg-success"
+                  >
+                    Nou
                   </span>
                 </div>
-                <div v-else class="fw-semibold mb-1">
-                  {{ formatMoney(p.price || p.list_price || 0) }} RON
+                <h3 class="h6 mb-1">{{ product.name }}</h3>
+                <div class="small text-muted mb-2">{{ product.code }}</div>
+                <div class="mt-auto">
+                  <div class="fw-semibold mb-1">
+                    {{ formatPrice(product.price) }} RON
+                  </div>
+                  <RouterLink
+                    :to="`/produs/${product.slug}`"
+                    class="btn btn-outline-primary btn-sm"
+                  >
+                    Detalii produs
+                  </RouterLink>
                 </div>
-                <RouterLink
-                  :to="`/produs/${p.slug}`"
-                  class="btn btn-outline-primary btn-sm"
-                >
-                  Detalii produs
-                </RouterLink>
               </div>
             </div>
           </div>
         </div>
-
-        <div v-if="!products.data.length" class="col-12">
-          <div class="alert alert-light border small mb-0">
-            Nu există produse legate de această promoție.
-          </div>
-        </div>
       </div>
+    </div>
+
+    <div v-else-if="!loading" class="alert alert-warning py-2">
+      Promoția nu a fost găsită.
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue';
-import { useRoute } from 'vue-router';
-import { fetchPromotionLanding } from '@/services/promotions';
+import { ref, onMounted, watch } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
+import { fetchPromotionDetails } from '@/services/promotions';
 
 const route = useRoute();
+const router = useRouter();
+
+const promotion = ref(null);
+const products = ref([]);
 
 const loading = ref(false);
 const error = ref('');
-const promotion = ref(null);
-const products = reactive({
-  data: [],
-  meta: null,
-});
 
-const formatMoney = (value) =>
-  (Number(value) || 0).toLocaleString('ro-RO', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
+const loadPromotion = async () => {
+  const slug = route.params.slug;
 
-const formatPeriod = (promo) => {
-  if (!promo) return '';
-  if (!promo.start_at && !promo.end_at) return 'fără perioadă';
-  const start = promo.start_at
-    ? new Date(promo.start_at).toLocaleDateString('ro-RO')
-    : '–';
-  const end = promo.end_at
-    ? new Date(promo.end_at).toLocaleDateString('ro-RO')
-    : '–';
-  return `${start} – ${end}`;
-};
+  if (!slug) {
+    router.replace({ name: 'promotions' });
+    return;
+  }
 
-const formatCustomerType = (t) => {
-  if (t === 'b2b') return 'clienți B2B';
-  if (t === 'b2c') return 'clienți B2C';
-  return 'toți clienții';
-};
-
-const load = async () => {
   loading.value = true;
   error.value = '';
 
   try {
-    const data = await fetchPromotionLanding(route.params.slug);
-
-    promotion.value = data.promotion;
-    products.data = data.products?.data || [];
-    products.meta = data.products?.meta || null;
+    const data = await fetchPromotionDetails(slug);
+    promotion.value = data.promotion ?? null;
+    products.value = data.products ?? [];
   } catch (e) {
     console.error(e);
-    error.value = 'Promoția nu a putut fi încărcată.';
+    error.value = 'Nu s-a putut încărca promoția.';
   } finally {
     loading.value = false;
   }
 };
 
-onMounted(load);
+const formatPrice = (value) => {
+  if (typeof value !== 'number') return value;
+  return value.toLocaleString('ro-RO', { minimumFractionDigits: 2 });
+};
+
+onMounted(loadPromotion);
+
+// reîncarcă dacă se schimbă slug-ul
+watch(
+  () => route.params.slug,
+  () => loadPromotion()
+);
 </script>

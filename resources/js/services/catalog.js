@@ -26,8 +26,8 @@ export async function fetchProductBySlug(slug) {
 // Căutare produse: /api/catalog/search
 // folosit și pentru paginile /noutati, /reduceri etc.
 export async function searchProducts(params = {}) {
-  const { data } = await api.get('/search', { params });
-  return data;
+  const response = await api.get('/search', { params });
+  return response.data;
 }
 export const fetchCategoryTree = () =>
   api.get('/catalog/categories-tree').then((r) => r.data);

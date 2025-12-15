@@ -6,17 +6,21 @@ use Illuminate\Database\Eloquent\Model;
 
 class SalesRepresentative extends Model
 {
+    protected $table = 'sales_representatives';
+
     protected $fillable = [
         'name',
+        'email',
+        'phone',
         'region',
         'counties',
-        'phone',
-        'email',
-        'territory_code',
-        'active',
+        'is_active',
+        'sort_order',
     ];
 
     protected $casts = [
-        'active' => 'boolean',
+        'counties'   => 'array',
+        'is_active'  => 'boolean',
+        'sort_order' => 'integer',
     ];
 }

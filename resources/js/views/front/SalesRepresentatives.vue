@@ -1,123 +1,124 @@
 <template>
-  <div class="py-3">
-    <div class="container">
-      <h1 class="h4 mb-2">Reprezentanți vânzări</h1>
-      <p class="text-muted small mb-3">
-        Găsiți reprezentantul potrivit pentru regiunea sau județul dumneavoastră.
-      </p>
+  <div class="container py-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-3">
+      <div>
+        <h1 class="h4 mb-1">Reprezentanți vânzări</h1>
+        <p class="text-muted small mb-0">
+          Găsește persoana potrivită în funcție de regiune / județ.
+        </p>
+      </div>
+    </div>
 
-      <!-- Filtre -->
-      <div class="row mb-3">
-        <div class="col-md-4 mb-2">
-          <label class="small text-muted mb-1">Regiune</label>
-          <select
-            v-model="filters.region"
-            class="form-select form-select-sm"
-            @change="reload"
-          >
-            <option value="">Toate regiunile</option>
-            <option
-              v-for="region in regions"
-              :key="region"
-              :value="region"
+    <div class="card mb-3">
+      <div class="card-body">
+        <div class="row g-2 align-items-end">
+          <div class="col-md-4">
+            <label class="form-label form-label-sm">Regiune</label>
+            <select
+              v-model="selectedRegion"
+              class="form-select form-select-sm"
+              @change="handleFilterChange"
             >
-              {{ region }}
-            </option>
-          </select>
+              <option value="">Toate regiunile</option>
+              <option
+                v-for="region in filters.regions"
+                :key="region"
+                :value="region"
+              >
+                {{ region }}
+              </option>
+            </select>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label form-label-sm">Județ</label>
+            <select
+              v-model="selectedCounty"
+              class="form-select form-select-sm"
+              @change="handleFilterChange"
+            >
+              <option value="">Toate județele</option>
+              <option
+                v-for="county in filters.counties"
+                :key="county"
+                :value="county"
+              >
+                {{ county }}
+              </option>
+            </select>
+          </div>
+          <div class="col-md-4 text-md-end mt-2 mt-md-0">
+            <button
+              type="button"
+              class="btn btn-outline-secondary btn-sm me-2"
+              @click="resetFilters"
+            >
+              Resetează filtrele
+            </button>
+            <button
+              type="button"
+              class="btn btn-primary btn-sm"
+              @click="loadReps"
+            >
+              Aplică
+            </button>
+          </div>
         </div>
-        <div class="col-md-4 mb-2">
-          <label class="small text-muted mb-1">Județ (căutare text)</label>
-          <input
-            v-model="filters.county"
-            type="text"
-            class="form-control form-control-sm"
-            placeholder="ex. Cluj, Ilfov..."
-            @keyup.enter="reload"
-          />
-        </div>
-        <div class="col-md-4 mb-2 d-flex align-items-end">
-          <button
-            type="button"
-            class="btn btn-outline-secondary btn-sm me-2"
-            @click="reload"
-          >
-            Aplică filtre
-          </button>
-          <button
-            v-if="filters.region || filters.county"
-            type="button"
-            class="btn btn-link btn-sm text-decoration-none"
-            @click="resetFilters"
-          >
-            Resetează
-          </button>
-        </div>
+      </div>
+    </div>
+
+    <div v-if="error" class="alert alert-danger py-2 mb-3">
+      {{ error }}
+    </div>
+
+    <div v-if="loading" class="text-center py-4">
+      <div class="spinner-border spinner-border-sm" role="status" />
+      <div class="small text-muted mt-2">Se încarcă reprezentanții...</div>
+    </div>
+
+    <div v-else>
+      <div v-if="reps.length === 0" class="alert alert-info py-2">
+        Nu există reprezentanți pentru filtrarea selectată.
       </div>
 
-      <!-- Conținut -->
-      <div v-if="loading" class="text-muted small py-3">
-        Se încarcă reprezentanții...
-      </div>
-      <div v-else-if="error" class="alert alert-danger small py-2">
-        {{ error }}
-      </div>
-
-      <div v-else class="row g-3">
+      <div class="row g-3">
         <div
           v-for="rep in reps"
           :key="rep.id"
           class="col-md-4 col-sm-6"
         >
-          <div class="card h-100 border-0 shadow-sm">
+          <div class="card h-100 shadow-sm">
             <div class="card-body d-flex flex-column">
-              <div class="d-flex justify-content-between align-items-start mb-2">
-                <h2 class="h6 mb-0">{{ rep.name }}</h2>
-                <span class="badge bg-light text-muted">
-                  {{ rep.region || 'Nespecificat' }}
-                </span>
-              </div>
-
+              <h2 class="h6 mb-1">{{ rep.name }}</h2>
               <p class="small text-muted mb-2">
-                <strong>Județe:</strong>
-                {{ rep.counties || 'Nespecificat' }}
+                Regiune: {{ rep.region || 'Nespecificat' }}
               </p>
 
-              <div class="mt-auto small">
-                <div v-if="rep.phone" class="mb-1">
-                  Telefon:
-                  <a
-                    :href="`tel:${rep.phone}`"
-                    class="text-decoration-none"
-                  >
-                    {{ rep.phone }}
-                  </a>
-                </div>
-                <div v-if="rep.email">
-                  E-mail:
-                  <a
-                    :href="`mailto:${rep.email}`"
-                    class="text-decoration-none"
-                  >
-                    {{ rep.email }}
-                  </a>
+              <div class="small mb-2">
+                <div v-if="rep.counties && rep.counties.length" class="text-muted">
+                  Județe: {{ rep.counties.join(', ') }}
                 </div>
               </div>
 
-              <button
-                v-if="rep.email"
-                type="button"
-                class="btn btn-outline-primary btn-sm mt-3"
-                @click="contact(rep)"
-              >
-                Contactează
-              </button>
+              <div class="mt-auto">
+                <div class="small mb-1">
+                  <div v-if="rep.phone">
+                    <strong>Tel:</strong>
+                    <a :href="`tel:${rep.phone}`">{{ rep.phone }}</a>
+                  </div>
+                  <div v-if="rep.email">
+                    <strong>Email:</strong>
+                    <a :href="`mailto:${rep.email}`">{{ rep.email }}</a>
+                  </div>
+                </div>
+                <a
+                  v-if="rep.email"
+                  :href="`mailto:${rep.email}?subject=Solicitare%20ofert%C4%83`"
+                  class="btn btn-outline-primary btn-sm"
+                >
+                  Contactează
+                </a>
+              </div>
             </div>
-          </div>
-        </div>
-
-        <div v-if="!reps.length" class="col-12">
-          <div class="alert alert-light border small mb-0">
-            Nu am găsit reprezentanți pentru filtrele selectate.
           </div>
         </div>
       </div>
@@ -126,55 +127,50 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue';
-import { fetchSalesRepresentatives } from '@/services/salesReps';
+import { ref, onMounted } from 'vue';
+import { fetchSalesRepresentatives } from '@/services/sales';
+
+const reps = ref([]);
+const filters = ref({
+  regions: [],
+  counties: [],
+});
+
+const selectedRegion = ref('');
+const selectedCounty = ref('');
 
 const loading = ref(false);
 const error = ref('');
 
-const regions = ref([]);
-const reps = ref([]);
-
-const filters = reactive({
-  region: '',
-  county: '',
-});
-
-const load = async () => {
+const loadReps = async () => {
   loading.value = true;
   error.value = '';
 
   try {
     const data = await fetchSalesRepresentatives({
-      region: filters.region || undefined,
-      county: filters.county || undefined,
+      region: selectedRegion.value || undefined,
+      county: selectedCounty.value || undefined,
     });
 
-    regions.value = data.filters?.regions || [];
-    reps.value = data.representatives || [];
+    reps.value = data.data ?? [];
+    filters.value = data.filters ?? { regions: [], counties: [] };
   } catch (e) {
     console.error(e);
-    error.value = 'Nu s-au putut încărca reprezentanții de vânzări.';
+    error.value = 'Nu s-au putut încărca reprezentanții.';
   } finally {
     loading.value = false;
   }
 };
 
-const reload = () => {
-  load();
-};
-
 const resetFilters = () => {
-  filters.region = '';
-  filters.county = '';
-  load();
+  selectedRegion.value = '';
+  selectedCounty.value = '';
+  loadReps();
 };
 
-const contact = (rep) => {
-  if (rep.email) {
-    window.location.href = `mailto:${rep.email}`;
-  }
+const handleFilterChange = () => {
+  // dacă vrei autoload la schimbare, poți apela direct loadReps()
 };
 
-onMounted(load);
+onMounted(loadReps);
 </script>

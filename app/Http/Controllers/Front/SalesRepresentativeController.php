@@ -8,40 +8,73 @@ use Illuminate\Http\Request;
 
 class SalesRepresentativeController extends Controller
 {
+    /**
+     * GET /api/sales-representatives
+     * Filtre: ?region=...&county=...
+     */
     public function index(Request $request)
     {
-        $query = SalesRepresentative::query()
-            ->where('active', true)
-            ->orderBy('region')
-            ->orderBy('name');
+        $region = $request->query('region');
+        $county = $request->query('county');
 
-        if ($region = $request->input('region')) {
+        $query = SalesRepresentative::query()
+            ->where('is_active', true);
+
+        if ($region) {
             $query->where('region', $region);
         }
 
-        if ($county = $request->input('county')) {
+        if ($county) {
             $query->where(function ($q) use ($county) {
-                $q->where('counties', 'like', '%' . $county . '%');
+                $q->whereJsonContains('counties', $county);
             });
         }
 
-        $reps = $query->get();
+        $reps = $query
+            ->orderBy('sort_order')
+            ->orderBy('name')
+            ->get()
+            ->map(function (SalesRepresentative $rep) {
+                return [
+                    'id'      => $rep->id,
+                    'name'    => $rep->name,
+                    'email'   => $rep->email,
+                    'phone'   => $rep->phone,
+                    'region'  => $rep->region,
+                    'counties'=> $rep->counties ?? [],
+                ];
+            });
 
-        // extragem liste distincte pentru filtre
-        $regions = SalesRepresentative::query()
-            ->where('active', true)
-            ->select('region')
-            ->whereNotNull('region')
-            ->distinct()
-            ->orderBy('region')
+        // Construim liste de filtre din toți reprezentanții activi
+        $allActive = SalesRepresentative::query()
+            ->where('is_active', true)
+            ->get();
+
+        $regions = $allActive
             ->pluck('region')
-            ->values();
+            ->filter()
+            ->unique()
+            ->sort()
+            ->values()
+            ->all();
+
+        $counties = $allActive
+            ->pluck('counties')
+            ->filter()
+            ->flatMap(function ($c) {
+                return is_array($c) ? $c : [];
+            })
+            ->unique()
+            ->sort()
+            ->values()
+            ->all();
 
         return response()->json([
+            'data'    => $reps,
             'filters' => [
                 'regions' => $regions,
+                'counties'=> $counties,
             ],
-            'representatives' => $reps,
         ]);
     }
 }

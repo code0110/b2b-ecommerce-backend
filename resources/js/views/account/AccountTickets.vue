@@ -1,149 +1,278 @@
 <template>
   <div class="container py-4">
-    <h2 class="mb-1">Tichete suport & mesaje</h2>
-    <p class="text-muted mb-3">
-      Sistem demo de ticketing între client și echipa de suport / agent /
-      director de vânzări.
-    </p>
-
-    <div class="alert alert-info small" v-if="frontClientType">
-      <div>
-        Client activ:
-        <strong>{{ frontCustomerName }}</strong>
-        <span class="badge bg-secondary ms-2">{{ frontClientType }}</span>
-      </div>
-      <div class="mt-1" v-if="isImpersonating">
-        Orice tichet nou va fi deschis în numele acestui client. Util pentru
-        agenți și directori care gestionează comunicarea pentru portofoliul lor.
-      </div>
-      <div class="mt-1 text-muted" v-else>
-        Client autentificat direct în platformă.
-      </div>
-    </div>
-
-    <div class="alert alert-warning small" v-else>
-      Nu există client activ. Într-o implementare reală, crearea de tichete ar
-      fi blocată până la identificarea clientului.
-    </div>
-
-    <div class="row g-3 mt-3">
-      <div class="col-lg-4">
-        <div class="card shadow-sm h-100">
-          <div class="card-header py-2 d-flex justify-content-between align-items-center">
-            <strong class="small text-uppercase">Deschide tichet nou</strong>
-            <span class="badge bg-primary">Demo</span>
-          </div>
-          <div class="card-body small">
-            <div class="mb-2">
-              <label class="form-label">Subiect</label>
-              <input
-                type="text"
-                class="form-control form-control-sm"
-                placeholder="Ex: Nelămurire privind o factură"
-                v-model="newTicket.subject"
-              />
-            </div>
-            <div class="mb-2">
-              <label class="form-label">Categorie</label>
-              <select
-                class="form-select form-select-sm"
-                v-model="newTicket.category"
-              >
-                <option value="general">General</option>
-                <option value="comenzi">Comenzi & livrare</option>
-                <option value="facturi">Facturi & plăți</option>
-                <option value="tehnic">Suport tehnic</option>
-              </select>
-            </div>
-            <div class="mb-3">
-              <label class="form-label">Mesaj</label>
-              <textarea
-                class="form-control form-control-sm"
-                rows="4"
-                placeholder="Descrie pe scurt problema..."
-                v-model="newTicket.message"
-              ></textarea>
-            </div>
-            <button
-              type="button"
-              class="btn btn-sm btn-primary w-100"
-              :disabled="!frontClientType"
-              @click="createTicket"
-            >
-              Trimite tichet
-            </button>
-            <p class="small text-muted mt-2 mb-0">
-              În acest demo, tichetele nu se salvează pe server – logica este doar
-              de prezentare a fluxului.
-            </p>
-          </div>
+    <div class="row">
+      <!-- Lista tichete -->
+      <div class="col-lg-4 mb-3 mb-lg-0">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <h1 class="h5 mb-0">Tichete suport</h1>
+          <button
+            type="button"
+            class="btn btn-primary btn-sm"
+            @click="startNewTicket"
+          >
+            Tichet nou
+          </button>
         </div>
+
+        <div v-if="loadingList" class="text-muted small py-3">
+          Se încarcă tichetele...
+        </div>
+
+        <div
+          v-else-if="tickets.length === 0"
+          class="text-muted small py-3"
+        >
+          Nu ai tichete deschise încă.
+        </div>
+
+        <ul
+          v-else
+          class="list-group list-group-flush small"
+        >
+          <li
+            v-for="t in tickets"
+            :key="t.id"
+            class="list-group-item list-group-item-action"
+            :class="{
+              active:
+                currentTicket &&
+                currentTicket.id === t.id,
+            }"
+            role="button"
+            @click="openTicket(t)"
+          >
+            <div class="d-flex justify-content-between">
+              <span class="fw-semibold">
+                {{ t.subject }}
+              </span>
+              <span
+                class="badge bg-secondary text-uppercase"
+              >
+                {{ t.status }}
+              </span>
+            </div>
+            <div class="text-muted">
+              {{ t.category || 'General' }} ·
+              <span v-if="t.last_message_at">
+                actualizat
+                {{ formatDate(t.last_message_at) }}
+              </span>
+            </div>
+          </li>
+        </ul>
       </div>
 
+      <!-- Detalii / formular -->
       <div class="col-lg-8">
-        <div class="card shadow-sm h-100">
-          <div class="card-header py-2 d-flex justify-content-between align-items-center">
-            <strong class="small text-uppercase">Tichetele mele</strong>
-            <span class="badge bg-light text-dark">
-              {{ demoTickets.length }} tichete demo
-            </span>
-          </div>
-          <div class="card-body small">
-            <div
-              v-for="ticket in demoTickets"
-              :key="ticket.id"
-              class="border-bottom pb-2 mb-2"
-            >
-              <div class="d-flex justify-content-between">
+        <div v-if="loadingTicket" class="text-muted small py-3">
+          Se încarcă detaliile tichetului...
+        </div>
+
+        <!-- Formular tichet nou -->
+        <div v-else-if="mode === 'new'">
+          <div class="card shadow-sm">
+            <div class="card-body">
+              <h2 class="h6 mb-3">Tichet nou</h2>
+
+              <div
+                v-if="error"
+                class="alert alert-danger small"
+              >
+                {{ error }}
+              </div>
+
+              <form
+                @submit.prevent="submitNewTicket"
+                class="vstack gap-3 small"
+              >
                 <div>
-                  <div class="fw-semibold">
-                    {{ ticket.subject }}
-                    <span class="badge bg-light text-dark ms-1">
-                      {{ ticket.categoryLabel }}
-                    </span>
+                  <label class="form-label">Subiect *</label>
+                  <input
+                    v-model="newTicket.subject"
+                    type="text"
+                    class="form-control form-control-sm"
+                    required
+                  />
+                </div>
+
+                <div class="row g-3">
+                  <div class="col-md-6">
+                    <label class="form-label">Categorie</label>
+                    <input
+                      v-model="newTicket.category"
+                      type="text"
+                      class="form-control form-control-sm"
+                      placeholder="ex: Comenzi, Facturare, Livrare"
+                    />
                   </div>
-                  <div class="text-muted">
-                    ID: {{ ticket.code }} • Creat: {{ ticket.createdAt }}
+                  <div class="col-md-6">
+                    <label class="form-label">Prioritate</label>
+                    <select
+                      v-model="newTicket.priority"
+                      class="form-select form-select-sm"
+                    >
+                      <option value="low">Scăzută</option>
+                      <option value="normal">Normală</option>
+                      <option value="high">Ridicată</option>
+                    </select>
                   </div>
                 </div>
-                <div class="text-end">
-                  <span
-                    class="badge"
-                    :class="{
-                      'bg-secondary': ticket.status === 'nou',
-                      'bg-info text-dark': ticket.status === 'in_lucru',
-                      'bg-success': ticket.status === 'rezolvat'
-                    }"
+
+                <div>
+                  <label class="form-label">Mesaj *</label>
+                  <textarea
+                    v-model="newTicket.message"
+                    rows="4"
+                    class="form-control form-control-sm"
+                    required
+                  ></textarea>
+                </div>
+
+                <div class="d-flex gap-2">
+                  <button
+                    type="submit"
+                    class="btn btn-primary btn-sm"
+                    :disabled="submitting"
                   >
+                    <span
+                      v-if="submitting"
+                      class="spinner-border spinner-border-sm me-1"
+                    ></span>
+                    Trimite tichet
+                  </button>
+                  <button
+                    type="button"
+                    class="btn btn-outline-secondary btn-sm"
+                    :disabled="submitting"
+                    @click="
+                      mode = currentTicket ? 'view' : 'idle'
+                    "
+                  >
+                    Renunță
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+
+        <!-- Detalii tichet -->
+        <div
+          v-else-if="currentTicket"
+          class="card shadow-sm"
+        >
+          <div class="card-body small">
+            <div
+              class="d-flex justify-content-between align-items-start mb-2"
+            >
+              <div>
+                <h2 class="h6 mb-1">
+                  {{ currentTicket.subject }}
+                </h2>
+                <div class="small text-muted">
+                  {{ currentTicket.category || 'General' }} ·
+                  <span class="text-uppercase">
+                    {{ currentTicket.status }}
+                  </span>
+                  ·
+                  <span v-if="currentTicket.created_at">
+                    creat
                     {{
-                      ticket.status === 'nou'
-                        ? 'Nou'
-                        : ticket.status === 'in_lucru'
-                          ? 'În lucru'
-                          : 'Rezolvat'
+                      formatDate(
+                        currentTicket.created_at
+                      )
                     }}
                   </span>
                 </div>
               </div>
-              <div class="mt-2">
-                <div class="fw-semibold mb-1">Istoric mesaje</div>
-                <ul class="list-unstyled mb-0">
-                  <li
-                    v-for="(msg, idx) in ticket.messages"
-                    :key="idx"
-                    class="mb-1"
-                  >
-                    <span class="fw-semibold">{{ msg.from }}:</span>
-                    <span class="ms-1">{{ msg.text }}</span>
-                    <span class="text-muted ms-2">({{ msg.when }})</span>
-                  </li>
-                </ul>
+              <button
+                type="button"
+                class="btn btn-outline-secondary btn-sm"
+                @click="startNewTicket"
+              >
+                Tichet nou
+              </button>
+            </div>
+
+            <div
+              v-if="error"
+              class="alert alert-danger small"
+            >
+              {{ error }}
+            </div>
+
+            <div
+              class="border rounded p-2 mb-3 bg-light"
+              style="max-height: 320px; overflow-y: auto"
+            >
+              <div
+                v-for="msg in currentTicket.messages || []"
+                :key="msg.id"
+                class="mb-3"
+              >
+                <div class="small fw-semibold">
+                  {{
+                    msg.sender
+                      ? `${msg.sender.first_name} ${
+                          msg.sender.last_name || ''
+                        }`
+                      : 'Sistem'
+                  }}
+                  <span class="text-muted fw-normal">
+                    ·
+                    {{ formatDateTime(msg.created_at) }}
+                  </span>
+                </div>
+                <div class="small">
+                  {{ msg.message }}
+                </div>
+              </div>
+
+              <div
+                v-if="(currentTicket.messages || []).length === 0"
+                class="small text-muted"
+              >
+                Nu există mesaje în acest tichet încă.
               </div>
             </div>
-            <div v-if="!demoTickets.length" class="alert alert-light border mb-0">
-              Nu există tichete demo. Creează unul nou din formularul alăturat.
-            </div>
+
+            <form
+              @submit.prevent="submitReply"
+              class="vstack gap-2 small"
+            >
+              <label class="form-label">Răspuns</label>
+              <textarea
+                v-model="replyMessage"
+                rows="3"
+                class="form-control form-control-sm"
+                placeholder="Scrie un mesaj pentru echipa de suport..."
+              ></textarea>
+              <div class="d-flex justify-content-end gap-2">
+                <button
+                  type="submit"
+                  class="btn btn-primary btn-sm"
+                  :disabled="
+                    submitting || !replyMessage.trim()
+                  "
+                >
+                  <span
+                    v-if="submitting"
+                    class="spinner-border spinner-border-sm me-1"
+                  ></span>
+                  Trimite răspuns
+                </button>
+              </div>
+            </form>
           </div>
+        </div>
+
+        <!-- Nimic selectat -->
+        <div
+          v-else
+          class="text-muted small py-3"
+        >
+          Selectează un tichet din listă sau creează unul
+          nou.
         </div>
       </div>
     </div>
@@ -151,124 +280,129 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
-import { useAuthStore } from '@/store/auth'
+import { ref, reactive, onMounted } from 'vue';
+import {
+  fetchTickets,
+  fetchTicket,
+  createTicket,
+  addTicketMessage,
+} from '@/services/account/tickets';
 
-const authStore = useAuthStore()
+const tickets = ref([]);
+const currentTicket = ref(null);
 
-const isImpersonating = computed(() => !!authStore.impersonatedCustomer)
+const loadingList = ref(false);
+const loadingTicket = ref(false);
+const submitting = ref(false);
+const error = ref('');
 
-const frontClientType = computed(() => {
-  if (authStore.impersonatedCustomer?.clientType) {
-    return authStore.impersonatedCustomer.clientType
-  }
-  if (authStore.user?.role === 'b2b') return 'B2B'
-  if (authStore.user?.role === 'b2c') return 'B2C'
-  return null
-})
+const mode = ref('idle'); // idle | new | view
 
-const frontCustomerName = computed(() => {
-  if (authStore.impersonatedCustomer?.name) {
-    return authStore.impersonatedCustomer.name
-  }
-  if (authStore.user && (authStore.user.role === 'b2b' || authStore.user.role === 'b2c')) {
-    return authStore.user.name
-  }
-  return null
-})
-
-// Demo tickets
-const demoTickets = ref([
-  {
-    id: 1,
-    code: 'TCK-1001',
-    subject: 'Întrebare despre termenul de livrare',
-    category: 'comenzi',
-    categoryLabel: 'Comenzi & livrare',
-    status: 'in_lucru',
-    createdAt: '2025-02-10',
-    messages: [
-      {
-        from: 'Client',
-        text: 'Bună ziua, care este termenul estimat de livrare pentru comanda #CMD-0998?',
-        when: '10.02, 09:15'
-      },
-      {
-        from: 'Suport',
-        text: 'Comanda este în curs de livrare, termen estimat: 12.02.',
-        when: '10.02, 10:02'
-      }
-    ]
-  },
-  {
-    id: 2,
-    code: 'TCK-0997',
-    subject: 'Neconcordanță factură',
-    category: 'facturi',
-    categoryLabel: 'Facturi & plăți',
-    status: 'rezolvat',
-    createdAt: '2025-01-28',
-    messages: [
-      {
-        from: 'Client',
-        text: 'Pe factura #FAC-2025-001 apar două linii dublate.',
-        when: '28.01, 14:20'
-      },
-      {
-        from: 'Suport',
-        text: 'A fost emisă o factură storno, problema este rezolvată.',
-        when: '29.01, 09:05'
-      }
-    ]
-  }
-])
-
-const newTicket = ref({
+const newTicket = reactive({
   subject: '',
-  category: 'general',
-  message: ''
-})
+  category: '',
+  priority: 'normal',
+  message: '',
+});
 
-const createTicket = () => {
-  if (!frontClientType.value) {
-    return
+const replyMessage = ref('');
+
+const formatDate = (value) => {
+  if (!value) return '';
+  return new Date(value).toLocaleDateString('ro-RO');
+};
+
+const formatDateTime = (value) => {
+  if (!value) return '';
+  return new Date(value).toLocaleString('ro-RO');
+};
+
+const loadTickets = async () => {
+  loadingList.value = true;
+  error.value = '';
+  try {
+    const data = await fetchTickets();
+    tickets.value = data.data ?? data;
+  } catch (e) {
+    console.error(e);
+    error.value = 'Nu am putut încărca lista de tichete.';
+  } finally {
+    loadingList.value = false;
   }
-  if (!newTicket.value.subject || !newTicket.value.message) {
-    return
+};
+
+const openTicket = async (ticket) => {
+  mode.value = 'view';
+  currentTicket.value = null;
+  loadingTicket.value = true;
+  error.value = '';
+
+  try {
+    const data = await fetchTicket(ticket.id);
+    currentTicket.value = data;
+  } catch (e) {
+    console.error(e);
+    error.value = 'Nu am putut încărca tichetul.';
+  } finally {
+    loadingTicket.value = false;
   }
+};
 
-  const nextId = demoTickets.value.length
-    ? Math.max(...demoTickets.value.map(t => t.id)) + 1
-    : 1
-
-  demoTickets.value.unshift({
-    id: nextId,
-    code: `TCK-${1000 + nextId}`,
-    subject: newTicket.value.subject,
-    category: newTicket.value.category,
-    categoryLabel:
-      newTicket.value.category === 'comenzi'
-        ? 'Comenzi & livrare'
-        : newTicket.value.category === 'facturi'
-          ? 'Facturi & plăți'
-          : newTicket.value.category === 'tehnic'
-            ? 'Suport tehnic'
-            : 'General',
-    status: 'nou',
-    createdAt: new Date().toISOString().slice(0, 10),
-    messages: [
-      {
-        from: frontCustomerName.value || 'Client',
-        text: newTicket.value.message,
-        when: 'acum'
-      }
-    ]
-  })
-
-  newTicket.value = {
+const startNewTicket = () => {
+  mode.value = 'new';
+  error.value = '';
+  currentTicket.value = null;
+  Object.assign(newTicket, {
     subject: '',
-    category: 'general',
-    message: ''
+    category: '',
+    priority: 'normal',
+    message: '',
+  });
+};
+
+const submitNewTicket = async () => {
+  submitting.value = true;
+  error.value = '';
+
+  try {
+    const created = await createTicket({ ...newTicket });
+    mode.value = 'view';
+    await loadTickets();
+    await openTicket(created);
+  } catch (e) {
+    console.error(e);
+    error.value =
+      e?.response?.data?.message ??
+      'Nu am putut crea tichetul.';
+  } finally {
+    submitting.value = false;
   }
-}
+};
+
+const submitReply = async () => {
+  if (!replyMessage.value.trim() || !currentTicket.value) {
+    return;
+  }
+
+  submitting.value = true;
+  error.value = '';
+
+  try {
+    await addTicketMessage(currentTicket.value.id, {
+      message: replyMessage.value,
+    });
+    replyMessage.value = '';
+    const fresh = await fetchTicket(currentTicket.value.id);
+    currentTicket.value = fresh;
+  } catch (e) {
+    console.error(e);
+    error.value =
+      e?.response?.data?.message ??
+      'Nu am putut trimite mesajul.';
+  } finally {
+    submitting.value = false;
+  }
+};
+
+onMounted(loadTickets);
 </script>

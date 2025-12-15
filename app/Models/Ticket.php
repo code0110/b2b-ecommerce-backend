@@ -3,8 +3,6 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Ticket extends Model
 {
@@ -23,22 +21,22 @@ class Ticket extends Model
         'last_message_at' => 'datetime',
     ];
 
-    public function customer(): BelongsTo
+    public function customer()
     {
         return $this->belongsTo(Customer::class);
     }
 
-    public function createdBy(): BelongsTo
+    public function creator()
     {
         return $this->belongsTo(User::class, 'created_by_user_id');
     }
 
-    public function assignedTo(): BelongsTo
+    public function assignee()
     {
         return $this->belongsTo(User::class, 'assigned_to_user_id');
     }
 
-    public function messages(): HasMany
+    public function messages()
     {
         return $this->hasMany(TicketMessage::class);
     }

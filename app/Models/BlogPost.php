@@ -3,7 +3,6 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class BlogPost extends Model
 {
@@ -25,12 +24,12 @@ class BlogPost extends Model
         'published_at' => 'datetime',
     ];
 
-    public function category(): BelongsTo
+    public function category()
     {
         return $this->belongsTo(BlogCategory::class, 'category_id');
     }
 
-    public function author(): BelongsTo
+    public function author()
     {
         return $this->belongsTo(User::class, 'author_user_id');
     }

@@ -13,9 +13,23 @@ class TicketController extends Controller
     {
         $user = $request->user();
 
-        return Ticket::where('customer_id', $user->customer_id)
+        $tickets = Ticket::where('customer_id', $user->customer_id)
             ->orderByDesc('last_message_at')
-            ->paginate(20);
+            ->orderByDesc('created_at')
+            ->paginate(15);
+
+        return response()->json($tickets);
+    }
+
+    public function show(int $id, Request $request)
+    {
+        $user = $request->user();
+
+        $ticket = Ticket::with(['messages.sender'])
+            ->where('customer_id', $user->customer_id)
+            ->findOrFail($id);
+
+        return response()->json($ticket);
     }
 
     public function store(Request $request)
@@ -23,9 +37,10 @@ class TicketController extends Controller
         $user = $request->user();
 
         $data = $request->validate([
-            'subject'  => ['required', 'string', 'max:191'],
-            'category' => ['nullable', 'string', 'max:100'],
-            'message'  => ['required', 'string'],
+            'subject'  => 'required|string|max:255',
+            'category' => 'nullable|string|max:100',
+            'message'  => 'required|string',
+            'priority' => 'nullable|string|max:50',
         ]);
 
         $ticket = Ticket::create([
@@ -34,7 +49,7 @@ class TicketController extends Controller
             'subject'            => $data['subject'],
             'category'           => $data['category'] ?? null,
             'status'             => 'new',
-            'priority'           => 'normal',
+            'priority'           => $data['priority'] ?? 'normal',
             'last_message_at'    => now(),
         ]);
 
@@ -45,31 +60,17 @@ class TicketController extends Controller
             'is_internal'    => false,
         ]);
 
-        return response()->json($ticket->load('messages.sender'), 201);
+        return response()->json($ticket->fresh(), 201);
     }
 
-    public function show($id, Request $request)
+    public function storeMessage(int $id, Request $request)
     {
         $user = $request->user();
 
-        $ticket = Ticket::where('customer_id', $user->customer_id)
-            ->where('id', $id)
-            ->with('messages.sender')
-            ->firstOrFail();
-
-        return $ticket;
-    }
-
-    public function addMessage($id, Request $request)
-    {
-        $user = $request->user();
-
-        $ticket = Ticket::where('customer_id', $user->customer_id)
-            ->where('id', $id)
-            ->firstOrFail();
+        $ticket = Ticket::where('customer_id', $user->customer_id)->findOrFail($id);
 
         $data = $request->validate([
-            'message' => ['required', 'string'],
+            'message' => 'required|string',
         ]);
 
         $message = TicketMessage::create([
@@ -79,12 +80,11 @@ class TicketController extends Controller
             'is_internal'    => false,
         ]);
 
-        $ticket->last_message_at = now();
-        if ($ticket->status === 'new') {
-            $ticket->status = 'open';
-        }
-        $ticket->save();
+        $ticket->update([
+            'last_message_at' => now(),
+            'status'          => $ticket->status === 'resolved' ? 'in_progress' : $ticket->status,
+        ]);
 
-        return response()->json($message->load('sender'), 201);
+        return response()->json($message, 201);
     }
 }

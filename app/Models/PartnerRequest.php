@@ -3,7 +3,6 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class PartnerRequest extends Model
 {
@@ -22,7 +21,7 @@ class PartnerRequest extends Model
         'assigned_agent_id',
     ];
 
-    public function assignedAgent(): BelongsTo
+    public function assignedAgent()
     {
         return $this->belongsTo(User::class, 'assigned_agent_id');
     }

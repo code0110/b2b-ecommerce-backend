@@ -3,7 +3,6 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class TicketMessage extends Model
 {
@@ -18,12 +17,12 @@ class TicketMessage extends Model
         'is_internal' => 'boolean',
     ];
 
-    public function ticket(): BelongsTo
+    public function ticket()
     {
         return $this->belongsTo(Ticket::class);
     }
 
-    public function sender(): BelongsTo
+    public function sender()
     {
         return $this->belongsTo(User::class, 'sender_user_id');
     }

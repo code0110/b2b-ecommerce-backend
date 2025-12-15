@@ -1,178 +1,152 @@
 <template>
-  <div class="container">
-    <PageHeader
-      title="Devino partener"
-      subtitle="Completează formularul pentru a deveni client B2B și a beneficia de condiții comerciale dedicate."
-    />
+  <div class="container py-4">
+    <div class="row">
+      <div class="col-lg-7">
+        <h1 class="h3 mb-3">Devino partener B2B</h1>
+        <p class="text-muted small mb-4">
+          Completează formularul de mai jos și un reprezentant de vânzări te va
+          contacta pentru detalii comerciale.
+        </p>
 
-    <div class="row g-3">
-      <div class="col-lg-8">
-        <div class="card shadow-sm">
-          <div class="card-body small">
-            <form @submit.prevent="onSubmit">
-              <h6 class="mb-2">Date firmă</h6>
-              <div class="row g-2">
-                <div class="col-md-6">
-                  <label class="form-label text-muted">Denumire firmă</label>
-                  <input
-                    v-model="form.companyName"
-                    type="text"
-                    class="form-control form-control-sm"
-                    required
-                  />
-                </div>
-                <div class="col-md-3">
-                  <label class="form-label text-muted">CUI</label>
-                  <input
-                    v-model="form.cui"
-                    type="text"
-                    class="form-control form-control-sm"
-                    required
-                  />
-                </div>
-                <div class="col-md-3">
-                  <label class="form-label text-muted">Nr. Reg. Com.</label>
-                  <input
-                    v-model="form.regCom"
-                    type="text"
-                    class="form-control form-control-sm"
-                  />
-                </div>
-              </div>
-
-              <div class="row g-2 mt-1">
-                <div class="col-md-4">
-                  <label class="form-label text-muted">IBAN (opțional)</label>
-                  <input
-                    v-model="form.iban"
-                    type="text"
-                    class="form-control form-control-sm"
-                  />
-                </div>
-                <div class="col-md-4">
-                  <label class="form-label text-muted">Regiune</label>
-                  <select
-                    v-model="form.region"
-                    class="form-select form-select-sm"
-                    required
-                  >
-                    <option value="">Alege regiunea</option>
-                    <option value="Sud / București - Ilfov">Sud / București - Ilfov</option>
-                    <option value="Transilvania">Transilvania</option>
-                    <option value="Moldova">Moldova</option>
-                    <option value="Dobrogea">Dobrogea</option>
-                    <option value="Banat / Crișana">Banat / Crișana</option>
-                  </select>
-                </div>
-                <div class="col-md-4">
-                  <label class="form-label text-muted">Tip activitate</label>
-                  <input
-                    v-model="form.activityType"
-                    type="text"
-                    class="form-control form-control-sm"
-                    placeholder="ex: Distribuitor, Antreprenor..."
-                  />
-                </div>
-              </div>
-
-              <h6 class="mt-3 mb-2">Persoană de contact</h6>
-              <div class="row g-2">
-                <div class="col-md-4">
-                  <label class="form-label text-muted">Nume persoană contact</label>
-                  <input
-                    v-model="form.contactPerson"
-                    type="text"
-                    class="form-control form-control-sm"
-                    required
-                  />
-                </div>
-                <div class="col-md-4">
-                  <label class="form-label text-muted">Email</label>
-                  <input
-                    v-model="form.email"
-                    type="email"
-                    class="form-control form-control-sm"
-                    required
-                  />
-                </div>
-                <div class="col-md-4">
-                  <label class="form-label text-muted">Telefon</label>
-                  <input
-                    v-model="form.phone"
-                    type="tel"
-                    class="form-control form-control-sm"
-                  />
-                </div>
-              </div>
-
-              <h6 class="mt-3 mb-2">Informații suplimentare</h6>
-              <div class="mb-2">
-                <label class="form-label text-muted">Mesaj / detalii proiect</label>
-                <textarea
-                  v-model="form.message"
-                  class="form-control form-control-sm"
-                  rows="3"
-                  placeholder="Descrie pe scurt volumul estimat, tipurile de produse de interes, proiecte în derulare etc."
-                />
-              </div>
-
-              <div class="form-check mb-2">
-                <input
-                  id="terms"
-                  v-model="form.acceptTerms"
-                  class="form-check-input"
-                  type="checkbox"
-                  required
-                />
-                <label class="form-check-label small" for="terms">
-                  Sunt de acord cu prelucrarea datelor conform politicii de confidențialitate.
-                </label>
-              </div>
-
-              <div class="d-flex justify-content-end">
-                <button
-                  type="submit"
-                  class="btn btn-primary btn-sm"
-                  :disabled="submitting"
-                >
-                  Trimite solicitare
-                </button>
-              </div>
-              <p v-if="submitInfo" class="small text-muted mt-2 mb-0">
-                {{ submitInfo }}
-              </p>
-            </form>
-          </div>
+        <div v-if="success" class="alert alert-success small">
+          {{ success }}
         </div>
+        <div v-if="error" class="alert alert-danger small">
+          {{ error }}
+        </div>
+
+        <form @submit.prevent="submit" class="vstack gap-3">
+          <div class="row g-3">
+            <div class="col-md-8">
+              <label class="form-label small">Denumire firmă *</label>
+              <input
+                v-model="form.company_name"
+                type="text"
+                class="form-control form-control-sm"
+                required
+              />
+            </div>
+            <div class="col-md-4">
+              <label class="form-label small">CIF</label>
+              <input
+                v-model="form.cif"
+                type="text"
+                class="form-control form-control-sm"
+              />
+            </div>
+          </div>
+
+          <div class="row g-3">
+            <div class="col-md-4">
+              <label class="form-label small">Nr. Reg. Com.</label>
+              <input
+                v-model="form.reg_com"
+                type="text"
+                class="form-control form-control-sm"
+              />
+            </div>
+            <div class="col-md-8">
+              <label class="form-label small">IBAN</label>
+              <input
+                v-model="form.iban"
+                type="text"
+                class="form-control form-control-sm"
+              />
+            </div>
+          </div>
+
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label small">Persoană de contact *</label>
+              <input
+                v-model="form.contact_name"
+                type="text"
+                class="form-control form-control-sm"
+                required
+              />
+            </div>
+            <div class="col-md-6">
+              <label class="form-label small">Telefon</label>
+              <input
+                v-model="form.phone"
+                type="text"
+                class="form-control form-control-sm"
+              />
+            </div>
+          </div>
+
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label small">Email *</label>
+              <input
+                v-model="form.email"
+                type="email"
+                class="form-control form-control-sm"
+                required
+              />
+            </div>
+            <div class="col-md-6">
+              <label class="form-label small">Regiune / județ</label>
+              <input
+                v-model="form.region"
+                type="text"
+                class="form-control form-control-sm"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label class="form-label small">Tip activitate</label>
+            <input
+              v-model="form.activity_type"
+              type="text"
+              class="form-control form-control-sm"
+              placeholder="ex: distribuitor, magazin online, instalator"
+            />
+          </div>
+
+          <div>
+            <label class="form-label small">Detalii suplimentare</label>
+            <textarea
+              v-model="form.notes"
+              rows="3"
+              class="form-control form-control-sm"
+            ></textarea>
+          </div>
+
+          <div class="d-flex align-items-center gap-2">
+            <button
+              type="submit"
+              class="btn btn-primary btn-sm"
+              :disabled="loading"
+            >
+              <span
+                v-if="loading"
+                class="spinner-border spinner-border-sm me-1"
+                role="status"
+              ></span>
+              Trimite cererea
+            </button>
+            <span class="small text-muted">
+              Vei primi un răspuns în cel mai scurt timp.
+            </span>
+          </div>
+        </form>
       </div>
 
-      <div class="col-lg-4">
-        <div class="card shadow-sm mb-3">
-          <div class="card-header py-2">
-            <strong>Ce se întâmplă după trimiterea formularului?</strong>
-          </div>
-          <div class="card-body small text-muted">
-            <ol class="mb-0">
-              <li>Solicitarea ajunge în backend în lista de „cereri parteneri”.</li>
-              <li>Este alocată automat unui <strong>agent de vânzări</strong> în funcție de regiune.</li>
-              <li>Agentul te contactează pentru clarificări și configurare cont B2B.</li>
-              <li>După aprobare, primești pe email datele de autentificare și condițiile comerciale.</li>
-            </ol>
-          </div>
-        </div>
-
-        <div class="card shadow-sm">
-          <div class="card-header py-2">
-            <strong>Beneficii cont B2B</strong>
-          </div>
-          <div class="card-body small text-muted">
-            <ul class="mb-0">
-              <li>Prețuri contractuale și discounturi personalizate.</li>
-              <li>Limită de credit și termene de plată negociate.</li>
-              <li>Istoric comenzi și șabloane de comenzi recurente.</li>
-              <li>Suport dedicat prin agentul de vânzări alocat.</li>
-            </ul>
-          </div>
+      <div class="col-lg-5 mt-4 mt-lg-0">
+        <div class="border rounded p-3 bg-light small">
+          <h2 class="h6">Beneficii pentru parteneri</h2>
+          <ul class="mb-3">
+            <li>Liste de preț dedicate și discounturi pe volum;</li>
+            <li>Termene de plată și limită de credit;</li>
+            <li>Acces la promoții și campanii exclusive B2B;</li>
+            <li>Suport dedicat prin reprezentanți de vânzări.</li>
+          </ul>
+          <p class="mb-0 text-muted">
+            Dacă ești deja client, te poți autentifica în cont pentru a vedea
+            condițiile comerciale existente.
+          </p>
         </div>
       </div>
     </div>
@@ -180,51 +154,49 @@
 </template>
 
 <script setup>
-import { reactive, ref } from 'vue'
-import PageHeader from '@/components/common/PageHeader.vue'
-import { usePartnerRequestsStore } from '@/store/partnerRequests'
+import { reactive, ref } from 'vue';
+import { submitPartnerRequest } from '@/services/content';
 
-const store = usePartnerRequestsStore()
+const loading = ref(false);
+const error = ref('');
+const success = ref('');
 
 const form = reactive({
-  companyName: '',
-  cui: '',
-  regCom: '',
+  company_name: '',
+  cif: '',
+  reg_com: '',
   iban: '',
-  region: '',
-  activityType: '',
-  contactPerson: '',
+  contact_name: '',
   email: '',
   phone: '',
-  message: '',
-  acceptTerms: false
-})
+  region: '',
+  activity_type: '',
+  notes: '',
+});
 
-const submitting = ref(false)
-const submitInfo = ref('')
+const resetForm = () => {
+  Object.keys(form).forEach((key) => {
+    form[key] = '';
+  });
+};
 
-const onSubmit = async () => {
-  if (!form.companyName || !form.cui || !form.region || !form.contactPerson || !form.email) {
-    submitInfo.value = 'Te rugăm să completezi toate câmpurile obligatorii.'
-    return
-  }
-  if (!form.acceptTerms) {
-    submitInfo.value = 'Trebuie să accepți prelucrarea datelor pentru a continua.'
-    return
-  }
+const submit = async () => {
+  loading.value = true;
+  error.value = '';
+  success.value = '';
 
-  submitting.value = true
   try {
-    const payload = { ...form }
-    const request = store.submitRequest(payload)
-    submitInfo.value =
-      'Template: cererea ta a fost înregistrată cu ID #' +
-      request.id +
-      '. În implementarea reală se va trimite un e-mail către echipa internă, iar cererea va apărea în lista din backend pentru alocare pe agent.'
-    // opțional: resetare parțială form
-    form.message = ''
+    await submitPartnerRequest({ ...form });
+    success.value =
+      'Cererea ta a fost înregistrată. Îți vom răspunde în curând.';
+    resetForm();
+  } catch (e) {
+    console.error(e);
+    error.value =
+      e?.response?.data?.message ??
+      'A apărut o eroare la trimiterea cererii.';
   } finally {
-    submitting.value = false
+    loading.value = false;
   }
-}
+};
 </script>

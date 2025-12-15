@@ -21,6 +21,7 @@ use App\Http\Controllers\Front\CartController;
 use App\Http\Controllers\Front\CheckoutController;
 use App\Http\Controllers\Front\OrderController;
 
+use App\Http\Controllers\Front\PageController;
 
 use App\Http\Controllers\Admin\TicketController as AdminTicketController;
 use App\Http\Controllers\Admin\SalesRepresentativeController as AdminSalesRepController;
@@ -108,6 +109,8 @@ Route::get('blog', [FrontBlogController::class, 'index']);
 Route::get('blog/{slug}', [FrontBlogController::class, 'show']);
 Route::get('pages/{slug}', [FrontBlogController::class, 'page']);
 
+
+Route::get('pages/{slug}', [PageController::class, 'show']);
 // Devino partener
 Route::post('partner-requests', [PartnerController::class, 'store']);
 

@@ -24,7 +24,13 @@ class Promotion extends Model
         'status',
         'is_exclusive',
         'is_iterative',
+        'priority',
+        'stacking_type',
         'bonus_type',       // gratuitate / value / percent etc.
+        'trigger_type',
+        'trigger_payload',
+        'benefit_type',
+        'benefit_payload',
         'min_cart_total',
         'min_qty_per_product',
         'customer_type',    // b2b / b2c / both
@@ -38,6 +44,9 @@ class Promotion extends Model
         'end_at'            => 'datetime',
         'is_exclusive'      => 'boolean',
         'is_iterative'      => 'boolean',
+        'priority'          => 'integer',
+        'trigger_payload'   => 'array',
+        'benefit_payload'   => 'array',
         'logged_in_only'    => 'boolean',
         'min_cart_total'    => 'float',
         'min_qty_per_product' => 'integer',

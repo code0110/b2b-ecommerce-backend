@@ -4,6 +4,7 @@ namespace App\Services\Pricing;
 
 use App\Models\Cart;
 use App\Models\CartItem;
+use App\Models\ContractPrice;
 use App\Models\Customer;
 use App\Models\Product;
 use App\Models\Promotion;
@@ -178,16 +179,51 @@ class PromotionPricingService
     }
 
     /**
-     * Prețul de bază al produsului: override sau list_price.
-     * (poți extinde logică: B2B price list, etc.)
+     * Prețul de bază al produsului: 
+     * 1. Contract Price (Client)
+     * 2. Contract Price (Grup Client)
+     * 3. List Price (sau override) - Discount Grup
      */
     protected function getBasePrice(Product $product, ?Customer $customer = null): float
     {
-        if (!is_null($product->price_override)) {
-            return (float) $product->price_override;
+        // 1. Contract Price (Client specific)
+        if ($customer) {
+            $customerContractPrice = ContractPrice::where('product_id', $product->id)
+                ->where('customer_id', $customer->id)
+                ->value('price');
+
+            if ($customerContractPrice !== null) {
+                return (float) $customerContractPrice;
+            }
+
+            // 2. Contract Price (Grup Client)
+            if ($customer->group_id) {
+                $groupContractPrice = ContractPrice::where('product_id', $product->id)
+                    ->where('customer_group_id', $customer->group_id)
+                    ->value('price');
+
+                if ($groupContractPrice !== null) {
+                    return (float) $groupContractPrice;
+                }
+            }
         }
 
-        return (float) $product->list_price;
+        // 3. Preț de listă (sau override)
+        $price = !is_null($product->price_override) 
+            ? (float) $product->price_override 
+            : (float) $product->list_price;
+
+        // 4. Discount standard Grup (aplicat la prețul de listă)
+        if ($customer && $customer->group_id) {
+             // Încărcăm grupul dacă nu e deja încărcat
+             $group = $customer->group; 
+             if ($group && $group->default_discount_percent > 0) {
+                 $discount = $price * ($group->default_discount_percent / 100);
+                 $price = max(0, $price - $discount);
+             }
+        }
+
+        return $price;
     }
 
     /**

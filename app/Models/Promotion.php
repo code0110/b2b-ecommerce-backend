@@ -35,7 +35,8 @@ class Promotion extends Model
         'min_qty_per_product',
         'customer_type',    // b2b / b2c / both
         'logged_in_only',
-        'discount_type',    // <--- presupun: 'percent' | 'fixed'
+        'applies_to',
+        'discount_percent',
         'discount_value',   // <--- presupun: numeric
     ];
 
@@ -50,6 +51,7 @@ class Promotion extends Model
         'logged_in_only'    => 'boolean',
         'min_cart_total'    => 'float',
         'min_qty_per_product' => 'integer',
+        'discount_percent'  => 'float',
         'discount_value'    => 'float',
     ];
 

@@ -32,6 +32,27 @@ class Product extends Model
         'is_new',
         'is_promo',
         'is_best_seller',
+        'type',
+        'visibility',
+        'tags',
+        'key_benefits',
+        'technical_specs',
+        'meta_title',
+        'meta_description',
+        'meta_keywords',
+        'video_url',
+        'vat_included',
+        'currency',
+        'min_stock_limit',
+        'allow_backorder',
+        'overstock_policy',
+        'estimated_delivery_text',
+        'unit_of_measure',
+        'min_order_quantity',
+        'order_quantity_step',
+        'requires_quote',
+        'erp_sync_status',
+        'erp_last_sync_at',
     ];
 
     protected $casts = [
@@ -45,9 +66,26 @@ class Product extends Model
         'is_new'              => 'boolean',
         'is_promo'            => 'boolean',
         'is_best_seller'      => 'boolean',
+        'tags'                => 'array',
+        'key_benefits'        => 'array',
+        'technical_specs'     => 'array',
+        'vat_included'        => 'boolean',
+        'allow_backorder'     => 'boolean',
+        'requires_quote'      => 'boolean',
+        'erp_last_sync_at'    => 'datetime',
     ];
 
     /* ---------- RELAȚII ---------- */
+
+    public function units(): HasMany
+    {
+        return $this->hasMany(ProductUnit::class);
+    }
+
+    public function documents(): HasMany
+    {
+        return $this->hasMany(ProductDocument::class);
+    }
 
     public function mainCategory(): BelongsTo
     {
@@ -93,19 +131,16 @@ class Product extends Model
         return $this->hasMany(RelatedProduct::class)->where('type', 'complementary');
     }
 
+    public function upsellProducts(): HasMany
+    {
+        return $this->hasMany(RelatedProduct::class)->where('type', 'upsell');
+    }
+
     /**
      * Alias pentru compatibilitate dacă undeva în cod se folosește `related()`.
      */
     public function related(): HasMany
     {
         return $this->relatedProducts();
-    }
-
-    /**
-     * Documente atașate produsului (fișe tehnice, certificate, manuale etc.)
-     */
-    public function documents(): HasMany
-    {
-        return $this->hasMany(ProductDocument::class);
     }
 }

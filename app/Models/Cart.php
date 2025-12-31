@@ -13,6 +13,7 @@ class Cart extends Model
         'user_id',
         'status',
         'session_id',
+        'coupon_id',
     ];
 
     public function items(): HasMany
@@ -23,5 +24,10 @@ class Cart extends Model
     public function customer(): BelongsTo
     {
         return $this->belongsTo(Customer::class);
+    }
+
+    public function coupon(): BelongsTo
+    {
+        return $this->belongsTo(Coupon::class);
     }
 }

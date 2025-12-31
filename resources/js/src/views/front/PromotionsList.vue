@@ -4,11 +4,11 @@
       <div>
         <h1 class="h4 mb-1">Promoții active & în curând</h1>
         <p class="text-muted small mb-0">
-          Pagină demo de listare a campaniilor promoționale, segmentate pe B2B / B2C.
+          Campaniile promoționale active în acest moment.
         </p>
       </div>
-      <div class="small text-muted">
-        {{ filteredPromotions.length }} promoții demo
+      <div class="small text-muted" v-if="!loading">
+        {{ filteredPromotions.length }} promoții
       </div>
     </div>
 
@@ -33,26 +33,35 @@
               <option value="">Toate</option>
               <option value="B2B">B2B</option>
               <option value="B2C">B2C</option>
-              <option value="ALL">B2B & B2C</option>
             </select>
           </div>
           <div class="col-md-3">
-            <label class="form-label">Status</label>
+            <label class="form-label">Status (Scope)</label>
             <select
               class="form-select form-select-sm"
-              v-model="filters.status"
+              v-model="filters.scope"
+              @change="loadPromotions"
             >
-              <option value="">Toate</option>
-              <option value="active">Active</option>
+              <option value="current">Active acum</option>
               <option value="upcoming">În curând</option>
-              <option value="expired">Expirate</option>
+              <option value="all">Toate</option>
             </select>
           </div>
         </div>
       </div>
     </div>
 
-    <div class="row g-3">
+    <div v-if="loading" class="text-center py-5">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Se încarcă...</span>
+      </div>
+    </div>
+
+    <div v-else-if="error" class="alert alert-danger">
+      {{ error }}
+    </div>
+
+    <div v-else class="row g-3">
       <div
         v-for="promo in filteredPromotions"
         :key="promo.slug"
@@ -66,14 +75,14 @@
                 :class="{
                   'bg-success': promo.status === 'active',
                   'bg-warning text-dark': promo.status === 'upcoming',
-                  'bg-secondary': promo.status === 'expired'
+                  'bg-secondary': promo.status === 'inactive'
                 }"
               >
-                {{ promo.statusLabel }}
+                {{ promo.status === 'active' ? 'Activă' : promo.status }}
               </span>
               <span
                 class="badge"
-                :class="promo.segment === 'B2B' ? 'bg-primary' : promo.segment === 'B2C' ? 'bg-info text-dark' : 'bg-dark'"
+                :class="promo.segmentLabel.includes('B2B') ? 'bg-primary' : (promo.segmentLabel.includes('B2C') ? 'bg-info text-dark' : 'bg-dark')"
               >
                 {{ promo.segmentLabel }}
               </span>
@@ -87,7 +96,7 @@
               {{ promo.period }}
             </p>
             <p class="small mb-3 text-muted">
-              Tip promoție: {{ promo.typeLabel }}
+              {{ promo.badge }}
             </p>
             <div class="mt-auto d-flex justify-content-between align-items-center">
               <RouterLink
@@ -116,61 +125,63 @@
 </template>
 
 <script setup>
-import { reactive, computed } from 'vue'
+import { reactive, computed, ref, onMounted } from 'vue'
+import { fetchPromotions } from '@/services/promotions'
 
-const promotions = [
-  {
-    slug: 'campanie-primavara-b2b',
-    title: 'Campanie de primăvară B2B',
-    teaser: 'Discount suplimentar la materiale de construcții pentru comenzi peste 10.000 RON.',
-    period: '01.03 – 30.04',
-    segment: 'B2B',
-    segmentLabel: 'B2B',
-    status: 'active',
-    statusLabel: 'Activă',
-    typeLabel: 'Discount procentual pe coș'
-  },
-  {
-    slug: 'weekend-special-b2c',
-    title: 'Weekend special B2C',
-    teaser: 'Reduceri pentru clienți persoane fizice la produse de bricolaj și grădină.',
-    period: 'În fiecare weekend',
-    segment: 'B2C',
-    segmentLabel: 'B2C',
-    status: 'upcoming',
-    statusLabel: 'În curând',
-    typeLabel: 'Discount valoric per produs'
-  },
-  {
-    slug: 'pachet-santier-start',
-    title: 'Pachet Șantier Start',
-    teaser: 'Pachet promoțional de produse pentru deschiderea unui șantier nou.',
-    period: '01.02 – 31.05',
-    segment: 'ALL',
-    segmentLabel: 'B2B & B2C',
-    status: 'active',
-    statusLabel: 'Activă',
-    typeLabel: 'Pachete produse (bundle)'
-  }
-]
+const promotions = ref([])
+const loading = ref(false)
+const error = ref(null)
 
 const filters = reactive({
   search: '',
   segment: '',
-  status: ''
+  scope: 'current'
 })
 
+const loadPromotions = async () => {
+  loading.value = true
+  error.value = null
+  try {
+    // Pass scope to API
+    const response = await fetchPromotions({ 
+        scope: filters.scope 
+    })
+    
+    // API returns { data: [...], meta: {...} }
+    const data = response.data || []
+    
+    promotions.value = data.map(p => ({
+        slug: p.slug,
+        title: p.name,
+        teaser: p.short_description,
+        status: p.status, // 'active', etc.
+        period: p.period,
+        segmentLabel: p.segmentLabel,
+        badge: p.badge
+    }))
+    
+  } catch (err) {
+    console.error(err)
+    error.value = "Eroare la încărcarea promoțiilor."
+  } finally {
+    loading.value = false
+  }
+}
+
 const filteredPromotions = computed(() => {
-  return promotions.filter((p) => {
+  return promotions.value.filter((p) => {
     const matchesSearch =
       !filters.search ||
-      p.title.toLowerCase().includes(filters.search.toLowerCase()) ||
-      p.teaser.toLowerCase().includes(filters.search.toLowerCase())
+      (p.title && p.title.toLowerCase().includes(filters.search.toLowerCase())) ||
+      (p.teaser && p.teaser.toLowerCase().includes(filters.search.toLowerCase()))
 
-    const matchesSegment = !filters.segment || p.segment === filters.segment
-    const matchesStatus = !filters.status || p.status === filters.status
+    const matchesSegment = !filters.segment || (p.segmentLabel && p.segmentLabel.includes(filters.segment))
 
-    return matchesSearch && matchesSegment && matchesStatus
+    return matchesSearch && matchesSegment
   })
+})
+
+onMounted(() => {
+  loadPromotions()
 })
 </script>

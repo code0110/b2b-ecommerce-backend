@@ -12,10 +12,12 @@ class Attribute extends Model
         'slug',
         'type',
         'is_filterable',
+        'is_comparable',
     ];
 
     protected $casts = [
         'is_filterable' => 'boolean',
+        'is_comparable' => 'boolean',
     ];
 
     public function values(): HasMany

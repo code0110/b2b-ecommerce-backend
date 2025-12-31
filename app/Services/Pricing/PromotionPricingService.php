@@ -5,6 +5,7 @@ namespace App\Services\Pricing;
 use App\Models\Cart;
 use App\Models\CartItem;
 use App\Models\ContractPrice;
+use App\Models\Coupon;
 use App\Models\Customer;
 use App\Models\Product;
 use App\Models\Promotion;
@@ -178,6 +179,38 @@ class PromotionPricingService
         return [$promoPrice, $discountPercent];
     }
 
+    protected function calculateLineDiscount(Promotion $promotion, float $currentSubtotal, float $unitBasePrice, int $quantity): float
+    {
+        $discount = 0.0;
+
+        switch ($promotion->bonus_type) {
+            case 'discount_percent':
+                if ($promotion->discount_percent > 0) {
+                    $discount = $currentSubtotal * ((float) $promotion->discount_percent / 100);
+                }
+                break;
+
+            case 'discount_value':
+                if ($promotion->discount_value > 0) {
+                    // Assuming fixed value applies PER UNIT?
+                    // "discount_value" usually means "Amount off".
+                    // If it's 10 RON off, is it 10 RON off the ITEM LINE or PER UNIT?
+                    // Usually "Fixed Discount" on a product promotion is per unit.
+                    $discount = min($currentSubtotal, (float) $promotion->discount_value * $quantity);
+                }
+                break;
+
+            case 'free_item':
+                if ($promotion->min_qty_per_product > 0 && $quantity >= $promotion->min_qty_per_product) {
+                    // One unit free
+                    $discount = $unitBasePrice; 
+                }
+                break;
+        }
+
+        return $discount;
+    }
+
     /**
      * Prețul de bază al produsului: 
      * 1. Contract Price (Client)
@@ -275,72 +308,97 @@ class PromotionPricingService
     {
         $promotions = $this->getActivePromotionsForCustomer($customer);
 
-        $items = [];
-        $subtotal = 0.0;
-        $discountTotal = 0.0;
+        // 1. Calculate base subtotal first to support cart-level rules
+        $tempItems = [];
+        $cartSubtotal = 0.0;
 
-        /** @var CartItem $item */
         foreach ($cart->items as $item) {
             $product = $item->product;
-            if (!$product) {
-                continue;
-            }
+            if (!$product) continue;
 
             $basePrice = $this->getBasePrice($product, $customer);
             $lineSubtotal = $basePrice * $item->quantity;
-            $subtotal += $lineSubtotal;
+            $cartSubtotal += $lineSubtotal;
 
-            // selectăm promoțiile eligibile pentru acest produs
-            $eligiblePromos = $promotions
-                ->filter(fn (Promotion $p) => $this->promotionAppliesToProduct($p, $product));
+            $tempItems[] = [
+                'item' => $item,
+                'product' => $product,
+                'base_price' => $basePrice,
+                'line_subtotal' => $lineSubtotal,
+            ];
+        }
 
-            $bestLineDiscount = 0.0;
-            $appliedPromo = null;
+        $items = [];
+        $discountTotal = 0.0;
 
-            foreach ($eligiblePromos as $promotion) {
-                // condiții legate de coș (min_cart_total, min_qty_per_product etc.)
-                if ($promotion->min_qty_per_product > 0 && $item->quantity < $promotion->min_qty_per_product) {
-                    continue;
+        // 2. Apply promotions
+        foreach ($tempItems as $data) {
+            $item = $data['item'];
+            $product = $data['product'];
+            $basePrice = $data['base_price'];
+            $lineSubtotal = $data['line_subtotal'];
+            
+            // Filter eligible promotions
+            $eligiblePromos = $promotions->filter(function (Promotion $p) use ($product, $item, $cartSubtotal) {
+                // Product scope
+                if (!$this->promotionAppliesToProduct($p, $product)) {
+                    return false;
                 }
-
-                if ($promotion->min_cart_total > 0 && $subtotal < (float) $promotion->min_cart_total) {
-                    // atenție: aici folosim subtotal curent; pentru scenarii mai complexe ar trebui calculat separat
-                    continue;
+                // Min Quantity
+                if ($p->min_qty_per_product > 0 && $item->quantity < $p->min_qty_per_product) {
+                    return false;
                 }
-
-                // calculăm discount-ul de linie în funcție de bonus_type
-                $lineDiscount = 0.0;
-
-                switch ($promotion->bonus_type) {
-                    case 'discount_percent':
-                        if ($promotion->discount_percent > 0) {
-                            $lineDiscount = $lineSubtotal * ((float) $promotion->discount_percent / 100);
-                        }
-                        break;
-
-                    case 'discount_value':
-                        if ($promotion->discount_value > 0) {
-                            // presupunem că discount_value se aplică per produs (unitate)
-                            $lineDiscount = min($lineSubtotal, (float) $promotion->discount_value * $item->quantity);
-                        }
-                        break;
-
-                    case 'free_item':
-                        // exemplu simplu: dacă ai cantitatea minimă, una e gratuită
-                        if ($promotion->min_qty_per_product > 0 && $item->quantity >= $promotion->min_qty_per_product) {
-                            $lineDiscount = $basePrice; // o unitate gratuită
-                        }
-                        break;
+                // Min Cart Total
+                if ($p->min_cart_total > 0 && $cartSubtotal < (float) $p->min_cart_total) {
+                    return false;
                 }
+                return true;
+            });
 
-                if ($lineDiscount > $bestLineDiscount) {
-                    $bestLineDiscount = $lineDiscount;
-                    $appliedPromo = $promotion;
+            // Sort by priority (descending)
+            $eligiblePromos = $eligiblePromos->sortByDesc('priority');
+
+            $lineDiscountTotal = 0.0;
+            $appliedPromosList = [];
+
+            // Strategy:
+            // 1. Check for Exclusive promotions. If any exists, pick the HIGHEST PRIORITY one and stop.
+            // 2. If no exclusive, apply all Iterative promotions in Priority order.
+
+            $exclusivePromo = $eligiblePromos->firstWhere('stacking_type', 'exclusive');
+
+            if ($exclusivePromo) {
+                $discount = $this->calculateLineDiscount($exclusivePromo, $lineSubtotal, $basePrice, $item->quantity);
+                if ($discount > 0) {
+                    $lineDiscountTotal = $discount;
+                    $appliedPromosList[] = $exclusivePromo;
+                }
+            } else {
+                // Apply Iterative promos
+                $currentSubtotal = $lineSubtotal;
+
+                foreach ($eligiblePromos as $promotion) {
+                    // Skip if accidentally exclusive (shouldn't happen if logic above is correct, but safe)
+                    if ($promotion->stacking_type === 'exclusive') continue;
+
+                    $discount = $this->calculateLineDiscount($promotion, $currentSubtotal, $basePrice, $item->quantity);
+
+                    if ($discount > 0) {
+                        $lineDiscountTotal += $discount;
+                        $currentSubtotal -= $discount; // Reduce base for next promo if needed?
+                        // Usually iterative means "10% off", then "5% off the remaining".
+                        // If discount is fixed value, it just subtracts.
+                        
+                        $appliedPromosList[] = $promotion;
+                    }
                 }
             }
+            
+            // Ensure we don't discount more than the subtotal
+            $lineDiscountTotal = min($lineDiscountTotal, $lineSubtotal);
 
-            $discountTotal += $bestLineDiscount;
-            $lineTotal = $lineSubtotal - $bestLineDiscount;
+            $discountTotal += $lineDiscountTotal;
+            $lineTotal = $lineSubtotal - $lineDiscountTotal;
 
             $items[] = [
                 'id'                => $item->id,
@@ -350,21 +408,65 @@ class PromotionPricingService
                 'quantity'          => $item->quantity,
                 'unit_price'        => $basePrice,
                 'line_subtotal'     => round($lineSubtotal, 2),
-                'line_discount'     => round($bestLineDiscount, 2),
+                'line_discount'     => round($lineDiscountTotal, 2),
                 'line_total'        => round($lineTotal, 2),
-                'applied_promotion' => $appliedPromo ? [
-                    'id'   => $appliedPromo->id,
-                    'name' => $appliedPromo->name,
-                    'slug' => $appliedPromo->slug,
+                'applied_promotions'=> collect($appliedPromosList)->map(fn($p) => [
+                    'id' => $p->id,
+                    'name' => $p->name,
+                    'slug' => $p->slug
+                ]),
+                // Backward compatibility: use the first applied promo
+                'applied_promotion' => count($appliedPromosList) > 0 ? [
+                    'id'   => $appliedPromosList[0]->id,
+                    'name' => $appliedPromosList[0]->name,
+                    'slug' => $appliedPromosList[0]->slug,
                 ] : null,
             ];
         }
 
+        $subtotal = $cartSubtotal; // restore correct subtotal
+
+
+        $totalAfterLineDiscounts = $subtotal - $discountTotal;
+        $couponDiscount = 0.0;
+        $appliedCoupon = null;
+
+        if ($cart->coupon_id) {
+            $coupon = $cart->coupon;
+            
+            if ($coupon && $coupon->isValid()) {
+                // Check min_cart_value
+                if (!$coupon->min_cart_value || $totalAfterLineDiscounts >= $coupon->min_cart_value) {
+                    // Check stackable
+                    // If !is_stackable and $discountTotal > 0, we might skip coupon.
+                    // For now, let's assume strict interpretation: invalid if other promos applied.
+                    if ($coupon->is_stackable || $discountTotal <= 0) {
+                        // Calculate discount
+                        if ($coupon->discount_type === 'percent') {
+                            $couponDiscount = $totalAfterLineDiscounts * ($coupon->discount_value / 100);
+                        } elseif ($coupon->discount_type === 'fixed_cart') {
+                            $couponDiscount = min($totalAfterLineDiscounts, $coupon->discount_value);
+                        }
+                        
+                        $appliedCoupon = [
+                            'code' => $coupon->code,
+                            'discount_amount' => round($couponDiscount, 2)
+                        ];
+                    }
+                }
+            }
+        }
+
+        $finalTotal = max(0, $totalAfterLineDiscounts - $couponDiscount);
+        $totalDiscount = $discountTotal + $couponDiscount;
+
         return [
             'items'          => $items,
             'subtotal'       => round($subtotal, 2),
-            'discount_total' => round($discountTotal, 2),
-            'total'          => round($subtotal - $discountTotal, 2),
+            'discount_total' => round($totalDiscount, 2),
+            'coupon_discount' => round($couponDiscount, 2),
+            'total'          => round($finalTotal, 2),
+            'applied_coupon' => $appliedCoupon,
         ];
     }
 }

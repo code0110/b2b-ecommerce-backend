@@ -20,7 +20,7 @@ class CheckoutController extends Controller
 {
     protected function resolveCart(Request $request)
     {
-        $user = $request->user();
+        $user = $request->user('sanctum') ?? $request->user();
 
         if ($user) {
             return Cart::with(['items.product.mainCategory', 'items.product.brand'])
@@ -38,6 +38,8 @@ class CheckoutController extends Controller
 
     public function summary(Request $request, PromotionPricingService $pricing)
     {
+        $user = $request->user('sanctum') ?? $request->user();
+
         $cart = $this->resolveCart($request);
 
         if (!$cart) {
@@ -46,7 +48,6 @@ class CheckoutController extends Controller
             ], 400);
         }
 
-        $user = $request->user();
         $customer = $user ? \App\Models\Customer::find($user->customer_id) : null;
 
         $priced = $pricing->priceCart($cart, $customer);
@@ -58,6 +59,7 @@ class CheckoutController extends Controller
         $grandTotal = $priced['total'] + $shippingTotal + $taxTotal;
 
         $shippingMethods = ShippingMethod::where('is_active', true)->get();
+        $addresses = $customer ? $customer->addresses : [];
 
         return response()->json([
             'items'           => $priced['items'],
@@ -67,12 +69,14 @@ class CheckoutController extends Controller
             'tax_total'       => $taxTotal,
             'grand_total'     => $grandTotal,
             'shipping_methods'=> $shippingMethods,
+            'addresses'       => $addresses,
+            'user'            => $user,
         ]);
     }
 
     public function placeOrder(Request $request, PromotionPricingService $pricing)
     {
-        $user = $request->user();
+        $user = $request->user('sanctum') ?? $request->user();
 
         // 1. Resolve Cart
         $cart = $this->resolveCart($request);

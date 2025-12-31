@@ -40,7 +40,33 @@
                   <div :class="{'text-danger fw-bold': item.unit_base_price > item.unit_final_price}">
                     {{ item.unit_final_price.toLocaleString('ro-RO', { minimumFractionDigits: 2 }) }} RON
                   </div>
-                  <span class="text-muted" style="font-size: 0.85em;">x {{ item.quantity }}</span>
+                  
+                  <div class="input-group input-group-sm mt-2" style="width: 140px; margin-left: auto;">
+                    <button 
+                      class="btn btn-outline-secondary" 
+                      type="button" 
+                      @click="updateQuantity(item, item.quantity - 1)"
+                      :disabled="item.quantity <= 1 || updating === item.id"
+                    >
+                      <i class="bi bi-dash"></i>
+                    </button>
+                    <input 
+                      type="number" 
+                      class="form-control text-center" 
+                      :value="item.quantity" 
+                      @change="updateQuantity(item, $event.target.value)"
+                      min="1"
+                      :disabled="updating === item.id"
+                    >
+                    <button 
+                      class="btn btn-outline-secondary" 
+                      type="button" 
+                      @click="updateQuantity(item, item.quantity + 1)"
+                      :disabled="updating === item.id"
+                    >
+                      <i class="bi bi-plus"></i>
+                    </button>
+                  </div>
                 </div>
 
                 <!-- Total linie -->
@@ -102,12 +128,13 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue';
-import { getCart, removeCartItem } from '@/services/cart';
+import { getCart, removeCartItem, updateCartItem } from '@/services/cart';
 
 const loading = ref(false);
 const error = ref('');
 const cartRaw = ref(null);
 const items = ref([]);
+const updating = ref(null);
 const summary = ref({
   subtotal: 0,
   discountTotal: 0,
@@ -115,7 +142,7 @@ const summary = ref({
 });
 
 const loadCart = async () => {
-  loading.value = true;
+  // loading.value = true; // Don't show full loader on refresh to keep UI stable
   error.value = '';
 
   try {
@@ -140,6 +167,22 @@ const loadCart = async () => {
     }
   } finally {
     loading.value = false;
+  }
+};
+
+const updateQuantity = async (item, newQuantity) => {
+  const qty = parseInt(newQuantity);
+  if (isNaN(qty) || qty < 1) return;
+  
+  updating.value = item.id;
+  try {
+    await updateCartItem(item.id, qty);
+    await loadCart();
+  } catch (e) {
+    console.error('Update quantity error', e);
+    error.value = 'Nu s-a putut actualiza cantitatea.';
+  } finally {
+    updating.value = null;
   }
 };
 

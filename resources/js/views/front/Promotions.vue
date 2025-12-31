@@ -79,13 +79,21 @@
                 <strong>Perioadă:</strong> {{ promo.period }}
               </p>
 
-              <div class="mt-auto">
+              <div class="mt-auto d-flex gap-2">
                 <RouterLink
                   :to="`/promotii/${promo.slug}`"
-                  class="btn btn-outline-primary btn-sm"
+                  class="btn btn-outline-primary btn-sm flex-grow-1"
                 >
-                  Vezi detalii și produse
+                  Vezi detalii
                 </RouterLink>
+                <button
+                  class="btn btn-primary btn-sm flex-grow-1"
+                  @click="addPromoToCart(promo)"
+                  :disabled="addingPromo === promo.id"
+                >
+                  <span v-if="addingPromo === promo.id" class="spinner-border spinner-border-sm me-1"></span>
+                  Adaugă în coș
+                </button>
               </div>
             </div>
           </div>
@@ -100,10 +108,14 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { fetchPromotions } from '@/services/promotions';
+import { addPromotionToCart } from '@/services/cart';
+import { useToast } from 'vue-toastification';
 
+const toast = useToast();
 const promotions = ref([]);
 const loading = ref(false);
 const error = ref('');
+const addingPromo = ref(null);
 
 const scope = ref('current');       // current | upcoming | all
 const customerType = ref('');       // '' | b2b | b2c
@@ -124,6 +136,20 @@ const loadPromotions = async () => {
     error.value = 'Nu s-au putut încărca promoțiile.';
   } finally {
     loading.value = false;
+  }
+};
+
+const addPromoToCart = async (promo) => {
+  addingPromo.value = promo.id;
+  try {
+    await addPromotionToCart(promo.id);
+    toast.success('Promoția a fost adăugată în coș!');
+  } catch (e) {
+    console.error(e);
+    const msg = e.response?.data?.message || 'Nu s-a putut adăuga promoția în coș.';
+    toast.error(msg);
+  } finally {
+    addingPromo.value = null;
   }
 };
 

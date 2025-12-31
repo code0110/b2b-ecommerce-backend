@@ -10,10 +10,14 @@ import 'bootstrap';
 // CSS-ul tău
 import '../css/app.css'; // sau ce folosești tu
 
+import Toast from "vue-toastification";
+import "vue-toastification/dist/index.css";
+
 const app = createApp(App);
 const pinia = createPinia();          // <<–– instanță Pinia
 
 app.use(pinia);                       // <<–– foarte important: înregistrăm Pinia
 app.use(router);
+app.use(Toast);
 
 app.mount('#app');

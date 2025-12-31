@@ -142,6 +142,7 @@ Route::middleware($sessionMiddleware)->prefix('cart')->group(function () {
     Route::post('items', [CartController::class, 'addItem']);
     Route::put('items/{itemId}', [CartController::class, 'updateItem']);
     Route::delete('items/{itemId}', [CartController::class, 'removeItem']);
+    Route::post('promotions/{id}', [CartController::class, 'addPromotion']);
     Route::delete('/', [CartController::class, 'clear']);
 });
 // Arbore de categorii pentru front (overlay catalog)

@@ -52,6 +52,15 @@ export async function clearCart() {
 }
 
 /**
+ * POST /api/cart/promotions/{id}
+ * Add all products from a promotion to the cart.
+ */
+export async function addPromotionToCart(promotionId) {
+  const { data } = await api.post(`/cart/promotions/${promotionId}`);
+  return data;
+}
+
+/**
  * GET /api/checkout/summary
  * (roută protejată de auth:sanctum în backend)
  */

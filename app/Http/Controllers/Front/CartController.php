@@ -199,6 +199,60 @@ class CartController extends Controller
 
         $item->delete();
 
+        $cart->refresh();
+
+        return $this->respondWithEnrichedCart($cart, $request);
+    }
+
+    /**
+     * POST /api/cart/promotions/{id}
+     * Add all products from a promotion to the cart.
+     */
+    public function addPromotion($id, Request $request)
+    {
+        $promotion = \App\Models\Promotion::findOrFail($id);
+        
+        // Get all products associated with this promotion
+        // Assuming the promotion has a 'products' relationship
+        $products = $promotion->products;
+
+        if ($products->isEmpty()) {
+            return response()->json(['message' => 'Această promoție nu are produse asociate direct.'], 400);
+        }
+
+        $cart = $this->resolveCart($request);
+
+        foreach ($products as $product) {
+            // Check if item exists
+            $item = $cart->items()
+                ->where('product_id', $product->id)
+                ->first();
+
+            $unitPrice = $product->price_override ?? $product->list_price ?? 0;
+
+            if ($item) {
+                $item->quantity += 1; // Increment by 1
+                // We don't update price here usually as it might have been set by something else, 
+                // but for consistency with addItem:
+                // $item->unit_price = $unitPrice; 
+                $item->save();
+            } else {
+                $item = new CartItem([
+                    'product_id'         => $product->id,
+                    'product_variant_id' => null, // Assuming simple products for now
+                    'quantity'           => 1,
+                    'unit_price'         => $unitPrice,
+                ]);
+                $cart->items()->save($item);
+            }
+            
+            // Update total
+            $item->total = $item->unit_price * $item->quantity;
+            $item->save();
+        }
+
+        $cart->refresh();
+
         return $this->respondWithEnrichedCart($cart, $request);
     }
 

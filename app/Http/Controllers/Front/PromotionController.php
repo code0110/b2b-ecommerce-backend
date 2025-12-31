@@ -88,7 +88,7 @@ class PromotionController extends Controller
     {
         $now = Carbon::now();
 
-        $promotion = Promotion::query()
+        $promotion = Promotion::with(['categories', 'brands', 'customerGroups'])
             ->where('slug', $slug)
             ->firstOrFail();
 
@@ -98,13 +98,39 @@ class PromotionController extends Controller
             ->pluck('product_id');
 
         $productsQuery = Product::query()
-            ->whereIn('id', $productIds)
             ->where('status', 'published')
             ->leftJoin('categories', 'products.main_category_id', '=', 'categories.id')
             ->select([
                 'products.*',
                 'categories.name as category_name',
             ]);
+
+        // Logică filtrare în funcție de applies_to
+        if ($promotion->applies_to === 'products') {
+            $productsQuery->whereIn('products.id', $productIds);
+        } elseif ($promotion->applies_to === 'categories') {
+            $categoryIds = DB::table('promotion_category')
+                ->where('promotion_id', $promotion->id)
+                ->pluck('category_id');
+            $productsQuery->whereIn('products.main_category_id', $categoryIds);
+        } elseif ($promotion->applies_to === 'brands') {
+            $brandIds = DB::table('promotion_brand')
+                ->where('promotion_id', $promotion->id)
+                ->pluck('brand_id');
+            $productsQuery->whereIn('products.brand_id', $brandIds);
+        } else {
+            // applies_to = all sau altceva
+            // Dacă e 'all', nu listăm toate produsele (ar fi prea multe).
+            // Putem returna o listă goală sau logică specifică.
+            // Pentru moment, dacă nu e 'products', 'categories' sau 'brands', lăsăm gol
+            // doar dacă nu avem produse specificate explicit (fallback)
+            if ($productIds->isNotEmpty()) {
+                $productsQuery->whereIn('products.id', $productIds);
+            } else {
+                // Hack: forțează rezultat gol dacă nu știm ce să afișăm
+                $productsQuery->whereRaw('1 = 0');
+            }
+        }
 
         $products = $productsQuery
             ->orderBy('products.name')
@@ -137,6 +163,7 @@ class PromotionController extends Controller
                 'banner_image'      => $promotion->banner_image,
                 'mobile_image'      => $promotion->mobile_image,
                 'status'            => $promotion->status,
+                'applies_to'        => $promotion->applies_to,
                 'period'            => $this->formatPeriod($promotion),
                 'segmentLabel'      => $this->segmentLabel($promotion),
             ],

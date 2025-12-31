@@ -99,12 +99,13 @@
 </template>
 
 <script setup>
-import { computed, reactive } from 'vue'
+import { computed, reactive, ref, onMounted } from 'vue'
 import { RouterLink } from 'vue-router'
 import PageHeader from '@/components/common/PageHeader.vue'
-import { usePromotionsStore } from '@/store/promotions'
+import { fetchPromotions } from '@/services/promotions'
 
-const store = usePromotionsStore()
+const promotions = ref([])
+const loading = ref(true)
 
 const filters = reactive({
   status: '',
@@ -112,8 +113,37 @@ const filters = reactive({
   clientType: ''
 })
 
+const loadPromotions = async () => {
+  loading.value = true
+  try {
+    const response = await fetchPromotions({ scope: 'all' })
+    promotions.value = (response.data || []).map(p => ({
+      id: p.id,
+      slug: p.slug,
+      name: p.name,
+      shortDescription: p.short_description,
+      startDate: p.start_at,
+      endDate: p.end_at,
+      status: p.status,
+      type: p.discount_type || 'discount_percent',
+      clientTypes: p.customer_type === 'both' ? ['B2B', 'B2C'] : [p.customer_type?.toUpperCase() || 'ALL'],
+      images: {
+        list: p.hero_image
+      }
+    }))
+  } catch (error) {
+    console.error('Failed to load promotions:', error)
+  } finally {
+    loading.value = false
+  }
+}
+
+onMounted(() => {
+  loadPromotions()
+})
+
 const filteredPromotions = computed(() => {
-  return store.all.filter((p) => {
+  return promotions.value.filter((p) => {
     if (filters.status && p.status !== filters.status) return false
     if (filters.type && p.type !== filters.type) return false
     if (filters.clientType && !p.clientTypes.includes(filters.clientType)) return false

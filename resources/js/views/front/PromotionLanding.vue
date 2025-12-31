@@ -65,7 +65,12 @@
         </div>
 
         <div v-if="products.length === 0" class="alert alert-info py-2">
-          Nu sunt produse asociate acestei promoții în acest moment.
+          <span v-if="promotion.applies_to === 'all'">
+            Această promoție se aplică la nivelul întregului coș sau unei game extinse, conform condițiilor.
+          </span>
+          <span v-else>
+            Nu sunt produse asociate acestei promoții în acest moment.
+          </span>
         </div>
 
         <div class="row g-3">

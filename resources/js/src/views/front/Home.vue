@@ -167,100 +167,51 @@
 </template>
 
 <script setup>
-const homePromotions = [
-  {
-    slug: 'campanie-primavara-b2b',
-    title: 'Campanie de primăvară pentru parteneri B2B',
-    teaser: 'Discount suplimentar la materiale de construcții pentru comenzi peste 10.000 RON.',
-    badge: 'B2B',
-    period: '01.03 – 30.04',
-    segmentLabel: 'Clienți B2B (parteneri)'
-  },
-  {
-    slug: 'weekend-special-b2c',
-    title: 'Weekend special B2C',
-    teaser: 'Reduceri pentru clienți persoane fizice la produse de bricolaj și grădină.',
-    badge: 'B2C',
-    period: 'În fiecare weekend',
-    segmentLabel: 'Clienți B2C (retail)'
-  },
-  {
-    slug: 'transport-gratuit-combinat',
-    title: 'Transport gratuit combinat',
-    teaser: 'Transport gratuit pentru comenzi mixte B2B/B2C peste 500 RON.',
-    badge: 'ALL',
-    period: '01.02 – 31.05',
-    segmentLabel: 'Toți clienții (B2B & B2C)'
-  }
-]
+import { ref, onMounted } from 'vue'
+import { fetchHomeData } from '@/services/catalog'
 
-const newProducts = [
-  {
-    slug: 'ciment-premium-42-5',
-    name: 'Ciment Premium 42.5',
-    code: 'PRD-NEW-001',
-    category: 'Materiale de construcții',
-    price: 48.5
-  },
-  {
-    slug: 'vopsea-lavabila-interior',
-    name: 'Vopsea lavabilă interior 15L',
-    code: 'PRD-NEW-002',
-    category: 'Finisaje',
-    price: 210.0
-  },
-  {
-    slug: 'bormasina-compacta',
-    name: 'Bormașină compactă 18V',
-    code: 'PRD-NEW-003',
-    category: 'Unelte electrice',
-    price: 399.9
-  },
-  {
-    slug: 'sistem-scaffolding-aluminiu',
-    name: 'Sistem schelă aluminiu',
-    code: 'PRD-NEW-004',
-    category: 'Echipamente șantier',
-    price: 2850.0
-  }
-]
+const homePromotions = ref([])
+const newProducts = ref([])
+const recommendedProducts = ref([])
+const loading = ref(true)
 
-const recommendedProducts = [
-  {
-    slug: 'ciment-portland-40kg',
-    name: 'Ciment Portland 40kg',
-    code: 'PRD-001',
-    category: 'Materiale de construcții',
-    price: 45.0,
-    hasDiscount: true,
-    discountPercent: 10,
-    promoPrice: 40.5
-  },
-  {
-    slug: 'adeziv-gresie-faianta',
-    name: 'Adeziv gresie / faianță',
-    code: 'PRD-005',
-    category: 'Adezivi',
-    price: 35.0,
-    hasDiscount: false
-  },
-  {
-    slug: 'pavaj-beton',
-    name: 'Pavaj beton 20x10',
-    code: 'PRD-020',
-    category: 'Pavaje',
-    price: 3.2,
-    hasDiscount: true,
-    discountPercent: 5,
-    promoPrice: 3.04
-  },
-  {
-    slug: 'echipament-protectie-kit',
-    name: 'Kit echipament protecție',
-    code: 'PRD-030',
-    category: 'Echipamente protecție',
-    price: 150.0,
-    hasDiscount: false
+onMounted(async () => {
+  try {
+    const data = await fetchHomeData()
+    
+    // Map API data to view structure
+    homePromotions.value = (data.promotions || []).map(p => ({
+      slug: p.slug,
+      title: p.name,
+      teaser: p.short_description || p.description,
+      badge: p.customer_type === 'b2b' ? 'B2B' : (p.customer_type === 'b2c' ? 'B2C' : 'ALL'),
+      period: 'Activă',
+      segmentLabel: p.customer_type === 'b2b' ? 'B2B' : (p.customer_type === 'b2c' ? 'B2C' : 'B2B & B2C')
+    }))
+
+    newProducts.value = (data.new_products || []).map(p => ({
+      slug: p.slug,
+      name: p.name,
+      code: p.internal_code,
+      category: '', // API doesn't return category relationship in home()
+      price: Number(p.list_price)
+    }))
+
+    recommendedProducts.value = (data.recommended || []).map(p => ({
+      slug: p.slug,
+      name: p.name,
+      code: p.internal_code,
+      category: '',
+      price: Number(p.list_price),
+      hasDiscount: false, // Simple mapping
+      discountPercent: 0,
+      promoPrice: Number(p.list_price)
+    }))
+
+  } catch (error) {
+    console.error('Failed to load home data:', error)
+  } finally {
+    loading.value = false
   }
-]
+})
 </script>

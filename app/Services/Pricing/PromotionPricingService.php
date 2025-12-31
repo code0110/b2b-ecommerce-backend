@@ -371,7 +371,10 @@ class PromotionPricingService
                 $discount = $this->calculateLineDiscount($exclusivePromo, $lineSubtotal, $basePrice, $item->quantity);
                 if ($discount > 0) {
                     $lineDiscountTotal = $discount;
-                    $appliedPromosList[] = $exclusivePromo;
+                    $appliedPromosList[] = [
+                        'promotion' => $exclusivePromo,
+                        'amount'    => $discount,
+                    ];
                 }
             } else {
                 // Apply Iterative promos
@@ -389,7 +392,10 @@ class PromotionPricingService
                         // Usually iterative means "10% off", then "5% off the remaining".
                         // If discount is fixed value, it just subtracts.
                         
-                        $appliedPromosList[] = $promotion;
+                        $appliedPromosList[] = [
+                            'promotion' => $promotion,
+                            'amount'    => $discount,
+                        ];
                     }
                 }
             }
@@ -406,20 +412,37 @@ class PromotionPricingService
                 'product_name'      => $product->name,
                 'product_slug'      => $product->slug,
                 'quantity'          => $item->quantity,
-                'unit_price'        => $basePrice,
+                'unit_price'        => $basePrice, // Base price
                 'line_subtotal'     => round($lineSubtotal, 2),
                 'line_discount'     => round($lineDiscountTotal, 2),
                 'line_total'        => round($lineTotal, 2),
-                'applied_promotions'=> collect($appliedPromosList)->map(fn($p) => [
-                    'id' => $p->id,
-                    'name' => $p->name,
-                    'slug' => $p->slug
+                
+                // Aliases & Extras for Frontend (Cart.vue / Checkout.vue compatibility)
+                'unit_base_price'   => $basePrice,
+                'unit_final_price'  => $item->quantity > 0 ? round($lineTotal / $item->quantity, 2) : 0,
+                'line_base_total'   => round($lineSubtotal, 2),
+                'line_final_total'  => round($lineTotal, 2),
+                
+                'product'           => [
+                    'id'            => $product->id,
+                    'name'          => $product->name,
+                    'slug'          => $product->slug,
+                    'internal_code' => $product->internal_code,
+                    'sku'           => $product->internal_code,
+                    'thumbnail'     => null, // TODO: add if needed
+                ],
+
+                'applied_promotions'=> collect($appliedPromosList)->map(fn($item) => [
+                    'id' => $item['promotion']->id,
+                    'name' => $item['promotion']->name,
+                    'slug' => $item['promotion']->slug,
+                    'discount_amount' => round($item['amount'], 2),
                 ]),
                 // Backward compatibility: use the first applied promo
                 'applied_promotion' => count($appliedPromosList) > 0 ? [
-                    'id'   => $appliedPromosList[0]->id,
-                    'name' => $appliedPromosList[0]->name,
-                    'slug' => $appliedPromosList[0]->slug,
+                    'id'   => $appliedPromosList[0]['promotion']->id,
+                    'name' => $appliedPromosList[0]['promotion']->name,
+                    'slug' => $appliedPromosList[0]['promotion']->slug,
                 ] : null,
             ];
         }

@@ -33,13 +33,28 @@
               </div>
               <div class="text-end">
                 <div class="small mb-1">
-                  {{ item.unit_price.toLocaleString('ro-RO', { minimumFractionDigits: 2 }) }} RON
-                  ×
-                  {{ item.quantity }}
+                  <!-- Afișare preț unitar (base + final) -->
+                  <div v-if="item.unit_base_price > item.unit_final_price" class="text-muted text-decoration-line-through me-1">
+                     {{ item.unit_base_price.toLocaleString('ro-RO', { minimumFractionDigits: 2 }) }} RON
+                  </div>
+                  <div :class="{'text-danger fw-bold': item.unit_base_price > item.unit_final_price}">
+                    {{ item.unit_final_price.toLocaleString('ro-RO', { minimumFractionDigits: 2 }) }} RON
+                  </div>
+                  <span class="text-muted" style="font-size: 0.85em;">x {{ item.quantity }}</span>
                 </div>
+
+                <!-- Total linie -->
                 <div class="fw-semibold mb-1">
-                  {{ item.total.toLocaleString('ro-RO', { minimumFractionDigits: 2 }) }} RON
+                  {{ item.line_final_total.toLocaleString('ro-RO', { minimumFractionDigits: 2 }) }} RON
                 </div>
+                
+                <!-- Promoții aplicate -->
+                <div v-if="item.applied_promotions && item.applied_promotions.length" class="small text-success mb-2">
+                  <div v-for="promo in item.applied_promotions" :key="promo.id">
+                    <i class="bi bi-tag-fill me-1"></i> {{ promo.name }} (-{{ promo.discount_amount }} RON)
+                  </div>
+                </div>
+
                 <button
                   class="btn btn-outline-danger btn-sm"
                   type="button"
@@ -58,8 +73,20 @@
               <h2 class="h6">Sumar coș</h2>
               <div class="d-flex justify-content-between mb-2">
                 <span>Subtotal</span>
-                <span class="fw-semibold">
+                <span>
                   {{ subtotal.toLocaleString('ro-RO', { minimumFractionDigits: 2 }) }} RON
+                </span>
+              </div>
+              <div v-if="discountTotal > 0" class="d-flex justify-content-between mb-2 text-success">
+                <span>Reducere</span>
+                <span>
+                  -{{ discountTotal.toLocaleString('ro-RO', { minimumFractionDigits: 2 }) }} RON
+                </span>
+              </div>
+              <div class="d-flex justify-content-between mb-3 border-top pt-2">
+                <span class="fw-bold">Total de plată</span>
+                <span class="fw-bold">
+                  {{ grandTotal.toLocaleString('ro-RO', { minimumFractionDigits: 2 }) }} RON
                 </span>
               </div>
               <RouterLink to="/checkout" class="btn btn-primary w-100 btn-sm">
@@ -81,6 +108,11 @@ const loading = ref(false);
 const error = ref('');
 const cartRaw = ref(null);
 const items = ref([]);
+const summary = ref({
+  subtotal: 0,
+  discountTotal: 0,
+  total: 0
+});
 
 const loadCart = async () => {
   loading.value = true;
@@ -90,12 +122,15 @@ const loadCart = async () => {
     const data = await getCart();
     cartRaw.value = data;
 
-    const rawItems = data.items ?? [];
-    items.value = rawItems.map(i => ({
-      ...i,
-      unit_price: Number(i.unit_price ?? 0),
-      total: Number(i.total ?? 0),
-    }));
+    // Use items directly from API as they are already enriched
+    items.value = data.items ?? [];
+    
+    // Update summary from API response
+    summary.value = {
+      subtotal: data.subtotal ?? 0,
+      discountTotal: data.discount_total ?? 0,
+      total: data.total ?? 0
+    };
   } catch (e) {
     console.error('Cart load error', e);
     if (e.response?.data?.message) {
@@ -108,9 +143,9 @@ const loadCart = async () => {
   }
 };
 
-const subtotal = computed(() =>
-  items.value.reduce((sum, i) => sum + (i.total || 0), 0)
-);
+const subtotal = computed(() => summary.value.subtotal);
+const discountTotal = computed(() => summary.value.discountTotal);
+const grandTotal = computed(() => summary.value.total);
 
 const remove = async (id) => {
   try {

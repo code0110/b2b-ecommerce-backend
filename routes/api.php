@@ -131,7 +131,13 @@ Route::post('orders/{orderId}/pay', [FrontPaymentController::class, 'payOrder'])
 
 
 // Cart & checkout (client logat sau guest cu session token separat)
-Route::prefix('cart')->group(function () {
+$sessionMiddleware = [
+    \Illuminate\Cookie\Middleware\EncryptCookies::class,
+    \Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse::class,
+    \Illuminate\Session\Middleware\StartSession::class,
+];
+
+Route::middleware($sessionMiddleware)->prefix('cart')->group(function () {
     Route::get('/', [CartController::class, 'show']);
     Route::post('items', [CartController::class, 'addItem']);
     Route::put('items/{itemId}', [CartController::class, 'updateItem']);
@@ -152,9 +158,9 @@ Route::get('catalog/new-products', [CatalogHighlightController::class, 'newProdu
 Route::get('catalog/discounted-products', [CatalogHighlightController::class, 'discountedProducts']);
 
 
-Route::prefix('checkout')->group(function () {
-    Route::get('summary', [CheckoutController::class, 'summary'])->middleware('auth:sanctum');
-    Route::post('place-order', [CheckoutController::class, 'placeOrder'])->middleware('auth:sanctum');
+Route::middleware($sessionMiddleware)->prefix('checkout')->group(function () {
+    Route::get('summary', [CheckoutController::class, 'summary']);
+    Route::post('place-order', [CheckoutController::class, 'placeOrder']);
 });
 
 // Orders in client account

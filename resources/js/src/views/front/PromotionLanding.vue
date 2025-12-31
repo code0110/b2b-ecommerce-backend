@@ -168,14 +168,13 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRoute } from 'vue-router'
-import { usePromotionsStore } from '@/store/promotions'
+import { fetchPromotionDetails } from '@/services/promotions'
 
 const route = useRoute()
-const store = usePromotionsStore()
-
-const promotion = computed(() => store.getBySlug(route.params.slug))
+const loading = ref(true)
+const promotion = ref(null)
 
 const statusLabel = (s) => {
   switch (s) {
@@ -206,15 +205,57 @@ const statusBadgeClass = (s) => {
 const typeLabel = (t) => {
   switch (t) {
     case 'discount_percent':
-      return 'Discount procentual'
-    case 'discount_fixed':
-      return 'Discount valoric'
-    case 'x_get_y':
-      return 'Cumperi X → primești Y'
+      return 'Discount %'
+    case 'discount_value':
+      return 'Discount fix'
+    case 'free_item':
+      return 'Produs gratuit'
     case 'bundle':
-      return 'Pachet (bundle)'
+      return 'Pachet'
     default:
       return t
   }
 }
+
+onMounted(async () => {
+  try {
+    const data = await fetchPromotionDetails(route.params.slug)
+    const p = data.promotion
+    const products = data.products || []
+
+    promotion.value = {
+      landingTitle: p.name,
+      landingSubtitle: p.short_description,
+      startDate: p.start_at ? p.start_at.substring(0, 10) : '',
+      endDate: p.end_at ? p.end_at.substring(0, 10) : '',
+      status: p.status,
+      type: p.bonus_type,
+      clientTypes: p.customer_type === 'both' ? ['B2B', 'B2C'] : [p.customer_type?.toUpperCase() || 'ALL'],
+      longDescription: p.description,
+      images: {
+        header: p.banner_image || p.hero_image
+      },
+      trigger: {
+        minQtyPerProduct: p.min_qty_per_product > 0 ? p.min_qty_per_product : null,
+        minCartValue: parseFloat(p.min_cart_total) > 0 ? parseFloat(p.min_cart_total) : null,
+        notes: null
+      },
+      benefit: {
+        discountPercent: p.discount_percent ? parseFloat(p.discount_percent) : null,
+        discountValue: p.discount_value ? parseFloat(p.discount_value) : null,
+        freeProductCode: null,
+        specialPriceCode: null
+      },
+      productList: products.map(prod => prod.internal_code),
+      customerGroups: (p.customer_groups || []).map(g => g.name),
+      categories: (p.categories || []).map(c => c.name),
+      brands: (p.brands || []).map(b => b.name)
+    }
+  } catch (error) {
+    console.error('Failed to load promotion details:', error)
+    promotion.value = null
+  } finally {
+    loading.value = false
+  }
+})
 </script>

@@ -16,10 +16,12 @@ class CartController extends Controller
 {
 
     protected PromotionEngine $promotionEngine;
+    protected PromotionPricingService $promotionPricingService;
 
-    public function __construct(PromotionEngine $promotionEngine)
+    public function __construct(PromotionEngine $promotionEngine, PromotionPricingService $promotionPricingService)
     {
         $this->promotionEngine = $promotionEngine;
+        $this->promotionPricingService = $promotionPricingService;
     }
     /**
      * Coș-ul este legat de:
@@ -83,17 +85,12 @@ class CartController extends Controller
         ];
     }
 
-    /**
-     * GET /api/cart
-     */
-        public function show(Request $request)
+    protected function respondWithEnrichedCart(Cart $cart, Request $request)
     {
-        $cart = $this->resolveCart($request);
-
         $user     = $request->user();
         $customer = $user?->customer ?? null;
 
-        $pricing = $this->promotionEngine->enrichCart($cart, $user, $customer);
+        $pricing = $this->promotionPricingService->priceCart($cart, $customer);
 
         return response()->json([
             'id'             => $cart->id,
@@ -102,6 +99,15 @@ class CartController extends Controller
             'discount_total' => $pricing['discount_total'],
             'total'          => $pricing['total'],
         ]);
+    }
+
+    /**
+     * GET /api/cart
+     */
+    public function show(Request $request)
+    {
+        $cart = $this->resolveCart($request);
+        return $this->respondWithEnrichedCart($cart, $request);
     }
 
 
@@ -160,7 +166,7 @@ class CartController extends Controller
 
         $cart->refresh();
 
-        return response()->json($this->transformCart($cart), 201);
+        return $this->respondWithEnrichedCart($cart, $request);
     }
 
     /**
@@ -180,7 +186,7 @@ class CartController extends Controller
 
         $cart = $item->cart;
 
-        return response()->json($this->transformCart($cart));
+        return $this->respondWithEnrichedCart($cart, $request);
     }
 
     /**
@@ -193,7 +199,7 @@ class CartController extends Controller
 
         $item->delete();
 
-        return response()->json($this->transformCart($cart));
+        return $this->respondWithEnrichedCart($cart, $request);
     }
 
     /**

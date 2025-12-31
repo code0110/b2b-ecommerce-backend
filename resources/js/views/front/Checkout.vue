@@ -31,49 +31,119 @@
     <div v-if="!loading && !error && cartItems.length > 0" class="row">
       <!-- Stânga: pașii de checkout -->
       <div class="col-lg-8">
-        <!-- Pas 1: Adrese (simplificat: ID-uri din addresses) -->
+        <!-- Pas 1: Adrese (Interactiv: Select existing or Add new) -->
         <div class="card mb-3">
           <div class="card-header">
             <strong>1. Adrese facturare și livrare</strong>
           </div>
           <div class="card-body">
-            <p class="small text-muted">
-              În backend, `CheckoutController@placeOrder` așteaptă
-              identificatori de adresă existenți în tabela <code>addresses</code>
-              (câmpurile <code>billing_address_id</code> și
-              <code>shipping_address_id</code>).
-              Până implementăm un API de adrese în frontend, poți folosi ID-uri
-              existente din baza de date (ex: pentru testare).
-            </p>
+             <!-- Adresă Facturare -->
+             <h6 class="mb-3 border-bottom pb-2">Adresă de facturare</h6>
+             
+             <div v-if="user && availableAddresses.length" class="mb-3">
+               <div class="form-check form-check-inline">
+                 <input class="form-check-input" type="radio" id="bill-existing" value="existing" v-model="billingMode">
+                 <label class="form-check-label" for="bill-existing">Alege existentă</label>
+               </div>
+               <div class="form-check form-check-inline">
+                 <input class="form-check-input" type="radio" id="bill-new" value="new" v-model="billingMode">
+                 <label class="form-check-label" for="bill-new">Adaugă nouă</label>
+               </div>
+             </div>
 
-            <div class="row g-3">
-              <div class="col-md-6">
-                <label class="form-label">ID adresă facturare</label>
-                <input
-                  type="number"
-                  v-model.number="billingAddressId"
-                  class="form-control"
-                  min="1"
-                  placeholder="ex: 1"
-                />
-              </div>
-              <div class="col-md-6">
-                <label class="form-label">ID adresă livrare</label>
-                <input
-                  type="number"
-                  v-model.number="shippingAddressId"
-                  class="form-control"
-                  min="1"
-                  placeholder="ex: 1"
-                />
-              </div>
-            </div>
+             <div v-if="billingMode === 'existing' && availableAddresses.length" class="mb-3">
+               <select v-model="billingAddressId" class="form-select">
+                 <option :value="null">Selectează o adresă...</option>
+                 <option v-for="addr in availableAddresses" :key="addr.id" :value="addr.id">
+                   {{ addr.contact_name }} ({{ addr.city }}, {{ addr.street }})
+                 </option>
+               </select>
+             </div>
 
-            <div class="small text-muted mt-2">
-              După ce vom avea un endpoint pentru adrese în contul client,
-              acest pas se poate transforma în dropdown-uri cu adresele
-              salvate (livrare/facturare).
-            </div>
+             <div v-if="billingMode === 'new'" class="row g-2 mb-4">
+                <div class="col-md-6">
+                  <label class="form-label small">Nume Contact / Companie *</label>
+                  <input type="text" class="form-control form-control-sm" v-model="newBillingAddress.contact_name">
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label small">Telefon</label>
+                  <input type="text" class="form-control form-control-sm" v-model="newBillingAddress.phone">
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label small">Țară</label>
+                  <input type="text" class="form-control form-control-sm" v-model="newBillingAddress.country">
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label small">Județ</label>
+                  <input type="text" class="form-control form-control-sm" v-model="newBillingAddress.county">
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label small">Oraș *</label>
+                  <input type="text" class="form-control form-control-sm" v-model="newBillingAddress.city">
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label small">Cod Poștal</label>
+                  <input type="text" class="form-control form-control-sm" v-model="newBillingAddress.postal_code">
+                </div>
+                <div class="col-12">
+                  <label class="form-label small">Stradă și număr *</label>
+                  <input type="text" class="form-control form-control-sm" v-model="newBillingAddress.street">
+                </div>
+             </div>
+
+             <!-- Adresă Livrare -->
+             <h6 class="mb-3 border-bottom pb-2 mt-4">Adresă de livrare</h6>
+             
+             <div v-if="user && availableAddresses.length" class="mb-3">
+               <div class="form-check form-check-inline">
+                 <input class="form-check-input" type="radio" id="ship-existing" value="existing" v-model="shippingMode">
+                 <label class="form-check-label" for="ship-existing">Alege existentă</label>
+               </div>
+               <div class="form-check form-check-inline">
+                 <input class="form-check-input" type="radio" id="ship-new" value="new" v-model="shippingMode">
+                 <label class="form-check-label" for="ship-new">Adaugă nouă</label>
+               </div>
+             </div>
+
+             <div v-if="shippingMode === 'existing' && availableAddresses.length" class="mb-3">
+               <select v-model="shippingAddressId" class="form-select">
+                 <option :value="null">Selectează o adresă...</option>
+                 <option v-for="addr in availableAddresses" :key="addr.id" :value="addr.id">
+                   {{ addr.contact_name }} ({{ addr.city }}, {{ addr.street }})
+                 </option>
+               </select>
+             </div>
+
+             <div v-if="shippingMode === 'new'" class="row g-2">
+                <div class="col-md-6">
+                  <label class="form-label small">Nume Destinatar *</label>
+                  <input type="text" class="form-control form-control-sm" v-model="newShippingAddress.contact_name">
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label small">Telefon</label>
+                  <input type="text" class="form-control form-control-sm" v-model="newShippingAddress.phone">
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label small">Țară</label>
+                  <input type="text" class="form-control form-control-sm" v-model="newShippingAddress.country">
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label small">Județ</label>
+                  <input type="text" class="form-control form-control-sm" v-model="newShippingAddress.county">
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label small">Oraș *</label>
+                  <input type="text" class="form-control form-control-sm" v-model="newShippingAddress.city">
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label small">Cod Poștal</label>
+                  <input type="text" class="form-control form-control-sm" v-model="newShippingAddress.postal_code">
+                </div>
+                <div class="col-12">
+                  <label class="form-label small">Stradă și număr *</label>
+                  <input type="text" class="form-control form-control-sm" v-model="newShippingAddress.street">
+                </div>
+             </div>
           </div>
         </div>
 
@@ -202,18 +272,31 @@
               <li
                 v-for="item in cartItems"
                 :key="item.id"
-                class="d-flex justify-content-between"
+                class="mb-3"
               >
-                <div>
-                  <div class="fw-semibold">
-                    {{ item.product?.name || 'Produs' }}
+                <div class="d-flex justify-content-between">
+                  <div>
+                    <div class="fw-semibold">
+                      {{ item.product_name || 'Produs' }}
+                    </div>
+                    <div class="text-muted">
+                      x {{ item.quantity }}
+                    </div>
+                    <!-- Afisare promotii aplicate -->
+                    <div v-if="item.applied_promotions && item.applied_promotions.length" class="text-success mt-1">
+                      <div v-for="promo in item.applied_promotions" :key="promo.id">
+                        <i class="bi bi-tag-fill me-1"></i> {{ promo.name }} (-{{ promo.discount_amount }} RON)
+                      </div>
+                    </div>
                   </div>
-                  <div class="text-muted">
-                    x {{ item.quantity }}
+                  <div class="text-end">
+                    <div v-if="item.line_discount > 0" class="text-decoration-line-through text-muted" style="font-size: 0.9em;">
+                      {{ formatPrice(item.line_base_total) }} RON
+                    </div>
+                    <div :class="{'text-success fw-bold': item.line_discount > 0}">
+                      {{ formatPrice(item.line_final_total) }} RON
+                    </div>
                   </div>
-                </div>
-                <div class="text-end">
-                  {{ formatPrice(item.total) }} RON
                 </div>
               </li>
             </ul>
@@ -225,19 +308,26 @@
               <dd class="col-6 text-end">
                 {{ formatPrice(subtotal) }} RON
               </dd>
+              
+              <template v-if="discountTotal > 0">
+                <dt class="col-6 text-success">Reduceri</dt>
+                <dd class="col-6 text-end text-success">
+                  -{{ formatPrice(discountTotal) }} RON
+                </dd>
+              </template>
+
               <dt class="col-6">Transport</dt>
               <dd class="col-6 text-end text-muted">
-                Calculat pe baza regulilor definite la metoda selectată
-                (de adăugat în backend ulterior)
+                {{ shippingTotal > 0 ? formatPrice(shippingTotal) + ' RON' : 'Calculat ulterior' }}
               </dd>
             </dl>
 
             <hr />
 
             <div class="d-flex justify-content-between align-items-center">
-              <div class="fw-semibold">Total estimativ</div>
+              <div class="fw-semibold">Total de plată</div>
               <div class="fw-bold h5 mb-0">
-                {{ formatPrice(subtotal) }} RON
+                {{ formatPrice(grandTotal) }} RON
               </div>
             </div>
           </div>
@@ -254,9 +344,11 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, reactive, watch } from 'vue';
+import { useRouter } from 'vue-router';
 import { getCheckoutSummary, placeOrder } from '@/services/cart';
 
+const router = useRouter();
 const loading = ref(false);
 const submitting = ref(false);
 const error = ref('');
@@ -269,6 +361,29 @@ const shippingAddressId = ref(null);
 const selectedShippingMethodId = ref(null);
 const paymentMethod = ref('card');
 
+const billingMode = ref('new');
+const shippingMode = ref('new');
+
+const newBillingAddress = reactive({
+  contact_name: '',
+  phone: '',
+  country: 'Romania',
+  county: '',
+  city: '',
+  street: '',
+  postal_code: '',
+});
+
+const newShippingAddress = reactive({
+  contact_name: '',
+  phone: '',
+  country: 'Romania',
+  county: '',
+  city: '',
+  street: '',
+  postal_code: '',
+});
+
 const formatPrice = (value) => {
   const num = Number(value) || 0;
   return num.toLocaleString('ro-RO', {
@@ -277,9 +392,14 @@ const formatPrice = (value) => {
   });
 };
 
-const cartItems = computed(() => summary.value?.cart?.items ?? []);
+const cartItems = computed(() => summary.value?.items ?? []);
 const subtotal = computed(() => Number(summary.value?.subtotal) || 0);
+const discountTotal = computed(() => Number(summary.value?.discount_total) || 0);
+const shippingTotal = computed(() => Number(summary.value?.shipping_total) || 0);
+const grandTotal = computed(() => Number(summary.value?.grand_total) || 0);
 const shippingMethods = computed(() => summary.value?.shipping_methods ?? []);
+const user = computed(() => summary.value?.user);
+const availableAddresses = computed(() => summary.value?.addresses ?? []);
 
 const loadSummary = async () => {
   loading.value = true;
@@ -296,8 +416,13 @@ const loadSummary = async () => {
   } catch (e) {
     console.error('Checkout summary error', e);
     if (e.response?.status === 401) {
-      error.value =
-        'Trebuie să fii autentificat pentru a accesa checkout-ul. Te rugăm să te loghezi.';
+      // Allow guest checkout now, but maybe show login prompt?
+      // Since we removed middleware, 401 shouldn't happen for summary unless token is invalid.
+      // If no token, it just returns guest cart.
+      // But if token is invalid, it might return 401.
+      error.value = 'Sesiunea a expirat. Te rugăm să te loghezi din nou.';
+    } else if (e.response?.status === 400 && e.response.data?.message === 'Coșul este gol.') {
+      summary.value = { items: [] };
     } else {
       error.value =
         e.response?.data?.message ||
@@ -308,11 +433,39 @@ const loadSummary = async () => {
   }
 };
 
+watch(availableAddresses, (newVal) => {
+  if (newVal && newVal.length > 0) {
+    billingMode.value = 'existing';
+    shippingMode.value = 'existing';
+    if (!billingAddressId.value) billingAddressId.value = newVal[0].id;
+    if (!shippingAddressId.value) shippingAddressId.value = newVal[0].id;
+  } else {
+    billingMode.value = 'new';
+    shippingMode.value = 'new';
+  }
+});
+
 const onPlaceOrder = async () => {
-  if (!billingAddressId.value || !shippingAddressId.value) {
-    error.value =
-      'Te rugăm să completezi atât ID-ul adresei de facturare, cât și al adresei de livrare.';
+  if (billingMode.value === 'existing' && !billingAddressId.value) {
+    error.value = 'Te rugăm să selectezi o adresă de facturare.';
     return;
+  }
+  if (shippingMode.value === 'existing' && !shippingAddressId.value) {
+    error.value = 'Te rugăm să selectezi o adresă de livrare.';
+    return;
+  }
+
+  if (billingMode.value === 'new') {
+    if (!newBillingAddress.contact_name || !newBillingAddress.city || !newBillingAddress.street) {
+       error.value = 'Te rugăm să completezi câmpurile obligatorii pentru facturare (Nume, Oraș, Stradă).';
+       return;
+    }
+  }
+  if (shippingMode.value === 'new') {
+    if (!newShippingAddress.contact_name || !newShippingAddress.city || !newShippingAddress.street) {
+       error.value = 'Te rugăm să completezi câmpurile obligatorii pentru livrare (Nume, Oraș, Stradă).';
+       return;
+    }
   }
 
   if (!selectedShippingMethodId.value) {
@@ -327,16 +480,26 @@ const onPlaceOrder = async () => {
   try {
     const payload = {
       shipping_method_id: Number(selectedShippingMethodId.value),
-      billing_address_id: Number(billingAddressId.value),
-      shipping_address_id: Number(shippingAddressId.value),
       payment_method: paymentMethod.value,
     };
+
+    if (billingMode.value === 'existing') {
+        payload.billing_address_id = Number(billingAddressId.value);
+    } else {
+        payload.billing_address = { ...newBillingAddress };
+    }
+
+    if (shippingMode.value === 'existing') {
+        payload.shipping_address_id = Number(shippingAddressId.value);
+    } else {
+        payload.shipping_address = { ...newShippingAddress };
+    }
 
     const order = await placeOrder(payload);
 
     successMessage.value = `Comanda #${order.id} a fost plasată cu succes.`;
-    // opțional: poți goli local coșul din UI
-    // sau lăsa backend-ul să îl marcheze ca "converted"
+    // Ascundem formularul și coșul
+    summary.value = null;
   } catch (e) {
     console.error('Place order error', e);
 

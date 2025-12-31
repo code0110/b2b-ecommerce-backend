@@ -1,234 +1,600 @@
 <template>
-  <div class="container-fluid py-3">
+  <div class="container-fluid py-4">
+    <!-- Header simplu fără componentă externă -->
     <div class="d-flex justify-content-between align-items-center mb-3">
       <div>
-        <h1 class="h5 mb-0">Fișă client</h1>
-        <div class="small text-muted">
-          <RouterLink :to="{ name: 'admin-customers' }">
-            ← Înapoi la listă
-          </RouterLink>
-        </div>
+        <button
+          type="button"
+          class="btn btn-link text-decoration-none ps-0"
+          @click="goBack"
+        >
+          ← Înapoi la lista de clienți
+        </button>
+        <h4 class="mb-0 mt-2">
+          Fișă client
+          <span v-if="customer" class="text-muted small">
+            • {{ customer.name }}
+          </span>
+        </h4>
+        <p class="text-muted small mb-0">
+          Detalii client, structură comercială și ierarhie agent → director → admin.
+        </p>
+      </div>
+      <div class="text-end">
+        <button
+          v-if="canImpersonateCustomer"
+          type="button"
+          class="btn btn-outline-primary btn-sm"
+          @click="impersonateAsCustomer"
+        >
+          Plasează comandă ca acest client
+        </button>
       </div>
     </div>
 
-    <div v-if="error" class="alert alert-danger py-2">
-      {{ error }}
+    <div v-if="loading" class="text-center py-5">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Se încarcă...</span>
+      </div>
     </div>
 
-    <div v-if="loading" class="alert alert-info py-2">
-      Se încarcă datele clientului...
+    <div v-else-if="!customer" class="alert alert-warning">
+      Clientul nu a fost găsit în datele demo.
     </div>
 
-    <div v-if="customer" class="row g-3">
-      <!-- Date generale -->
-      <div class="col-lg-4">
-        <div class="card h-100">
-          <div class="card-header py-2 small">
-            Date generale
-          </div>
-          <div class="card-body small">
-            <p class="mb-1">
-              <strong>Client:</strong><br>
-              {{ customer.name || customer.company_name || customer.full_name }}
-            </p>
-            <p class="mb-1">
-              <strong>Tip:</strong>
-              {{ customer.type_label || customer.type || '—' }}
-            </p>
-            <p class="mb-1">
-              <strong>Grup:</strong>
-              {{ customer.group?.name || customer.group_name || '—' }}
-            </p>
-            <p class="mb-1">
-              <strong>Email:</strong>
-              {{ customer.email }}
-            </p>
-            <p class="mb-1">
-              <strong>Telefon:</strong>
-              {{ customer.phone || '—' }}
-            </p>
-            <p class="mb-1">
-              <strong>Status:</strong>
-              <span
-                class="badge"
-                :class="customer.status === 'active' ? 'bg-success' : 'bg-secondary'"
-              >
-                {{ customer.status_label || customer.status || '—' }}
-              </span>
-            </p>
-          </div>
-        </div>
-      </div>
-
-      <!-- Condiții comerciale B2B -->
-      <div class="col-lg-4">
-        <div class="card h-100">
-          <div class="card-header py-2 small">
-            Condiții comerciale
-          </div>
-          <div class="card-body small">
-            <p class="mb-1">
-              <strong>Termen de plată:</strong>
-              {{ customer.payment_terms_label || customer.payment_terms || '—' }}
-            </p>
-            <p class="mb-1">
-              <strong>Limită credit:</strong>
-              {{ formatMoney(customer.credit_limit || 0) }}
-            </p>
-            <p class="mb-1">
-              <strong>Sold curent:</strong>
-              {{ formatMoney(customer.current_balance || customer.balance || 0) }}
-            </p>
-            <p class="mb-1">
-              <strong>Sold restant:</strong>
-              {{ formatMoney(customer.overdue_balance || 0) }}
-            </p>
-            <p class="mb-1">
-              <strong>Discount standard:</strong>
-              {{ (customer.default_discount ?? 0) }} %
-            </p>
-          </div>
-        </div>
-      </div>
-
-      <!-- Puncte de lucru / adrese -->
-      <div class="col-lg-4">
-        <div class="card h-100">
-          <div class="card-header py-2 small">
-            Adrese & puncte de lucru (read-only demo)
-          </div>
-          <div class="card-body small">
-            <div v-if="!addresses.billing?.length && !addresses.shipping?.length">
-              <span class="text-muted">Nu există adrese înregistrate.</span>
+    <div v-else class="row">
+      <!-- Col stânga: date generale + multi-user -->
+      <div class="col-xl-8 mb-3">
+        <div class="card shadow-sm mb-3">
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <div>
+              <h5 class="mb-0">
+                {{ customer.name }}
+                <span class="badge bg-secondary ms-2">
+                  {{ customer.clientType || 'Nespecificat' }}
+                </span>
+              </h5>
+              <small class="text-muted">
+                {{ customer.code || 'Fără cod intern' }}
+              </small>
             </div>
-
-            <div v-if="addresses.billing?.length" class="mb-2">
-              <strong>Adrese facturare</strong>
-              <ul class="mb-0 small">
-                <li v-for="(addr, idx) in addresses.billing" :key="'b' + idx">
-                  {{ addr.line1 }}
-                  <span v-if="addr.city">, {{ addr.city }}</span>
-                  <span v-if="addr.country">, {{ addr.country }}</span>
-                </li>
-              </ul>
-            </div>
-
-            <div v-if="addresses.shipping?.length">
-              <strong>Adrese livrare</strong>
-              <ul class="mb-0 small">
-                <li v-for="(addr, idx) in addresses.shipping" :key="'s' + idx">
-                  {{ addr.line1 }}
-                  <span v-if="addr.city">, {{ addr.city }}</span>
-                  <span v-if="addr.country">, {{ addr.country }}</span>
-                </li>
-              </ul>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Comenzi recente / activitate simplă -->
-      <div class="col-12">
-        <div class="card">
-          <div class="card-header py-2 small">
-            Comenzi recente (dacă backend-ul trimite ceva în relație)
-          </div>
-          <div class="card-body p-0">
-            <table class="table table-sm mb-0 align-middle">
-              <thead class="table-light">
-                <tr>
-                  <th>#</th>
-                  <th>Data</th>
-                  <th>Status</th>
-                  <th class="text-end">Total</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr v-if="!recentOrders.length">
-                  <td colspan="4" class="text-center text-muted py-3">
-                    Nu avem comenzi recente în payload-ul clientului.
-                  </td>
-                </tr>
-                <tr
-                  v-for="o in recentOrders"
-                  :key="o.id"
+            <div class="text-end small">
+              <div>
+                <span class="text-muted">Status:</span>
+                <span
+                  :class="[
+                    'badge',
+                    customer.status === 'blocked' ? 'bg-danger' : 'bg-success'
+                  ]"
                 >
-                  <td class="small">#{{ o.number || o.id }}</td>
-                  <td class="small">
-                    {{ formatDate(o.created_at) }}
-                  </td>
-                  <td class="small">
-                    {{ o.status_label || o.status }}
-                  </td>
-                  <td class="small text-end">
-                    {{ formatMoney(o.total || 0) }}
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+                  {{ customer.status === 'blocked' ? 'Blocat' : 'Activ' }}
+                </span>
+              </div>
+              <div class="mt-1">
+                <span class="text-muted">Grup:</span>
+                <strong>{{ customer.groupName || 'Nespecificat' }}</strong>
+              </div>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="row g-3">
+              <div class="col-md-6">
+                <div class="small text-muted">Tip client</div>
+                <div class="fw-semibold">
+                  {{
+                    customer.clientType === 'B2B'
+                      ? 'Client B2B (companie)'
+                      : customer.clientType === 'B2C'
+                        ? 'Client B2C (persoană fizică)'
+                        : 'Nespecificat'
+                  }}
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="small text-muted">Email</div>
+                <div class="fw-semibold">
+                  <a
+                    v-if="customer.email"
+                    :href="`mailto:${customer.email}`"
+                    class="text-decoration-none"
+                  >
+                    {{ customer.email }}
+                  </a>
+                  <span v-else class="text-muted">-</span>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="small text-muted">Telefon</div>
+                <div class="fw-semibold">
+                  <a
+                    v-if="customer.phone"
+                    :href="`tel:${customer.phone}`"
+                    class="text-decoration-none"
+                  >
+                    {{ customer.phone }}
+                  </a>
+                  <span v-else class="text-muted">-</span>
+                </div>
+              </div>
+              <div class="col-md-6" v-if="customer.companyName">
+                <div class="small text-muted">Denumire firmă</div>
+                <div class="fw-semibold">
+                  {{ customer.companyName }}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Puncte de lucru / adrese (demo) -->
+        <div class="card shadow-sm mb-3">
+          <div class="card-header py-2 d-flex justify-content-between align-items-center">
+            <strong>Puncte de lucru & adrese</strong>
+            <span class="small text-muted">
+              Gestionare multi-adresă pentru facturare / livrare (structură demo)
+            </span>
+          </div>
+          <div class="card-body small">
+            <div class="row">
+              <div class="col-md-6 border-end">
+                <div class="fw-semibold mb-2">Adrese facturare</div>
+                <div v-if="customer.billingAddresses && customer.billingAddresses.length">
+                  <div
+                    v-for="addr in customer.billingAddresses"
+                    :key="addr.id || addr.label"
+                    class="mb-2"
+                  >
+                    <div class="d-flex justify-content-between">
+                      <div class="fw-semibold">
+                        {{ addr.label || 'Adresă facturare' }}
+                      </div>
+                      <span v-if="addr.isDefault" class="badge bg-primary">
+                        Implicită
+                      </span>
+                    </div>
+                    <pre class="mb-1">{{ addr.address }}</pre>
+                    <div class="text-muted">
+                      CUI: {{ addr.vatNumber || customer.vatNumber || '-' }}
+                    </div>
+                  </div>
+                </div>
+                <div v-else class="text-muted">
+                  Nu sunt definite adrese de facturare în demo.
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="fw-semibold mb-2">Adrese livrare</div>
+                <div v-if="customer.shippingAddresses && customer.shippingAddresses.length">
+                  <div
+                    v-for="addr in customer.shippingAddresses"
+                    :key="addr.id || addr.label"
+                    class="mb-2"
+                  >
+                    <div class="d-flex justify-content-between">
+                      <div class="fw-semibold">
+                        {{ addr.label || 'Adresă livrare' }}
+                      </div>
+                      <span v-if="addr.isDefault" class="badge bg-primary">
+                        Implicită
+                      </span>
+                    </div>
+                    <pre class="mb-1">{{ addr.address }}</pre>
+                    <div class="text-muted">
+                      Contact: {{ addr.contactPerson || customer.contactPerson || '-' }}
+                    </div>
+                  </div>
+                </div>
+                <div v-else class="text-muted">
+                  Nu sunt definite adrese de livrare în demo.
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Multi-user B2B -->
+        <div v-if="customer.clientType === 'B2B'" class="card shadow-sm mb-3">
+          <div class="card-header py-2 d-flex justify-content-between align-items-center">
+            <strong>Utilizatori cont companie</strong>
+            <span class="badge bg-light text-dark">
+              {{ (customer.users && customer.users.length) || 0 }} utilizatori
+            </span>
+          </div>
+          <div class="card-body small">
+            <div v-if="customer.users && customer.users.length">
+              <div class="table-responsive">
+                <table class="table table-sm align-middle mb-0">
+                  <thead>
+                    <tr>
+                      <th>Nume</th>
+                      <th>Email</th>
+                      <th>Rol intern</th>
+                      <th class="text-end">Poate plasa comenzi</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr v-for="user in customer.users" :key="user.id || user.email">
+                      <td>{{ user.name }}</td>
+                      <td>
+                        <a
+                          v-if="user.email"
+                          :href="`mailto:${user.email}`"
+                          class="text-decoration-none"
+                        >
+                          {{ user.email }}
+                        </a>
+                        <span v-else class="text-muted">-</span>
+                      </td>
+                      <td>{{ user.internalRole || 'Utilizator' }}</td>
+                      <td class="text-end">
+                        <span
+                          :class="[
+                            'badge',
+                            user.canPlaceOrders ? 'bg-success' : 'bg-secondary'
+                          ]"
+                        >
+                          {{ user.canPlaceOrders ? 'Da' : 'Nu' }}
+                        </span>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <div v-else class="text-muted">
+              În acest demo nu sunt definiți utilizatori suplimentari pentru companie.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Col dreapta: structură comercială & ierarhie -->
+      <div class="col-xl-4 mb-3">
+        <div class="card shadow-sm mb-3">
+          <div class="card-header py-2">
+            <strong>Structură comercială</strong>
+          </div>
+          <div class="card-body small">
+            <dl class="row mb-0">
+              <dt class="col-5">Tip client</dt>
+              <dd class="col-7">
+                {{ customer.clientType || 'Nespecificat' }}
+              </dd>
+
+              <dt class="col-5">Grup client</dt>
+              <dd class="col-7">
+                {{ customer.groupName || 'Nespecificat' }}
+              </dd>
+
+              <dt class="col-5">Agent</dt>
+              <dd class="col-7">
+                {{ customer.assignedAgent || 'Nealocat' }}
+              </dd>
+
+              <dt class="col-5">Director</dt>
+              <dd class="col-7">
+                {{ customer.assignedDirector || 'Nealocat' }}
+              </dd>
+
+              <dt class="col-5">Termen plată</dt>
+              <dd class="col-7">
+                {{
+                  customer.paymentTermDays
+                    ? customer.paymentTermDays + ' zile'
+                    : 'La livrare'
+                }}
+              </dd>
+
+              <dt class="col-5">Limită credit</dt>
+              <dd class="col-7">
+                <span v-if="customer.creditLimit != null">
+                  {{
+                    customer.creditLimit.toLocaleString('ro-RO', {
+                      style: 'currency',
+                      currency: 'RON'
+                    })
+                  }}
+                </span>
+                <span v-else class="text-muted">Fără limită setată</span>
+              </dd>
+
+              <dt class="col-5">Sold curent</dt>
+              <dd class="col-7">
+                <span
+                  :class="customer.currentBalance > 0 ? 'text-danger' : 'text-success'"
+                >
+                  {{
+                    customer.currentBalance.toLocaleString('ro-RO', {
+                      style: 'currency',
+                      currency: 'RON'
+                    })
+                  }}
+                </span>
+              </dd>
+            </dl>
+          </div>
+        </div>
+
+        <div class="card shadow-sm mb-3">
+          <div class="card-header py-2">
+            <strong>Condiții comerciale & discounturi</strong>
+          </div>
+          <div class="card-body small">
+            <dl class="row mb-0">
+              <dt class="col-6">Discount standard</dt>
+              <dd class="col-6 text-end">
+                <span v-if="customer.defaultDiscount != null">
+                  {{ customer.defaultDiscount.toFixed(1) }}%
+                </span>
+                <span v-else class="text-muted">-</span>
+              </dd>
+
+              <dt class="col-6">Prețuri contractuale</dt>
+              <dd class="col-6 text-end">
+                <span
+                  :class="[
+                    'badge',
+                    customer.hasContractPrices ? 'bg-success' : 'bg-secondary'
+                  ]"
+                >
+                  {{ customer.hasContractPrices ? 'Există' : 'Nu există' }}
+                </span>
+              </dd>
+
+              <dt class="col-6">Promoții dedicate</dt>
+              <dd class="col-6 text-end">
+                <span
+                  :class="[
+                    'badge',
+                    customer.hasDedicatedPromotions ? 'bg-success' : 'bg-secondary'
+                  ]"
+                >
+                  {{ customer.hasDedicatedPromotions ? 'Active' : 'Nu există' }}
+                </span>
+              </dd>
+            </dl>
+          </div>
+        </div>
+
+<div class="card shadow-sm mb-3">
+  <div class="card-header py-2 d-flex justify-content-between align-items-center">
+    <strong>Credit & încasări (demo)</strong>
+    <span
+      v-if="customer && customer.clientType === 'B2B'"
+      class="badge bg-light text-dark"
+    >
+      B2B
+    </span>
+  </div>
+  <div class="card-body small">
+    <div v-if="customer && customer.clientType === 'B2B'">
+      <dl class="row mb-3" v-if="demoCredit">
+        <dt class="col-6">Termen de plată</dt>
+        <dd class="col-6">
+          {{ demoCredit.paymentTermDays }} zile
+        </dd>
+
+        <dt class="col-6">Limită credit</dt>
+        <dd class="col-6">
+          {{ demoCredit.creditLimit.toLocaleString('ro-RO', { minimumFractionDigits: 2 }) }}
+          {{ demoCredit.currency }}
+        </dd>
+
+        <dt class="col-6">Sold curent</dt>
+        <dd class="col-6">
+          {{ demoCredit.currentBalance.toLocaleString('ro-RO', { minimumFractionDigits: 2 }) }}
+          {{ demoCredit.currency }}
+        </dd>
+
+        <dt class="col-6">Sold restant</dt>
+        <dd class="col-6">
+          {{ demoCredit.overdueBalance.toLocaleString('ro-RO', { minimumFractionDigits: 2 }) }}
+          {{ demoCredit.currency }}
+        </dd>
+
+        <dt class="col-6">Credit disponibil</dt>
+        <dd class="col-6">
+          {{ demoCredit.availableCredit.toLocaleString('ro-RO', { minimumFractionDigits: 2 }) }}
+          {{ demoCredit.currency }}
+        </dd>
+      </dl>
+
+      <h6 class="fw-semibold small mb-2">
+        Încasări recente (CHS / BO / CEC)
+      </h6>
+
+      <div v-if="demoReceipts.length">
+        <div class="table-responsive">
+          <table class="table table-sm table-bordered mb-2">
+            <thead class="table-light">
+              <tr>
+                <th>Data</th>
+                <th>Tip</th>
+                <th class="text-end">Sumă</th>
+                <th>Doc.</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="r in demoReceipts" :key="r.id">
+                <td>{{ r.date }}</td>
+                <td>
+                  <span
+                    class="badge"
+                    :class="{
+                      'bg-success': r.type === 'CHS',
+                      'bg-primary': r.type === 'BO',
+                      'bg-info text-dark': r.type === 'CEC'
+                    }"
+                  >
+                    {{ r.type }}
+                  </span>
+                </td>
+                <td class="text-end">
+                  {{ r.amount.toLocaleString('ro-RO', { minimumFractionDigits: 2 }) }}
+                </td>
+                <td>{{ r.documentNumber }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="text-muted mb-0">
+          Într-o implementare reală, aceste încasări ar proveni din modulul de
+          încasări (CHS/BO/CEC) și din ERP, având impact direct asupra soldului
+          clientului și a limitei de credit disponibile.
+        </p>
+      </div>
+      <div v-else class="text-muted">
+        Nu există încasări demo pentru acest client.
+      </div>
+    </div>
+    <div v-else class="text-muted">
+      În demo-ul curent, zona de credit și încasări este relevantă în principal
+      pentru clienți B2B.
+    </div>
+  </div>
+</div>
+
+        <div class="card shadow-sm">
+          <div class="card-header py-2">
+            <strong>Informații ierarhie & impersonare</strong>
+          </div>
+          <div class="card-body small">
+            <p class="mb-2">
+              Structură ierarhică utilizată în demo:
+            </p>
+            <ul class="mb-2 ps-3">
+              <li>Client B2C</li>
+              <li>Client B2B → Agent → Director → Admin / Operator</li>
+            </ul>
+            <p class="mb-0 text-muted">
+              Agentul și directorul pot plasa comenzi în numele acestui client prin
+              butonul „Plasează comandă ca acest client”, respectând asignările
+              configurate (assignedAgent / assignedDirector).
+            </p>
           </div>
         </div>
       </div>
     </div>
-
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
-import { useRoute } from 'vue-router'
-import { fetchCustomer } from '@/services/admin/customers'
+import { ref, computed, onMounted } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { useCustomersStore } from '@/store/customers'
+import { useAuthStore } from '@/store/auth'
 
 const route = useRoute()
+const router = useRouter()
+const customersStore = useCustomersStore()
+const authStore = useAuthStore()
 
-const loading = ref(false)
-const error = ref('')
+const loading = ref(true)
 const customer = ref(null)
+const demoCredit = computed(() => {
+  if (!customer.value || customer.value.clientType !== 'B2B') return null
 
-const addresses = ref({
-  billing: [],
-  shipping: []
+  const creditLimit = 50000
+  const currentBalance = 24500
+  const overdueBalance = 2500
+
+  return {
+    paymentTermDays: 30,
+    creditLimit,
+    currentBalance,
+    overdueBalance,
+    availableCredit: Math.max(0, creditLimit - currentBalance),
+    currency: 'RON'
+  }
 })
 
-const recentOrders = ref([])
+const demoReceipts = computed(() => {
+  if (!customer.value || customer.value.clientType !== 'B2B') return []
 
-const formatMoney = (val) => {
-  if (val == null) return '0,00 RON'
-  return `${Number(val).toLocaleString('ro-RO', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2
-  })} RON`
-}
-
-const formatDate = (value) => {
-  if (!value) return ''
-  const d = new Date(value)
-  return d.toLocaleString('ro-RO')
-}
-
-const loadCustomer = async () => {
-  loading.value = true
-  error.value = ''
-
-  try {
-    const data = await fetchCustomer(route.params.id)
-    const c = data.data || data
-
-    customer.value = c
-
-    addresses.value = {
-      billing: c.billing_addresses || c.invoice_addresses || [],
-      shipping: c.shipping_addresses || c.delivery_addresses || []
+  return [
+    {
+      id: 1,
+      date: '2025-02-20',
+      type: 'CHS',
+      amount: 5000.0,
+      documentNumber: 'CHS-2025-001'
+    },
+    {
+      id: 2,
+      date: '2025-02-18',
+      type: 'BO',
+      amount: 20000.0,
+      documentNumber: 'BO-2025-010'
+    },
+    {
+      id: 3,
+      date: '2025-02-15',
+      type: 'CEC',
+      amount: 15000.5,
+      documentNumber: 'CEC-2025-002'
     }
+  ]
+})
 
-    recentOrders.value = c.recent_orders || c.orders || []
-  } catch (e) {
-    console.error(e)
-    error.value = 'Nu s-au putut încărca datele clientului.'
-  } finally {
-    loading.value = false
+
+const goBack = () => {
+  router.push({ name: 'admin-customers' })
+}
+
+onMounted(() => {
+  const id = route.params.id
+  const fromStore = customersStore.getById
+    ? customersStore.getById(id)
+    : null
+
+  customer.value = fromStore || null
+  loading.value = false
+})
+
+const canImpersonateCustomer = computed(() => {
+  if (!authStore.user || !customer.value) return false
+
+  // Extract roles safely
+  const userRoles = (authStore.user.roles || []).map(r => r.slug || r.code || '')
+  const c = customer.value
+
+  // Doar clienți B2B/B2C pot fi impersonați în front
+  if (c.clientType !== 'B2B' && c.clientType !== 'B2C') {
+    return false
+  }
+
+  // Admin or Operator
+  if (userRoles.some(r => ['admin', 'operator'].includes(r))) {
+    return true
+  }
+
+  // Agent
+  if (userRoles.includes('sales_agent')) {
+    return !!c.assignedAgent && c.assignedAgent === authStore.user.name
+  }
+
+  // Director
+  if (userRoles.includes('sales_director')) {
+    // În acest demo folosim assignedDirector pentru a marca portofoliul directorului.
+    return !!c.assignedDirector && c.assignedDirector === authStore.user.name
+  }
+
+  return false
+})
+
+const impersonateAsCustomer = () => {
+  if (!canImpersonateCustomer.value || !customer.value) return
+
+  if (authStore.startImpersonation) {
+    authStore.startImpersonation({
+      id: customer.value.id,
+      name: customer.value.name,
+    })
+  } else {
+    // Fallback if store action update hasn't propagated or for safety
+    localStorage.setItem('impersonated_client_id', customer.value.id)
+    localStorage.setItem('impersonated_client_name', customer.value.name)
+    window.location.href = '/'
   }
 }
-
-onMounted(loadCustomer)
 </script>

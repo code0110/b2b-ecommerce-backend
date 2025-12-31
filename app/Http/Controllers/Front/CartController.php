@@ -29,11 +29,12 @@ class CartController extends Controller
     protected function resolveCart(Request $request): Cart
     {
         // User logat: încercăm întâi via sanctum, apoi via sesiunea web
-        $user = auth('sanctum')->user() ?? auth()->user();
+        $user = $request->user('sanctum') ?? $request->user();
 
         if ($user) {
             return Cart::firstOrCreate([
                 'user_id' => $user->id,
+                'customer_id' => $user->customer_id, // Support for impersonation / specific customer carts
                 'status'  => 'active',
             ]);
         }

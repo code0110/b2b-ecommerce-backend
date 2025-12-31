@@ -3,7 +3,7 @@
     <div class="container">
       <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
         <div>
-          <h1 class="h4 mb-1">Contul meu</h1>
+          <h1 class="h4 mb-1">Dashboard</h1>
           <p class="text-muted mb-0">
             Rezumat situație comenzi, facturi, credit și acces rapid la toate secțiunile contului.
           </p>
@@ -22,145 +22,8 @@
 
   <div class="container mb-5">
     <div class="row">
-      <!-- Sidebar cont client -->
-      <aside class="col-lg-3 mb-4 mb-lg-0">
-        <div class="card mb-3 shadow-sm">
-          <div class="card-body d-flex">
-            <div
-              class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-3"
-              style="width: 48px; height: 48px;"
-            >
-              <span class="fw-semibold">
-                {{ initials }}
-              </span>
-            </div>
-            <div class="flex-grow-1">
-              <div class="fw-semibold">
-                {{ overview?.user?.name || '-' }}
-              </div>
-              <div class="small text-muted">
-                {{ overview?.user?.email }}
-              </div>
-              <div class="small mt-1" v-if="overview?.customer">
-                <span class="badge bg-light text-dark border">
-                  {{ overview.customer.name }}
-                </span>
-              </div>
-            </div>
-          </div>
-          <div class="card-footer bg-white border-top small text-muted" v-if="overview?.customer">
-            <div class="d-flex justify-content-between">
-              <span>Tip client</span>
-              <span class="fw-semibold text-uppercase">
-                {{ overview.customer.type }}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        <nav class="card shadow-sm">
-          <div class="card-header bg-white fw-semibold">
-            Meniu cont
-          </div>
-          <div class="list-group list-group-flush small">
-            <RouterLink
-              :to="{ name: 'account-dashboard' }"
-              class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
-              :class="{ active: route.name === 'account-dashboard' }"
-            >
-              <span>
-                <i class="bi bi-speedometer2 me-2"></i>
-                Dashboard
-              </span>
-            </RouterLink>
-
-            <RouterLink
-              :to="{ name: 'account-orders' }"
-              class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
-              :class="{ active: route.name === 'account-orders' }"
-            >
-              <span>
-                <i class="bi bi-basket2 me-2"></i>
-                Comenzi
-              </span>
-              <span class="badge bg-light text-dark" v-if="overview?.orders">
-                {{ overview.orders.total }}
-              </span>
-            </RouterLink>
-
-            <RouterLink
-              :to="{ name: 'account-offers' }"
-              class="list-group-item list-group-item-action"
-              :class="{ active: route.name === 'account-offers' }"
-            >
-              <i class="bi bi-tags me-2"></i>
-              Oferte & negocieri
-            </RouterLink>
-
-            <RouterLink
-              :to="{ name: 'account-documents' }"
-              class="list-group-item list-group-item-action"
-              :class="{ active: route.name === 'account-documents' }"
-            >
-              <i class="bi bi-receipt me-2"></i>
-              Documente financiare
-            </RouterLink>
-
-            <RouterLink
-              :to="{ name: 'account-recurring-orders' }"
-              class="list-group-item list-group-item-action"
-              :class="{ active: route.name === 'account-recurring-orders' }"
-            >
-              <i class="bi bi-arrow-repeat me-2"></i>
-              Comenzi recurente
-            </RouterLink>
-
-            <RouterLink
-              :to="{ name: 'account-company-users' }"
-              class="list-group-item list-group-item-action"
-              :class="{ active: route.name === 'account-company-users' }"
-            >
-              <i class="bi bi-people me-2"></i>
-              Utilizatori companie
-            </RouterLink>
-
-            <RouterLink
-              :to="{ name: 'account-addresses' }"
-              class="list-group-item list-group-item-action"
-              :class="{ active: route.name === 'account-addresses' }"
-            >
-              <i class="bi bi-geo-alt me-2"></i>
-              Adrese livrare / facturare
-            </RouterLink>
-
-            <RouterLink
-              :to="{ name: 'account-tickets' }"
-              class="list-group-item list-group-item-action"
-              :class="{ active: route.name === 'account-tickets' }"
-            >
-              <i class="bi bi-life-preserver me-2"></i>
-              Tichete suport
-            </RouterLink>
-
-            <RouterLink
-              :to="{ name: 'account-notifications' }"
-              class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
-              :class="{ active: route.name === 'account-notifications' }"
-            >
-              <span>
-                <i class="bi bi-bell me-2"></i>
-                Notificări
-              </span>
-              <span class="badge bg-danger" v-if="unreadNotifications > 0">
-                {{ unreadNotifications }}
-              </span>
-            </RouterLink>
-          </div>
-        </nav>
-      </aside>
-
       <!-- Conținut principal dashboard -->
-      <section class="col-lg-9">
+      <section class="col-12">
         <!-- Loading / error -->
         <div v-if="loading" class="text-center py-5">
           <div class="spinner-border text-primary mb-3" role="status"></div>

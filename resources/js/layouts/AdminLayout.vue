@@ -68,6 +68,9 @@
         <RouterLink class="nav-link text-white" :to="{ name: 'admin-collections' }">
           Încasări
         </RouterLink>
+        <RouterLink class="nav-link text-white" :to="{ name: 'admin-receipt-books' }">
+          Chitanțiere
+        </RouterLink>
 
 
         <li class="nav-item">
@@ -129,7 +132,7 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, onMounted } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
 import { useNotificationsStore } from '@/store/notifications'
 import NotificationBell from '@/components/common/NotificationBell.vue'
@@ -139,6 +142,10 @@ const currentRouteName = route.name ?? 'Dashboard'
 
 const notificationsStore = useNotificationsStore()
 const adminUnreadCount = computed(() => notificationsStore.adminUnreadCount)
+
+onMounted(() => {
+  notificationsStore.fetchAdminUnreadCount()
+})
 </script>
 
 <style scoped>

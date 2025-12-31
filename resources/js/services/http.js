@@ -59,6 +59,12 @@ function attachInterceptors(instance, { attachCartSession = false } = {}) {
     // Pentru front (api) – coș guest via X-Cart-Session
     if (attachCartSession) {
       config.headers['X-Cart-Session'] = getOrCreateCartSessionId();
+      
+      // Impersonare client (Agent/Director)
+      const impersonatedClientId = localStorage.getItem('impersonated_client_id');
+      if (impersonatedClientId) {
+        config.headers['X-Impersonated-Client-Id'] = impersonatedClientId;
+      }
     }
 
     return config;

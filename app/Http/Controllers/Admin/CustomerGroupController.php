@@ -18,9 +18,10 @@ class CustomerGroupController extends Controller
         $data = $request->validate([
             'name'                     => ['required', 'string', 'max:191'],
             'type'                     => ['required', 'in:b2b,b2c'],
-            'default_discount_percent' => ['nullable', 'numeric'],
-            'default_payment_terms_days' => ['nullable', 'integer'],
-            'default_credit_limit'     => ['nullable', 'numeric'],
+            'default_discount_percent' => ['nullable', 'numeric', 'min:0', 'max:100'],
+            'default_payment_terms_days' => ['nullable', 'integer', 'min:0'],
+            'default_credit_limit'     => ['nullable', 'numeric', 'min:0'],
+            'is_active'                => ['nullable', 'boolean'],
         ]);
 
         $group = CustomerGroup::create($data);
@@ -38,9 +39,10 @@ class CustomerGroupController extends Controller
         $data = $request->validate([
             'name'                     => ['sometimes', 'string', 'max:191'],
             'type'                     => ['sometimes', 'in:b2b,b2c'],
-            'default_discount_percent' => ['nullable', 'numeric'],
-            'default_payment_terms_days' => ['nullable', 'integer'],
-            'default_credit_limit'     => ['nullable', 'numeric'],
+            'default_discount_percent' => ['nullable', 'numeric', 'min:0', 'max:100'],
+            'default_payment_terms_days' => ['nullable', 'integer', 'min:0'],
+            'default_credit_limit'     => ['nullable', 'numeric', 'min:0'],
+            'is_active'                => ['nullable', 'boolean'],
         ]);
 
         $customerGroup->update($data);

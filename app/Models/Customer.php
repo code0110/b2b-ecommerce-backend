@@ -53,4 +53,19 @@ class Customer extends Model
     {
         return $this->hasMany(Order::class);
     }
+
+    public function agent(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'agent_user_id');
+    }
+
+    public function salesDirector(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'sales_director_user_id');
+    }
+
+    public function invoices(): HasMany
+    {
+        return $this->hasMany(Invoice::class);
+    }
 }

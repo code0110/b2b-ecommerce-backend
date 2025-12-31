@@ -28,7 +28,7 @@
             v-if="!loading && notifications.length === 0"
             class="list-group-item small text-muted text-center py-3"
           >
-            Nu există notificări sau endpoint-ul nu este încă implementat.
+            Nu există notificări.
           </li>
 
           <li
@@ -39,10 +39,10 @@
           >
             <div>
               <div class="fw-semibold">
-                {{ n.title || n.type || 'Notificare' }}
+                {{ n.data?.title || n.title || n.type || 'Notificare' }}
               </div>
               <div class="text-muted">
-                {{ n.message || n.body || '—' }}
+                {{ n.data?.message || n.data?.body || n.message || n.body || '—' }}
               </div>
               <div class="text-muted">
                 <small>{{ formatDate(n.created_at) }}</small>
@@ -72,7 +72,9 @@ import {
   fetchAdminNotifications,
   markNotificationRead
 } from '@/services/admin/notifications'
+import { useNotificationsStore } from '@/store/notifications'
 
+const notificationsStore = useNotificationsStore()
 const notifications = ref([])
 const loading = ref(false)
 const error = ref('')
@@ -89,9 +91,11 @@ const loadNotifications = async () => {
   try {
     const resp = await fetchAdminNotifications()
     notifications.value = resp.data || resp || []
+    // Also update the count in the store/header
+    notificationsStore.fetchAdminUnreadCount()
   } catch (e) {
     console.error(e)
-    error.value = 'Nu s-au putut încărca notificările (sau endpoint-ul nu există încă).'
+    error.value = 'Nu s-au putut încărca notificările.'
   } finally {
     loading.value = false
   }

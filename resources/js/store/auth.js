@@ -89,5 +89,19 @@ export const useAuthStore = defineStore('auth', {
         await this.logout();
       }
     },
+
+    startImpersonation(client) {
+      if (!client || !client.id) return;
+      localStorage.setItem('impersonated_client_id', client.id);
+      localStorage.setItem('impersonated_client_name', client.name || 'Client');
+      // Force reload to apply interceptor
+      window.location.href = '/';
+    },
+
+    stopImpersonation() {
+      localStorage.removeItem('impersonated_client_id');
+      localStorage.removeItem('impersonated_client_name');
+      window.location.href = '/';
+    },
   },
 });

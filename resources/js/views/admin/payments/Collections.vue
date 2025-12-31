@@ -35,14 +35,38 @@
                 <option value="op">OP – ordin de plată</option>
               </select>
             </div>
-            <div class="col-md-4">
-              <label class="form-label form-label-sm">Client (ID sau nume – simplu demo)</label>
-              <input
-                v-model="form.customer_reference"
-                type="text"
-                class="form-control form-control-sm"
-                placeholder="ID client sau nume"
-              >
+            <div class="col-md-4 position-relative">
+              <label class="form-label form-label-sm">Client</label>
+              <div class="input-group input-group-sm">
+                <input
+                  type="text"
+                  class="form-control"
+                  placeholder="Caută client (nume, email...)"
+                  v-model="customerSearch"
+                  @input="searchCustomers"
+                  @focus="showCustomerResults = true"
+                >
+                <button v-if="selectedCustomer" class="btn btn-outline-secondary" type="button" @click="clearCustomer">
+                  <i class="bi bi-x"></i>
+                </button>
+              </div>
+              
+              <!-- Dropdown rezultate -->
+              <div v-if="showCustomerResults && customerResults.length > 0" class="list-group position-absolute w-100 shadow-sm" style="z-index: 1050; max-height: 200px; overflow-y: auto;">
+                <button
+                  v-for="cust in customerResults"
+                  :key="cust.id"
+                  type="button"
+                  class="list-group-item list-group-item-action list-group-item-light small"
+                  @click="selectCustomer(cust)"
+                >
+                  <strong>{{ cust.name }}</strong>
+                  <div class="text-muted" style="font-size: 0.8em;">{{ cust.email }} | {{ cust.cif || 'Fără CIF' }}</div>
+                </button>
+              </div>
+              <div v-if="showCustomerResults && customerSearch.length >= 2 && customerResults.length === 0 && !searchingCustomers" class="position-absolute w-100 p-2 bg-white border rounded shadow-sm text-muted small" style="z-index: 1050;">
+                Nu s-au găsit rezultate.
+              </div>
             </div>
             <div class="col-md-2">
               <label class="form-label form-label-sm">Sumă</label>
@@ -57,7 +81,7 @@
             <div class="col-md-3">
               <label class="form-label form-label-sm">Data încasării</label>
               <input
-                v-model="form.collected_at"
+                v-model="form.payment_date"
                 type="date"
                 class="form-control form-control-sm"
               >
@@ -81,6 +105,28 @@
                 class="form-control form-control-sm"
               >
             </div>
+            
+            <div class="col-12" v-if="['bo', 'cec'].includes(form.type)">
+                <div class="row g-3 p-2 bg-light border rounded mt-1 mb-2">
+                    <div class="col-md-3">
+                        <label class="form-label form-label-sm">Serie</label>
+                        <input v-model="form.series" type="text" class="form-control form-control-sm">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label form-label-sm">Număr</label>
+                        <input v-model="form.number" type="text" class="form-control form-control-sm">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label form-label-sm">Bancă</label>
+                        <input v-model="form.bank" type="text" class="form-control form-control-sm">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label form-label-sm">Scadență</label>
+                        <input v-model="form.due_date" type="date" class="form-control form-control-sm">
+                    </div>
+                </div>
+            </div>
+
             <div class="col-md-4 d-flex align-items-end">
               <button
                 class="btn btn-sm btn-primary me-2"
@@ -135,10 +181,16 @@
               :key="c.id"
             >
               <td class="small">
-                {{ formatDate(c.collected_at || c.created_at) }}
+                {{ formatDate(c.payment_date || c.created_at) }}
               </td>
               <td class="small">
-                {{ c.customer_name || c.customer_reference || '—' }}
+                <div v-if="c.customer">
+                  <strong>{{ c.customer.name || c.customer.company_name }}</strong>
+                  <div class="text-muted" style="font-size: 0.8em;" v-if="c.customer.cif">{{ c.customer.cif }}</div>
+                </div>
+                <div v-else>
+                  {{ c.customer_name || c.customer_reference || '—' }}
+                </div>
               </td>
               <td class="small">
                 {{ typeLabel(c.type) }}
@@ -147,7 +199,15 @@
                 {{ formatMoney(c.amount || 0) }}
               </td>
               <td class="small">
-                {{ c.reference || c.document_number || '—' }}
+                <div v-if="['bo', 'cec'].includes(c.type)">
+                  <div v-if="c.series || c.number"><strong>Doc:</strong> {{ c.series }} {{ c.number }}</div>
+                  <div v-if="c.bank"><strong>Bancă:</strong> {{ c.bank }}</div>
+                  <div v-if="c.due_date"><strong>Scadență:</strong> {{ formatDate(c.due_date) }}</div>
+                  <div v-if="c.document_number" class="text-muted">{{ c.document_number }}</div>
+                </div>
+                <div v-else>
+                  {{ c.reference || c.document_number || '—' }}
+                </div>
               </td>
             </tr>
           </tbody>
@@ -164,6 +224,7 @@ import {
   fetchCollections,
   createCollection
 } from '@/services/admin/collections'
+import { adminApi } from '@/services/http'
 
 const collections = ref([])
 const loading = ref(false)
@@ -172,13 +233,26 @@ const error = ref('')
 const formError = ref('')
 const showForm = ref(false)
 
+// Customer search state
+const customerSearch = ref('')
+const customerResults = ref([])
+const showCustomerResults = ref(false)
+const searchingCustomers = ref(false)
+const selectedCustomer = ref(null)
+
 const form = ref({
   type: 'chs',
-  customer_reference: '',
+  customer_id: null,
   amount: null,
-  collected_at: '',
+  payment_date: new Date().toISOString().slice(0, 10),
   reference: '',
-  document_number: ''
+  document_number: '',
+  series: '',
+  number: '',
+  bank: '',
+  due_date: '',
+  currency: 'RON',
+  status: 'collected'
 })
 
 const formatDate = (val) => {
@@ -219,16 +293,58 @@ const loadCollections = async () => {
   }
 }
 
+const searchCustomers = async () => {
+  if (customerSearch.value.length < 2) {
+    customerResults.value = []
+    showCustomerResults.value = false
+    return
+  }
+  
+  searchingCustomers.value = true
+  try {
+    const { data } = await adminApi.get('/customers', {
+      params: { q: customerSearch.value }
+    })
+    customerResults.value = data.data || []
+    showCustomerResults.value = true
+  } catch (e) {
+    console.error(e)
+  } finally {
+    searchingCustomers.value = false
+  }
+}
+
+const selectCustomer = (customer) => {
+  selectedCustomer.value = customer
+  form.value.customer_id = customer.id
+  customerSearch.value = customer.name || customer.company_name || customer.email
+  showCustomerResults.value = false
+}
+
+const clearCustomer = () => {
+  selectedCustomer.value = null
+  form.value.customer_id = null
+  customerSearch.value = ''
+  customerResults.value = []
+}
+
 const startCreate = () => {
   showForm.value = true
   formError.value = ''
+  clearCustomer() // Reset customer selection
   form.value = {
     type: 'chs',
-    customer_reference: '',
+    customer_id: null,
     amount: null,
-    collected_at: new Date().toISOString().slice(0, 10),
+    payment_date: new Date().toISOString().slice(0, 10),
     reference: '',
-    document_number: ''
+    document_number: '',
+    series: '',
+    number: '',
+    bank: '',
+    due_date: '',
+    currency: 'RON',
+    status: 'collected'
   }
 }
 

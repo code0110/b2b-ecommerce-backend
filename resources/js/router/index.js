@@ -40,6 +40,7 @@ import RecurringOrders from '@/views/account/RecurringOrders.vue'
 import AccountTickets from '@/views/account/AccountTickets.vue'
 import AccountOffers from '@/views/account/AccountOffers.vue'
 import AccountNotifications from '@/views/account/AccountNotifications.vue'
+import AgentDashboard from '@/views/account/AgentDashboard.vue'
 
 // Admin
 import AdminDashboard from '@/views/admin/Dashboard.vue'
@@ -57,6 +58,7 @@ import PromotionListAdmin from '@/views/admin/promotions/PromotionList.vue'
 import PromotionFormAdmin from '@/views/admin/promotions/PromotionForm.vue'
 import TicketList from '@/views/admin/tickets/TicketList.vue'
 import Collections from '@/views/admin/payments/Collections.vue'
+import ReceiptBookList from '@/views/admin/receipt-books/ReceiptBookList.vue'
 import AdminNotifications from '@/views/admin/notifications/AdminNotifications.vue'
 import RolesPermissions from '@/views/admin/settings/RolesPermissions.vue'
 import AuditLog from '@/views/admin/settings/AuditLog.vue'
@@ -200,8 +202,18 @@ const router = createRouter({
       component: AccountLayout,
       meta: { requiresAuth: true },
       children: [
+            {
+              path: '',
+              redirect: { name: 'account-dashboard' }
+            },
+            {
+              path: 'agent',
+          name: 'agent-dashboard',
+          component: AgentDashboard,
+          meta: { requiresAuth: true }
+        },
         {
-          path: '',
+          path: 'dashboard',
           name: 'account-dashboard',
           component: AccountDashboard,
           meta: { requiresAuth: true }
@@ -386,6 +398,11 @@ const router = createRouter({
           path: 'collections',
           name: 'admin-collections',
           component: Collections
+        },
+        {
+          path: 'receipt-books',
+          name: 'admin-receipt-books',
+          component: ReceiptBookList
         },
         {
   path: 'settings/users',

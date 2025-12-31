@@ -88,6 +88,11 @@ class Product extends Model
         return $this->hasMany(RelatedProduct::class);
     }
 
+    public function complementaryProducts(): HasMany
+    {
+        return $this->hasMany(RelatedProduct::class)->where('type', 'complementary');
+    }
+
     /**
      * Alias pentru compatibilitate dacă undeva în cod se folosește `related()`.
      */

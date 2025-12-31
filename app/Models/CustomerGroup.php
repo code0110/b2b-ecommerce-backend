@@ -13,12 +13,14 @@ class CustomerGroup extends Model
         'default_discount_percent',
         'default_payment_terms_days',
         'default_credit_limit',
+        'is_active',
     ];
 
     protected $casts = [
         'default_discount_percent' => 'float',
         'default_payment_terms_days' => 'integer',
         'default_credit_limit' => 'float',
+        'is_active' => 'boolean',
     ];
 
     public function customers(): HasMany

@@ -39,6 +39,11 @@ class User extends Authenticatable
 
 
 
+    public function getFullNameAttribute(): string
+    {
+        return trim("{$this->first_name} {$this->last_name}");
+    }
+
     public function orders(): HasMany
     {
         return $this->hasMany(Order::class, 'placed_by_user_id');
@@ -94,4 +99,13 @@ public function roles(): BelongsToMany
             ->exists();
     }
 
+    public function managedCustomers(): HasMany
+    {
+        return $this->hasMany(Customer::class, 'agent_user_id');
+    }
+
+    public function directedCustomers(): HasMany
+    {
+        return $this->hasMany(Customer::class, 'sales_director_user_id');
+    }
 }

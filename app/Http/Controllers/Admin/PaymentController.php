@@ -43,6 +43,10 @@ class PaymentController extends Controller
             'status'      => 'required|string|max:50',
             'payment_date'=> 'nullable|date',
             'document_number' => 'nullable|string|max:100',
+            'series'      => 'nullable|string|max:20',
+            'number'      => 'nullable|string|max:50',
+            'bank'        => 'nullable|string|max:100',
+            'due_date'    => 'nullable|date',
             'notes'       => 'nullable|string',
         ]);
 

@@ -67,60 +67,96 @@
               <div v-if="users.length === 0" class="text-center text-muted py-4 small">
                 Nu există utilizatori pentru filtrele selectate.
               </div>
-              <div v-else class="table-responsive">
-                <table class="table table-sm table-hover align-middle mb-0">
-                  <thead class="table-light">
-                    <tr>
-                      <th>Nume</th>
-                      <th>Email</th>
-                      <th>Roluri</th>
-                      <th>Status</th>
-                      <th style="width: 80px;"></th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr v-for="u in users" :key="u.id">
-                      <td>
-                        <div class="fw-semibold">{{ u.name }}</div>
-                      </td>
-                      <td class="small">{{ u.email }}</td>
-                      <td class="small">
-                        <span
-                          v-for="r in u.roles"
-                          :key="r.id"
-                          class="badge bg-secondary me-1 mb-1"
-                        >
-                          {{ r.name }}
-                        </span>
-                      </td>
-                      <td>
-                        <span
-                          class="badge"
-                          :class="u.is_active ? 'bg-success' : 'bg-secondary'"
-                        >
-                          {{ u.is_active ? 'Activ' : 'Inactiv' }}
-                        </span>
-                      </td>
-                      <td class="text-end">
-                        <button
-                          type="button"
-                          class="btn btn-outline-secondary btn-sm me-1"
-                          @click="editUser(u)"
-                        >
-                          Editează
+              <div v-else>
+                <div class="table-responsive">
+                  <table class="table table-sm table-hover align-middle mb-0">
+                    <thead class="table-light">
+                      <tr>
+                        <th>Nume</th>
+                        <th>Email</th>
+                        <th>Roluri</th>
+                        <th>Status</th>
+                        <th style="width: 120px;"></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr v-for="u in users" :key="u.id">
+                        <td>
+                          <div class="fw-semibold">{{ u.name }}</div>
+                        </td>
+                        <td class="small">{{ u.email }}</td>
+                        <td class="small">
+                          <span
+                            v-for="r in u.roles"
+                            :key="r.id"
+                            class="badge bg-secondary me-1 mb-1"
+                          >
+                            {{ r.name }}
+                          </span>
+                        </td>
+                        <td>
+                          <span
+                            class="badge"
+                            :class="u.is_active ? 'bg-success' : 'bg-secondary'"
+                          >
+                            {{ u.is_active ? 'Activ' : 'Inactiv' }}
+                          </span>
+                        </td>
+                        <td class="text-end">
+                          <button
+                            type="button"
+                            class="btn btn-outline-secondary btn-sm me-1"
+                            @click="editUser(u)"
+                            title="Editează"
+                          >
+                            <i class="bi bi-pencil"></i>
+                          </button>
+                          
+                          <button
+                            v-if="u.is_active && u.id !== currentUserId"
+                            type="button"
+                            class="btn btn-outline-danger btn-sm"
+                            @click="deactivateUser(u)"
+                            title="Dezactivează"
+                          >
+                            <i class="bi bi-person-x"></i>
+                          </button>
+
+                          <button
+                            v-if="!u.is_active && u.id !== currentUserId"
+                            type="button"
+                            class="btn btn-outline-success btn-sm"
+                            @click="activateUser(u)"
+                            title="Activează"
+                          >
+                            <i class="bi bi-person-check"></i>
+                          </button>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+
+                <!-- Pagination -->
+                <div class="d-flex justify-content-between align-items-center mt-3 small" v-if="pagination.last_page > 1">
+                  <div class="text-muted">
+                    Afișare {{ pagination.from }} - {{ pagination.to }} din {{ pagination.total }} utilizatori
+                  </div>
+                  <nav>
+                    <ul class="pagination pagination-sm mb-0">
+                      <li class="page-item" :class="{ disabled: pagination.current_page === 1 }">
+                        <button class="page-link" @click="changePage(pagination.current_page - 1)">
+                          &laquo;
                         </button>
-                        <button
-                          type="button"
-                          class="btn btn-outline-danger btn-sm"
-                          @click="deactivateUser(u)"
-                          v-if="u.id !== currentUserId"
-                        >
-                          Dezactivează
+                      </li>
+                      <li class="page-item" :class="{ disabled: pagination.current_page === pagination.last_page }">
+                        <button class="page-link" @click="changePage(pagination.current_page + 1)">
+                          &raquo;
                         </button>
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
+                      </li>
+                    </ul>
+                  </nav>
+                </div>
               </div>
             </div>
 
@@ -293,6 +329,14 @@ const form = reactive({
   role_ids: [],
 });
 
+const pagination = reactive({
+  current_page: 1,
+  last_page: 1,
+  total: 0,
+  from: 0,
+  to: 0,
+});
+
 const loadRoles = async () => {
   try {
     roles.value = await fetchRoles();
@@ -301,16 +345,23 @@ const loadRoles = async () => {
   }
 };
 
-const loadUsers = async () => {
+const loadUsers = async (page = 1) => {
   loading.value = true;
   error.value = '';
 
   try {
     const params = {
       ...filters,
+      page,
     };
     const data = await fetchUsers(params);
     users.value = data.data || data.items || [];
+    
+    pagination.current_page = data.current_page || 1;
+    pagination.last_page = data.last_page || 1;
+    pagination.total = data.total || 0;
+    pagination.from = data.from || 0;
+    pagination.to = data.to || 0;
   } catch (e) {
     console.error('loadUsers error', e);
     error.value = 'Nu s-au putut încărca utilizatorii.';
@@ -319,11 +370,16 @@ const loadUsers = async () => {
   }
 };
 
+const changePage = (page) => {
+  if (page < 1 || page > pagination.last_page) return;
+  loadUsers(page);
+};
+
 const resetFilters = () => {
   filters.search = '';
   filters.role = '';
   filters.is_active = '';
-  loadUsers();
+  loadUsers(1);
 };
 
 const resetForm = () => {
@@ -355,10 +411,22 @@ const deactivateUser = async (u) => {
 
   try {
     await deleteUser(u.id);
-    await loadUsers();
+    await loadUsers(pagination.current_page);
   } catch (e) {
     console.error('deactivateUser error', e);
     alert('Nu s-a putut dezactiva utilizatorul.');
+  }
+};
+
+const activateUser = async (u) => {
+  if (!confirm(`Sigur vrei să activezi utilizatorul ${u.name}?`)) return;
+
+  try {
+    await updateUser(u.id, { is_active: true });
+    await loadUsers(pagination.current_page);
+  } catch (e) {
+    console.error('activateUser error', e);
+    alert('Nu s-a putut activa utilizatorul.');
   }
 };
 
@@ -386,7 +454,7 @@ const submitForm = async () => {
       await createUser(payload);
     }
 
-    await loadUsers();
+    await loadUsers(pagination.current_page);
     resetForm();
   } catch (e) {
     console.error('submitForm error', e);

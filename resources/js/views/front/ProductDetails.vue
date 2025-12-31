@@ -1,13 +1,22 @@
 <template>
-  <div class="container py-4" v-if="!loading && product">
-    <!-- Breadcrumbs simple -->
-    <nav aria-label="breadcrumb" class="mb-3">
+  <div v-if="loading" class="text-center py-5">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Se încarcă...</span>
+    </div>
+    <div class="mt-2 text-muted">Se încarcă detaliile produsului...</div>
+  </div>
+
+  <div class="container py-4" v-else-if="product">
+    <!-- Breadcrumbs -->
+    <nav aria-label="breadcrumb" class="small mb-3">
       <ol class="breadcrumb mb-0">
         <li class="breadcrumb-item">
           <RouterLink to="/">Acasă</RouterLink>
         </li>
         <li class="breadcrumb-item">
-          <RouterLink to="/produse">Catalog</RouterLink>
+          <RouterLink :to="product.categorySlug ? `/categorie/${product.categorySlug}` : '/produse'">
+            {{ categoryTitle }}
+          </RouterLink>
         </li>
         <li class="breadcrumb-item active" aria-current="page">
           {{ product.name }}
@@ -15,88 +24,140 @@
       </ol>
     </nav>
 
-    <div class="row">
-      <!-- Imagine / galerie -->
-      <div class="col-md-6 mb-3">
-        <div
-          class="border rounded p-3 h-100 d-flex align-items-center justify-content-center bg-white"
-          style="min-height: 280px;"
-        >
-          <span class="text-muted small">
-            [ Galerie imagini – de integrat ulterior cu câmpurile reale ]
-          </span>
+    <!-- Header + preț + stoc -->
+    <div class="row g-4 mb-3">
+      <div class="col-md-5">
+        <div class="border rounded bg-white p-3 mb-2 text-center">
+          <div class="ratio ratio-4x3 bg-light d-flex align-items-center justify-content-center">
+            <img 
+              v-if="product.image_url" 
+              :src="product.image_url" 
+              :alt="product.name"
+              class="img-fluid"
+              style="max-height: 100%; object-fit: contain;"
+            />
+            <span v-else class="text-muted small">
+              Imagine indisponibilă
+            </span>
+          </div>
+        </div>
+        <div class="d-flex gap-2 small" v-if="product.images && product.images.length > 0">
+          <button
+            v-for="(img, idx) in product.images"
+            :key="idx"
+            type="button"
+            class="btn btn-outline-secondary btn-sm flex-fill"
+          >
+            Imagine {{ idx + 1 }}
+          </button>
         </div>
       </div>
 
-      <!-- Detalii produs + buton coș -->
-      <div class="col-md-6 mb-3">
+      <div class="col-md-7">
         <h1 class="h4 mb-1">{{ product.name }}</h1>
+        <div class="small text-muted mb-2">
+          Cod produs: {{ product.internal_code || product.code }} • Brand: {{ product.brand || 'Generic' }}
+        </div>
 
-        <p class="small text-muted mb-1">
-          Cod intern: {{ product.internal_code || product.code || '-' }}
-        </p>
-
-        <p class="small text-muted mb-2" v-if="product.brand">
-          Brand: <strong>{{ product.brand.name || product.brand }}</strong>
-        </p>
-
-        <!-- Preț -->
-        <div class="mb-3">
-          <span class="h5 me-2">
-            {{ displayPrice }} RON
+        <div class="mb-2">
+          <span
+            class="badge"
+            :class="isStockAvailable ? 'bg-success' : 'bg-secondary'"
+          >
+            {{ isStockAvailable ? 'În stoc' : 'La comandă' }}
           </span>
-          <span class="badge bg-success" v-if="hasPromo">
-            Promoție
+          <span
+            v-if="product.stock_qty !== null && isB2B"
+            class="badge bg-light text-dark ms-2"
+          >
+            Stoc B2B: {{ product.stock_qty }}
           </span>
         </div>
 
-        <!-- Cantitate -->
         <div class="mb-3">
-          <label class="form-label small">Cantitate</label>
-          <div class="input-group input-group-sm" style="max-width: 180px;">
-            <button
-              class="btn btn-outline-secondary"
-              type="button"
-              @click="decreaseQty"
-            >
-              -
-            </button>
-            <input
-              type="number"
-              class="form-control text-center"
-              v-model.number="quantity"
-              min="1"
-            />
-            <button
-              class="btn btn-outline-secondary"
-              type="button"
-              @click="increaseQty"
-            >
-              +
-            </button>
+          <div class="h5 mb-1">
+            <span v-if="product.has_discount" class="text-muted text-decoration-line-through h6 me-2">
+              {{ formatPrice(product.list_price || product.price) }}
+            </span>
+            <span class="fw-semibold">
+              {{ formatPrice(displayPrice) }}
+            </span>
+          </div>
+          <div class="small text-muted">
+            <span v-if="product.has_discount">
+              Preț promoțional activ.
+            </span>
+            <span v-else>
+              Preț de listă.
+            </span>
+          </div>
+          <div class="small mt-1" v-if="isB2B">
+            <span class="badge bg-primary me-1">B2B</span>
+            Prețuri și condiții comerciale B2B (termen plată, limită credit) se aplică în cont sau la impersonare.
           </div>
         </div>
 
-        <!-- BUTONUL DE COȘ – aici era problema: fără @click -->
-        <div class="d-flex flex-wrap gap-2 mb-3">
-          <button
-            type="button"
-            class="btn btn-primary btn-sm"
-            :disabled="addLoading"
-            @click="addToCart"
-          >
-            <span
-              v-if="addLoading"
-              class="spinner-border spinner-border-sm me-1"
+        <!-- Variante + unități de măsură -->
+        <div class="row g-2 mb-3 small">
+          <div class="col-md-6" v-if="product.variants && product.variants.length">
+            <label class="form-label">Variantă</label>
+            <select class="form-select form-select-sm" v-model="selectedVariant">
+              <option
+                v-for="variant in product.variants"
+                :key="variant.code"
+                :value="variant.code"
+              >
+                {{ variant.label }} (cod: {{ variant.code }})
+              </option>
+            </select>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Unitate de măsură</label>
+            <select class="form-select form-select-sm" v-model="selectedUnit">
+              <option
+                v-for="uom in unitsOfMeasure"
+                :key="uom.value"
+                :value="uom.value"
+              >
+                {{ uom.label }}
+              </option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Cantitate + butoane -->
+        <div class="d-flex align-items-center gap-2 mb-4">
+          <div style="width: 100px;">
+            <input
+              type="number"
+              class="form-control"
+              v-model.number="quantity"
+              min="1"
             />
+          </div>
+          <button
+            class="btn btn-primary"
+            @click="addToCart"
+            :disabled="addLoading || (!isStockAvailable && !product.can_backorder)"
+          >
+            <span v-if="addLoading" class="spinner-border spinner-border-sm me-1"></span>
+            <i v-else class="bi bi-cart-plus"></i> 
             Adaugă în coș
           </button>
-
           <button
-            type="button"
-            class="btn btn-outline-secondary btn-sm"
+            class="btn btn-outline-secondary"
+            title="Adaugă la favorite"
+            @click="addToFavoritesDemo"
           >
-            Adaugă la favorite
+            <i class="bi bi-heart"></i>
+          </button>
+          <button
+            v-if="isB2B"
+            class="btn btn-outline-secondary"
+            title="Solicită ofertă personalizată"
+            @click="requestOfferDemo"
+          >
+            <i class="bi bi-file-earmark-text"></i>
           </button>
         </div>
 
@@ -108,148 +169,357 @@
           {{ addError }}
         </div>
 
-        <hr />
-
-        <!-- Info stoc simplificată -->
-        <p class="small text-muted mb-1" v-if="product.stock_status">
-          Disponibilitate: {{ product.stock_status }}
-        </p>
-        <p class="small text-muted mb-0" v-if="product.main_category">
-          Categorie: {{ product.main_category.name }}
-        </p>
+        <!-- Tabs: Descriere / Specificații / Documente -->
+        <ul class="nav nav-tabs mb-3" id="productTab" role="tablist">
+          <li class="nav-item" role="presentation">
+            <button
+              class="nav-link active"
+              id="desc-tab"
+              data-bs-toggle="tab"
+              data-bs-target="#desc-pane"
+              type="button"
+              role="tab"
+            >
+              Descriere
+            </button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button
+              class="nav-link"
+              id="specs-tab"
+              data-bs-toggle="tab"
+              data-bs-target="#specs-pane"
+              type="button"
+              role="tab"
+            >
+              Specificații
+            </button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button
+              class="nav-link"
+              id="docs-tab"
+              data-bs-toggle="tab"
+              data-bs-target="#docs-pane"
+              type="button"
+              role="tab"
+            >
+              Documente
+            </button>
+          </li>
+        </ul>
+        <div class="tab-content" id="productTabContent">
+          <div
+            class="tab-pane fade show active"
+            id="desc-pane"
+            role="tabpanel"
+          >
+            <div class="small text-muted" v-html="product.long_description || product.description || 'Fără descriere.'"></div>
+          </div>
+          <div
+            class="tab-pane fade"
+            id="specs-pane"
+            role="tabpanel"
+          >
+            <table class="table table-sm table-striped small mb-0" v-if="product.attributes && product.attributes.length">
+              <tbody>
+                <tr v-for="(attr, idx) in product.attributes" :key="idx">
+                  <td class="text-muted" style="width: 40%">{{ attr.name }}</td>
+                  <td class="fw-semibold">{{ attr.value }}</td>
+                </tr>
+              </tbody>
+            </table>
+            <div v-else class="small text-muted">Nu există specificații.</div>
+          </div>
+          <div
+            class="tab-pane fade"
+            id="docs-pane"
+            role="tabpanel"
+          >
+            <div v-if="product.documents && product.documents.length" class="list-group list-group-flush small">
+              <div
+                v-for="doc in product.documents"
+                :key="doc.id"
+                class="list-group-item d-flex justify-content-between align-items-center px-0"
+              >
+                <div>
+                  <div class="fw-semibold">
+                    <i class="bi bi-file-earmark-pdf text-danger me-1"></i>
+                    {{ doc.label || doc.name }}
+                  </div>
+                  <div class="text-muted" style="font-size: 0.85rem;">
+                    {{ doc.description }}
+                    <span v-if="doc.restriction !== 'public'" class="badge bg-warning text-dark ms-1">
+                      {{ doc.restrictionLabel || 'Restricționat' }}
+                    </span>
+                  </div>
+                </div>
+                <button
+                  class="btn btn-sm btn-outline-primary"
+                  @click="openDocumentDemo(doc)"
+                >
+                  Descarcă
+                </button>
+              </div>
+            </div>
+            <div v-else class="small text-muted">Nu există documente atașate.</div>
+          </div>
+        </div>
       </div>
     </div>
 
-    <div class="row mt-4">
-      <div class="col-md-8">
-        <h2 class="h6">Descriere produs</h2>
-        <p class="small text-muted" v-if="product.short_description">
-          {{ product.short_description }}
-        </p>
-        <div
-          v-if="product.description"
-          class="small"
-          v-html="product.description"
-        />
+    <!-- Produse similare / complementare -->
+    <div class="row g-4 mt-2">
+      <div class="col-md-6">
+        <div class="card h-100">
+          <div class="card-header py-2">
+            <strong class="small text-uppercase">Produse similare</strong>
+          </div>
+          <div class="card-body small">
+            <div
+              v-for="similar in similarProducts"
+              :key="similar.slug"
+              class="d-flex justify-content-between align-items-center py-1 border-bottom"
+            >
+              <div>
+                <div class="fw-semibold">{{ similar.name }}</div>
+                <div class="text-muted">{{ similar.internal_code || similar.code }}</div>
+              </div>
+              <RouterLink
+                :to="`/produs/${similar.slug}`"
+                class="btn btn-outline-secondary btn-sm"
+              >
+                Detalii
+              </RouterLink>
+            </div>
+            <div v-if="similarProducts.length === 0" class="text-muted">
+              Nu sunt definite produse similare.
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <div class="card h-100">
+          <div class="card-header py-2">
+            <strong class="small text-uppercase">Produse complementare</strong>
+          </div>
+          <div class="card-body small">
+            <div
+              v-for="comp in complementaryProducts"
+              :key="comp.slug"
+              class="d-flex justify-content-between align-items-center py-1 border-bottom"
+            >
+              <div>
+                <div class="fw-semibold">{{ comp.name }}</div>
+                <div class="text-muted">{{ comp.internal_code || comp.code }}</div>
+              </div>
+              <RouterLink
+                :to="`/produs/${comp.slug}`"
+                class="btn btn-outline-secondary btn-sm"
+              >
+                Detalii
+              </RouterLink>
+            </div>
+            <div v-if="complementaryProducts.length === 0" class="text-muted">
+              Nu sunt definite produse complementare.
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
 
-  <!-- Loading -->
-  <div class="container py-5" v-else-if="loading">
-    <div class="text-center text-muted">
-      Se încarcă detaliile produsului...
-    </div>
+  <div v-else-if="error" class="container py-4">
+     <div class="alert alert-danger">
+        {{ error }}
+     </div>
+      <div class="mt-3">
+        <RouterLink to="/" class="btn btn-outline-primary">
+          Înapoi la prima pagină
+        </RouterLink>
+      </div>
   </div>
 
-  <!-- Not found -->
-  <div class="container py-5" v-else>
+  <div v-else class="container py-4">
     <div class="alert alert-warning">
       Produsul nu a fost găsit.
     </div>
+    <div class="mt-3">
+        <RouterLink to="/" class="btn btn-outline-primary">
+          Înapoi la prima pagină
+        </RouterLink>
+      </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue';
-import { useRoute } from 'vue-router';
-import { fetchProductBySlug } from '@/services/catalog';
-import { addCartItem } from '@/services/cart';
+import { computed, ref, onMounted, watch } from 'vue'
+import { useRoute } from 'vue-router'
+import { useAuthStore } from '@/store/auth'
+import { useProductsStore } from '@/store/products'
+import { fetchProductBySlug } from '@/services/catalog'
+import { addCartItem } from '@/services/cart'
 
-const route = useRoute();
+const route = useRoute()
+const authStore = useAuthStore()
+const productsStore = useProductsStore()
 
-const loading = ref(false);
-const product = ref(null);
-const error = ref('');
+const loading = ref(false)
+const error = ref(null)
+const product = ref(null)
+const quantity = ref(1)
+const addLoading = ref(false)
+const addMessage = ref('')
+const addError = ref('')
 
-// stare add-to-cart
-const quantity = ref(1);
-const addLoading = ref(false);
-const addMessage = ref('');
-const addError = ref('');
+const frontClientType = computed(() => {
+  if (authStore.impersonatedCustomer?.clientType) {
+    return authStore.impersonatedCustomer.clientType
+  }
+  if (authStore.user?.role === 'b2b') return 'B2B'
+  if (authStore.user?.role === 'b2c') return 'B2C'
+  return null
+})
 
-// încarcă produsul după slug din URL
+const isB2B = computed(() => frontClientType.value === 'B2B')
+
+const slug = computed(() => route.params.slug || '')
+
+const mapDemoProductToView = (demoProduct) => {
+    return {
+        id: demoProduct.id,
+        name: demoProduct.name,
+        slug: 'produs-demo-' + demoProduct.id,
+        internal_code: demoProduct.internalCode,
+        code: demoProduct.internalCode,
+        brand: demoProduct.brand,
+        categorySlug: '', // demoProducts doesn't have slug for category easily accessible, or we can guess
+        category_name: demoProduct.mainCategory,
+        image_url: null, // demo doesn't have images
+        stock_status: demoProduct.stockStatus,
+        stock_qty: demoProduct.stockQty,
+        list_price: demoProduct.listPrice,
+        price: demoProduct.listPrice,
+        price_override: demoProduct.overridePrice,
+        promo_price: null, // demo doesn't seem to have promoPrice in the object I saw, or maybe it does?
+        has_discount: false,
+        short_description: demoProduct.shortDescription,
+        description: demoProduct.longDescription,
+        attributes: Object.entries(demoProduct.attributes || {}).map(([key, value]) => ({ name: key, value })),
+        variants: demoProduct.variants || [],
+        documents: demoProduct.documents || [],
+        similar_products: [],
+        complementary_products: []
+    }
+}
+
 const loadProduct = async () => {
-  loading.value = true;
-  error.value = '';
-  addMessage.value = '';
-  addError.value = '';
+  if (!slug.value) return
+  
+  loading.value = true
+  error.value = null
+  product.value = null
+  addMessage.value = ''
+  addError.value = ''
+  
+  // Check for demo product
+  if (slug.value.toString().startsWith('produs-demo-')) {
+     const id = slug.value.replace('produs-demo-', '')
+     const demoProduct = productsStore.getById(id)
+     if (demoProduct) {
+        product.value = mapDemoProductToView(demoProduct)
+        if (product.value.variants && product.value.variants.length > 0) {
+            selectedVariant.value = product.value.variants[0].code
+        }
+        loading.value = false
+        return
+     }
+  }
 
   try {
-    const slug = route.params.slug;
-    const data = await fetchProductBySlug(slug);
-
-    // backend-ul poate întoarce direct produsul sau { product: {...} }
-    product.value = data.product ?? data;
-  } catch (e) {
-    console.error('Product load error', e);
-    error.value = 'Nu s-au putut încărca detaliile produsului.';
+    const data = await fetchProductBySlug(slug.value)
+    product.value = data.product ?? data
+    // Select first variant if available
+    if (product.value.variants && product.value.variants.length > 0) {
+        selectedVariant.value = product.value.variants[0].code
+    }
+  } catch (err) {
+    console.error(err)
+    if (err.response && err.response.status === 404) {
+       error.value = "Produsul nu există sau a fost dezactivat."
+    } else {
+       error.value = "A apărut o eroare la încărcarea produsului."
+    }
   } finally {
-    loading.value = false;
+    loading.value = false
   }
-};
+}
 
-onMounted(loadProduct);
+onMounted(() => {
+  loadProduct()
+})
 
-watch(
-  () => route.params.slug,
-  () => {
-    loadProduct();
-  }
-);
+watch(slug, () => {
+  loadProduct()
+})
 
-// calcul preț pentru afișare
-const basePrice = computed(() => {
-  if (!product.value) return 0;
+const categoryTitle = computed(() => {
+  if (!product.value) return 'Categorie produse'
+  return product.value.category?.name || product.value.category_name || 'Categorie produse'
+})
 
-  const p = product.value;
+const selectedVariant = ref(null)
 
-  return (
-    p.price_override ??
-    p.list_price ??
-    p.final_price ??
-    p.price ??
-    0
-  );
-});
-
-const promoPrice = computed(() => {
-  if (!product.value) return null;
-
-  const p = product.value;
-
-  return p.promo_price ?? null;
-});
-
-const hasPromo = computed(() => {
-  if (!promoPrice.value) return false;
-  return Number(promoPrice.value) < Number(basePrice.value);
-});
+const unitsOfMeasure = [
+  { value: 'buc', label: 'bucată' },
+  { value: 'sac', label: 'sac' },
+  { value: 'bax', label: 'bax' },
+  { value: 'palet', label: 'palet' }
+]
+const selectedUnit = ref('buc')
 
 const displayPrice = computed(() => {
-  const val = hasPromo.value ? promoPrice.value : basePrice.value;
-  const num = Number(val || 0);
-
-  return num.toLocaleString('ro-RO', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
-});
-
-// quantity controls
-const increaseQty = () => {
-  quantity.value += 1;
-};
-
-const decreaseQty = () => {
-  if (quantity.value > 1) {
-    quantity.value -= 1;
+  if (!product.value) return 0
+  if (product.value.price_override) return parseFloat(product.value.price_override)
+  if (product.value.has_discount && product.value.promo_price) {
+    return parseFloat(product.value.promo_price)
   }
-};
+  return parseFloat(product.value.price || 0)
+})
 
-// FUNCTIA APELATĂ DE BUTON
+const isStockAvailable = computed(() => {
+    if (!product.value) return false
+    if (product.value.stock_status === 'in_stock') return true
+    if (product.value.stock_qty > 0) return true
+    return false
+})
+
+const similarProducts = computed(() => {
+  if (!product.value || !product.value.similar_products) return []
+  return product.value.similar_products
+})
+
+const complementaryProducts = computed(() => {
+  if (!product.value || !product.value.complementary_products) return []
+  return product.value.complementary_products
+})
+
+const formatPrice = (val) => {
+    if (val === null || val === undefined) return '-'
+    return new Intl.NumberFormat('ro-RO', { 
+        style: 'currency', 
+        currency: 'RON' 
+    }).format(val)
+}
+
 const addToCart = async () => {
   if (!product.value) return;
+
+  // Demo alert for demo products
+  if (slug.value.toString().startsWith('produs-demo-')) {
+      window.alert(`Demo: produsul "${product.value.name}" (cantitate: ${quantity.value}) ar fi adăugat în coș.`)
+      return
+  }
 
   addLoading.value = true;
   addMessage.value = '';
@@ -259,12 +529,9 @@ const addToCart = async () => {
     const payload = {
       product_id: product.value.id,
       quantity: Number(quantity.value) || 1,
-      // dacă vei avea variante: product_variant_id: selectedVariantId.value || null,
     };
 
     const cartData = await addCartItem(payload);
-    console.debug('Cart after add', cartData);
-
     addMessage.value = 'Produsul a fost adăugat în coș.';
   } catch (e) {
     console.error('Add to cart error', e);
@@ -279,4 +546,23 @@ const addToCart = async () => {
     addLoading.value = false;
   }
 };
+
+const addToFavoritesDemo = () => {
+  if (!product.value) return
+  window.alert(
+    `Demo: produsul "${product.value.name}" ar fi adăugat la lista de favorite pentru clientul curent.`
+  )
+}
+
+const requestOfferDemo = () => {
+  if (!product.value) return
+  window.alert(
+    'Demo: ar porni fluxul "Solicită ofertă" către agent / director, ' +
+      'cu produsul preselectat în cerere.'
+  )
+}
+
+const openDocumentDemo = (doc) => {
+    window.alert(`Demo: s-ar descărca documentul "${doc.label || doc.name}".`)
+}
 </script>

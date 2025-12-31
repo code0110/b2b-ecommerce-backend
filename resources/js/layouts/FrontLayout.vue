@@ -1,5 +1,14 @@
 <template>
   <div class="front-layout d-flex flex-column min-vh-100 bg-light">
+    <!-- Impersonation Banner -->
+    <div v-if="impersonatingClient" class="bg-warning text-dark py-2 px-3 text-center d-flex justify-content-center align-items-center gap-3">
+      <strong><i class="bi bi-exclamation-triangle-fill"></i> Mod Impersonare:</strong>
+      <span>Comandați în numele clientului <strong>{{ impersonatingClientName }}</strong></span>
+      <button @click="stopImpersonation" class="btn btn-sm btn-dark ms-2">
+        Revenire la Dashboard
+      </button>
+    </div>
+
     <!-- HEADER -->
     <header class="bg-white border-bottom">
       <div class="container py-2 d-flex align-items-center justify-content-between gap-3">
@@ -164,6 +173,15 @@ const authStore = useAuthStore();
 const showCatalog = ref(false);
 const searchQuery = ref('');
 const showVat = ref(true);
+
+const impersonatingClient = ref(!!localStorage.getItem('impersonated_client_id'));
+const impersonatingClientName = ref(localStorage.getItem('impersonated_client_name'));
+
+const stopImpersonation = () => {
+  localStorage.removeItem('impersonated_client_id');
+  localStorage.removeItem('impersonated_client_name');
+  window.location.href = '/cont/agent';
+};
 
 const currentYear = new Date().getFullYear();
 

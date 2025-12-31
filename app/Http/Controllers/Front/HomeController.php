@@ -24,7 +24,7 @@ class HomeController extends Controller
      */
     public function homepage(Request $request, PromotionPricingService $pricing)
     {
-        $user = $request->user();
+        $user = $request->user('sanctum');
         $customer = optional($user)->customer;
 
         // 1) PROMOȚII ACTIVE

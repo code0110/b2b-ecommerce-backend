@@ -554,7 +554,8 @@ onMounted(() => {
 const canImpersonateCustomer = computed(() => {
   if (!authStore.user || !customer.value) return false
 
-  const role = authStore.user.role
+  // Extract roles safely
+  const userRoles = (authStore.user.roles || []).map(r => r.slug || r.code || '')
   const c = customer.value
 
   // Doar clienți B2B/B2C pot fi impersonați în front
@@ -562,17 +563,20 @@ const canImpersonateCustomer = computed(() => {
     return false
   }
 
-  if (role === 'agent') {
+  // Admin or Operator
+  if (userRoles.some(r => ['admin', 'operator'].includes(r))) {
+    return true
+  }
+
+  // Agent
+  if (userRoles.includes('sales_agent')) {
     return !!c.assignedAgent && c.assignedAgent === authStore.user.name
   }
 
-  if (role === 'director') {
+  // Director
+  if (userRoles.includes('sales_director')) {
     // În acest demo folosim assignedDirector pentru a marca portofoliul directorului.
     return !!c.assignedDirector && c.assignedDirector === authStore.user.name
-  }
-
-  if (role === 'admin' || role === 'operator') {
-    return true
   }
 
   return false
@@ -581,15 +585,16 @@ const canImpersonateCustomer = computed(() => {
 const impersonateAsCustomer = () => {
   if (!canImpersonateCustomer.value || !customer.value) return
 
-  authStore.startImpersonation &&
+  if (authStore.startImpersonation) {
     authStore.startImpersonation({
       id: customer.value.id,
-      code: customer.value.code,
       name: customer.value.name,
-      clientType: customer.value.clientType,
-      groupName: customer.value.groupName
     })
-
-  router.push({ name: 'account-dashboard' })
+  } else {
+    // Fallback if store action update hasn't propagated or for safety
+    localStorage.setItem('impersonated_client_id', customer.value.id)
+    localStorage.setItem('impersonated_client_name', customer.value.name)
+    window.location.href = '/'
+  }
 }
 </script>

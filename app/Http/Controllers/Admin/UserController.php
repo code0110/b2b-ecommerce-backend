@@ -117,7 +117,7 @@ class UserController extends Controller
             $user->first_name = $data['first_name'];
         }
 
-        if (array_keyExists('last_name', $data)) {
+        if (array_key_exists('last_name', $data)) {
             $user->last_name = $data['last_name'];
         }
 

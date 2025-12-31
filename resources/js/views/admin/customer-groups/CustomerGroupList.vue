@@ -44,17 +44,18 @@
             <div class="col-md-2">
               <label class="form-label form-label-sm">Discount default (%)</label>
               <input
-                v-model.number="form.default_discount"
+                v-model.number="form.default_discount_percent"
                 type="number"
                 min="0"
                 max="100"
+                step="0.01"
                 class="form-control form-control-sm"
               >
             </div>
             <div class="col-md-3">
               <label class="form-label form-label-sm">Termen de plată (zile)</label>
               <input
-                v-model.number="form.payment_terms_days"
+                v-model.number="form.default_payment_terms_days"
                 type="number"
                 min="0"
                 class="form-control form-control-sm"
@@ -66,7 +67,7 @@
             <div class="col-md-3">
               <label class="form-label form-label-sm">Limită credit (RON)</label>
               <input
-                v-model.number="form.credit_limit"
+                v-model.number="form.default_credit_limit"
                 type="number"
                 step="0.01"
                 class="form-control form-control-sm"
@@ -152,13 +153,13 @@
                 {{ g.type?.toUpperCase?.() || g.type }}
               </td>
               <td class="small">
-                {{ g.default_discount ?? 0 }} %
+                {{ g.default_discount_percent ?? 0 }} %
               </td>
               <td class="small">
-                {{ g.payment_terms_days ?? '—' }} zile
+                {{ g.default_payment_terms_days ?? '—' }} zile
               </td>
               <td class="small">
-                {{ formatMoney(g.credit_limit || 0) }}
+                {{ formatMoney(g.default_credit_limit || 0) }}
               </td>
               <td class="small">
                 <span
@@ -214,9 +215,9 @@ const currentGroup = ref(null)
 const form = ref({
   name: '',
   type: 'b2b',
-  default_discount: 0,
-  payment_terms_days: 0,
-  credit_limit: 0,
+  default_discount_percent: 0,
+  default_payment_terms_days: 0,
+  default_credit_limit: 0,
   is_active: true
 })
 
@@ -247,9 +248,9 @@ const resetForm = () => {
   form.value = {
     name: '',
     type: 'b2b',
-    default_discount: 0,
-    payment_terms_days: 0,
-    credit_limit: 0,
+    default_discount_percent: 0,
+    default_payment_terms_days: 0,
+    default_credit_limit: 0,
     is_active: true
   }
   formError.value = ''
@@ -264,9 +265,9 @@ const editGroup = (g) => {
   form.value = {
     name: g.name || '',
     type: g.type || 'b2b',
-    default_discount: g.default_discount ?? 0,
-    payment_terms_days: g.payment_terms_days ?? 0,
-    credit_limit: g.credit_limit ?? 0,
+    default_discount_percent: g.default_discount_percent ?? 0,
+    default_payment_terms_days: g.default_payment_terms_days ?? 0,
+    default_credit_limit: g.default_credit_limit ?? 0,
     is_active: g.is_active ?? true
   }
   formError.value = ''

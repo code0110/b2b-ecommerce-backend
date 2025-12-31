@@ -362,7 +362,8 @@ INSERT INTO `customers` (`id`, `type`, `name`, `legal_name`, `cif`, `reg_com`, `
 (1, 'b2c', 'binar cod', NULL, NULL, NULL, NULL, 'cod.binar@gmail.com', '+40758880618', NULL, NULL, NULL, 0, 0.00, 0.00, 'RON', 1, 0, '2025-12-11 14:48:57', '2025-12-11 14:48:57'),
 (2, 'b2c', 'binar cod', NULL, NULL, NULL, NULL, 'cod.binar@gmail.com', '+40758880618', NULL, NULL, NULL, 0, 0.00, 0.00, 'RON', 1, 0, '2025-12-11 14:49:19', '2025-12-11 14:49:19'),
 (3, 'b2c', 'binar cod', NULL, NULL, NULL, NULL, 'cod.binar@gmail.com', '+40758880618', NULL, NULL, NULL, 0, 0.00, 0.00, 'RON', 1, 0, '2025-12-11 14:50:11', '2025-12-11 14:50:11'),
-(4, 'b2b', 'binar cod', NULL, NULL, NULL, NULL, 'cod.binar@gmail.com', '+40758880618', NULL, NULL, NULL, 0, 0.00, 0.00, 'RON', 1, 0, '2025-12-11 14:50:23', '2025-12-11 14:50:23');
+(4, 'b2b', 'binar cod', NULL, NULL, NULL, NULL, 'cod.binar@gmail.com', '+40758880618', NULL, 4, 5, 0, 0.00, 0.00, 'RON', 1, 0, '2025-12-11 14:50:23', '2025-12-11 14:50:23'),
+(5, 'b2c', 'Client B2C', NULL, NULL, NULL, NULL, 'clientb2c@test.com', '0700000002', NULL, NULL, NULL, 0, 0.00, 0.00, 'RON', 1, 0, '2025-12-15 12:00:00', '2025-12-15 12:00:00');
 
 -- --------------------------------------------------------
 
@@ -982,7 +983,8 @@ CREATE TABLE `promotions` (
 INSERT INTO `promotions` (`id`, `name`, `slug`, `short_description`, `description`, `hero_image`, `banner_image`, `mobile_image`, `start_at`, `end_at`, `status`, `is_exclusive`, `is_iterative`, `bonus_type`, `discount_type`, `discount_percent`, `discount_value`, `applies_to`, `min_cart_total`, `min_qty_per_product`, `customer_type`, `logged_in_only`, `created_at`, `updated_at`) VALUES
 (1, 'promo 1', 'promo1', 'sdf', 'sdf', NULL, NULL, NULL, '2025-12-11 22:00:00', '2025-12-30 22:00:00', 'active', 0, 0, 'discount_percent', NULL, NULL, NULL, 'all', 10.00, 1, 'both', 1, '2025-12-12 07:12:05', '2025-12-12 07:12:05'),
 (2, 'Scule electrice -10% pentru parteneri', 'scule-electrice-10-procent', 'Reducere 10% la toată gama de scule electrice pentru clienți B2B.', 'Campanie dedicată partenerilor B2B: reducere 10% la sculele electrice selectate (bormașini, ciocane rotopercutoare, polizoare).', NULL, NULL, NULL, '2025-12-07 13:56:40', '2026-01-01 13:56:40', 'active', 0, 1, 'discount_percent', NULL, NULL, NULL, 'all', 500.00, 1, 'b2b', 1, '2025-12-12 13:56:40', '2025-12-12 13:56:40'),
-(3, 'Echipamente de protecție – pachet avantajos', 'echipamente-protectie-pachet', 'Prețuri speciale la pachete de mănuși și echipamente de protecție.', 'Pachete avantajoase pentru echiparea rapidă a echipelor din teren: mănuși de protecție, ochelari, cască și încălțăminte.', NULL, NULL, NULL, '2025-12-10 13:56:40', '2026-01-11 13:56:40', 'active', 0, 0, 'discount_value', NULL, NULL, NULL, 'all', 300.00, 5, 'both', 0, '2025-12-12 13:56:40', '2025-12-12 13:56:40');
+(3, 'Echipamente de protecție – pachet avantajos', 'echipamente-protectie-pachet', 'Prețuri speciale la pachete de mănuși și echipamente de protecție.', 'Pachete avantajoase pentru echiparea rapidă a echipelor din teren: mănuși de protecție, ochelari, cască și încălțăminte.', NULL, NULL, NULL, '2025-12-10 13:56:40', '2026-01-11 13:56:40', 'active', 0, 0, 'discount_value', NULL, NULL, NULL, 'all', 300.00, 5, 'both', 0, '2025-12-12 13:56:40', '2025-12-12 13:56:40'),
+(4, '1+1 Gratis la orice produs', '1-plus-1-gratis', 'Cumperi un produs, primesti unul gratis', 'Oferta speciala 1+1 gratis la toate produsele.', NULL, NULL, NULL, '2025-12-15 12:00:00', '2026-12-15 12:00:00', 'active', 0, 0, 'free_item', NULL, NULL, NULL, 'all', 0.00, 1, 'both', 0, '2025-12-15 12:00:00', '2025-12-15 12:00:00');
 
 -- --------------------------------------------------------
 
@@ -1104,7 +1106,9 @@ CREATE TABLE `role_user` (
 INSERT INTO `role_user` (`role_id`, `user_id`) VALUES
 (1, 1),
 (3, 3),
-(4, 4);
+(4, 4),
+(5, 5),
+(2, 6);
 
 -- --------------------------------------------------------
 
@@ -1266,8 +1270,10 @@ CREATE TABLE `users` (
 INSERT INTO `users` (`id`, `customer_id`, `first_name`, `last_name`, `email`, `phone`, `email_verified_at`, `password`, `is_active`, `remember_token`, `company_role`, `requires_approval`, `created_at`, `updated_at`) VALUES
 (1, 4, 'binar', 'cod', 'cod.binar@gmail.com', '+40758880618', NULL, '$2y$12$QGDQEF22w6jLDSkNQHjoOuRWIy25dUd1Xc2GxQaQBU.7MHx8Tv/kW', 1, NULL, NULL, 0, '2025-12-11 14:50:24', '2025-12-11 14:50:24'),
 (2, 3, 'binar', 'cod', 'client@metal-rom.ro', '+40758880618', NULL, '$2y$12$QGDQEF22w6jLDSkNQHjoOuRWIy25dUd1Xc2GxQaQBU.7MHx8Tv/kW', 1, NULL, NULL, 0, '2025-12-11 14:50:24', '2025-12-11 14:50:24'),
-(3, NULL, 'test', 'test', 'test@test.com', '0758880618', NULL, '$2y$12$SF6bZo8RL0ZsmwrHmTweouDi2VMdjfGSdoNxRIHhwnphoLFQ84B1m', 1, NULL, NULL, 0, '2025-12-15 11:43:06', '2025-12-15 11:43:06'),
-(4, NULL, 'agent', 'test', 'agent@test.com', '0758880618', NULL, '$2y$12$EQtPcnuAvXnDdeCjbHwF1uwJgAOmaoF2nJf/1CdHHCBDDO85UmAa6', 1, NULL, NULL, 0, '2025-12-15 11:44:29', '2025-12-15 11:44:29');
+(3, 4, 'test', 'test', 'test@test.com', '0758880618', NULL, '$2y$12$SF6bZo8RL0ZsmwrHmTweouDi2VMdjfGSdoNxRIHhwnphoLFQ84B1m', 1, NULL, NULL, 0, '2025-12-15 11:43:06', '2025-12-15 11:43:06'),
+(4, NULL, 'agent', 'test', 'agent@test.com', '0758880618', NULL, '$2y$12$EQtPcnuAvXnDdeCjbHwF1uwJgAOmaoF2nJf/1CdHHCBDDO85UmAa6', 1, NULL, NULL, 0, '2025-12-15 11:44:29', '2025-12-15 11:44:29'),
+(5, NULL, 'Director', 'Vanzari', 'director@test.com', '0700000001', NULL, '$2y$12$EQtPcnuAvXnDdeCjbHwF1uwJgAOmaoF2nJf/1CdHHCBDDO85UmAa6', 1, NULL, NULL, 0, '2025-12-15 12:00:00', '2025-12-15 12:00:00'),
+(6, 5, 'Client', 'B2C', 'clientb2c@test.com', '0700000002', NULL, '$2y$12$EQtPcnuAvXnDdeCjbHwF1uwJgAOmaoF2nJf/1CdHHCBDDO85UmAa6', 1, NULL, NULL, 0, '2025-12-15 12:00:00', '2025-12-15 12:00:00');
 
 --
 -- Indexuri pentru tabele eliminate

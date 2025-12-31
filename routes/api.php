@@ -78,7 +78,8 @@ Route::prefix('auth')->group(function () {
 });
 
 // Front-office public catalog
-Route::get('home', [CatalogController::class, 'home']);
+// Route::get('home', [CatalogController::class, 'home']);
+Route::get('home', [HomeController::class, 'homepage']);
 Route::get('promotions', [CatalogController::class, 'promotions']);
 Route::get('categories', [CatalogController::class, 'categories']);
 Route::get('categories/{slug}', [CatalogController::class, 'category']);
@@ -121,11 +122,8 @@ Route::get('pages/{slug}', [PageController::class, 'show']);
 Route::post('partner-requests', [PartnerController::class, 'store']);
 
 
-// Tickets
-Route::get('tickets', [FrontTicketController::class, 'index']);
-Route::post('tickets', [FrontTicketController::class, 'store']);
-Route::get('tickets/{id}', [FrontTicketController::class, 'show']);
-Route::post('tickets/{id}/messages', [FrontTicketController::class, 'addMessage']);
+// Tickets - moved to account group
+
 
 // Payments
 Route::get('payments', [FrontPaymentController::class, 'index']);
@@ -160,7 +158,7 @@ Route::prefix('checkout')->group(function () {
 });
 
 // Orders in client account
-Route::middleware('auth:sanctum')->group(function () {
+Route::middleware(['auth:sanctum', 'impersonate'])->group(function () {
 
     Route::prefix('account')->group(function () {
         // Dashboard cont
@@ -200,9 +198,25 @@ Route::middleware('auth:sanctum')->group(function () {
 
         // Utilizatori companie (multi-user B2B)
         Route::get('company-users', [CompanyUserController::class, 'index']);
+
+        // Agent & Director Dashboard
+        Route::prefix('agent')->group(function () {
+            Route::get('clients', [App\Http\Controllers\Front\AgentDashboardController::class, 'getClients']);
+            Route::get('agents', [App\Http\Controllers\Front\AgentDashboardController::class, 'getAgents']);
+            Route::get('clients/{id}/invoices', [App\Http\Controllers\Front\AgentDashboardController::class, 'getClientInvoices']);
+            Route::get('receipt-book/active', [App\Http\Controllers\Front\AgentDashboardController::class, 'getActiveReceiptBook']);
+            Route::post('payments', [App\Http\Controllers\Front\AgentDashboardController::class, 'storePayment']);
+            Route::post('payments/cancel-receipt', [App\Http\Controllers\Front\AgentDashboardController::class, 'cancelReceipt']);
+        });
         Route::post('company-users', [CompanyUserController::class, 'store']);
         Route::put('company-users/{user}', [CompanyUserController::class, 'update']);
         Route::delete('company-users/{user}', [CompanyUserController::class, 'destroy']);
+
+        // Tickets (Account)
+        Route::get('tickets', [FrontTicketController::class, 'index']);
+        Route::post('tickets', [FrontTicketController::class, 'store']);
+        Route::get('tickets/{id}', [FrontTicketController::class, 'show']);
+        Route::post('tickets/{id}/messages', [FrontTicketController::class, 'storeMessage']);
     });
 
     Route::get('orders', [OrderController::class, 'index']);
@@ -237,8 +251,8 @@ Route::post('company/orders/{order}/reject', [OrderApprovalController::class, 'r
 Route::get('shipments', [FrontShipmentController::class, 'index']);
 Route::get('shipments/{id}', [FrontShipmentController::class, 'show']);
 
-// Homepage data
-Route::get('home', [HomeController::class, 'homepage']);
+// Homepage data - Moved to public area
+// Route::get('home', [HomeController::class, 'homepage']);
 
 // Produse noi
 Route::get('products/new', [HomeController::class, 'newProducts']);
@@ -297,7 +311,11 @@ Route::apiResource('sales-representatives', AdminSalesRepController::class);
 Route::apiResource('partner-requests', AdminPartnerRequestController::class)->only(['index', 'show', 'update']);
 
 // Payments
-Route::apiResource('payments', AdminPaymentController::class)->only(['index', 'show', 'store', 'update']);
+        Route::apiResource('payments', AdminPaymentController::class)->only(['index', 'show', 'store', 'update']);
+
+        // Receipt Books
+        Route::apiResource('receipt-books', \App\Http\Controllers\Admin\ReceiptBookController::class);
+        Route::get('receipt-books-agents', [\App\Http\Controllers\Admin\ReceiptBookController::class, 'getAgents']);
 
         // Quotes / oferte
         Route::apiResource('quotes', \App\Http\Controllers\Admin\QuoteController::class)->only(['index', 'show', 'update']);
@@ -321,6 +339,12 @@ Route::apiResource('payments', AdminPaymentController::class)->only(['index', 's
         // Audit logs
         Route::get('audit-logs', [\App\Http\Controllers\Admin\AuditLogController::class, 'index']);
         Route::get('audit-logs/{id}', [\App\Http\Controllers\Admin\AuditLogController::class, 'show']);
+
+        // Notifications
+        Route::get('notifications', [\App\Http\Controllers\Front\NotificationController::class, 'index']);
+        Route::get('notifications/unread-count', [\App\Http\Controllers\Front\NotificationController::class, 'unreadCount']);
+        Route::post('notifications/{id}/read', [\App\Http\Controllers\Front\NotificationController::class, 'markAsRead']);
+        Route::post('notifications/read-all', [\App\Http\Controllers\Front\NotificationController::class, 'markAllAsRead']);
 
         // ORDERS (NOU) – foarte important să fie în ACEST grup
         Route::get('orders', [AdminOrderController::class, 'index']);

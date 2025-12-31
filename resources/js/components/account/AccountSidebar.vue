@@ -42,6 +42,18 @@
         </RouterLink>
 
         <RouterLink
+          v-if="isAgentOrDirector"
+          :to="{ name: 'agent-dashboard' }"
+          class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
+          :class="{ active: isActive('agent-dashboard') }"
+        >
+          <span>
+            <i class="bi bi-briefcase me-1"></i>
+            Panou Agent
+          </span>
+        </RouterLink>
+
+        <RouterLink
           :to="{ name: 'account-orders' }"
           class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
           :class="{ active: isActive('account-orders') || isActive('account-order-details') }"
@@ -192,7 +204,14 @@ const initials = computed(() => {
 });
 
 const isCompanyAccount = computed(() => {
-  return authStore.customerType === 'b2b' || authStore.role === 'customer_b2b';
+  // Verificare mai robustă, în caz că nu avem customerType setat explicit
+  const roles = (authStore.user?.roles || []).map(r => r.slug || r.code);
+  return authStore.customerType === 'b2b' || authStore.role === 'customer_b2b' || roles.includes('company_owner');
+});
+
+const isAgentOrDirector = computed(() => {
+  const roles = (authStore.user?.roles || []).map(r => r.slug || r.code);
+  return roles.includes('sales_agent') || roles.includes('sales_director');
 });
 
 const roleLabel = computed(() => {

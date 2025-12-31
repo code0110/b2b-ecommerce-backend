@@ -32,7 +32,7 @@ class CheckoutController extends Controller
             ], 400);
         }
 
-        $customer = $this->resolveCustomerFromUser($user);
+        $customer = \App\Models\Customer::find($user->customer_id);
 
         $priced = $pricing->priceCart($cart, $customer);
 
@@ -65,36 +65,25 @@ class CheckoutController extends Controller
             'payment_method'       => ['required', 'in:card,op,b2b_terms'],
         ]);
 
-        $cart = Cart::where('user_id', $user->id)->where('status', 'active')->with('items.product', 'items.variant')->firstOrFail();
+        $cart = Cart::where('user_id', $user->id)
+            ->where('customer_id', $user->customer_id)
+            ->where('status', 'active')
+            ->with('items.product', 'items.variant')
+            ->firstOrFail();
 
         return DB::transaction(function () use ($cart, $user, $data) {
             $subtotal = $cart->items->sum('total');
             $shippingTotal = 0; // TODO: calcul pe baza regulilor de shipping
             $grandTotal = $subtotal + $shippingTotal;
-
-            // după ce ai creat $order și ai totalul:
-if ($customer->type === 'b2b' && $customer->credit_limit > 0) {
-    $futureBalance = ($customer->current_balance ?? 0) + $grandTotal;
-
-    if ($futureBalance > $customer->credit_limit) {
-        // depășire credit – blocăm comanda
-        $order->credit_blocked = true;
-        $order->status = 'credit_blocked';
-        $order->save();
-    } else {
-        // actualizăm soldul
-        $customer->current_balance = $futureBalance;
-        $customer->save();
-    }
-}
-
+            
+            $customer = \App\Models\Customer::find($user->customer_id);
 
             $order = Order::create([
                 'order_number'       => 'C' . now()->format('Ymd') . '-' . Str::upper(Str::random(6)),
                 'customer_id'        => $user->customer_id,
                 'placed_by_user_id'  => $user->id,
                 'status'             => 'pending',
-                'type'               => $user->customer?->type ?? 'b2c',
+                'type'               => $customer?->type ?? 'b2c',
                 'total_items'        => $cart->items->sum('quantity'),
                 'subtotal'           => $subtotal,
                 'discount_total'     => 0,

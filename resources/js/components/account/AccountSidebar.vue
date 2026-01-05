@@ -42,6 +42,18 @@
         </RouterLink>
 
         <RouterLink
+          v-if="isDirector"
+          :to="{ name: 'account-director-dashboard' }"
+          class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
+          :class="{ active: isActive('account-director-dashboard') }"
+        >
+          <span>
+            <i class="bi bi-person-workspace me-1"></i>
+            Dashboard Director
+          </span>
+        </RouterLink>
+
+        <RouterLink
           v-if="isAgentOrDirector"
           :to="{ name: 'agent-dashboard' }"
           class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
@@ -95,6 +107,58 @@
           <span>
             <i class="bi bi-receipt me-1"></i>
             Documente fiscale
+          </span>
+        </RouterLink>
+      </div>
+    </div>
+
+    <!-- Meniu Director -->
+    <div v-if="isDirector" class="card mb-3 shadow-sm">
+      <div class="card-header py-2">
+        <span class="fw-semibold small">Management Vânzări</span>
+      </div>
+      <div class="list-group list-group-flush small">
+        <RouterLink
+          :to="{ name: 'account-director-dashboard' }"
+          class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
+          :class="{ active: isActive('account-director-dashboard') }"
+        >
+          <span>
+            <i class="bi bi-person-workspace me-1"></i>
+            Dashboard Director
+          </span>
+        </RouterLink>
+
+        <RouterLink
+          :to="{ name: 'account-reports' }"
+          class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
+          :class="{ active: isActive('account-reports') }"
+        >
+          <span>
+            <i class="bi bi-bar-chart-line me-1"></i>
+            Rapoarte
+          </span>
+        </RouterLink>
+
+        <RouterLink
+          :to="{ name: 'account-targets' }"
+          class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
+          :class="{ active: isActive('account-targets') }"
+        >
+          <span>
+            <i class="bi bi-bullseye me-1"></i>
+            Obiective KPI
+          </span>
+        </RouterLink>
+
+        <RouterLink
+          :to="{ name: 'account-routes-management' }"
+          class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
+          :class="{ active: isActive('account-routes-management') }"
+        >
+          <span>
+            <i class="bi bi-map-fill me-1"></i>
+            Management Rute
           </span>
         </RouterLink>
       </div>

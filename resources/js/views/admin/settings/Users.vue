@@ -6,14 +6,34 @@
         <h1 class="h3 fw-bold mb-1 text-gray-800">Utilizatori Back-office</h1>
         <p class="text-muted small mb-0">Gestionează administratorii, operatorii și agenții.</p>
       </div>
-      <button class="btn btn-primary shadow-sm d-flex align-items-center gap-2" @click="openCreateModal">
-        <i class="bi bi-person-plus-fill"></i>
-        <span>Utilizator Nou</span>
-      </button>
+      <div class="d-flex gap-2">
+        <div class="btn-group bg-white shadow-sm rounded p-1">
+          <button 
+            class="btn btn-sm px-3" 
+            :class="viewMode === 'list' ? 'btn-primary' : 'btn-light text-muted border-0'" 
+            @click="viewMode = 'list'"
+          >
+            <i class="bi bi-list-ul me-1"></i> Listă
+          </button>
+          <button 
+            class="btn btn-sm px-3" 
+            :class="viewMode === 'assignment' ? 'btn-primary' : 'btn-light text-muted border-0'" 
+            @click="viewMode = 'assignment'"
+          >
+            <i class="bi bi-people-fill me-1"></i> Asignare Directori
+          </button>
+        </div>
+        <button v-if="viewMode === 'list'" class="btn btn-primary shadow-sm d-flex align-items-center gap-2" @click="openCreateModal">
+          <i class="bi bi-person-plus-fill"></i>
+          <span>Utilizator Nou</span>
+        </button>
+      </div>
     </div>
 
-    <!-- Filters -->
-    <div class="card border-0 shadow-sm mb-4">
+    <!-- List View -->
+    <div v-if="viewMode === 'list'">
+      <!-- Filters -->
+      <div class="card border-0 shadow-sm mb-4">
       <div class="card-body p-3 bg-white rounded">
         <form @submit.prevent="loadUsers(1)" class="row g-3 align-items-end">
           <div class="col-md-4">
@@ -108,6 +128,9 @@
                   </div>
                 </td>
                 <td class="text-muted small">
+                  {{ u.director_name || '-' }}
+                </td>
+                <td class="text-muted small">
                   <div v-if="u.phone"><i class="bi bi-telephone me-1"></i>{{ u.phone }}</div>
                   <div v-else>-</div>
                 </td>
@@ -170,6 +193,12 @@
           </nav>
         </div>
       </div>
+    </div>
+    </div>
+
+    <!-- Assignment View -->
+    <div v-if="viewMode === 'assignment'">
+      <DirectorAssignment />
     </div>
 
     <!-- Modal Form -->
@@ -258,16 +287,20 @@
 </template>
 
 <script setup>
-import { onMounted, reactive, ref, computed } from 'vue';
+import { onMounted, reactive, ref, computed, watch } from 'vue';
+import { useRoute } from 'vue-router';
 import { fetchUsers, createUser, updateUser, deleteUser } from '@/services/admin/users';
 import { fetchRoles } from '@/services/admin/roles';
 import { useAuthStore } from '@/store/auth';
 import { useToast } from 'vue-toastification';
+import DirectorAssignment from './DirectorAssignment.vue';
 
+const route = useRoute();
 const authStore = useAuthStore();
 const toast = useToast();
 const currentUserId = authStore.user?.id ?? null;
 
+const viewMode = ref('list'); // 'list' | 'assignment'
 const users = ref([]);
 const roles = ref([]);
 const directors = ref([]);
@@ -368,6 +401,19 @@ const isSalesAgent = computed(() => {
   return form.role_ids.includes(agentRole.id);
 });
 
+// Watch for route changes to update filters
+watch(() => route.query.role, (newRole) => {
+  filters.role = newRole || '';
+  loadUsers(1);
+});
+
+// Watch for role changes in form to clear director if not agent
+watch(() => form.role_ids, () => {
+  if (!isSalesAgent.value) {
+    form.director_id = null;
+  }
+});
+
 const openCreateModal = () => {
   form.id = null;
   form.first_name = '';
@@ -378,6 +424,15 @@ const openCreateModal = () => {
   form.is_active = true;
   form.role_ids = [];
   form.director_id = null;
+
+  // Pre-select role if filter is active
+  if (filters.role) {
+    const roleObj = roles.value.find(r => r.slug === filters.role);
+    if (roleObj) {
+      form.role_ids.push(roleObj.id);
+    }
+  }
+
   formError.value = '';
   showModal.value = true;
 };
@@ -412,6 +467,7 @@ const submitForm = async () => {
     phone: form.phone || null,
     is_active: form.is_active,
     role_ids: form.role_ids,
+    director_id: form.director_id,
   };
 
   if (form.password) {
@@ -464,6 +520,11 @@ const activateUser = async (u) => {
 };
 
 onMounted(() => {
+  if (route.query.role) {
+    filters.role = route.query.role;
+    // Auto-switch to assignment mode if we are on 'sales_director' page?
+    // User might prefer list view. Let's keep list as default but tabs available.
+  }
   loadRoles();
   loadDirectors();
   loadUsers();

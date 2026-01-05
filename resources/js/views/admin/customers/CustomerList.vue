@@ -240,13 +240,14 @@
               </div>
               <div class="col-md-6">
                 <label class="form-label fw-bold small">Director Vânzări</label>
-                <select class="form-select" v-model="assignDirectorId">
+                <select class="form-select" v-model="assignDirectorId" :disabled="!!assignAgentId">
                   <option :value="null">-- Nealocat --</option>
                   <option v-for="u in directors" :key="u.id" :value="u.id">
                     {{ formatUser(u) }}
                   </option>
                 </select>
-                <div class="form-text small">Supervizează și aprobă limitele de credit.</div>
+                <div class="form-text small" v-if="assignAgentId">Determinat automat de agentul selectat.</div>
+                <div class="form-text small" v-else>Supervizează și aprobă limitele de credit.</div>
               </div>
             </div>
           </div>
@@ -308,8 +309,8 @@ watch(assignAgentId, (newAgentId) => {
   if (!newAgentId) return
   
   const agent = agents.value.find(a => a.id === newAgentId)
-  if (agent && agent.director_id) {
-    assignDirectorId.value = agent.director_id
+  if (agent) {
+    assignDirectorId.value = agent.director_id || null
   }
 })
 

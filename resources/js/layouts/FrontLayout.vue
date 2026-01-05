@@ -1,5 +1,20 @@
 <template>
   <div class="front-layout d-flex flex-column min-vh-100 bg-light">
+    <!-- Active Visit Banner (When NOT impersonating) -->
+    <div v-if="visitStore.hasActiveVisit && !impersonatingClient" class="bg-primary text-white py-2 px-3 text-center d-flex justify-content-center align-items-center gap-3">
+        <div class="d-flex align-items-center gap-2">
+            <i class="bi bi-geo-alt-fill"></i>
+            <span class="fw-bold">Vizită activă:</span>
+            <span>{{ visitStore.activeVisit.customer?.name || 'Client necunoscut' }}</span>
+            <span class="small opacity-75 ms-1">({{ new Date(visitStore.activeVisit.start_time).toLocaleTimeString() }})</span>
+        </div>
+        <button @click="handleEndVisit" class="btn btn-sm btn-light text-primary d-flex align-items-center gap-2 border-0" :disabled="visitStore.loading">
+            <span v-if="visitStore.loading" class="spinner-border spinner-border-sm"></span>
+            <i v-else class="bi bi-stop-circle"></i> 
+            Încheie
+        </button>
+    </div>
+
     <!-- Impersonation Banner -->
     <div v-if="impersonatingClient" class="bg-warning text-dark py-2 px-3 text-center d-flex justify-content-center align-items-center gap-3">
       <strong><i class="bi bi-exclamation-triangle-fill"></i> Mod Impersonare:</strong>
@@ -183,6 +198,16 @@ const showVat = ref(true);
 
 const impersonatingClient = ref(!!localStorage.getItem('impersonated_client_id'));
 const impersonatingClientName = ref(localStorage.getItem('impersonated_client_name'));
+
+const handleEndVisit = async () => {
+  if (confirm('Sigur doriți să încheiați vizita?')) {
+    try {
+      await visitStore.endVisit();
+    } catch (e) {
+      console.error(e);
+    }
+  }
+};
 
 const stopImpersonation = async () => {
   if (visitStore.activeVisit) {

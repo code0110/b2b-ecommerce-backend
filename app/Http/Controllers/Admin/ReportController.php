@@ -19,20 +19,6 @@ class ReportController extends Controller
         $endDate = $request->get('end_date', now()->endOfMonth()->toDateString());
         $agentId = $request->get('agent_id');
 
-        $queryVisits = CustomerVisit::whereBetween('start_time', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
-            ->where('status', 'completed');
-        
-        $queryOrders = Order::whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
-            ->whereNotNull('customer_visit_id');
-
-        $queryPayments = Payment::whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
-            ->whereNotNull('customer_visit_id');
-
-        $this->applyAgentFilter($queryVisits, $agentId, 'agent_id');
-        $this->applyAgentFilter($queryOrders, $agentId, 'user_id'); // Assuming user_id is the agent on orders? Or we rely on visit link
-        // Actually orders linked to visits should use visit->agent_id ideally, but direct filtering on visit relation is better.
-        // Let's rely on the visit relation for accuracy if possible, but for simple sums:
-        
         // Refine filtering logic
         $user = Auth::user();
         $allowedAgentIds = $this->getAllowedAgentIds($user);

@@ -142,7 +142,7 @@
               </div>
               <div class="col-md-6">
                 <label class="form-label small fw-bold">Director Vânzări</label>
-                <select class="form-select" v-model="form.sales_director_user_id">
+                <select class="form-select" v-model="form.sales_director_user_id" :disabled="!!form.agent_user_id">
                   <option :value="null">-- Nealocat --</option>
                   <option v-for="u in directors" :key="u.id" :value="u.id">
                     {{ formatUser(u) }}
@@ -240,12 +240,19 @@ const form = ref({
 
 // Auto-assign director when agent is selected
 watch(() => form.value.agent_user_id, (newAgentId) => {
-  if (!newAgentId) return
+  if (!newAgentId) {
+    // Optional: clear director if agent is removed? 
+    // Usually yes, unless we want to keep the director assignment.
+    // Let's keep it safe and not clear if we just deselect agent, 
+    // but if we switch agents, we must sync.
+    return
+  }
   
   // Find agent in props
   const agent = props.agents.find(a => a.id === newAgentId)
-  if (agent && agent.director_id) {
-    form.value.sales_director_user_id = agent.director_id
+  if (agent) {
+    // Always sync director with agent's director (even if null)
+    form.value.sales_director_user_id = agent.director_id || null
   }
 })
 

@@ -38,10 +38,6 @@
             <i class="bi bi-bullseye me-2"></i> <span class="link-text">Obiective KPI</span>
           </RouterLink>
 
-          <RouterLink v-if="authStore.role === 'sales_director' || authStore.role === 'admin'" :to="{ name: 'director-dashboard' }" class="nav-link text-white rounded d-flex align-items-center px-3 py-2" active-class="active-link" title="Dashboard Director">
-            <i class="bi bi-person-workspace me-2"></i> <span class="link-text">Dashboard Director</span>
-          </RouterLink>
-
           <div class="nav-section-title text-uppercase text-muted fw-bold small mt-4 mb-2 px-2">Catalog</div>
           
           <RouterLink :to="{ name: 'admin-products' }" class="nav-link text-white rounded d-flex align-items-center px-3 py-2" active-class="active-link" title="Produse">
@@ -141,21 +137,6 @@
     <!-- Main Content Area -->
     <div class="flex-grow-1 d-flex flex-column bg-light" style="height: 100vh; overflow: hidden;">
       
-      <!-- Active Visit Banner -->
-      <div v-if="visitStore.hasActiveVisit" class="bg-warning text-dark px-4 py-2 d-flex justify-content-between align-items-center border-bottom shadow-sm z-20">
-          <div class="d-flex align-items-center gap-2">
-              <i class="bi bi-geo-alt-fill text-danger"></i>
-              <span class="fw-bold">Vizită activă:</span>
-              <span>{{ visitStore.activeVisit.customer?.name || 'Client necunoscut' }}</span>
-              <span class="small opacity-75 ms-1">(începută la {{ new Date(visitStore.activeVisit.start_time).toLocaleTimeString() }})</span>
-          </div>
-          <button @click="handleEndVisit" class="btn btn-sm btn-dark d-flex align-items-center gap-2" :disabled="visitStore.loading">
-              <span v-if="visitStore.loading" class="spinner-border spinner-border-sm"></span>
-              <i v-else class="bi bi-stop-circle"></i> 
-              Încheie Vizita
-          </button>
-      </div>
-
       <!-- Top Header -->
       <header class="bg-white border-bottom shadow-sm px-4 py-3 d-flex justify-content-between align-items-center z-10">
         <div class="d-flex align-items-center">
@@ -205,14 +186,12 @@ import { computed, onMounted, ref } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { useNotificationsStore } from '@/store/notifications'
 import { useAuthStore } from '@/store/auth'
-import { useVisitStore } from '@/store/visit'
 import NotificationBell from '@/components/common/NotificationBell.vue'
 
 const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
 const notificationsStore = useNotificationsStore()
-const visitStore = useVisitStore()
 
 const currentRouteName = computed(() => route.name)
 const adminUnreadCount = computed(() => notificationsStore.adminUnreadCount)
@@ -241,17 +220,8 @@ const formatRouteName = (name) => {
     return cleanName.charAt(0).toUpperCase() + cleanName.slice(1);
 }
 
-const handleEndVisit = async () => {
-  try {
-    await visitStore.endVisit()
-  } catch (e) {
-    console.error('Failed to end visit', e)
-  }
-}
-
 onMounted(() => {
   notificationsStore.fetchAdminUnreadCount()
-  visitStore.checkActiveVisit()
 })
 </script>
 

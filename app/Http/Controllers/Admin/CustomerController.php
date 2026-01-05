@@ -98,9 +98,13 @@ class CustomerController extends Controller
         if (array_key_exists('agent_user_id', $data)) {
             if (!empty($data['agent_user_id'])) {
                 $agent = User::find($data['agent_user_id']);
-                if ($agent && $agent->director_id) {
+                // Setăm directorul agentului (chiar dacă e null)
+                if ($agent) {
                     $data['sales_director_user_id'] = $agent->director_id;
                 }
+            } else {
+                // Dacă nu mai avem agent, ștergem și directorul
+                $data['sales_director_user_id'] = null;
             }
         }
 

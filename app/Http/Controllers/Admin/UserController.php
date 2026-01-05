@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\Role;
+use App\Models\Customer;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
@@ -135,6 +136,14 @@ class UserController extends Controller
             $user->is_active = $data['is_active'];
         }
 
+        if (array_key_exists('director_id', $data)) {
+            $user->director_id = $data['director_id'];
+            
+            // Actualizăm automat clienții agentului cu noul director
+            Customer::where('agent_user_id', $user->id)
+                ->update(['sales_director_user_id' => $data['director_id']]);
+        }
+
         if (!empty($data['password'])) {
             $user->password = Hash::make($data['password']);
         }
@@ -176,6 +185,7 @@ class UserController extends Controller
             'email'      => $user->email,
             'phone'      => $user->phone,
             'director_id' => $user->director_id,
+            'director_name' => optional($user->director)->full_name,
             'is_active'  => (bool) $user->is_active,
             'created_at' => optional($user->created_at)->toDateTimeString(),
             'roles'      => $user->roles->map(function (Role $role) {

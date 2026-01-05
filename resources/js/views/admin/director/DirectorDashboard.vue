@@ -8,7 +8,21 @@
     </div>
 
     <!-- Summary Cards -->
-    <div class="row mb-4">
+    <div class="row mb-4 g-3">
+      <div class="col-md-3">
+        <div class="card bg-white shadow-sm border-0 h-100" :class="{ 'border-warning': summary.pending_approvals > 0 }">
+          <div class="card-body">
+            <h6 class="text-muted text-uppercase small">Aprobări Necesare</h6>
+            <div class="d-flex justify-content-between align-items-center mt-2">
+                <h2 class="fw-bold mb-0" :class="summary.pending_approvals > 0 ? 'text-warning' : 'text-secondary'">{{ summary.pending_approvals }}</h2>
+                <button v-if="summary.pending_approvals > 0" class="btn btn-sm btn-warning text-dark" @click="goToApprovals">
+                    Vezi <i class="bi bi-arrow-right"></i>
+                </button>
+            </div>
+            <small class="text-muted">Oferte ce necesită derogare</small>
+          </div>
+        </div>
+      </div>
       <div class="col-md-3">
         <div class="card bg-white shadow-sm border-0 h-100">
           <div class="card-body">
@@ -60,6 +74,7 @@
               <th>Agent</th>
               <th>Status</th>
               <th>Activitate Curentă</th>
+              <th>Locație</th>
               <th>Vânzări Astăzi</th>
               <th>Vizite Astăzi</th>
             </tr>
@@ -78,13 +93,27 @@
                     <div class="fw-bold text-dark">{{ agent.current_customer }}</div>
                     <small class="text-muted">Început la {{ formatTime(agent.visit_start_time) }}</small>
                 </div>
+                <div v-else-if="agent.last_seen">
+                    <small class="text-muted">Ultima vizită: {{ formatTime(agent.last_seen) }}</small>
+                </div>
+                <span v-else class="text-muted">-</span>
+              </td>
+              <td>
+                <div v-if="agent.latitude && agent.longitude">
+                    <a :href="`https://www.google.com/maps/search/?api=1&query=${agent.latitude},${agent.longitude}`" target="_blank" class="btn btn-sm btn-outline-primary">
+                        <i class="bi bi-map me-1"></i> Vezi Harta
+                    </a>
+                    <div v-if="agent.is_off_site" class="mt-1">
+                        <span class="badge bg-danger" title="Distanță mare față de client">Off-site</span>
+                    </div>
+                </div>
                 <span v-else class="text-muted">-</span>
               </td>
               <td>{{ formatPrice(agent.today_sales) }}</td>
               <td>{{ agent.today_visits }}</td>
             </tr>
             <tr v-if="teamStatus.length === 0">
-                <td colspan="5" class="text-center py-4 text-muted">Nu există agenți asignați.</td>
+                <td colspan="6" class="text-center py-4 text-muted">Nu există agenți asignați.</td>
             </tr>
           </tbody>
         </table>
@@ -96,14 +125,18 @@
 
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue';
+import { useRouter } from 'vue-router';
 import { adminApi } from '@/services/http';
+
+const router = useRouter();
 
 const summary = ref({
     today_sales: 0,
     month_sales: 0,
     today_visits: 0,
     active_visits: 0,
-    agents_count: 0
+    agents_count: 0,
+    pending_approvals: 0
 });
 
 const teamStatus = ref([]);
@@ -116,6 +149,10 @@ const formatPrice = (value) => {
 const formatTime = (dateString) => {
     if (!dateString) return '';
     return new Date(dateString).toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit' });
+};
+
+const goToApprovals = () => {
+    router.push({ name: 'account-offers-list', query: { status: 'pending_approval' } });
 };
 
 const fetchData = async () => {

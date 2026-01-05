@@ -64,6 +64,39 @@
                                 </button>
                             </td>
                         </tr>
+                        <tr v-if="editingId && agents.find(a => a.id === editingId)" :key="'details-' + editingId" class="table-light">
+                            <td colspan="5">
+                                <div class="p-3">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <h6 class="mb-0">Targeturi pe Categorii</h6>
+                                        <button class="btn btn-sm btn-outline-primary" @click="addTargetItem">
+                                            <i class="bi bi-plus-lg"></i> Adaugă Categorie
+                                        </button>
+                                    </div>
+                                    <div v-if="tempTarget.items && tempTarget.items.length > 0" class="row g-2">
+                                        <div v-for="(item, index) in tempTarget.items" :key="index" class="col-md-6">
+                                            <div class="card card-body p-2 bg-white">
+                                                <div class="d-flex gap-2 align-items-center">
+                                                    <select v-model="item.target_id" class="form-select form-select-sm">
+                                                        <option value="" disabled>Selectează Categoria</option>
+                                                        <option v-for="cat in categories" :key="cat.id" :value="cat.id">
+                                                            {{ cat.name }}
+                                                        </option>
+                                                    </select>
+                                                    <input type="number" v-model="item.target_amount" class="form-control form-control-sm" placeholder="Sumă (RON)" min="0" step="100" style="width: 120px;">
+                                                    <button class="btn btn-sm btn-outline-danger" @click="removeTargetItem(index)">
+                                                        <i class="bi bi-trash"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div v-else class="text-muted small fst-italic">
+                                        Nu sunt definite targeturi specifice pe categorii.
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
                         <tr v-if="agents.length === 0">
                             <td colspan="5" class="text-center py-4 text-muted">Nu există agenți asignați.</td>
                         </tr>
@@ -89,6 +122,7 @@ const months = ['Ianuarie', 'Februarie', 'Martie', 'Aprilie', 'Mai', 'Iunie', 'I
 
 const agents = ref([]);
 const targets = ref([]);
+const categories = ref([]);
 const editingId = ref(null);
 const tempTarget = ref({});
 const saving = ref(false);
@@ -126,14 +160,47 @@ const fetchTargets = async () => {
     }
 };
 
+const fetchCategories = async () => {
+    try {
+        const res = await adminApi.get('/categories?per_page=100');
+        categories.value = res.data.data || res.data;
+    } catch (e) {
+        console.error('Eroare încărcare categorii', e);
+    }
+};
+
 const editTarget = (agent) => {
+    if (!agent || !agent.id) return;
+    
     const existing = getTarget(agent.id);
     tempTarget.value = {
         target_sales_amount: existing.target_sales_amount || 0,
         target_visits_count: existing.target_visits_count || 0,
-        target_new_customers: existing.target_new_customers || 0
+        target_new_customers: existing.target_new_customers || 0,
+        items: existing.items ? existing.items.map(i => ({
+            target_type: 'category',
+            target_id: i.target_id,
+            target_amount: i.target_amount
+        })) : []
     };
     editingId.value = agent.id;
+};
+
+const addTargetItem = () => {
+    if (!tempTarget.value.items) {
+        tempTarget.value.items = [];
+    }
+    tempTarget.value.items.push({
+        target_type: 'category',
+        target_id: '',
+        target_amount: 0
+    });
+};
+
+const removeTargetItem = (index) => {
+    if (tempTarget.value.items) {
+        tempTarget.value.items.splice(index, 1);
+    }
 };
 
 const cancelEdit = () => {
@@ -174,5 +241,6 @@ const saveTarget = async (userId) => {
 onMounted(() => {
     fetchAgents();
     fetchTargets();
+    fetchCategories();
 });
 </script>

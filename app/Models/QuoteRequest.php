@@ -46,4 +46,9 @@ class QuoteRequest extends Model
     {
         return $this->hasMany(QuoteRequestItem::class);
     }
+
+    public function offer(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(Offer::class);
+    }
 }

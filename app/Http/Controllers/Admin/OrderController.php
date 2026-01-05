@@ -15,8 +15,25 @@ class OrderController extends Controller
      */
     public function index(Request $request)
     {
+        $user = $request->user();
         $query = Order::query()
             ->with(['customer']);
+
+        // RBAC Filtering
+        if ($user->hasRole('sales_agent')) {
+            $query->whereHas('customer', function ($q) use ($user) {
+                $q->where('agent_user_id', $user->id)
+                  ->orWhereHas('teamMembers', function ($sq) use ($user) {
+                      $sq->where('users.id', $user->id);
+                  });
+            });
+        } elseif ($user->hasRole('sales_director')) {
+            $subordinateIds = \App\Models\User::where('director_id', $user->id)->pluck('id');
+            $query->whereHas('customer', function ($q) use ($user, $subordinateIds) {
+                $q->where('sales_director_user_id', $user->id)
+                  ->orWhereIn('agent_user_id', $subordinateIds);
+            });
+        }
 
         // Filtre
         if ($status = $request->query('status')) {

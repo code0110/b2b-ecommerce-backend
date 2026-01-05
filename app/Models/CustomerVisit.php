@@ -55,4 +55,9 @@ class CustomerVisit extends Model
     {
         return $this->hasMany(Payment::class, 'customer_visit_id');
     }
+
+    public function locationLogs()
+    {
+        return $this->hasMany(VisitLocationLog::class, 'customer_visit_id');
+    }
 }

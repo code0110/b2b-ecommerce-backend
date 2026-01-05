@@ -252,6 +252,13 @@ const handleStartVisit = async (customer) => {
     }
 };
 
+const createOffer = (customer) => {
+    router.push({ 
+        name: 'admin-offers-new', 
+        query: { customer_id: customer.id } 
+    });
+};
+
 onMounted(() => {
     setToday();
     loadData();

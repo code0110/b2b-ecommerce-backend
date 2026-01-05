@@ -7,6 +7,9 @@
           Cereri de ofertă și oferte comerciale legate de comenzi.
         </p>
       </div>
+      <RouterLink to="/cont/cere-oferta" class="btn btn-primary btn-sm">
+        <i class="bi bi-plus-lg me-1"></i> Cere Ofertă
+      </RouterLink>
     </div>
 
     <div v-if="error" class="alert alert-danger small mb-3">
@@ -24,7 +27,6 @@
       <div v-if="offers.length === 0" class="alert alert-info small">
         Nu există oferte înregistrate.
       </div>
-
       <div v-else class="card shadow-sm">
         <div class="table-responsive">
           <table class="table table-sm align-middle mb-0">
@@ -176,6 +178,9 @@
 import { ref, onMounted } from 'vue';
 import { fetchOffers, fetchOffer } from '@/services/account/offers';
 
+import { useRouter } from 'vue-router';
+
+const router = useRouter();
 const loading = ref(false);
 const error = ref('');
 const offers = ref([]);
@@ -212,15 +217,8 @@ const loadOffers = async () => {
 };
 
 const viewOffer = async (offer) => {
-  try {
-    const data = await fetchOffer(offer.id);
-    selectedOffer.value = data.offer ?? data;
-  } catch (e) {
-    console.error(e);
-    error.value =
-      e?.response?.data?.message ||
-      'Nu am putut încărca detaliile ofertei.';
-  }
+    // Navigate to dedicated offer details page for full functionality (negotiation, etc)
+    router.push({ name: 'account-offer-details', params: { id: offer.id } });
 };
 
 onMounted(loadOffers);

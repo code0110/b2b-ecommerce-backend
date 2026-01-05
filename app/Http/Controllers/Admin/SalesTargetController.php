@@ -16,7 +16,7 @@ class SalesTargetController extends Controller
         $month = $request->input('month', date('n'));
         $userId = $request->input('user_id');
 
-        $query = SalesTarget::with('user')
+        $query = SalesTarget::with(['user', 'items'])
             ->where('year', $year)
             ->where('month', $month);
 
@@ -44,8 +44,24 @@ class SalesTargetController extends Controller
             'month' => 'required|integer|min:1|max:12',
             'target_sales_amount' => 'required|numeric|min:0',
             'target_visits_count' => 'required|integer|min:0',
-            'target_new_customers' => 'nullable|integer|min:0'
+            'target_new_customers' => 'nullable|integer|min:0',
+            'items' => 'nullable|array',
+            'items.*.target_type' => 'required|string|in:category',
+            'items.*.target_id' => 'required|integer',
+            'items.*.target_amount' => 'required|numeric|min:0',
         ]);
+
+        // RBAC: Director can only set targets for their subordinates
+        /** @var \App\Models\User $currentUser */
+        $currentUser = Auth::user();
+        if ($currentUser->hasRole('sales_director') && !$currentUser->hasRole('admin')) {
+             $isSubordinate = User::where('id', $request->user_id)
+                                  ->where('director_id', $currentUser->id)
+                                  ->exists();
+             if (!$isSubordinate) {
+                 return response()->json(['message' => 'Unauthorized: You can only set targets for your assigned agents.'], 403);
+             }
+        }
 
         $target = SalesTarget::updateOrCreate(
             [
@@ -60,7 +76,18 @@ class SalesTargetController extends Controller
             ]
         );
 
-        return response()->json($target);
+        if ($request->has('items')) {
+            $target->items()->delete();
+            foreach ($request->items as $item) {
+                $target->items()->create([
+                    'target_type' => $item['target_type'],
+                    'target_id' => $item['target_id'],
+                    'target_amount' => $item['target_amount']
+                ]);
+            }
+        }
+
+        return response()->json($target->load('items'));
     }
     
     public function show($id)

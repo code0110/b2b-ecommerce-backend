@@ -143,6 +143,88 @@ class CustomerVisitController extends Controller
 
         return response()->json($visit);
     }
+
+    public function recordLocation(Request $request, $id)
+    {
+        $visit = CustomerVisit::findOrFail($id);
+        
+        /** @var User $user */
+        $user = Auth::user();
+
+        if ($user->id !== $visit->agent_id) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        if ($visit->status !== 'in_progress') {
+            return response()->json(['message' => 'Visit is not in progress'], 400);
+        }
+
+        $data = $request->validate([
+            'latitude' => ['required', 'numeric'],
+            'longitude' => ['required', 'numeric'],
+            'accuracy' => ['nullable', 'numeric'],
+            'battery_level' => ['nullable', 'integer'],
+            'provider' => ['nullable', 'string'],
+            'speed' => ['nullable', 'numeric'],
+            'heading' => ['nullable', 'numeric'],
+            'altitude' => ['nullable', 'numeric'],
+            'network_type' => ['nullable', 'string'],
+        ]);
+
+        // Logică complexă de detecție anomalii
+        $isMocked = false;
+        
+        // 1. Verificare acuratețe extremă (suspicioasă pentru GPS mobil, dar posibilă) sau foarte proastă
+        if (isset($data['accuracy'])) {
+             // Acuratețe suspect de perfectă (0) sau foarte proastă (>1000m)
+             if ($data['accuracy'] === 0) {
+                 // Unele dispozitive raportează 0 pe fake GPS
+                 // $isMocked = true; // (Comentat pentru a evita false positives, dar e un indicator)
+             }
+        }
+
+        // 2. Verificare viteză excesivă în timpul vizitei
+        // Dacă viteza e > 30km/h (8.3 m/s) în timpul unei vizite "in_progress", agentul probabil a plecat
+        if (isset($data['speed']) && $data['speed'] > 8.3) {
+            // Putem marca vizita ca "moving_away" sau similar în viitor
+            // Momentan doar logăm viteza
+        }
+
+        $visit->locationLogs()->create([
+            'latitude' => $data['latitude'],
+            'longitude' => $data['longitude'],
+            'accuracy' => $data['accuracy'] ?? null,
+            'battery_level' => $data['battery_level'] ?? null,
+            'provider' => $data['provider'] ?? null,
+            'speed' => $data['speed'] ?? null,
+            'heading' => $data['heading'] ?? null,
+            'altitude' => $data['altitude'] ?? null,
+            'network_type' => $data['network_type'] ?? null,
+            'is_mocked' => $isMocked,
+        ]);
+
+        // Actualizăm și ultima locație cunoscută pe vizită pentru acces rapid
+        // Nu actualizăm latitude/longitude pe vizita părinte pentru a păstra punctul de start intact
+        // Dar am putea folosi 'end_latitude' temporar sau câmpuri noi 'current_latitude'
+        // Pentru moment, rapoartele citesc din logs (ceea ce e corect).
+        
+        // Totuși, putem verifica distanța față de client live
+        if ($visit->customer) {
+             $dist = $this->calculateDistance(
+                 $data['latitude'], 
+                 $data['longitude'], 
+                 $visit->customer->latitude, 
+                 $visit->customer->longitude
+             );
+             
+             // Dacă e la mai mult de 1km, e clar "Off-site"
+             if ($dist > 1000 && !$visit->is_off_site) {
+                 $visit->update(['is_off_site' => true, 'distance_deviation' => $dist]);
+             }
+        }
+
+        return response()->json(['status' => 'ok']);
+    }
     
     /**
      * Calculate distance between two points in meters using Haversine formula

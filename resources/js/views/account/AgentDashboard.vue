@@ -63,6 +63,15 @@
             Istoric Vizite
           </button>
         </li>
+        <li class="nav-item">
+          <button 
+            class="nav-link" 
+            :class="{ active: activeTab === 'offers' }" 
+            @click="activeTab = 'offers'"
+          >
+            Oferte și Cereri
+          </button>
+        </li>
         <li class="nav-item" v-if="isDirector">
           <button 
             class="nav-link" 
@@ -208,6 +217,13 @@
                                 </button>
                                 
                                 <button 
+                                    class="btn btn-warning btn-sm text-dark"
+                                    @click="createOffer(item.customer)"
+                                    title="Creează Ofertă"
+                                >
+                                    <i class="bi bi-file-earmark-plus"></i>
+                                </button>
+                                <button 
                                     class="btn btn-light border btn-sm"
                                     @click="activeTab = 'clients'; searchClient = item.customer.name"
                                     title="Vezi Detalii Client"
@@ -294,6 +310,14 @@
                     <i class="bi bi-cash-stack"></i> Încasare
                   </button>
                   <button 
+                    class="btn btn-sm btn-warning me-2 text-dark"
+                    @click="createOffer(client)"
+                    title="Creează Ofertă"
+                    :disabled="!canPerformAction(client)"
+                  >
+                    <i class="bi bi-file-earmark-text"></i> Ofertă
+                  </button>
+                  <button 
                     class="btn btn-sm btn-primary"
                     @click="impersonateClient(client)"
                     title="Plasează Comandă"
@@ -311,6 +335,96 @@
             </tbody>
           </table>
         </div>
+      </div>
+
+      <!-- Tab Oferte și Cereri -->
+      <div v-if="activeTab === 'offers'">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+              <h5 class="mb-0">Oferte și Cereri</h5>
+              <div class="d-flex gap-2">
+                  <button 
+                      class="btn btn-warning text-dark btn-sm"
+                      @click="router.push({ name: 'account-offers-new' })"
+                  >
+                      <i class="bi bi-plus-lg"></i> Ofertă Nouă
+                  </button>
+                  <button 
+                      class="btn btn-primary btn-sm"
+                      @click="router.push({ name: 'account-offers-list' })"
+                  >
+                      <i class="bi bi-list-ul"></i> Vezi Toate
+                  </button>
+              </div>
+          </div>
+          
+          <div class="row g-4">
+              <!-- Summary Cards -->
+              <div class="col-md-6">
+                   <div class="card h-100 shadow-sm border-0 bg-primary text-white">
+                       <div class="card-body">
+                           <div class="d-flex justify-content-between align-items-center mb-3">
+                               <div>
+                                   <h6 class="text-uppercase small opacity-75 mb-1">Oferte Active</h6>
+                                   <h2 class="display-6 fw-bold mb-0">{{ offersStats.active || 0 }}</h2>
+                               </div>
+                               <i class="bi bi-file-earmark-text fs-1 opacity-50"></i>
+                           </div>
+                           <button class="btn btn-light btn-sm text-primary w-100" @click="router.push({ name: 'account-offers-list' })">
+                               Gestionare Oferte
+                           </button>
+                       </div>
+                   </div>
+              </div>
+              <div class="col-md-6">
+                   <div class="card h-100 shadow-sm border-0 bg-success text-white">
+                       <div class="card-body">
+                           <div class="d-flex justify-content-between align-items-center mb-3">
+                               <div>
+                                   <h6 class="text-uppercase small opacity-75 mb-1">Cereri Noi</h6>
+                                   <h2 class="display-6 fw-bold mb-0">{{ recentRequests.length }}</h2>
+                               </div>
+                               <i class="bi bi-inbox fs-1 opacity-50"></i>
+                           </div>
+                           <button class="btn btn-light btn-sm text-success w-100" @click="router.push({ name: 'account-offers-list', query: { tab: 'requests' } })">
+                               Vezi Toate Cererile
+                           </button>
+                       </div>
+                   </div>
+              </div>
+
+              <!-- Recent Requests List -->
+              <div class="col-12">
+                  <div class="card border-0 shadow-sm">
+                      <div class="card-header bg-white py-3">
+                          <h6 class="mb-0 fw-bold">Cereri de Ofertă Recente</h6>
+                      </div>
+                      <div class="card-body p-0">
+                          <div v-if="recentRequests.length === 0" class="p-4 text-center text-muted small">
+                              Nu există cereri recente.
+                          </div>
+                          <div class="list-group list-group-flush" v-else>
+                              <div v-for="req in recentRequests" :key="req.id" class="list-group-item p-3">
+                                  <div class="d-flex justify-content-between align-items-center">
+                                      <div>
+                                          <div class="fw-bold text-dark">{{ req.customer?.name || 'Client Necunoscut' }}</div>
+                                          <div class="small text-muted mb-1">
+                                              <span class="badge bg-secondary me-2">#{{ req.id }}</span>
+                                              {{ new Date(req.created_at).toLocaleDateString('ro-RO') }}
+                                          </div>
+                                          <div class="small text-muted text-truncate" style="max-width: 400px;">
+                                              {{ req.customer_notes || 'Fără notițe' }}
+                                          </div>
+                                      </div>
+                                      <button class="btn btn-sm btn-outline-primary" @click="router.push({ name: 'account-offers-new', query: { customer_id: req.customer_id, request_id: req.id } })">
+                                          Creează Ofertă
+                                      </button>
+                                  </div>
+                              </div>
+                          </div>
+                      </div>
+                  </div>
+              </div>
+          </div>
       </div>
 
       <!-- Tab Istoric -->
@@ -715,6 +829,7 @@
 import { ref, computed, onMounted, watch } from 'vue';
 import { useAuthStore } from '@/store/auth';
 import agentService from '@/services/account/agent';
+import { adminApi } from '@/services/http';
 import { useRouter } from 'vue-router';
 import { useVisitStore } from '@/store/visit';
 import { useToast } from 'vue-toastification';
@@ -731,6 +846,28 @@ const routes = ref([]); // Store all routes
 const loading = ref(true);
 const searchClient = ref('');
 const showAgentClientsOnly = ref(false);
+
+const offersStats = ref({ active: 0 });
+const recentRequests = ref([]);
+
+const loadOffersData = async () => {
+    try {
+        const { data } = await adminApi.get('/quotes?per_page=5');
+        recentRequests.value = data.data;
+        
+        // Get active offers count
+        const offers = await adminApi.get('/offers?status=sent');
+        offersStats.value.active = offers.data.total;
+    } catch (e) {
+        console.error('Offers data load error', e);
+    }
+};
+
+watch(activeTab, (newTab) => {
+    if (newTab === 'offers') {
+        loadOffersData();
+    }
+});
 
 const days = [
   { value: 'Monday', label: 'Luni' },
@@ -946,6 +1083,10 @@ const openPaymentModal = async (client) => {
   } finally {
       loadingInvoices.value = false;
   }
+};
+
+const createOffer = (client) => {
+    router.push({ name: 'admin-offers-new', query: { customer_id: client.id } });
 };
 
 const closePaymentModal = () => {

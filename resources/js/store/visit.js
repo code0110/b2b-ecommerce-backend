@@ -5,6 +5,8 @@ export const useVisitStore = defineStore('visit', {
   state: () => ({
     activeVisit: JSON.parse(localStorage.getItem('active_visit') || 'null'),
     loading: false,
+    watchId: null,
+    heartbeatInterval: null,
   }),
 
   getters: {
@@ -19,6 +21,7 @@ export const useVisitStore = defineStore('visit', {
         const visits = response.data.data;
         if (visits && visits.length > 0) {
           this.setActiveVisit(visits[0]);
+          this.startLocationTracking(); // Repornim tracking-ul dacă există vizită activă
         } else {
           this.clearActiveVisit();
         }
@@ -35,6 +38,96 @@ export const useVisitStore = defineStore('visit', {
     clearActiveVisit() {
       this.activeVisit = null;
       localStorage.removeItem('active_visit');
+      this.stopLocationTracking();
+    },
+
+    startLocationTracking() {
+      if (!this.activeVisit) return;
+      if (this.watchId) return; // Deja activ
+
+      console.log('Starting location tracking for visit', this.activeVisit.id);
+
+      if ("geolocation" in navigator) {
+        // 1. Watch Position pentru update local și precizie
+        this.watchId = navigator.geolocation.watchPosition(
+          (position) => {
+             // Opțional: putem actualiza un state local cu poziția curentă pentru UI
+             console.log('Location update:', position.coords);
+          },
+          (error) => {
+             console.warn('Watch position error:', error);
+          },
+          {
+             enableHighAccuracy: true,
+             maximumAge: 0,
+             timeout: 10000
+          }
+        );
+
+        // 2. Heartbeat periodic către server (ex: la fiecare 60 secunde)
+        this.heartbeatInterval = setInterval(async () => {
+             this.sendLocationHeartbeat();
+        }, 60000); 
+
+        // Trimitem unul imediat
+        this.sendLocationHeartbeat();
+      }
+    },
+
+    stopLocationTracking() {
+      if (this.watchId) {
+        navigator.geolocation.clearWatch(this.watchId);
+        this.watchId = null;
+      }
+      if (this.heartbeatInterval) {
+        clearInterval(this.heartbeatInterval);
+        this.heartbeatInterval = null;
+      }
+      console.log('Location tracking stopped');
+    },
+
+    async sendLocationHeartbeat() {
+        if (!this.activeVisit) return;
+
+        // Get Network Type if available
+        let networkType = 'unknown';
+        if (navigator.connection) {
+            networkType = navigator.connection.effectiveType; // '4g', '3g', '2g', 'slow-2g'
+        }
+
+        // Get Battery Level if available (using Battery Status API if supported)
+        let batteryLevel = null;
+        if (navigator.getBattery) {
+             try {
+                 const battery = await navigator.getBattery();
+                 batteryLevel = Math.round(battery.level * 100);
+             } catch (e) {
+                 // Battery API not supported or blocked
+             }
+        }
+
+        navigator.geolocation.getCurrentPosition(
+            async (position) => {
+                try {
+                    await adminApi.post(`/customer-visits/${this.activeVisit.id}/location`, {
+                        latitude: position.coords.latitude,
+                        longitude: position.coords.longitude,
+                        accuracy: position.coords.accuracy,
+                        speed: position.coords.speed, // m/s
+                        heading: position.coords.heading, // degrees
+                        altitude: position.coords.altitude, // meters
+                        provider: 'browser',
+                        battery_level: batteryLevel,
+                        network_type: networkType
+                    });
+                    console.log('Detailed location heartbeat sent');
+                } catch (e) {
+                    console.error('Failed to send location heartbeat', e);
+                }
+            },
+            (err) => console.warn('Heartbeat location error', err),
+            { enableHighAccuracy: true, timeout: 5000 }
+        );
     },
 
     async startVisit(customerId) {
@@ -64,6 +157,7 @@ export const useVisitStore = defineStore('visit', {
             ...coords
         });
         this.setActiveVisit(response.data);
+        this.startLocationTracking(); // Start tracking
         return response.data;
       } catch (error) {
         throw error;
@@ -78,7 +172,7 @@ export const useVisitStore = defineStore('visit', {
       this.loading = true;
       try {
         const response = await adminApi.post(`/customer-visits/${this.activeVisit.id}/end`, data);
-        this.clearActiveVisit();
+        this.clearActiveVisit(); // Stops tracking automatically
         return response.data;
       } catch (error) {
         throw error;

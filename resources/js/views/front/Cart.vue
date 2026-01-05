@@ -115,9 +115,13 @@
                   {{ grandTotal.toLocaleString('ro-RO', { minimumFractionDigits: 2 }) }} RON
                 </span>
               </div>
-              <RouterLink to="/checkout" class="btn btn-primary w-100 btn-sm">
+              <RouterLink to="/checkout" class="btn btn-primary w-100 btn-sm mb-2">
                 Mergi la checkout
               </RouterLink>
+              <button class="btn btn-outline-primary w-100 btn-sm" @click="requestQuote" :disabled="quoting">
+                <span v-if="quoting" class="spinner-border spinner-border-sm me-2"></span>
+                Solicită Ofertă Personalizată
+              </button>
             </div>
           </div>
         </div>
@@ -128,10 +132,17 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
 import { getCart, removeCartItem, updateCartItem } from '@/services/cart';
+import axios from 'axios';
+import { useToast } from 'vue-toastification';
+
+const router = useRouter();
+const toast = useToast();
 
 const loading = ref(false);
 const error = ref('');
+const quoting = ref(false);
 const cartRaw = ref(null);
 const items = ref([]);
 const updating = ref(null);
@@ -197,6 +208,22 @@ const remove = async (id) => {
   } catch (e) {
     console.error('Remove item error', e);
     error.value = 'Nu s-a putut șterge articolul din coș.';
+  }
+};
+
+const requestQuote = async () => {
+  if (!confirm('Dorești să soliciți o ofertă personalizată pentru produsele din coș?')) return;
+  
+  quoting.value = true;
+  try {
+    await axios.post('/api/quotes/from-cart', { notes: 'Solicitare din coșul de cumpărături' });
+    toast.success('Cererea de ofertă a fost trimisă cu succes!');
+    router.push({ name: 'account-offers' });
+  } catch (e) {
+    console.error(e);
+    toast.error('Eroare la trimiterea cererii.');
+  } finally {
+    quoting.value = false;
   }
 };
 

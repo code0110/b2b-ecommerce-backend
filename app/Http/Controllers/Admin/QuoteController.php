@@ -16,7 +16,31 @@ class QuoteController extends Controller
 {
     public function index(Request $request)
     {
-        $query = QuoteRequest::with(['customer', 'assignedAgent']);
+        /** @var \App\Models\User $user */
+        $user = $request->user();
+        $query = QuoteRequest::with(['customer', 'assignedAgent', 'offer']);
+
+        // RBAC Filtering
+        if ($user->hasRole('sales_agent')) {
+            // Agent sees requests assigned to them OR from their customers
+            $query->where(function ($q) use ($user) {
+                $q->where('assigned_agent_id', $user->id)
+                  ->orWhereHas('customer', function ($c) use ($user) {
+                      $c->where('agent_user_id', $user->id);
+                  });
+            });
+        } elseif ($user->hasRole('sales_director')) {
+            // Director sees requests from their team
+            $subordinateIds = \App\Models\User::where('director_id', $user->id)->pluck('id');
+            $query->where(function ($q) use ($user, $subordinateIds) {
+                $q->where('assigned_agent_id', $user->id)
+                  ->orWhereIn('assigned_agent_id', $subordinateIds)
+                  ->orWhereHas('customer', function ($c) use ($user, $subordinateIds) {
+                      $c->where('agent_user_id', $user->id)
+                        ->orWhereIn('agent_user_id', $subordinateIds);
+                  });
+            });
+        }
 
         if ($status = $request->get('status')) {
             $query->where('status', $status);

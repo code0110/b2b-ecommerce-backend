@@ -95,7 +95,13 @@ class Customer extends Model
         }
 
         if ($user->hasRole('sales_director')) {
-            return $query->where('sales_director_user_id', $user->id);
+            // Directorul vede clienții asignați direct LUI sau clienții asignați agenților din subordine
+            $subordinateIds = User::where('director_id', $user->id)->pluck('id');
+
+            return $query->where(function($q) use ($user, $subordinateIds) {
+                $q->where('sales_director_user_id', $user->id)
+                  ->orWhereIn('agent_user_id', $subordinateIds);
+            });
         }
 
         if ($user->hasRole('sales_agent')) {

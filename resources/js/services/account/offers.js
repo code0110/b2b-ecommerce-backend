@@ -1,17 +1,21 @@
-// resources/js/services/account/offers.js
-import  api  from '../http';
+import api from '@/services/http'; // Assuming standard http service
 
 export const fetchOffers = async (params = {}) => {
-  const { data } = await api.get('/account/offers', { params });
+  const { data } = await api.get('/account/client-offers', { params });
   return data;
 };
 
 export const fetchOffer = async (id) => {
-  const { data } = await api.get(`/account/offers/${id}`);
+  const { data } = await api.get(`/account/client-offers/${id}`);
   return data;
 };
 
-export const requestOfferForCart = async (payload = {}) => {
-  const { data } = await api.post('/account/offers/request-from-cart', payload);
+export const updateOfferStatus = async (id, status) => {
+  const { data } = await api.post(`/account/client-offers/${id}/status`, { status });
+  return data;
+};
+
+export const sendOfferMessage = async (id, message) => {
+  const { data } = await api.post(`/account/client-offers/${id}/messages`, { message });
   return data;
 };

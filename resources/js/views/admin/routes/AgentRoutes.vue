@@ -199,7 +199,8 @@ const days = [
   { value: 'Sunday', label: 'Duminică' },
 ];
 
-const currentDay = ref(new Date().toLocaleDateString('en-US', { weekday: 'long' }));
+const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+const currentDay = ref(dayNames[new Date().getDay()]);
 const selectedAgentId = ref(null);
 const agents = ref([]);
 const customers = ref([]);

@@ -21,6 +21,34 @@
             </div>
           </div>
         </div>
+        
+        <!-- Toggle Start/Stop Program -->
+        <div v-if="isAgentOrDirector" class="mt-3 pt-2 border-top">
+             <div v-if="trackingStore.loading" class="text-center small text-muted">
+                <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                Se actualizează...
+             </div>
+             <button 
+                v-else-if="!trackingStore.isShiftActive"
+                @click="startDay"
+                class="btn btn-sm btn-success w-100 d-flex align-items-center justify-content-center"
+             >
+                <i class="bi bi-play-circle me-2"></i> Start Program
+             </button>
+             <button 
+                v-else
+                @click="endDay"
+                class="btn btn-sm btn-danger w-100 d-flex align-items-center justify-content-center"
+             >
+                <i class="bi bi-stop-circle me-2"></i> Încheie Program
+             </button>
+             
+             <div v-if="trackingStore.isShiftActive" class="text-center mt-1">
+                <small class="text-success fw-bold" style="font-size: 0.7rem;">
+                    <i class="bi bi-broadcast me-1"></i> Monitorizare Activă
+                </small>
+             </div>
+        </div>
       </div>
     </div>
 
@@ -38,18 +66,6 @@
           <span>
             <i class="bi bi-speedometer2 me-1"></i>
             Dashboard
-          </span>
-        </RouterLink>
-
-        <RouterLink
-          v-if="isDirector"
-          :to="{ name: 'account-director-dashboard' }"
-          class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
-          :class="{ active: isActive('account-director-dashboard') }"
-        >
-          <span>
-            <i class="bi bi-person-workspace me-1"></i>
-            Dashboard Director
           </span>
         </RouterLink>
 
@@ -78,6 +94,18 @@
         </RouterLink>
 
         <RouterLink
+          v-if="isDirector || authStore.role === 'admin'"
+          :to="{ name: 'account-route-history' }"
+          class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
+          :class="{ active: isActive('account-route-history') }"
+        >
+          <span>
+            <i class="bi bi-clock-history me-1"></i>
+            Istoric Rute
+          </span>
+        </RouterLink>
+
+        <RouterLink
           :to="{ name: 'account-orders' }"
           class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
           :class="{ active: isActive('account-orders') || isActive('account-order-details') }"
@@ -89,13 +117,24 @@
         </RouterLink>
 
         <RouterLink
-          :to="{ name: 'account-offers' }"
+          :to="{ name: isAgentOrDirector ? 'account-offers-list' : 'account-offers' }"
           class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
-          :class="{ active: isActive('account-offers') }"
+          :class="{ active: isActive('account-offers') || isActive('account-offers-list') }"
         >
           <span>
             <i class="bi bi-file-earmark-text me-1"></i>
             Oferte & cereri
+          </span>
+        </RouterLink>
+
+        <RouterLink
+          :to="{ name: 'account-request-quote' }"
+          class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
+          :class="{ active: isActive('account-request-quote') }"
+        >
+          <span>
+            <i class="bi bi-pencil-square me-1"></i>
+            Cere Ofertă
           </span>
         </RouterLink>
 
@@ -136,7 +175,18 @@
         >
           <span>
             <i class="bi bi-bar-chart-line me-1"></i>
-            Rapoarte
+            Raport Performanță
+          </span>
+        </RouterLink>
+
+        <RouterLink
+          :to="{ name: 'account-locations-report' }"
+          class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
+          :class="{ active: isActive('account-locations-report') }"
+        >
+          <span>
+            <i class="bi bi-geo-alt-fill me-1"></i>
+            Raport Locații
           </span>
         </RouterLink>
 
@@ -259,13 +309,32 @@
 import { computed, onMounted, ref } from 'vue';
 import { useRoute, useRouter, RouterLink } from 'vue-router';
 import { useAuthStore } from '@/store/auth';
+import { useTrackingStore } from '@/store/tracking';
 import  api  from '@/services/http';
 
 const route = useRoute();
 const router = useRouter();
 const authStore = useAuthStore();
+const trackingStore = useTrackingStore();
 
 const unreadNotifications = ref(0);
+
+const startDay = async () => {
+    try {
+        await trackingStore.startDay();
+    } catch (e) {
+        alert('Eroare la pornirea programului.');
+    }
+};
+
+const endDay = async () => {
+    if (!confirm('Ești sigur că vrei să închei programul?')) return;
+    try {
+        await trackingStore.endDay();
+    } catch (e) {
+        alert('Eroare la încheierea programului.');
+    }
+};
 
 const displayName = computed(() => {
   return authStore.user?.name || authStore.user?.full_name || 'Utilizator';
@@ -311,7 +380,6 @@ const loadUnreadNotifications = async () => {
     const { data } = await api.get('/notifications/unread-count');
     unreadNotifications.value = data.count ?? 0;
   } catch (e) {
-    // optional: ignori eroarea la meniu
     console.warn('Cannot load unread notifications count', e);
   }
 };
@@ -328,6 +396,10 @@ const logout = async () => {
 onMounted(() => {
   if (authStore.isAuthenticated) {
     loadUnreadNotifications();
+    
+    if (isAgentOrDirector.value) {
+        trackingStore.checkStatus();
+    }
   }
 });
 </script>

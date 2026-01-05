@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\User;
 use App\Models\Order;
+use App\Models\Offer;
 use App\Models\CustomerVisit;
 use App\Models\Payment;
 use Carbon\Carbon;
@@ -52,12 +53,18 @@ class DirectorDashboardController extends Controller
             ->where('status', 'in_progress')
             ->count();
 
+        // 3. Pending Approvals (Offers)
+        $pendingApprovals = Offer::whereIn('agent_id', $agentIds)
+            ->where('status', 'pending_approval')
+            ->count();
+
         return response()->json([
             'today_sales' => $todaySales,
             'month_sales' => $monthSales,
             'today_visits' => $todayVisits,
             'active_visits' => $activeVisits,
-            'agents_count' => count($agentIds)
+            'agents_count' => count($agentIds),
+            'pending_approvals' => $pendingApprovals
         ]);
     }
 

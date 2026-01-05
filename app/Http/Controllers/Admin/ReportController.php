@@ -154,6 +154,7 @@ class ReportController extends Controller
 
     public function locations(Request $request)
     {
+        /** @var \App\Models\User $user */
         $user = Auth::user();
         $allowedAgentIds = $this->getAllowedAgentIds($user);
 
@@ -173,41 +174,81 @@ class ReportController extends Controller
 
         $agents = User::whereIn('id', $agentIds)
             ->select('id', 'first_name', 'last_name')
+            ->with('roles')
             ->get()
-            ->map(function ($agent) {
-                $activeVisit = CustomerVisit::where('agent_id', $agent->id)
-                    ->where('status', 'in_progress')
-                    ->with('customer:id,name,latitude,longitude') // Get customer details
-                    ->first();
-                
-                $lastVisit = null;
-                if (!$activeVisit) {
-                    $lastVisit = CustomerVisit::where('agent_id', $agent->id)
-                        ->orderBy('end_time', 'desc')
-                        ->with('customer:id,name,latitude,longitude')
+                ->map(function ($agent) {
+                    $activeVisit = CustomerVisit::where('agent_id', $agent->id)
+                        ->where('status', 'in_progress')
+                        ->with(['customer:id,name,latitude,longitude', 'locationLogs' => function($q) {
+                            $q->latest()->limit(1);
+                        }])
                         ->first();
-                }
 
-                return [
-                    'id' => $agent->id,
-                    'name' => $agent->first_name . ' ' . $agent->last_name,
-                    'roles' => $agent->getRoleNames(),
-                    'status' => $activeVisit ? 'in_visit' : 'idle',
-                    'customer_name' => $activeVisit ? $activeVisit->customer->name : ($lastVisit ? $lastVisit->customer->name : null),
-                    'visit_start_time' => $activeVisit ? $activeVisit->start_time : null,
-                    'latitude' => $activeVisit ? $activeVisit->latitude : ($lastVisit ? ($lastVisit->end_latitude ?? $lastVisit->latitude) : null),
-                    'longitude' => $activeVisit ? $activeVisit->longitude : ($lastVisit ? ($lastVisit->end_longitude ?? $lastVisit->longitude) : null),
-                    'last_seen' => $activeVisit ? $activeVisit->start_time : ($lastVisit ? $lastVisit->end_time : null),
-                    'is_off_site' => $activeVisit ? $activeVisit->is_off_site : null,
-                    'distance_deviation' => $activeVisit ? $activeVisit->distance_deviation : null,
-                ];
-            });
+                    $lastVisit = null;
+                    if (!$activeVisit) {
+                        $lastVisit = CustomerVisit::where('agent_id', $agent->id)
+                            ->orderBy('end_time', 'desc')
+                            ->with('customer:id,name,latitude,longitude')
+                            ->first();
+                    }
+
+                    // Determine accurate current location and time
+                    $currentLat = null;
+                    $currentLng = null;
+                    $lastSeen = null;
+                    $speed = null;
+                    $batteryLevel = null;
+                    $networkType = null;
+                    $accuracy = null;
+
+                    if ($activeVisit) {
+                        $lastLog = $activeVisit->locationLogs->first();
+                        if ($lastLog) {
+                            $currentLat = $lastLog->latitude;
+                            $currentLng = $lastLog->longitude;
+                            $lastSeen = $lastLog->recorded_at;
+                            $speed = $lastLog->speed;
+                            $batteryLevel = $lastLog->battery_level;
+                            $networkType = $lastLog->network_type;
+                            $accuracy = $lastLog->accuracy;
+                        } else {
+                            $currentLat = $activeVisit->latitude;
+                            $currentLng = $activeVisit->longitude;
+                            $lastSeen = $activeVisit->updated_at;
+                        }
+                    } elseif ($lastVisit) {
+                        $currentLat = $lastVisit->end_latitude ?? $lastVisit->latitude;
+                        $currentLng = $lastVisit->end_longitude ?? $lastVisit->longitude;
+                        $lastSeen = $lastVisit->end_time;
+                    }
+
+                    return [
+                        'id' => $agent->id,
+                        'name' => $agent->first_name . ' ' . $agent->last_name,
+                        'roles' => $agent->getRoleNames(),
+                        'status' => $activeVisit ? 'in_visit' : 'idle',
+                        'customer_name' => $activeVisit ? $activeVisit->customer->name : ($lastVisit ? $lastVisit->customer->name : null),
+                        'visit_start_time' => $activeVisit ? $activeVisit->start_time : null,
+                        'latitude' => $currentLat,
+                        'longitude' => $currentLng,
+                        'last_seen' => $lastSeen,
+                        'is_off_site' => $activeVisit ? $activeVisit->is_off_site : null,
+                        'distance_deviation' => $activeVisit ? $activeVisit->distance_deviation : null,
+                        'telemetry' => [
+                            'speed' => $speed,
+                            'battery_level' => $batteryLevel,
+                            'network_type' => $networkType,
+                            'accuracy' => $accuracy,
+                        ]
+                    ];
+                });
             
         return response()->json($agents);
     }
 
     private function getAllowedAgentIds($user)
     {
+        /** @var \App\Models\User $user */
         if ($user->hasRole('admin')) {
             return User::role('sales_agent')->pluck('id')->toArray();
         }

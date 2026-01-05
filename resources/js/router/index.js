@@ -245,6 +245,54 @@ const router = createRouter({
           meta: { requiresAuth: true }
         },
         {
+          path: 'oferte-agent',
+          name: 'account-offers-list',
+          component: () => import('@/views/admin/offers/OfferList.vue'),
+          meta: { requiresAuth: true, requiresRole: ['sales_agent', 'sales_director'] }
+        },
+        {
+          path: 'oferte-agent/noua',
+          name: 'account-offers-new',
+          component: () => import('@/views/admin/offers/OfferForm.vue'),
+          meta: { requiresAuth: true, requiresRole: ['sales_agent', 'sales_director'] }
+        },
+        {
+          path: 'oferte-agent/:id',
+          name: 'account-offers-edit',
+          component: () => import('@/views/admin/offers/OfferForm.vue'),
+          meta: { requiresAuth: true, requiresRole: ['sales_agent', 'sales_director'] }
+        },
+        {
+          path: 'cereri-oferta',
+          name: 'account-quote-requests',
+          component: () => import('@/views/account/AccountQuoteRequests.vue'),
+          meta: { requiresAuth: true }
+        },
+        {
+          path: 'cereri-oferta/noua',
+          name: 'account-quote-requests-new',
+          component: () => import('@/views/account/AccountQuoteRequestNew.vue'),
+          meta: { requiresAuth: true }
+        },
+        {
+          path: 'cereri-oferta/:id',
+          name: 'account-quote-requests-show',
+          component: () => import('@/views/account/AccountQuoteRequestDetails.vue'),
+          meta: { requiresAuth: true }
+        },
+        {
+          path: 'cere-oferta',
+          name: 'account-request-quote',
+          component: () => import('@/views/account/RequestQuote.vue'),
+          meta: { requiresAuth: true }
+        },
+        {
+          path: 'oferte/:id',
+          name: 'account-offer-details',
+          component: () => import('@/views/account/AccountOfferDetails.vue'),
+          meta: { requiresAuth: true }
+        },
+        {
           path: 'comenzi/:id',
           name: 'account-order-details',
           component: OrderDetails,
@@ -293,6 +341,18 @@ const router = createRouter({
           meta: { requiresAuth: true, requiresRole: 'sales_director' }
         },
         {
+          path: 'rapoarte/locatii',
+          name: 'account-locations-report',
+          component: () => import('@/views/admin/reports/LocationsReport.vue'),
+          meta: { requiresAuth: true, requiresRole: 'sales_director' }
+        },
+        {
+          path: 'rapoarte/istoric-rute',
+          name: 'account-route-history',
+          component: () => import('@/views/admin/reports/RouteHistory.vue'),
+          meta: { requiresAuth: true, requiresRole: 'sales_director' }
+        },
+        {
           path: 'obiective',
           name: 'account-targets',
           component: () => import('@/views/admin/targets/SalesTargets.vue'),
@@ -329,6 +389,17 @@ const router = createRouter({
           path: 'reports',
           name: 'admin-reports',
           component: () => import('@/views/admin/reports/ReportsDashboard.vue')
+        },
+        {
+          path: 'reports/locations',
+          name: 'admin-reports-locations',
+          component: () => import('@/views/admin/reports/LocationsReport.vue')
+        },
+        {
+          path: 'reports/route-history',
+          name: 'admin-reports-route-history',
+          component: () => import('@/views/admin/reports/RouteHistory.vue'),
+          meta: { requiresAuth: true, requiresRole: ['admin', 'sales_director'] } // Update permissions
         },
         {
           path: 'targets',
@@ -437,6 +508,16 @@ const router = createRouter({
           component: OfferList
         },
         {
+          path: 'offers/new',
+          name: 'admin-offers-new',
+          component: () => import('@/views/admin/offers/OfferForm.vue')
+        },
+        {
+          path: 'offers/:id',
+          name: 'admin-offers-edit',
+          component: () => import('@/views/admin/offers/OfferForm.vue')
+        },
+        {
           path: 'tickets',
           name: 'admin-tickets',
           component: TicketList
@@ -455,6 +536,11 @@ const router = createRouter({
           path: 'routes',
           name: 'admin-agent-routes',
           component: AgentRoutes
+        },
+        {
+          path: 'settings/offers',
+          name: 'admin-settings-offers',
+          component: () => import('@/views/admin/settings/OfferSettings.vue')
         },
         {
   path: 'settings/users',
@@ -491,15 +577,19 @@ router.beforeEach((to, from, next) => {
   }
 
   if (to.meta.requiresAdmin) {
-    // Allow admin, sales_director, and sales_agent to access admin routes
-    // (Permissions will be handled by backend or component logic)
-    const allowedRoles = ['admin', 'sales_director', 'sales_agent'];
-    if (allowedRoles.includes(authStore.role)) {
+    // Restrict access strictly to admin role
+    if (authStore.role === 'admin') {
       return next();
     }
     
-    // Utilizator logat dar fără drepturi – redirecționăm către dashboard-ul de client.
-    return next({ name: 'account-dashboard' })
+    // Utilizator logat dar fără drepturi de admin – redirecționăm către dashboard-ul corespunzător
+    if (authStore.role === 'sales_director') {
+      return next({ name: 'account-director-dashboard' });
+    } else if (authStore.role === 'sales_agent') {
+      return next({ name: 'agent-dashboard' });
+    } else {
+      return next({ name: 'account-dashboard' });
+    }
   }
 
   return next()

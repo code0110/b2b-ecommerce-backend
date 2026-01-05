@@ -34,6 +34,14 @@
             <i class="bi bi-bar-chart-line me-2"></i> <span class="link-text">Rapoarte</span>
           </RouterLink>
 
+          <RouterLink :to="{ name: 'admin-reports-locations' }" class="nav-link text-white rounded d-flex align-items-center px-3 py-2" active-class="active-link" title="Raport Locații">
+            <i class="bi bi-geo-alt me-2"></i> <span class="link-text">Raport Locații</span>
+          </RouterLink>
+
+          <RouterLink :to="{ name: 'admin-reports-route-history' }" class="nav-link text-white rounded d-flex align-items-center px-3 py-2" active-class="active-link" title="Istoric Rute">
+            <i class="bi bi-clock-history me-2"></i> <span class="link-text">Istoric Rute</span>
+          </RouterLink>
+
           <RouterLink :to="{ name: 'admin-targets' }" class="nav-link text-white rounded d-flex align-items-center px-3 py-2" active-class="active-link" title="Obiective KPI">
             <i class="bi bi-bullseye me-2"></i> <span class="link-text">Obiective KPI</span>
           </RouterLink>
@@ -97,6 +105,10 @@
           </RouterLink>
 
           <div v-if="authStore.role === 'admin'" class="nav-section-title text-uppercase text-muted fw-bold small mt-4 mb-2 px-2">Sistem & Utilizatori</div>
+          
+          <RouterLink v-if="authStore.role === 'admin'" :to="{ name: 'admin-settings-offers' }" class="nav-link text-white rounded d-flex align-items-center px-3 py-2" active-class="active-link" title="Configurare Oferte">
+            <i class="bi bi-sliders me-2"></i> <span class="link-text">Configurare Oferte</span>
+          </RouterLink>
           
           <RouterLink v-if="authStore.role === 'admin'" :to="{ name: 'admin-users' }" exact-active-class="active-link" class="nav-link text-white rounded d-flex align-items-center px-3 py-2" :class="{ 'active-link': route.name === 'admin-users' && !route.query.role }" title="Toți Utilizatorii">
             <i class="bi bi-person-badge me-2"></i> <span class="link-text">Toți Utilizatorii</span>

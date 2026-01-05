@@ -105,6 +105,19 @@ public function roles(): BelongsToMany
             ->exists();
     }
 
+    public function getRoleNames()
+    {
+        return $this->roles->pluck('name');
+    }
+
+    public function scopeRole($query, $roles)
+    {
+        $roles = (array) $roles;
+        return $query->whereHas('roles', function ($q) use ($roles) {
+            $q->whereIn('slug', $roles);
+        });
+    }
+
     public function managedCustomers(): HasMany
     {
         return $this->hasMany(Customer::class, 'agent_user_id');

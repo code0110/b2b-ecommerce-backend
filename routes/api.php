@@ -77,6 +77,9 @@ Route::prefix('auth')->group(function () {
     Route::get('me', [AuthController::class, 'me'])->middleware('auth:sanctum');
 });
 
+// Public Config
+Route::get('config', [\App\Http\Controllers\Admin\SettingController::class, 'publicConfig']);
+
 // Front-office public catalog
 // Route::get('home', [CatalogController::class, 'home']);
 Route::get('home', [HomeController::class, 'homepage']);
@@ -191,6 +194,12 @@ Route::middleware(['auth:sanctum', 'impersonate'])->group(function () {
         Route::post('notifications/{notification}/read', [NotificationController::class, 'markAsRead']);
         Route::post('notifications/read-all', [NotificationController::class, 'markAllAsRead']);
 
+        // Offers (Agent/Director System - Client Access)
+        Route::get('client-offers', [\App\Http\Controllers\Front\OfferController::class, 'index']); 
+        Route::get('client-offers/{id}', [\App\Http\Controllers\Front\OfferController::class, 'show']);
+        Route::post('client-offers/{id}/status', [\App\Http\Controllers\Front\OfferController::class, 'changeStatus']);
+        Route::post('client-offers/{id}/messages', [\App\Http\Controllers\Front\OfferController::class, 'addMessage']);
+
         // Oferte (quotes) – tab-ul de “Oferte” din cont
         Route::get('offers', [QuoteController::class, 'index']);
         Route::get('offers/{quoteRequest}', [QuoteController::class, 'show']);
@@ -236,8 +245,14 @@ Route::get('notifications/unread-count', [NotificationController::class, 'unread
 Route::post('notifications/{id}/read', [NotificationController::class, 'markAsRead']);
 Route::post('notifications/read-all', [NotificationController::class, 'markAllAsRead']);
 
-// Oferte (front)
-Route::get('quotes', [QuoteController::class, 'index']);
+// Oferte (front) - pentru client
+    Route::get('client-offers', [\App\Http\Controllers\Front\OfferController::class, 'index']);
+    Route::get('client-offers/{id}', [\App\Http\Controllers\Front\OfferController::class, 'show']);
+    Route::post('client-offers/{id}/status', [\App\Http\Controllers\Front\OfferController::class, 'changeStatus']);
+    Route::post('client-offers/{id}/messages', [\App\Http\Controllers\Front\OfferController::class, 'addMessage']);
+
+    Route::get('quotes', [QuoteController::class, 'index']);
+Route::post('quotes', [QuoteController::class, 'store']);
 Route::get('quotes/{id}', [QuoteController::class, 'show']);
 Route::post('quotes/from-product', [QuoteController::class, 'fromProduct']);
 Route::post('quotes/from-cart', [QuoteController::class, 'fromCart']);
@@ -294,9 +309,18 @@ Route::prefix('admin')
 
         // Agent Routes & Visits
         Route::apiResource('agent-routes', \App\Http\Controllers\Admin\AgentRouteController::class);
+        
+        // Tracking (Rute Zilnice)
+        Route::post('tracking/start-day', [\App\Http\Controllers\Admin\AgentTrackingController::class, 'startDay']);
+        Route::post('tracking/end-day', [\App\Http\Controllers\Admin\AgentTrackingController::class, 'endDay']);
+        Route::post('tracking/ping', [\App\Http\Controllers\Admin\AgentTrackingController::class, 'pingLocation']);
+        Route::get('tracking/history', [\App\Http\Controllers\Admin\AgentTrackingController::class, 'getHistory']);
+        Route::get('tracking/status', [\App\Http\Controllers\Admin\AgentTrackingController::class, 'status']);
+
         Route::apiResource('customer-visits', \App\Http\Controllers\Admin\CustomerVisitController::class);
         Route::post('customer-visits/start', [\App\Http\Controllers\Admin\CustomerVisitController::class, 'startVisit']);
         Route::post('customer-visits/{id}/end', [\App\Http\Controllers\Admin\CustomerVisitController::class, 'endVisit']);
+        Route::post('customer-visits/{id}/location', [\App\Http\Controllers\Admin\CustomerVisitController::class, 'recordLocation']);
 
         // Reports
         Route::get('reports/dashboard-stats', [\App\Http\Controllers\Admin\ReportController::class, 'dashboardStats']);
@@ -345,7 +369,13 @@ Route::apiResource('partner-requests', AdminPartnerRequestController::class)->on
         Route::apiResource('receipt-books', \App\Http\Controllers\Admin\ReceiptBookController::class);
         Route::get('receipt-books-agents', [\App\Http\Controllers\Admin\ReceiptBookController::class, 'getAgents']);
 
-        // Quotes / oferte
+        // Offers (Agent/Director System)
+        Route::post('offers/check-price', [\App\Http\Controllers\Admin\OfferController::class, 'checkPrice']);
+        Route::apiResource('offers', \App\Http\Controllers\Admin\OfferController::class);
+        Route::post('offers/{id}/status', [\App\Http\Controllers\Admin\OfferController::class, 'changeStatus']);
+        Route::post('offers/{id}/messages', [\App\Http\Controllers\Admin\OfferController::class, 'addMessage']);
+
+        // Quotes / oferte (OLD system - keep if needed or remove)
         Route::apiResource('quotes', \App\Http\Controllers\Admin\QuoteController::class)->only(['index', 'show', 'update']);
         Route::post('quotes/{quoteRequest}/convert-to-order', [\App\Http\Controllers\Admin\QuoteController::class, 'convertToOrder']);
 

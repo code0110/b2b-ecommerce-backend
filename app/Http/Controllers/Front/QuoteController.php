@@ -29,10 +29,38 @@ class QuoteController extends Controller
 
         $quote = QuoteRequest::where('customer_id', $user->customer_id)
             ->where('id', $id)
-            ->with('items.product', 'assignedAgent')
+            ->with(['items.product', 'assignedAgent', 'offer' => function ($query) {
+                $query->whereIn('status', ['sent', 'accepted', 'rejected', 'negotiation', 'approved']);
+            }])
             ->firstOrFail();
 
         return $quote;
+    }
+
+    public function store(Request $request)
+    {
+        $user = $request->user();
+
+        $data = $request->validate([
+            'notes' => ['required', 'string', 'min:10'],
+        ]);
+
+        return DB::transaction(function () use ($user, $data) {
+            $quote = QuoteRequest::create([
+                'customer_id'        => $user->customer_id,
+                'created_by_user_id' => $user->id,
+                'assigned_agent_id'  => $user->customer?->agent_user_id,
+                'status'             => 'new',
+                'source'             => 'web_form',
+                'estimated_total'    => 0,
+                'offered_total'      => 0,
+                'customer_notes'     => $data['notes'],
+            ]);
+
+            // Notify agent/admin (optional, can be done via Observer or Event)
+            
+            return response()->json($quote, 201);
+        });
     }
 
     public function fromProduct(Request $request)

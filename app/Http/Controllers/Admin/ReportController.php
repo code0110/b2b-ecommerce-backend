@@ -51,8 +51,9 @@ class ReportController extends Controller
         $completedVisits = (clone $visits)->where('status', 'completed')->count();
 
         // Orders from visits
-        $ordersValue = Order::whereIn('customer_visit_id', $visits->select('id'))
-            ->sum('total');
+        $ordersQuery = Order::whereIn('customer_visit_id', $visits->select('id'));
+        $ordersValue = $ordersQuery->sum('grand_total');
+        $ordersCount = $ordersQuery->count();
 
         // Payments from visits
         $paymentsValue = Payment::whereIn('customer_visit_id', $visits->select('id'))
@@ -62,6 +63,7 @@ class ReportController extends Controller
             'total_visits' => $totalVisits,
             'completed_visits' => $completedVisits,
             'orders_value' => $ordersValue,
+            'orders_count' => $ordersCount,
             'payments_value' => $paymentsValue,
         ]);
     }
@@ -135,8 +137,16 @@ class ReportController extends Controller
                     ->whereBetween('start_time', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
                     ->pluck('id');
 
-                $ordersValue = Order::whereIn('customer_visit_id', $visitIds)->sum('total');
+                $ordersValue = Order::whereIn('customer_visit_id', $visitIds)->sum('grand_total');
                 $paymentsValue = Payment::whereIn('customer_visit_id', $visitIds)->sum('amount');
+
+                // Get Target for the period (assuming single month selection for simplicity, or sum of targets)
+                // If date range spans multiple months, this is complex. Let's try to match the start date month.
+                $start = \Carbon\Carbon::parse($startDate);
+                $target = \App\Models\SalesTarget::where('user_id', $agent->id)
+                    ->where('year', $start->year)
+                    ->where('month', $start->month)
+                    ->first();
 
                 return [
                     'id' => $agent->id,
@@ -144,6 +154,8 @@ class ReportController extends Controller
                     'visits_count' => $agent->visits_count,
                     'orders_value' => $ordersValue,
                     'payments_value' => $paymentsValue,
+                    'target_sales' => $target ? $target->target_sales_amount : 0,
+                    'target_visits' => $target ? $target->target_visits_count : 0,
                 ];
             });
 

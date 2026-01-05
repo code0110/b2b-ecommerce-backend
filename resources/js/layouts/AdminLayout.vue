@@ -34,6 +34,14 @@
             <i class="bi bi-bar-chart-line me-2"></i> <span class="link-text">Rapoarte</span>
           </RouterLink>
 
+          <RouterLink :to="{ name: 'admin-targets' }" class="nav-link text-white rounded d-flex align-items-center px-3 py-2" active-class="active-link" title="Obiective KPI">
+            <i class="bi bi-bullseye me-2"></i> <span class="link-text">Obiective KPI</span>
+          </RouterLink>
+
+          <RouterLink v-if="authStore.role === 'sales_director' || authStore.role === 'admin'" :to="{ name: 'director-dashboard' }" class="nav-link text-white rounded d-flex align-items-center px-3 py-2" active-class="active-link" title="Dashboard Director">
+            <i class="bi bi-person-workspace me-2"></i> <span class="link-text">Dashboard Director</span>
+          </RouterLink>
+
           <div class="nav-section-title text-uppercase text-muted fw-bold small mt-4 mb-2 px-2">Catalog</div>
           
           <RouterLink :to="{ name: 'admin-products' }" class="nav-link text-white rounded d-flex align-items-center px-3 py-2" active-class="active-link" title="Produse">

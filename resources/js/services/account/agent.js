@@ -1,4 +1,4 @@
-import http from '@/services/http';
+import http, { adminApi } from '@/services/http';
 
 export default {
   getClients(params) {

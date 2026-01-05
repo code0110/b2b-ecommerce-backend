@@ -304,6 +304,13 @@ Route::prefix('admin')
         Route::get('reports/outcomes-chart', [\App\Http\Controllers\Admin\ReportController::class, 'outcomesChart']);
         Route::get('reports/agent-performance', [\App\Http\Controllers\Admin\ReportController::class, 'agentPerformance']);
 
+        // Sales Targets
+        Route::apiResource('sales-targets', \App\Http\Controllers\Admin\SalesTargetController::class);
+
+        // Director Dashboard
+        Route::get('director/dashboard/summary', [\App\Http\Controllers\Admin\DirectorDashboardController::class, 'summary']);
+        Route::get('director/dashboard/team-status', [\App\Http\Controllers\Admin\DirectorDashboardController::class, 'teamStatus']);
+
         // Promotions
         Route::apiResource('promotions', \App\Http\Controllers\Admin\PromotionController::class);
 

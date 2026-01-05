@@ -307,6 +307,16 @@ const router = createRouter({
           component: () => import('@/views/admin/reports/ReportsDashboard.vue')
         },
         {
+          path: 'targets',
+          name: 'admin-targets',
+          component: () => import('@/views/admin/targets/SalesTargets.vue')
+        },
+        {
+          path: 'director-dashboard',
+          name: 'director-dashboard',
+          component: () => import('@/views/admin/director/DirectorDashboard.vue')
+        },
+        {
           path: 'orders',
           name: 'admin-orders',
           component: AdminOrdersList
@@ -456,8 +466,8 @@ router.beforeEach((to, from, next) => {
     })
   }
 
-  if (to.meta.requiresAdmin && authStore.role !== 'admin') {
-    // Utilizator logat dar fără drepturi de admin – redirecționăm către dashboard-ul de client.
+  if (to.meta.requiresAdmin && !['admin', 'sales_director'].includes(authStore.role)) {
+    // Utilizator logat dar fără drepturi de admin/director – redirecționăm către dashboard-ul de client.
     return next({ name: 'account-dashboard' })
   }
 

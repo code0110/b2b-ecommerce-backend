@@ -97,23 +97,39 @@
             <tr>
               <th>Agent</th>
               <th>Vizite</th>
+              <th>Realizat / Target (Vizite)</th>
               <th>Valoare Comenzi</th>
+              <th>Realizat / Target (Vânzări)</th>
               <th>Încasări</th>
-              <th>Medie Comandă / Vizită</th>
             </tr>
           </thead>
           <tbody>
             <tr v-for="agent in agentPerformance" :key="agent.id">
               <td class="fw-bold">{{ agent.name }}</td>
               <td>{{ agent.visits_count }}</td>
-              <td>{{ formatPrice(agent.orders_value) }}</td>
-              <td>{{ formatPrice(agent.payments_value) }}</td>
               <td>
-                {{ agent.visits_count > 0 ? formatPrice(agent.orders_value / agent.visits_count) : '-' }}
+                  <div v-if="agent.target_visits > 0">
+                      <div class="progress" style="height: 6px;">
+                        <div class="progress-bar" :class="getProgressBarClass(agent.visits_count, agent.target_visits)" role="progressbar" :style="{ width: Math.min((agent.visits_count / agent.target_visits) * 100, 100) + '%' }"></div>
+                      </div>
+                      <small class="text-muted" style="font-size: 0.75rem;">{{ agent.visits_count }} / {{ agent.target_visits }} ({{ Math.round((agent.visits_count / agent.target_visits) * 100) }}%)</small>
+                  </div>
+                  <small v-else class="text-muted">-</small>
               </td>
+              <td>{{ formatPrice(agent.orders_value) }}</td>
+              <td>
+                  <div v-if="agent.target_sales > 0">
+                      <div class="progress" style="height: 6px;">
+                        <div class="progress-bar" :class="getProgressBarClass(agent.orders_value, agent.target_sales)" role="progressbar" :style="{ width: Math.min((agent.orders_value / agent.target_sales) * 100, 100) + '%' }"></div>
+                      </div>
+                      <small class="text-muted" style="font-size: 0.75rem;">{{ formatPrice(agent.orders_value) }} / {{ formatPrice(agent.target_sales) }} ({{ Math.round((agent.orders_value / agent.target_sales) * 100) }}%)</small>
+                  </div>
+                  <small v-else class="text-muted">-</small>
+              </td>
+              <td>{{ formatPrice(agent.payments_value) }}</td>
             </tr>
             <tr v-if="agentPerformance.length === 0">
-                <td colspan="5" class="text-center py-4 text-muted">Nu există date pentru perioada selectată.</td>
+                <td colspan="6" class="text-center py-4 text-muted">Nu există date pentru perioada selectată.</td>
             </tr>
           </tbody>
         </table>
@@ -153,17 +169,13 @@ const stats = ref({
     total_visits: 0,
     completed_visits: 0,
     orders_value: 0,
+    orders_count: 0,
     payments_value: 0
 });
 
 const conversionRate = computed(() => {
     if (stats.value.total_visits === 0) return 0;
-    // Note: We don't have exact "number of orders" in stats yet, only value. 
-    // Ideally we should add order count to stats endpoint. 
-    // For now, let's just return 0 or request backend update.
-    // Let's assume we want order count too. I'll stick to 0 for now or remove it.
-    // Wait, let's keep it simple. I will just display what I have.
-    return 0; 
+    return Math.round((stats.value.orders_count / stats.value.total_visits) * 100);
 });
 
 const visitsChartData = ref(null);
@@ -185,6 +197,15 @@ const pieOptions = {
 
 const formatPrice = (value) => {
     return new Intl.NumberFormat('ro-RO', { style: 'currency', currency: 'RON' }).format(value || 0);
+};
+
+const getProgressBarClass = (current, target) => {
+    if (!target) return 'bg-secondary';
+    const percent = (current / target) * 100;
+    if (percent >= 100) return 'bg-success';
+    if (percent >= 80) return 'bg-info';
+    if (percent >= 50) return 'bg-warning';
+    return 'bg-danger';
 };
 
 const fetchData = async () => {

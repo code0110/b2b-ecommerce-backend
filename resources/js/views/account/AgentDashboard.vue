@@ -394,7 +394,7 @@
         </div>
       </div>
 
-      </div>
+
 
       <!-- Tab Agenti -->
       <div v-if="activeTab === 'agents'">

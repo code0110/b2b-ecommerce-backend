@@ -25,23 +25,39 @@ export const useAuthStore = defineStore('auth', {
     },
 
     setRoleFromUser(user) {
-  // folosim fie r.code, fie r.slug, în funcție de ce întoarce backend-ul
-  const roles = (user.roles || []).map((r) => r.code || r.slug);
+      // folosim fie r.code, fie r.slug, în funcție de ce întoarce backend-ul
+      const roles = (user.roles || []).map((r) => r.code || r.slug);
 
-  if (
-      roles.some((r) =>
-        ['admin', 'operator'].includes(
-          String(r).toLowerCase(),
-        ),
-      )
-    ) {
-      this.role = 'admin';
-    } else {
-      this.role = 'customer';
-    }
+      if (
+        roles.some((r) =>
+          ['admin', 'operator'].includes(
+            String(r).toLowerCase(),
+          ),
+        )
+      ) {
+        this.role = 'admin';
+      } else if (
+        roles.some((r) =>
+          ['sales_director'].includes(
+            String(r).toLowerCase(),
+          ),
+        )
+      ) {
+        this.role = 'sales_director';
+      } else if (
+        roles.some((r) =>
+          ['sales_agent'].includes(
+            String(r).toLowerCase(),
+          ),
+        )
+      ) {
+        this.role = 'sales_agent';
+      } else {
+        this.role = 'customer';
+      }
 
-  localStorage.setItem('role', this.role);
-},
+      localStorage.setItem('role', this.role);
+    },
 
     async login({ email, password, remember }) {
       this.loading = true;

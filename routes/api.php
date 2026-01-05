@@ -270,7 +270,7 @@ Route::get('products/discounted', [HomeController::class, 'discountedProducts'])
 });
 
 Route::prefix('admin')
-    ->middleware(['auth:sanctum', 'role:admin,operator,marketer,agent,sales_director'])
+    ->middleware(['auth:sanctum', 'role:admin,operator'])
     ->group(function () {
         // Dashboard
         Route::get('dashboard', [\App\Http\Controllers\Admin\DashboardController::class, 'index']);

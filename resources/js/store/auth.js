@@ -24,16 +24,16 @@ export const useAuthStore = defineStore('auth', {
   const roles = (user.roles || []).map((r) => r.code || r.slug);
 
   if (
-    roles.some((r) =>
-      ['admin', 'operator', 'marketer', 'sales_agent', 'sales_director'].includes(
-        String(r).toLowerCase(),
-      ),
-    )
-  ) {
-    this.role = 'admin';
-  } else {
-    this.role = 'customer';
-  }
+      roles.some((r) =>
+        ['admin', 'operator'].includes(
+          String(r).toLowerCase(),
+        ),
+      )
+    ) {
+      this.role = 'admin';
+    } else {
+      this.role = 'customer';
+    }
 
   localStorage.setItem('role', this.role);
 },

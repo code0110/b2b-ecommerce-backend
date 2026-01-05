@@ -22,8 +22,8 @@ class RolePermissionSeeder extends Seeder
 
         foreach ($roles as $r) {
             Role::firstOrCreate(
-                ['code' => $r['code']],
-                ['name' => $r['name'], 'is_system' => true]
+                ['slug' => $r['code']], // ensure slug is set
+                ['name' => $r['name'], 'code' => $r['code'], 'is_system' => true]
             );
         }
 
@@ -54,7 +54,7 @@ class RolePermissionSeeder extends Seeder
         }
 
         // mapează câteva permisiuni de bază pe roluri
-        $admin = Role::where('code', 'admin')->first();
+        $admin = Role::where('slug', 'admin')->first();
         if ($admin) {
             $admin->permissions()->sync(Permission::pluck('id')->all());
         }

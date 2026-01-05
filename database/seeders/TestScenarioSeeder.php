@@ -11,6 +11,9 @@ use App\Models\Customer;
 use App\Models\CustomerGroup;
 use App\Models\Promotion;
 use App\Models\Coupon;
+use App\Models\User;
+use App\Models\Role;
+use App\Models\ReceiptBook;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -80,6 +83,81 @@ class TestScenarioSeeder extends Seeder
             'group_id' => $groupVIP->id,
             'is_active' => true
         ]);
+
+        // 2.a. Users: Director & Agents
+        $directorRole = Role::where('slug', 'sales_director')->first() ?: Role::where('code', 'sales_director')->first();
+        $agentRole    = Role::where('slug', 'sales_agent')->first() ?: Role::where('code', 'agent')->first();
+
+        $director = User::firstOrCreate(
+            ['email' => 'director@example.com'],
+            [
+                'first_name' => 'Diana',
+                'last_name'  => 'Director',
+                'phone'      => '0711111111',
+                'password'   => bcrypt('password'),
+                'is_active'  => true,
+            ]
+        );
+        if ($directorRole) {
+            $director->roles()->syncWithoutDetaching([$directorRole->id]);
+        }
+
+        $agent1 = User::firstOrCreate(
+            ['email' => 'agent1@example.com'],
+            [
+                'first_name' => 'Alex',
+                'last_name'  => 'Agent',
+                'phone'      => '0722222222',
+                'password'   => bcrypt('password'),
+                'is_active'  => true,
+            ]
+        );
+        if ($agentRole) {
+            $agent1->roles()->syncWithoutDetaching([$agentRole->id]);
+        }
+
+        $agent2 = User::firstOrCreate(
+            ['email' => 'agent2@example.com'],
+            [
+                'first_name' => 'Bianca',
+                'last_name'  => 'Agent',
+                'phone'      => '0733333333',
+                'password'   => bcrypt('password'),
+                'is_active'  => true,
+            ]
+        );
+        if ($agentRole) {
+            $agent2->roles()->syncWithoutDetaching([$agentRole->id]);
+        }
+
+        // Receipt book for Director (numerar)
+        ReceiptBook::firstOrCreate(
+            ['user_id' => $director->id, 'series' => 'B2B', 'start_number' => 101],
+            ['end_number' => 150, 'current_number' => 101, 'is_active' => true]
+        );
+
+        // Extra demo customers assigned to agents under this director
+        $demoCustomers = [];
+        for ($i = 1; $i <= 8; $i++) {
+            $demoCustomers[] = [
+                'name' => "Demo Customer {$i}",
+                'type' => 'b2b',
+                'email' => "demo{$i}@test.com",
+                'phone' => '07000000' . str_pad((string)$i, 2, '0', STR_PAD_LEFT),
+                'group_id' => $groupB2B->id,
+                'is_active' => true,
+                'payment_terms_days' => 30,
+                'credit_limit' => 50000,
+                'current_balance' => $i % 3 === 0 ? 2500 + $i * 100 : 0,
+                'currency' => 'RON',
+                // sales links
+                'sales_director_user_id' => $director->id,
+                'agent_user_id' => $i % 2 === 0 ? $agent1->id : $agent2->id,
+            ];
+        }
+        foreach ($demoCustomers as $c) {
+            Customer::create($c);
+        }
 
         // 3. Brands
         $brandApple = Brand::create(['name' => 'Apple', 'slug' => 'apple', 'is_published' => true]);

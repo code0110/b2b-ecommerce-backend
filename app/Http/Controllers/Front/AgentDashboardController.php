@@ -16,7 +16,7 @@ class AgentDashboardController extends Controller
      */
     public function getClients(Request $request)
     {
-        $user = $request->user();
+        $user = $request->user('sanctum') ?? $request->user();
         
         // Determine if user is Director or Agent based on roles
         $isDirector = $user->hasRole('sales_director');
@@ -29,19 +29,30 @@ class AgentDashboardController extends Controller
         $query = Customer::query();
 
         if ($isDirector) {
-            // Director sees all clients where they are the director OR the direct agent
-            $query->where(function ($q) use ($user) {
+            // Director: see clients where they are the director,
+            // or clients of agents assigned under this director
+            $agentIds = Customer::where('sales_director_user_id', $user->id)
+                ->whereNotNull('agent_user_id')
+                ->distinct()
+                ->pluck('agent_user_id')
+                ->all();
+
+            $query->where(function ($q) use ($user, $agentIds) {
                 $q->where('sales_director_user_id', $user->id)
                   ->orWhere('agent_user_id', $user->id);
+                if (!empty($agentIds)) {
+                    $q->orWhereIn('agent_user_id', $agentIds);
+                }
             });
         } else {
             // Agent sees only their assigned clients
             $query->where('agent_user_id', $user->id);
         }
 
-        $clients = $query->with(['group', 'users'])
+        $limit = (int) ($request->get('limit') ?? 20);
+        $clients = $query->with(['group', 'users', 'agent'])
             ->orderBy('name')
-            ->paginate(20);
+            ->paginate(max(1, min($limit, 100)));
 
         return response()->json($clients);
     }
@@ -52,7 +63,7 @@ class AgentDashboardController extends Controller
      */
     public function getAgents(Request $request)
     {
-        $user = $request->user();
+        $user = $request->user('sanctum') ?? $request->user();
 
         if (!$user->hasRole('sales_director')) {
             return response()->json(['message' => 'Unauthorized'], 403);
@@ -64,10 +75,20 @@ class AgentDashboardController extends Controller
             ->distinct()
             ->pluck('agent_user_id');
 
-        $agents = User::whereIn('id', $agentIds)
-            ->withCount(['managedCustomers' => function ($q) use ($user) {
+        $query = User::query();
+        if ($agentIds->isNotEmpty()) {
+            $query->whereIn('id', $agentIds);
+        } else {
+            // Fallback demo: list all sales agents when none mapped yet
+            $query->whereHas('roles', function ($q) {
+                $q->where('slug', 'sales_agent');
+            });
+        }
+
+        $agents = $query->withCount(['managedCustomers' => function ($q) use ($user) {
                 $q->where('sales_director_user_id', $user->id);
             }])
+            ->orderBy('first_name')
             ->get();
 
         return response()->json($agents);

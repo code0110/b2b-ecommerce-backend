@@ -39,6 +39,12 @@
             placeholder="Caută client..." 
             v-model="searchClient"
           >
+          <div class="form-check ms-2" v-if="isDirector">
+            <input class="form-check-input" type="checkbox" id="agentOnly" v-model="showAgentClientsOnly">
+            <label class="form-check-label small" for="agentOnly">
+              Doar clienții agenților mei
+            </label>
+          </div>
         </div>
 
         <div class="table-responsive">
@@ -66,7 +72,9 @@
                 <td>{{ formatPrice(client.credit_limit, client.currency) }}</td>
                 <td v-if="isDirector">
                     <span v-if="client.agent_user_id === authStore.user.id" class="badge bg-info">Eu</span>
-                    <span v-else-if="client.agent" class="badge bg-secondary">{{ client.agent.name }}</span>
+                    <span v-else-if="client.agent" class="badge bg-secondary">
+                      {{ [client.agent.first_name, client.agent.last_name].filter(Boolean).join(' ') }}
+                    </span>
                     <span v-else class="text-muted">-</span>
                 </td>
                 <td class="text-end">
@@ -360,6 +368,7 @@ const clients = ref([]);
 const agents = ref([]);
 const loading = ref(true);
 const searchClient = ref('');
+const showAgentClientsOnly = ref(false);
 
 const showPaymentModal = ref(false);
 const showCancelModal = ref(false);
@@ -389,9 +398,14 @@ const isDirector = computed(() => {
 });
 
 const filteredClients = computed(() => {
-  if (!searchClient.value) return clients.value;
+  let list = clients.value;
+  if (isDirector.value && showAgentClientsOnly.value) {
+    const myId = authStore.user?.id;
+    list = list.filter(c => c.agent_user_id && c.agent_user_id !== myId);
+  }
+  if (!searchClient.value) return list;
   const q = searchClient.value.toLowerCase();
-  return clients.value.filter(c => 
+  return list.filter(c => 
     c.name.toLowerCase().includes(q) || 
     (c.cif && c.cif.toLowerCase().includes(q))
   );

@@ -84,6 +84,25 @@
   </RouterLink>
 </li>
 
+<li class="nav-item ms-3">
+  <RouterLink
+    :to="{ name: 'admin-users', query: { role: 'sales_agent' } }"
+    class="nav-link"
+    active-class="active"
+  >
+    <span>Agenți</span>
+  </RouterLink>
+</li>
+<li class="nav-item ms-3">
+  <RouterLink
+    :to="{ name: 'admin-users', query: { role: 'sales_director' } }"
+    class="nav-link"
+    active-class="active"
+  >
+    <span>Directori</span>
+  </RouterLink>
+</li>
+
 <li class="nav-item">
   <RouterLink
     :to="{ name: 'admin-roles-permissions' }"

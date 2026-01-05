@@ -295,13 +295,15 @@
 </template>
 
 <script setup>
-import { onMounted, reactive, ref } from 'vue';
+import { onMounted, reactive, ref, watch } from 'vue';
+import { useRoute } from 'vue-router';
 import { fetchUsers, createUser, updateUser, deleteUser } from '@/services/admin/users';
 import { fetchRoles } from '@/services/admin/roles';
 import { useAuthStore } from '@/store/auth';
 
 const authStore = useAuthStore();
 const currentUserId = authStore.user?.id ?? null;
+const route = useRoute();
 
 const users = ref([]);
 const roles = ref([]);
@@ -466,6 +468,16 @@ const submitForm = async () => {
 
 onMounted(async () => {
   await loadRoles();
+  const presetRole = typeof route.query.role === 'string' ? route.query.role : '';
+  if (presetRole) {
+    filters.role = presetRole;
+  }
   await loadUsers();
+});
+
+watch(() => route.query.role, (newRole) => {
+  const r = typeof newRole === 'string' ? newRole : '';
+  filters.role = r;
+  loadUsers(1);
 });
 </script>

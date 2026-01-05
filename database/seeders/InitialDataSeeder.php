@@ -14,7 +14,7 @@ class InitialDataSeeder extends Seeder
             ['name' => 'Administrator', 'slug' => 'admin'],
             ['name' => 'Client B2C', 'slug' => 'customer_b2c'],
             ['name' => 'Client B2B', 'slug' => 'customer_b2b'],
-            ['name' => 'Agent vânzări', 'slug' => 'agent'],
+            ['name' => 'Agent vânzări', 'slug' => 'sales_agent'],
             ['name' => 'Director vânzări', 'slug' => 'sales_director'],
             ['name' => 'Operator', 'slug' => 'operator'],
             ['name' => 'Marketer', 'slug' => 'marketer'],
@@ -23,7 +23,7 @@ class InitialDataSeeder extends Seeder
         foreach ($roles as $roleData) {
             Role::firstOrCreate(
                 ['slug' => $roleData['slug']],
-                ['name' => $roleData['name'], 'is_default' => false]
+                ['name' => $roleData['name']]
             );
         }
 

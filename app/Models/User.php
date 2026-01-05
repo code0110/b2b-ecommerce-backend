@@ -91,6 +91,11 @@ public function roles(): BelongsToMany
         return $this->belongsToMany(Role::class, 'role_user');
     }
 
+    public function targets()
+    {
+        return $this->hasMany(SalesTarget::class);
+    }
+
     public function hasRole(string|array $roles): bool
     {
         $roles = (array) $roles;

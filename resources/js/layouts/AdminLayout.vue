@@ -30,6 +30,10 @@
             <i class="bi bi-bag-check me-2"></i> <span class="link-text">Comenzi</span>
           </RouterLink>
 
+          <RouterLink :to="{ name: 'admin-reports' }" class="nav-link text-white rounded d-flex align-items-center px-3 py-2" active-class="active-link" title="Rapoarte">
+            <i class="bi bi-bar-chart-line me-2"></i> <span class="link-text">Rapoarte</span>
+          </RouterLink>
+
           <div class="nav-section-title text-uppercase text-muted fw-bold small mt-4 mb-2 px-2">Catalog</div>
           
           <RouterLink :to="{ name: 'admin-products' }" class="nav-link text-white rounded d-flex align-items-center px-3 py-2" active-class="active-link" title="Produse">

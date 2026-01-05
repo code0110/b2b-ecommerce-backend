@@ -19,6 +19,7 @@ class CustomerVisit extends Model
         'latitude',
         'longitude',
         'notes',
+        'outcome',
     ];
 
     protected $casts = [

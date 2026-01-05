@@ -40,7 +40,29 @@ export const useVisitStore = defineStore('visit', {
     async startVisit(customerId) {
       this.loading = true;
       try {
-        const response = await adminApi.post('/customer-visits/start', { customer_id: customerId });
+        let coords = { latitude: null, longitude: null };
+        
+        // Try to get location
+        if ("geolocation" in navigator) {
+            try {
+                const position = await new Promise((resolve, reject) => {
+                    navigator.geolocation.getCurrentPosition(resolve, reject, {
+                        enableHighAccuracy: true,
+                        timeout: 5000,
+                        maximumAge: 0
+                    });
+                });
+                coords.latitude = position.coords.latitude;
+                coords.longitude = position.coords.longitude;
+            } catch (e) {
+                console.warn('Could not get location', e);
+            }
+        }
+
+        const response = await adminApi.post('/customer-visits/start', { 
+            customer_id: customerId,
+            ...coords
+        });
         this.setActiveVisit(response.data);
         return response.data;
       } catch (error) {
@@ -50,12 +72,12 @@ export const useVisitStore = defineStore('visit', {
       }
     },
 
-    async endVisit(notes = '') {
+    async endVisit(data = {}) {
       if (!this.activeVisit) return;
       
       this.loading = true;
       try {
-        const response = await adminApi.post(`/customer-visits/${this.activeVisit.id}/end`, { notes });
+        const response = await adminApi.post(`/customer-visits/${this.activeVisit.id}/end`, data);
         this.clearActiveVisit();
         return response.data;
       } catch (error) {

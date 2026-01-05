@@ -298,6 +298,12 @@ Route::prefix('admin')
         Route::post('customer-visits/start', [\App\Http\Controllers\Admin\CustomerVisitController::class, 'startVisit']);
         Route::post('customer-visits/{id}/end', [\App\Http\Controllers\Admin\CustomerVisitController::class, 'endVisit']);
 
+        // Reports
+        Route::get('reports/dashboard-stats', [\App\Http\Controllers\Admin\ReportController::class, 'dashboardStats']);
+        Route::get('reports/visits-chart', [\App\Http\Controllers\Admin\ReportController::class, 'visitsChart']);
+        Route::get('reports/outcomes-chart', [\App\Http\Controllers\Admin\ReportController::class, 'outcomesChart']);
+        Route::get('reports/agent-performance', [\App\Http\Controllers\Admin\ReportController::class, 'agentPerformance']);
+
         // Promotions
         Route::apiResource('promotions', \App\Http\Controllers\Admin\PromotionController::class);
 

@@ -302,10 +302,15 @@ const router = createRouter({
           component: AdminNotifications
         },
         {
-  path: 'orders',
-  name: 'admin-orders',
-  component: AdminOrdersList
-},
+          path: 'reports',
+          name: 'admin-reports',
+          component: () => import('@/views/admin/reports/ReportsDashboard.vue')
+        },
+        {
+          path: 'orders',
+          name: 'admin-orders',
+          component: AdminOrdersList
+        },
 {
   path: 'orders/:id',
   name: 'admin-order-details',

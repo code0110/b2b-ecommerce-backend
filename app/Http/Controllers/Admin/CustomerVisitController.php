@@ -83,6 +83,7 @@ class CustomerVisitController extends Controller
 
         $data = $request->validate([
             'notes' => ['nullable', 'string'],
+            'outcome' => ['nullable', 'string'],
             'latitude' => ['nullable', 'numeric'],
             'longitude' => ['nullable', 'numeric'],
         ]);
@@ -91,6 +92,7 @@ class CustomerVisitController extends Controller
             'status'    => 'completed',
             'end_time'  => now(),
             'notes'     => $data['notes'] ?? $visit->notes,
+            'outcome'   => $data['outcome'] ?? null,
              // Update location on end if provided? Maybe distinct exit location
         ]);
 

@@ -54,6 +54,15 @@
             Clienți
           </button>
         </li>
+        <li class="nav-item">
+          <button 
+            class="nav-link" 
+            :class="{ active: activeTab === 'history' }" 
+            @click="loadHistory"
+          >
+            Istoric Vizite
+          </button>
+        </li>
         <li class="nav-item" v-if="isDirector">
           <button 
             class="nav-link" 
@@ -301,6 +310,92 @@
         </div>
       </div>
 
+      <!-- Tab Istoric -->
+      <div v-if="activeTab === 'history'">
+        <div v-if="loadingHistory" class="text-center py-5">
+             <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Se încarcă istoricul...</span>
+            </div>
+        </div>
+        <div v-else>
+             <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Data/Ora</th>
+                            <th>Client</th>
+                            <th>Durata</th>
+                            <th>Rezultat</th>
+                            <th>Notițe</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr v-for="visit in historyVisits" :key="visit.id">
+                            <td>
+                                {{ new Date(visit.start_time).toLocaleDateString() }} <br>
+                                <span class="text-muted small">{{ new Date(visit.start_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) }}</span>
+                            </td>
+                            <td>
+                                <div class="fw-bold">{{ visit.customer?.name }}</div>
+                                <div class="small text-muted">{{ visit.customer?.address }}</div>
+                            </td>
+                            <td>
+                                {{ calculateDuration(visit.start_time, visit.end_time) }}
+                            </td>
+                            <td>
+                                <span class="badge bg-info text-dark" v-if="visit.outcome">
+                                    {{ visitOutcomes.find(o => o.value === visit.outcome)?.label || visit.outcome }}
+                                </span>
+                                <span v-else class="text-muted small">-</span>
+                            </td>
+                            <td>
+                                <span v-if="visit.notes" class="text-truncate d-inline-block" style="max-width: 200px;" :title="visit.notes">
+                                    {{ visit.notes }}
+                                </span>
+                                <span v-else class="text-muted small">-</span>
+                            </td>
+                            <td>
+                                <span class="badge" :class="{
+                                    'bg-success': visit.status === 'completed',
+                                    'bg-primary': visit.status === 'in_progress',
+                                    'bg-secondary': visit.status === 'planned',
+                                    'bg-danger': visit.status === 'cancelled'
+                                }">
+                                    {{ visit.status === 'completed' ? 'Finalizată' : 
+                                       visit.status === 'in_progress' ? 'În desfășurare' : visit.status }}
+                                </span>
+                            </td>
+                        </tr>
+                        <tr v-if="historyVisits.length === 0">
+                            <td colspan="5" class="text-center py-4 text-muted">
+                                Nu există istoric de vizite.
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+             </div>
+             <!-- Pagination if needed -->
+             <div class="d-flex justify-content-center mt-3" v-if="historyMeta.last_page > 1">
+                <nav>
+                  <ul class="pagination">
+                    <li class="page-item" :class="{ disabled: historyMeta.current_page === 1 }">
+                      <button class="page-link" @click="loadHistory(historyMeta.current_page - 1)">Înapoi</button>
+                    </li>
+                    <li class="page-item disabled">
+                        <span class="page-link">Pagina {{ historyMeta.current_page }} din {{ historyMeta.last_page }}</span>
+                    </li>
+                    <li class="page-item" :class="{ disabled: historyMeta.current_page === historyMeta.last_page }">
+                      <button class="page-link" @click="loadHistory(historyMeta.current_page + 1)">Înainte</button>
+                    </li>
+                  </ul>
+                </nav>
+             </div>
+        </div>
+      </div>
+
+      </div>
+
       <!-- Tab Agenti -->
       <div v-if="activeTab === 'agents'">
         <div class="table-responsive">
@@ -508,6 +603,50 @@
       </div>
     </div>
 
+    <!-- Modal Finalizare Vizită -->
+    <div v-if="showEndVisitModal" class="modal-backdrop fade show" style="z-index: 1060;"></div>
+    <div 
+      class="modal fade" 
+      :class="{ show: showEndVisitModal }" 
+      style="display: block; z-index: 1070;" 
+      v-if="showEndVisitModal"
+      tabindex="-1"
+    >
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Finalizare Vizită</h5>
+            <button type="button" class="btn-close" @click="showEndVisitModal = false"></button>
+          </div>
+          <div class="modal-body">
+            <div class="mb-3">
+                <label class="form-label">Rezultat Vizită <span class="text-danger">*</span></label>
+                <select v-model="endVisitForm.outcome" class="form-select" required>
+                    <option v-for="outcome in visitOutcomes" :key="outcome.value" :value="outcome.value">
+                        {{ outcome.label }}
+                    </option>
+                </select>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Notițe / Observații</label>
+                <textarea 
+                    v-model="endVisitForm.notes" 
+                    class="form-control" 
+                    rows="3" 
+                    placeholder="Detalii despre vizită..."
+                ></textarea>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" @click="showEndVisitModal = false">Anulează</button>
+            <button type="button" class="btn btn-primary" @click="confirmEndVisit" :disabled="visitStore.loading">
+                {{ visitStore.loading ? 'Se salvează...' : 'Confirmă și Închide' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Modal Anulare Chitanță -->
     <div v-if="showCancelModal" class="modal-backdrop fade show" style="z-index: 1060;"></div>
     <div 
@@ -599,6 +738,23 @@ selectedWeekType.value = getWeekType();
 
 const showPaymentModal = ref(false);
 const showCancelModal = ref(false);
+const showEndVisitModal = ref(false);
+
+const endVisitForm = ref({
+    outcome: 'presentation',
+    notes: ''
+});
+
+const visitOutcomes = [
+    { value: 'order_placed', label: 'Comandă preluată' },
+    { value: 'payment_collected', label: 'Încasare' },
+    { value: 'stock_check', label: 'Verificare stoc' },
+    { value: 'presentation', label: 'Prezentare produse' },
+    { value: 'no_interest', label: 'Nu este interesat' },
+    { value: 'client_closed', label: 'Client închis' },
+    { value: 'other', label: 'Altele' }
+];
+
 const cancelReason = ref('');
 const selectedClient = ref(null);
 const submitting = ref(false);
@@ -606,6 +762,10 @@ const invoices = ref([]);
 const loadingInvoices = ref(false);
 const selectedInvoiceIds = ref([]);
 const receiptBook = ref(null);
+
+const loadingHistory = ref(false);
+const historyVisits = ref([]);
+const historyMeta = ref({ current_page: 1, last_page: 1 });
 
 const paymentForm = ref({
   instrument: 'numerar', // numerar, bo, cec
@@ -788,6 +948,40 @@ const cancelCurrentReceipt = () => {
     showCancelModal.value = true;
 };
 
+const loadHistory = async (page = 1) => {
+    loadingHistory.value = true;
+    try {
+        const res = await agentService.getVisits({ 
+            page, 
+            limit: 10,
+            status: 'completed', // Only completed visits? Or all? Let's show all except cancelled maybe? Or just sort by desc
+        });
+        historyVisits.value = res.data.data;
+        historyMeta.value = {
+            current_page: res.data.current_page,
+            last_page: res.data.last_page
+        };
+    } catch (e) {
+        console.error('Failed to load visit history', e);
+        toast.error('Nu s-a putut încărca istoricul vizitelor.');
+    } finally {
+        loadingHistory.value = false;
+    }
+};
+
+const calculateDuration = (start, end) => {
+    if (!start || !end) return '-';
+    const s = new Date(start);
+    const e = new Date(end);
+    const diffMs = e - s;
+    const diffMins = Math.round(diffMs / 60000);
+    
+    if (diffMins < 60) return `${diffMins} min`;
+    const hours = Math.floor(diffMins / 60);
+    const mins = diffMins % 60;
+    return `${hours}h ${mins}m`;
+};
+
 const confirmCancelReceipt = async () => {
     if (!cancelReason.value) return;
 
@@ -857,11 +1051,24 @@ const handleStartVisit = async (customer) => {
   }
 };
 
-const handleEndVisit = async () => {
-  if (!confirm('Sigur doriți să încheiați vizita?')) return;
+const handleEndVisit = () => {
+  // Reset form
+  endVisitForm.value = {
+      outcome: 'presentation',
+      notes: ''
+  };
+  showEndVisitModal.value = true;
+};
+
+const confirmEndVisit = async () => {
   try {
-    await visitStore.endVisit();
+    await visitStore.endVisit(endVisitForm.value);
     toast.success('Vizită încheiată cu succes.');
+    showEndVisitModal.value = false;
+    // Reload history if on that tab
+    if (activeTab.value === 'history') {
+        loadHistory();
+    }
   } catch (e) {
     console.error(e);
     toast.error('Eroare la încheierea vizitei.');

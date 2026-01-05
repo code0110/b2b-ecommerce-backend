@@ -27,5 +27,10 @@ export default {
 
   getRoutes(params) {
     return http.get('/account/agent/routes', { params });
+  },
+  
+  getVisits(params) {
+    // Reusing the admin API endpoint as it's accessible to agents and handles filtering
+    return adminApi.get('/customer-visits', { params });
   }
 };

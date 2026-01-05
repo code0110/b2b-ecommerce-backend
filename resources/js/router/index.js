@@ -210,12 +210,18 @@ const router = createRouter({
             },
             {
               path: 'agent',
-          name: 'agent-dashboard',
-          component: AgentDashboard,
-          meta: { requiresAuth: true }
-        },
-        {
-          path: 'dashboard',
+              name: 'agent-dashboard',
+              component: AgentDashboard,
+              meta: { requiresAuth: true }
+            },
+            {
+              path: 'director',
+              name: 'account-director-dashboard',
+              component: () => import('@/views/admin/director/DirectorDashboard.vue'),
+              meta: { requiresAuth: true, requiresRole: 'sales_director' }
+            },
+            {
+              path: 'dashboard',
           name: 'account-dashboard',
           component: AccountDashboard,
           meta: { requiresAuth: true }
@@ -466,8 +472,8 @@ router.beforeEach((to, from, next) => {
     })
   }
 
-  if (to.meta.requiresAdmin && !['admin', 'sales_director'].includes(authStore.role)) {
-    // Utilizator logat dar fără drepturi de admin/director – redirecționăm către dashboard-ul de client.
+  if (to.meta.requiresAdmin && authStore.role !== 'admin') {
+    // Utilizator logat dar fără drepturi de admin – redirecționăm către dashboard-ul de client.
     return next({ name: 'account-dashboard' })
   }
 

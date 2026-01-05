@@ -226,6 +226,11 @@ const isAgentOrDirector = computed(() => {
   return roles.includes('sales_agent') || roles.includes('sales_director');
 });
 
+const isDirector = computed(() => {
+  const roles = (authStore.user?.roles || []).map(r => r.slug || r.code);
+  return roles.includes('sales_director') || authStore.role === 'sales_director';
+});
+
 const roleLabel = computed(() => {
   if (authStore.role === 'admin') return 'Administrator';
   if (authStore.role === 'customer_b2b') return 'Client B2B';

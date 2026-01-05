@@ -325,6 +325,7 @@
                             <th>Data/Ora</th>
                             <th>Client</th>
                             <th>Durata</th>
+                            <th>Acțiuni</th>
                             <th>Rezultat</th>
                             <th>Notițe</th>
                             <th>Status</th>
@@ -342,6 +343,23 @@
                             </td>
                             <td>
                                 {{ calculateDuration(visit.start_time, visit.end_time) }}
+                            </td>
+                            <td>
+                                <div v-if="visit.orders && visit.orders.length > 0">
+                                    <span class="badge bg-primary">
+                                        {{ visit.orders.length }} Comenzi
+                                        ({{ formatPrice(visit.orders.reduce((acc, o) => acc + parseFloat(o.total), 0)) }})
+                                    </span>
+                                </div>
+                                <div v-if="visit.payments && visit.payments.length > 0" class="mt-1">
+                                    <span class="badge bg-success">
+                                        {{ visit.payments.length }} Încasări
+                                        ({{ formatPrice(visit.payments.reduce((acc, p) => acc + parseFloat(p.amount), 0)) }})
+                                    </span>
+                                </div>
+                                <div v-if="(!visit.orders || visit.orders.length === 0) && (!visit.payments || visit.payments.length === 0)" class="text-muted small">
+                                    -
+                                </div>
                             </td>
                             <td>
                                 <span class="badge bg-info text-dark" v-if="visit.outcome">

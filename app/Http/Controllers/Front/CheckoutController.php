@@ -193,6 +193,7 @@ class CheckoutController extends Controller
                 'credit_blocked'     => false,
                 'placed_at'          => now(),
                 'due_date'           => null,
+                'customer_visit_id'  => $data['customer_visit_id'] ?? null,
             ]);
 
             foreach ($cart->items as $item) {

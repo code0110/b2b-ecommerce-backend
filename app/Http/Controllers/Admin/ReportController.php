@@ -49,6 +49,8 @@ class ReportController extends Controller
             
         $totalVisits = $visits->count();
         $completedVisits = (clone $visits)->where('status', 'completed')->count();
+        $visitsWithOrders = (clone $visits)->whereHas('orders')->count();
+        $visitsWithPayments = (clone $visits)->whereHas('payments')->count();
 
         // Orders from visits
         $ordersQuery = Order::whereIn('customer_visit_id', $visits->select('id'));
@@ -62,6 +64,8 @@ class ReportController extends Controller
         return response()->json([
             'total_visits' => $totalVisits,
             'completed_visits' => $completedVisits,
+            'visits_with_orders' => $visitsWithOrders,
+            'visits_with_payments' => $visitsWithPayments,
             'orders_value' => $ordersValue,
             'orders_count' => $ordersCount,
             'payments_value' => $paymentsValue,

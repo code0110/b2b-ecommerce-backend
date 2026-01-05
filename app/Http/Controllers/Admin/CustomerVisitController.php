@@ -14,7 +14,7 @@ class CustomerVisitController extends Controller
     {
         /** @var User $user */
         $user = Auth::user();
-        $query = CustomerVisit::with(['customer', 'agent'])->orderByDesc('created_at');
+        $query = CustomerVisit::with(['customer', 'agent', 'orders', 'payments'])->orderByDesc('created_at');
 
         if ($user->hasRole('sales_agent')) {
             $query->where('agent_id', $user->id);

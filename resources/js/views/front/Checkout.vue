@@ -347,8 +347,10 @@
 import { ref, computed, onMounted, reactive, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { getCheckoutSummary, placeOrder } from '@/services/cart';
+import { useVisitStore } from '@/store/visit';
 
 const router = useRouter();
+const visitStore = useVisitStore();
 const loading = ref(false);
 const submitting = ref(false);
 const error = ref('');

@@ -25,23 +25,32 @@
           <div class="card-body">
             <h6 class="text-muted text-uppercase small">Total Vizite</h6>
             <h2 class="fw-bold mb-0">{{ stats.total_visits }}</h2>
-            <small class="text-success">{{ stats.completed_visits }} finalizate</small>
+            <div class="d-flex justify-content-between small text-muted mt-2">
+                <span>{{ stats.completed_visits }} finalizate</span>
+                <span>{{ completionRate }}% rată fin.</span>
+            </div>
           </div>
         </div>
       </div>
       <div class="col-md-3">
         <div class="card bg-white shadow-sm border-0 h-100">
           <div class="card-body">
-            <h6 class="text-muted text-uppercase small">Valoare Comenzi (Vizite)</h6>
+            <h6 class="text-muted text-uppercase small">Comenzi ({{ stats.orders_count }})</h6>
             <h2 class="fw-bold mb-0">{{ formatPrice(stats.orders_value) }}</h2>
+            <div class="small text-muted mt-2">
+                {{ stats.visits_with_orders }} vizite cu comandă
+            </div>
           </div>
         </div>
       </div>
       <div class="col-md-3">
         <div class="card bg-white shadow-sm border-0 h-100">
           <div class="card-body">
-            <h6 class="text-muted text-uppercase small">Încasări (Vizite)</h6>
+            <h6 class="text-muted text-uppercase small">Încasări</h6>
             <h2 class="fw-bold mb-0">{{ formatPrice(stats.payments_value) }}</h2>
+             <div class="small text-muted mt-2">
+                {{ stats.visits_with_payments }} vizite cu încasare
+            </div>
           </div>
         </div>
       </div>
@@ -50,7 +59,9 @@
           <div class="card-body">
             <h6 class="text-muted text-uppercase small">Rată Conversie</h6>
             <h2 class="fw-bold mb-0">{{ conversionRate }}%</h2>
-            <small class="text-muted">Comenzi per vizită</small>
+            <div class="small text-success mt-2">
+                din vizitele efectuate
+            </div>
           </div>
         </div>
       </div>
@@ -168,6 +179,8 @@ const agents = ref([]);
 const stats = ref({
     total_visits: 0,
     completed_visits: 0,
+    visits_with_orders: 0,
+    visits_with_payments: 0,
     orders_value: 0,
     orders_count: 0,
     payments_value: 0
@@ -175,7 +188,12 @@ const stats = ref({
 
 const conversionRate = computed(() => {
     if (stats.value.total_visits === 0) return 0;
-    return Math.round((stats.value.orders_count / stats.value.total_visits) * 100);
+    return Math.round((stats.value.visits_with_orders / stats.value.total_visits) * 100);
+});
+
+const completionRate = computed(() => {
+    if (stats.value.total_visits === 0) return 0;
+    return Math.round((stats.value.completed_visits / stats.value.total_visits) * 100);
 });
 
 const visitsChartData = ref(null);

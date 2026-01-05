@@ -18,6 +18,10 @@ class CustomerVisit extends Model
         'end_time',
         'latitude',
         'longitude',
+        'end_latitude',
+        'end_longitude',
+        'distance_deviation',
+        'is_off_site',
         'notes',
         'outcome',
     ];
@@ -27,6 +31,9 @@ class CustomerVisit extends Model
         'end_time' => 'datetime',
         'latitude' => 'decimal:8',
         'longitude' => 'decimal:8',
+        'end_latitude' => 'decimal:8',
+        'end_longitude' => 'decimal:8',
+        'is_off_site' => 'boolean',
     ];
 
     public function agent(): BelongsTo

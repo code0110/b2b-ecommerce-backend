@@ -19,6 +19,14 @@ class UserController extends Controller
     {
         $query = User::query()->with('roles');
 
+        // RBAC: Sales Director sees only their subordinates and themselves
+        if ($request->user()->hasRole('sales_director') && !$request->user()->hasRole('admin')) {
+            $query->where(function($q) use ($request) {
+                $q->where('director_id', $request->user()->id)
+                  ->orWhere('id', $request->user()->id);
+            });
+        }
+
         if ($search = $request->query('search')) {
             $query->where(function ($q) use ($search) {
                 $q->where('first_name', 'like', "%{$search}%")

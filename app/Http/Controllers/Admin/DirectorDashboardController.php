@@ -72,6 +72,12 @@ class DirectorDashboardController extends Controller
             ->get()
             ->map(function($agent) {
                 $activeVisit = $agent->visits->first();
+                $lastVisit = null;
+                if (!$activeVisit) {
+                    $lastVisit = CustomerVisit::where('agent_id', $agent->id)
+                        ->orderBy('end_time', 'desc')
+                        ->first();
+                }
                 
                 // Get today's stats for this agent
                 $todayVisitsCount = CustomerVisit::where('agent_id', $agent->id)
@@ -88,6 +94,10 @@ class DirectorDashboardController extends Controller
                     'status' => $activeVisit ? 'in_visit' : 'idle',
                     'current_customer' => $activeVisit ? $activeVisit->customer->name : null,
                     'visit_start_time' => $activeVisit ? $activeVisit->start_time : null,
+                    'latitude' => $activeVisit ? $activeVisit->latitude : ($lastVisit ? ($lastVisit->end_latitude ?? $lastVisit->latitude) : null),
+                    'longitude' => $activeVisit ? $activeVisit->longitude : ($lastVisit ? ($lastVisit->end_longitude ?? $lastVisit->longitude) : null),
+                    'last_seen' => $activeVisit ? $activeVisit->start_time : ($lastVisit ? $lastVisit->end_time : null),
+                    'is_off_site' => $activeVisit ? $activeVisit->is_off_site : null,
                     'today_visits' => $todayVisitsCount,
                     'today_sales' => $todaySales
                 ];

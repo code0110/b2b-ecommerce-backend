@@ -24,16 +24,19 @@ class Customer extends Model
         'currency',
         'is_active',
         'is_partner',
+        'latitude',
+        'longitude',
         'agent_user_id',
         'sales_director_user_id',
     ];
 
     protected $casts = [
-        'payment_terms_days' => 'integer',
-        'credit_limit' => 'float',
-        'current_balance' => 'float',
+        'latitude' => 'decimal:8',
+        'longitude' => 'decimal:8',
         'is_active' => 'boolean',
         'is_partner' => 'boolean',
+        'credit_limit' => 'decimal:2',
+        'current_balance' => 'decimal:2',
     ];
 
     public function group(): BelongsTo
@@ -66,6 +69,15 @@ class Customer extends Model
         return $this->belongsTo(User::class, 'sales_director_user_id');
     }
 
+    /**
+     * The secondary agents assigned to this customer (Team).
+     */
+    public function teamMembers()
+    {
+        return $this->belongsToMany(User::class, 'agent_customer', 'customer_id', 'agent_id')
+                    ->withTimestamps();
+    }
+
     public function invoices(): HasMany
     {
         return $this->hasMany(Invoice::class);
@@ -87,7 +99,12 @@ class Customer extends Model
         }
 
         if ($user->hasRole('sales_agent')) {
-            return $query->where('agent_user_id', $user->id);
+            return $query->where(function ($q) use ($user) {
+                $q->where('agent_user_id', $user->id)
+                  ->orWhereHas('teamMembers', function ($subQ) use ($user) {
+                      $subQ->where('users.id', $user->id);
+                  });
+            });
         }
 
         return $query;

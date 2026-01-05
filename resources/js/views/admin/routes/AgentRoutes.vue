@@ -72,7 +72,10 @@
                 class="list-group-item d-flex justify-content-between align-items-center action-hover"
               >
                 <div>
-                  <div class="fw-bold text-dark">{{ c.name }}</div>
+                  <div class="fw-bold text-dark">
+                    {{ c.name }}
+                    <span v-if="selectedAgentId && c.agent_user_id !== selectedAgentId" class="badge bg-warning text-dark ms-1" style="font-size: 0.65rem;">Secundar</span>
+                  </div>
                   <div class="small text-muted">{{ c.address || 'Fără adresă' }}</div>
                 </div>
                 <button class="btn btn-sm btn-outline-primary" @click="addToRoute(c)">
@@ -111,7 +114,10 @@
               >
                 <div class="fw-bold text-muted me-2" style="width: 20px;">{{ index + 1 }}.</div>
                 <div class="flex-grow-1">
-                  <div class="fw-bold text-dark">{{ item.customer.name }}</div>
+                  <div class="fw-bold text-dark">
+                    {{ item.customer.name }}
+                    <span v-if="selectedAgentId && item.customer.agent_user_id !== selectedAgentId" class="badge bg-warning text-dark ms-1" style="font-size: 0.65rem;">Secundar</span>
+                  </div>
                   <div class="small text-muted">{{ item.customer.address || 'Fără adresă' }}</div>
                   <div class="mt-1">
                      <select v-model="item.week_type" class="form-select form-select-xs d-inline-block w-auto py-0 px-2" style="height: 24px; font-size: 0.75rem;" @change="isDirty = true" @click.stop>

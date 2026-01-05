@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Customer;
 use App\Models\CustomerVisit;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -52,11 +53,32 @@ class CustomerVisitController extends Controller
 
         /** @var User $user */
         $user = Auth::user();
+        $customer = Customer::findOrFail($data['customer_id']);
         
         // Close any ongoing visits for this user
         CustomerVisit::where('agent_id', $user->id)
             ->where('status', 'in_progress')
             ->update(['status' => 'completed', 'end_time' => now()]);
+
+        // Calculate distance deviation
+        $distanceDeviation = null;
+        $isOffSite = false;
+
+        if (!empty($data['latitude']) && !empty($data['longitude']) && 
+            !empty($customer->latitude) && !empty($customer->longitude)) {
+            
+            $distanceDeviation = $this->calculateDistance(
+                $data['latitude'], 
+                $data['longitude'], 
+                $customer->latitude, 
+                $customer->longitude
+            );
+            
+            // Assume 500m threshold
+            if ($distanceDeviation > 500) {
+                $isOffSite = true;
+            }
+        }
 
         $visit = CustomerVisit::create([
             'agent_id'    => $user->id,
@@ -65,6 +87,8 @@ class CustomerVisitController extends Controller
             'status'      => 'in_progress',
             'latitude'    => $data['latitude'] ?? null,
             'longitude'   => $data['longitude'] ?? null,
+            'distance_deviation' => $distanceDeviation,
+            'is_off_site' => $isOffSite
         ]);
 
         return response()->json($visit, 201);
@@ -77,7 +101,22 @@ class CustomerVisitController extends Controller
         /** @var User $user */
         $user = Auth::user();
 
-        if ($visit->agent_id !== $user->id && !$user->hasRole('admin')) {
+        // Check if user is the agent OR an admin OR a director of the agent
+        $isAuthorized = false;
+
+        if ($user->id === $visit->agent_id) {
+            $isAuthorized = true;
+        } elseif ($user->hasRole('admin')) {
+            $isAuthorized = true;
+        } elseif ($user->hasRole('sales_director')) {
+            // Check if the visit agent is a subordinate of this director
+            $agent = User::find($visit->agent_id);
+            if ($agent && $agent->director_id === $user->id) {
+                $isAuthorized = true;
+            }
+        }
+
+        if (!$isAuthorized) {
              return response()->json(['message' => 'Unauthorized'], 403);
         }
 
@@ -88,16 +127,39 @@ class CustomerVisitController extends Controller
             'longitude' => ['nullable', 'numeric'],
         ]);
 
-        $visit->update([
+        $updateData = [
             'status'    => 'completed',
             'end_time'  => now(),
             'notes'     => $data['notes'] ?? $visit->notes,
             'outcome'   => $data['outcome'] ?? null,
-             // Update location on end if provided? Maybe distinct exit location
-        ]);
+        ];
+
+        if (!empty($data['latitude']) && !empty($data['longitude'])) {
+            $updateData['end_latitude'] = $data['latitude'];
+            $updateData['end_longitude'] = $data['longitude'];
+        }
+
+        $visit->update($updateData);
 
         return response()->json($visit);
     }
     
-    // Generic store/update if needed for admins
+    /**
+     * Calculate distance between two points in meters using Haversine formula
+     */
+    private function calculateDistance($lat1, $lon1, $lat2, $lon2)
+    {
+        $earthRadius = 6371000; // meters
+
+        $dLat = deg2rad($lat2 - $lat1);
+        $dLon = deg2rad($lon2 - $lon1);
+
+        $a = sin($dLat / 2) * sin($dLat / 2) +
+             cos(deg2rad($lat1)) * cos(deg2rad($lat2)) *
+             sin($dLon / 2) * sin($dLon / 2);
+
+        $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
+
+        return round($earthRadius * $c);
+    }
 }

@@ -285,6 +285,24 @@ const router = createRouter({
           name: 'account-agent-routes',
           component: AccountAgentRoutes,
           meta: { requiresAuth: true }
+        },
+        {
+          path: 'rapoarte',
+          name: 'account-reports',
+          component: () => import('@/views/admin/reports/ReportsDashboard.vue'),
+          meta: { requiresAuth: true, requiresRole: 'sales_director' }
+        },
+        {
+          path: 'obiective',
+          name: 'account-targets',
+          component: () => import('@/views/admin/targets/SalesTargets.vue'),
+          meta: { requiresAuth: true, requiresRole: 'sales_director' }
+        },
+        {
+          path: 'management-rute',
+          name: 'account-routes-management',
+          component: () => import('@/views/admin/routes/AgentRoutes.vue'),
+          meta: { requiresAuth: true, requiresRole: 'sales_director' }
         }
       ]
     }
@@ -472,8 +490,15 @@ router.beforeEach((to, from, next) => {
     })
   }
 
-  if (to.meta.requiresAdmin && authStore.role !== 'admin') {
-    // Utilizator logat dar fără drepturi de admin – redirecționăm către dashboard-ul de client.
+  if (to.meta.requiresAdmin) {
+    // Allow admin, sales_director, and sales_agent to access admin routes
+    // (Permissions will be handled by backend or component logic)
+    const allowedRoles = ['admin', 'sales_director', 'sales_agent'];
+    if (allowedRoles.includes(authStore.role)) {
+      return next();
+    }
+    
+    // Utilizator logat dar fără drepturi – redirecționăm către dashboard-ul de client.
     return next({ name: 'account-dashboard' })
   }
 

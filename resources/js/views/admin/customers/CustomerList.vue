@@ -211,51 +211,77 @@
       @save="handleSaveCustomer"
     />
 
-    <!-- Modal asignări (Inline for now to keep existing logic working smoothly) -->
-    <div v-if="assignModalOpen">
-      <div class="modal-backdrop" @click="closeAssignModal"></div>
-      <div class="modal-panel custom-modal-panel">
-        <div class="card border-0 shadow-lg">
-          <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
-            <h5 class="mb-0 fw-bold">Asignare Echipă Vânzări</h5>
-            <button class="btn-close" @click="closeAssignModal"></button>
+    <!-- Modal Asignare Rapidă (Standard Bootstrap) -->
+    <div v-if="assignModalOpen" class="modal fade show d-block" tabindex="-1" role="dialog" style="background-color: rgba(0,0,0,0.5);">
+      <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content border-0 shadow-lg">
+          <div class="modal-header bg-white border-bottom py-3">
+            <h5 class="modal-title fw-bold text-primary">
+              <i class="bi bi-person-badge-fill me-2"></i>
+              Asignare Echipă
+            </h5>
+            <button type="button" class="btn-close" @click="closeAssignModal"></button>
           </div>
-          <div class="card-body">
-            <div class="mb-4 p-3 bg-light rounded border">
-              <div class="small text-muted text-uppercase fw-bold mb-1">Client Selectat</div>
-              <div class="fw-bold fs-5">{{ selectedCustomer?.name }}</div>
-              <div class="small text-muted">{{ selectedCustomer?.email }}</div>
-            </div>
-            
-            <div class="row g-4">
-              <div class="col-md-6">
-                <label class="form-label fw-bold small">Agent Vânzări</label>
-                <select class="form-select" v-model="assignAgentId">
-                  <option :value="null">-- Nealocat --</option>
-                  <option v-for="u in agents" :key="u.id" :value="u.id">
-                    {{ formatUser(u) }}
-                  </option>
-                </select>
-                <div class="form-text small">Gestionează comenzile și relația directă.</div>
-              </div>
-              <div class="col-md-6">
-                <label class="form-label fw-bold small">Director Vânzări</label>
-                <select class="form-select" v-model="assignDirectorId" :disabled="!!assignAgentId">
-                  <option :value="null">-- Nealocat --</option>
-                  <option v-for="u in directors" :key="u.id" :value="u.id">
-                    {{ formatUser(u) }}
-                  </option>
-                </select>
-                <div class="form-text small" v-if="assignAgentId">Determinat automat de agentul selectat.</div>
-                <div class="form-text small" v-else>Supervizează și aprobă limitele de credit.</div>
+          
+          <div class="modal-body bg-light">
+            <div class="card border-0 shadow-sm">
+              <div class="card-body">
+                <p class="mb-4 text-muted small">
+                  Selectează agentul și directorul pentru clientul 
+                  <strong class="text-dark">{{ selectedCustomer?.name }}</strong>.
+                </p>
+
+                <div class="alert alert-info border-0 d-flex align-items-center mb-3">
+                   <i class="bi bi-info-circle-fill me-2 fs-5"></i>
+                   <div class="small">
+                     Selectarea unui <strong>Agent</strong> va asigna automat <strong>Directorul</strong> acestuia.
+                   </div>
+                </div>
+
+                <div class="row g-3">
+                  <div class="col-12">
+                    <label class="form-label fw-bold small">Agent Vânzări</label>
+                    <select class="form-select" v-model="assignAgentId">
+                      <option :value="null">-- Nealocat --</option>
+                      <option v-for="u in agents" :key="u.id" :value="u.id">
+                        {{ formatUser(u) }}
+                      </option>
+                    </select>
+                  </div>
+                  <div class="col-12">
+                    <label class="form-label fw-bold small">Director Vânzări</label>
+                    <select class="form-select" v-model="assignDirectorId" :disabled="!!assignAgentId">
+                      <option :value="null">-- Nealocat --</option>
+                      <option v-for="u in directors" :key="u.id" :value="u.id">
+                        {{ formatUser(u) }}
+                      </option>
+                    </select>
+                    <div class="form-text small mt-2" v-if="assignAgentId">Determinat automat de agentul selectat.</div>
+                    <div class="form-text small mt-2" v-else>Supervizează și aprobă limitele de credit.</div>
+                  </div>
+                  
+                  <div class="col-12">
+                    <label class="form-label fw-bold small">Echipă Vânzări (Secundar)</label>
+                    <div class="border rounded p-2 bg-white" style="max-height: 120px; overflow-y: auto;">
+                        <div v-if="agents.length === 0" class="text-muted small fst-italic p-1">Nu există agenți disponibili.</div>
+                        <div v-for="agent in agents" :key="agent.id" class="form-check">
+                            <input class="form-check-input" type="checkbox" :value="agent.id" v-model="assignTeamMembers" :id="'assign_team_'+agent.id" :disabled="assignAgentId === agent.id">
+                            <label class="form-check-label small" :for="'assign_team_'+agent.id">
+                                {{ formatUser(agent) }}
+                            </label>
+                        </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
-          <div class="card-footer bg-white border-top py-3 d-flex justify-content-end gap-2">
-            <button class="btn btn-light border" @click="closeAssignModal">Anulează</button>
-            <button class="btn btn-success px-4" :disabled="savingAssign" @click="saveAssignments(selectedCustomer.id)">
+
+          <div class="modal-footer bg-white border-top py-3">
+            <button type="button" class="btn btn-light border" @click="closeAssignModal">Anulează</button>
+            <button type="button" class="btn btn-primary px-4" @click="saveAssignments(selectedCustomer.id)" :disabled="savingAssign">
               <span v-if="savingAssign" class="spinner-border spinner-border-sm me-2"></span>
-              Salvează Asignările
+              Salvează
             </button>
           </div>
         </div>
@@ -302,6 +328,7 @@ const assignModalOpen = ref(false)
 const selectedCustomer = ref(null)
 const assignAgentId = ref(null)
 const assignDirectorId = ref(null)
+const assignTeamMembers = ref([])
 const savingAssign = ref(false)
 
 // Auto-assign director when agent is selected
@@ -311,6 +338,11 @@ watch(assignAgentId, (newAgentId) => {
   const agent = agents.value.find(a => a.id === newAgentId)
   if (agent) {
     assignDirectorId.value = agent.director_id || null
+  }
+  
+  // Remove agent from team members if present
+  if (assignTeamMembers.value.includes(newAgentId)) {
+    assignTeamMembers.value = assignTeamMembers.value.filter(id => id !== newAgentId)
   }
 })
 
@@ -439,6 +471,7 @@ const openAssignModal = (customer) => {
   selectedCustomer.value = customer
   assignAgentId.value = customer?.agent?.id ?? null
   assignDirectorId.value = (customer?.sales_director?.id ?? customer?.salesDirector?.id) ?? null
+  assignTeamMembers.value = customer.teamMembers ? customer.teamMembers.map(u => u.id) : (customer.team_members ? customer.team_members.map(u => u.id) : [])
   assignModalOpen.value = true
 }
 
@@ -447,6 +480,7 @@ const closeAssignModal = () => {
   selectedCustomer.value = null
   assignAgentId.value = null
   assignDirectorId.value = null
+  assignTeamMembers.value = []
 }
 
 const saveAssignments = async (id) => {
@@ -454,7 +488,8 @@ const saveAssignments = async (id) => {
   try {
     const payload = {
       agent_user_id: assignAgentId.value != null ? Number(assignAgentId.value) : null,
-      sales_director_user_id: assignDirectorId.value != null ? Number(assignDirectorId.value) : null
+      sales_director_user_id: assignDirectorId.value != null ? Number(assignDirectorId.value) : null,
+      team_members: assignTeamMembers.value
     }
     await updateCustomer(id, payload)
     await loadCustomers()
@@ -506,32 +541,9 @@ const handleStartVisit = async (customer) => {
 </script>
 
 <style scoped>
-.modal-backdrop {
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.5);
-  backdrop-filter: blur(2px);
-  z-index: 1040;
-}
-
-.modal-panel {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 600px;
-  max-width: 95vw;
-  z-index: 1050;
-  animation: slideIn 0.3s ease-out;
-}
-
-.custom-modal-panel {
-    animation: slideIn 0.3s ease-out;
-}
-
-@keyframes slideIn {
-    from { opacity: 0; transform: translate(-50%, -48%); }
-    to { opacity: 1; transform: translate(-50%, -50%); }
+/* Bootstrap modal override for Vue transition if needed */
+.modal {
+  background-color: rgba(0,0,0,0.5);
 }
 
 .hover-link:hover {

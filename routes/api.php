@@ -303,6 +303,7 @@ Route::prefix('admin')
         Route::get('reports/visits-chart', [\App\Http\Controllers\Admin\ReportController::class, 'visitsChart']);
         Route::get('reports/outcomes-chart', [\App\Http\Controllers\Admin\ReportController::class, 'outcomesChart']);
         Route::get('reports/agent-performance', [\App\Http\Controllers\Admin\ReportController::class, 'agentPerformance']);
+        Route::get('reports/locations', [\App\Http\Controllers\Admin\ReportController::class, 'locations']);
 
         // Sales Targets
         Route::apiResource('sales-targets', \App\Http\Controllers\Admin\SalesTargetController::class);

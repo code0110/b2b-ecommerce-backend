@@ -110,6 +110,15 @@ public function roles(): BelongsToMany
         return $this->hasMany(Customer::class, 'agent_user_id');
     }
 
+    /**
+     * Customers assigned to this user as a team member (secondary).
+     */
+    public function teamCustomers()
+    {
+        return $this->belongsToMany(Customer::class, 'agent_customer', 'agent_id', 'customer_id')
+                    ->withTimestamps();
+    }
+
     public function directedCustomers(): HasMany
     {
         return $this->hasMany(Customer::class, 'sales_director_user_id');

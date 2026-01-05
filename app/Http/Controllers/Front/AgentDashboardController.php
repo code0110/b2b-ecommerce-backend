@@ -45,7 +45,12 @@ class AgentDashboardController extends Controller
                 }
             });
         } else {
-            $query->where('agent_user_id', $user->id);
+            $query->where(function ($q) use ($user) {
+                $q->where('agent_user_id', $user->id)
+                  ->orWhereHas('teamMembers', function ($subQ) use ($user) {
+                      $subQ->where('users.id', $user->id);
+                  });
+            });
         }
 
         $limit = (int) ($request->get('limit') ?? 20);

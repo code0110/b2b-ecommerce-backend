@@ -14,7 +14,7 @@ class CustomerController extends Controller
     {
         $query = Customer::query()
             ->visibleTo($request->user())
-            ->with(['group', 'agent:id,first_name,last_name,email', 'salesDirector:id,first_name,last_name,email']);
+            ->with(['group', 'agent:id,first_name,last_name,email', 'salesDirector:id,first_name,last_name,email', 'teamMembers:id,first_name,last_name,email']);
 
         if ($type = $request->get('type')) {
             $query->where('type', $type);
@@ -28,6 +28,15 @@ class CustomerController extends Controller
                 $q->where('name', 'like', "%{$search}%")
                   ->orWhere('email', 'like', "%{$search}%")
                   ->orWhere('phone', 'like', "%{$search}%");
+            });
+        }
+
+        if ($agentId = $request->get('agent_user_id')) {
+            $query->where(function ($q) use ($agentId) {
+                $q->where('agent_user_id', $agentId)
+                  ->orWhereHas('teamMembers', function ($sq) use ($agentId) {
+                      $sq->where('users.id', $agentId);
+                  });
             });
         }
 
@@ -54,6 +63,8 @@ class CustomerController extends Controller
             'is_partner'         => ['boolean'],
             'agent_user_id'         => ['nullable', 'integer', 'exists:users,id'],
             'sales_director_user_id'=> ['nullable', 'integer', 'exists:users,id'],
+            'team_members'          => ['nullable', 'array'],
+            'team_members.*'        => ['exists:users,id'],
         ]);
 
         if (array_key_exists('agent_user_id', $data) && !empty($data['agent_user_id'])) {
@@ -65,12 +76,16 @@ class CustomerController extends Controller
 
         $customer = Customer::create($data);
 
-        return response()->json($customer, 201);
+        if ($request->has('team_members')) {
+            $customer->teamMembers()->sync($request->input('team_members', []));
+        }
+
+        return response()->json($customer->load(['group', 'agent:id,first_name,last_name,email', 'salesDirector:id,first_name,last_name,email', 'teamMembers:id,first_name,last_name,email']), 201);
     }
 
     public function show(Customer $customer)
     {
-        return $customer->load('addresses', 'users', 'group', 'agent:id,first_name,last_name,email', 'salesDirector:id,first_name,last_name,email');
+        return $customer->load('addresses', 'users', 'group', 'agent:id,first_name,last_name,email', 'salesDirector:id,first_name,last_name,email', 'teamMembers:id,first_name,last_name,email');
     }
 
     public function update(Request $request, Customer $customer)
@@ -93,24 +108,29 @@ class CustomerController extends Controller
             'is_partner'         => ['boolean'],
             'agent_user_id'         => ['nullable', 'integer', 'exists:users,id'],
             'sales_director_user_id'=> ['nullable', 'integer', 'exists:users,id'],
+            'team_members'          => ['nullable', 'array'],
+            'team_members.*'        => ['exists:users,id'],
         ]);
 
         if (array_key_exists('agent_user_id', $data)) {
             if (!empty($data['agent_user_id'])) {
                 $agent = User::find($data['agent_user_id']);
                 // Setăm directorul agentului (chiar dacă e null)
-                if ($agent) {
+                if ($agent && $agent->director_id) {
                     $data['sales_director_user_id'] = $agent->director_id;
                 }
-            } else {
-                // Dacă nu mai avem agent, ștergem și directorul
-                $data['sales_director_user_id'] = null;
             }
+            // Eliminat logica care forța ștergerea directorului dacă nu există agent.
+            // Astfel permitem asignarea unui client doar la un director.
         }
 
         $customer->update($data);
 
-        return response()->json($customer->load(['group', 'agent:id,first_name,last_name,email', 'salesDirector:id,first_name,last_name,email']));
+        if ($request->has('team_members')) {
+            $customer->teamMembers()->sync($request->input('team_members', []));
+        }
+
+        return response()->json($customer->load(['group', 'agent:id,first_name,last_name,email', 'salesDirector:id,first_name,last_name,email', 'teamMembers:id,first_name,last_name,email']));
     }
 
     public function destroy(Customer $customer)

@@ -255,7 +255,10 @@
             <tbody>
               <tr v-for="client in filteredClients" :key="client.id" :class="{'table-primary': visitStore.activeVisit?.customer_id === client.id}">
                 <td>
-                  <div class="fw-bold">{{ client.name }}</div>
+                  <div class="fw-bold">
+                    {{ client.name }}
+                    <span v-if="!isDirector && client.agent_user_id !== authStore.user.id" class="badge bg-warning text-dark ms-2" style="font-size: 0.7rem;">Acces Echipă</span>
+                  </div>
                   <small class="text-muted">{{ client.email }}</small>
                 </td>
                 <td>{{ client.cif }}</td>

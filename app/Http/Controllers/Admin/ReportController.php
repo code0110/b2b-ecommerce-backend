@@ -152,6 +152,60 @@ class ReportController extends Controller
         return response()->json($agents);
     }
 
+    public function locations(Request $request)
+    {
+        $user = Auth::user();
+        $allowedAgentIds = $this->getAllowedAgentIds($user);
+
+        // Include directors in the list if user is admin
+        $agentIds = $allowedAgentIds;
+        if ($user->hasRole('admin')) {
+             // Add directors to the list if we want to track them too, 
+             // but user request said "locatia agentilor/ directorilor".
+             // If directors perform visits, they act as agents.
+             // If we want to see directors' locations even if they don't do visits?
+             // Usually tracking is via visits.
+             // Let's stick to users who have visits.
+             $directorIds = User::role('sales_director')->pluck('id')->toArray();
+             $agentIds = array_merge($agentIds, $directorIds);
+             $agentIds = array_unique($agentIds);
+        }
+
+        $agents = User::whereIn('id', $agentIds)
+            ->select('id', 'first_name', 'last_name')
+            ->get()
+            ->map(function ($agent) {
+                $activeVisit = CustomerVisit::where('agent_id', $agent->id)
+                    ->where('status', 'in_progress')
+                    ->with('customer:id,name,latitude,longitude') // Get customer details
+                    ->first();
+                
+                $lastVisit = null;
+                if (!$activeVisit) {
+                    $lastVisit = CustomerVisit::where('agent_id', $agent->id)
+                        ->orderBy('end_time', 'desc')
+                        ->with('customer:id,name,latitude,longitude')
+                        ->first();
+                }
+
+                return [
+                    'id' => $agent->id,
+                    'name' => $agent->first_name . ' ' . $agent->last_name,
+                    'roles' => $agent->getRoleNames(),
+                    'status' => $activeVisit ? 'in_visit' : 'idle',
+                    'customer_name' => $activeVisit ? $activeVisit->customer->name : ($lastVisit ? $lastVisit->customer->name : null),
+                    'visit_start_time' => $activeVisit ? $activeVisit->start_time : null,
+                    'latitude' => $activeVisit ? $activeVisit->latitude : ($lastVisit ? ($lastVisit->end_latitude ?? $lastVisit->latitude) : null),
+                    'longitude' => $activeVisit ? $activeVisit->longitude : ($lastVisit ? ($lastVisit->end_longitude ?? $lastVisit->longitude) : null),
+                    'last_seen' => $activeVisit ? $activeVisit->start_time : ($lastVisit ? $lastVisit->end_time : null),
+                    'is_off_site' => $activeVisit ? $activeVisit->is_off_site : null,
+                    'distance_deviation' => $activeVisit ? $activeVisit->distance_deviation : null,
+                ];
+            });
+            
+        return response()->json($agents);
+    }
+
     private function getAllowedAgentIds($user)
     {
         if ($user->hasRole('admin')) {

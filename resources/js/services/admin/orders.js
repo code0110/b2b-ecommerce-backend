@@ -1,5 +1,5 @@
 // resources/js/services/admin/orders.js
-import  adminApi  from '@/services/http';
+import { adminApi } from '@/services/http';
 
 export function fetchOrders(params = {}) {
   return adminApi.get('/orders', { params }).then(response => response.data);

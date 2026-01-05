@@ -19,6 +19,11 @@ export const useAuthStore = defineStore('auth', {
   },
 
   actions: {
+    hasRole(roleName) {
+      if (!this.user || !this.user.roles) return false;
+      return this.user.roles.some(r => (r.slug === roleName || r.code === roleName));
+    },
+
     setRoleFromUser(user) {
   // folosim fie r.code, fie r.slug, în funcție de ce întoarce backend-ul
   const roles = (user.roles || []).map((r) => r.code || r.slug);
@@ -90,15 +95,42 @@ export const useAuthStore = defineStore('auth', {
       }
     },
 
-    startImpersonation(client) {
+    async startImpersonation(client) {
       if (!client || !client.id) return;
+
+      // Import store dynamically to avoid circular dependency (visit -> adminApi -> auth -> visit)
+      const { useVisitStore } = await import('./visit');
+      const visitStore = useVisitStore();
+
+      // Dacă utilizatorul este agent, pornim automat o vizită
+      const isAgent = this.user?.roles?.some(r => 
+        (r.slug === 'sales_agent' || r.code === 'sales_agent')
+      );
+
+      if (isAgent) {
+        try {
+          await visitStore.startVisit(client.id);
+        } catch (e) {
+          console.error('Eroare la pornirea vizitei automate:', e);
+          if (!confirm('Nu s-a putut înregistra vizita automată. Continuați impersonarea?')) {
+            return;
+          }
+        }
+      }
+
       localStorage.setItem('impersonated_client_id', client.id);
       localStorage.setItem('impersonated_client_name', client.name || 'Client');
       // Force reload to apply interceptor
       window.location.href = '/';
     },
 
-    stopImpersonation() {
+    async stopImpersonation() {
+      // Opțional: Putem întreba agentul dacă vrea să închidă vizita, sau o lăsăm deschisă.
+      // Cerința: "sa poata intra in vizita si sa inchida vizita".
+      // Nu specifică "auto-close on stop impersonation".
+      // Dar ar fi util. Totuși, poate vrea să rămână în vizită și după ce iese din impersonare?
+      // Mai sigur: lăsăm vizita deschisă, dar îi oferim UI să o închidă.
+      
       localStorage.removeItem('impersonated_client_id');
       localStorage.removeItem('impersonated_client_name');
       window.location.href = '/';

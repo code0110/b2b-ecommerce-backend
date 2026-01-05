@@ -20,17 +20,30 @@
           Detalii client, structură comercială și ierarhie agent → director → admin.
         </p>
       </div>
-      <div class="text-end">
+      <div class="text-end d-flex gap-2">
+        <button 
+          class="btn btn-outline-primary btn-sm"
+          @click="openEditModal"
+        >
+          <i class="bi bi-pencil me-1"></i> Editează
+        </button>
         <button
           v-if="canImpersonateCustomer"
           type="button"
-          class="btn btn-outline-primary btn-sm"
+          class="btn btn-primary btn-sm"
           @click="impersonateAsCustomer"
         >
           Plasează comandă ca acest client
         </button>
       </div>
     </div>
+
+    <CustomerFormModal 
+      v-if="showFormModal" 
+      :customer="customer"
+      @close="showFormModal = false"
+      @save="handleSaveCustomer"
+    />
 
     <div v-if="loading" class="text-center py-5">
       <div class="spinner-border text-primary" role="status">
@@ -40,6 +53,19 @@
 
     <div v-else-if="!customer" class="alert alert-warning">
       Clientul nu a fost găsit în datele demo.
+    </div>
+
+    <div v-if="!canViewDetails" class="alert alert-info shadow-sm text-center py-5">
+      <i class="bi bi-shield-lock fs-1 mb-3 d-block text-primary"></i>
+      <h4 class="alert-heading fw-bold">Vizită Necesară</h4>
+      <p class="mb-4">
+        Pentru a vizualiza detaliile acestui client și a efectua operațiuni, trebuie să începeți o vizită.
+      </p>
+      <button class="btn btn-primary btn-lg px-5 shadow-sm" @click="handleStartVisit" :disabled="visitStore.loading">
+        <span v-if="visitStore.loading" class="spinner-border spinner-border-sm me-2"></span>
+        <i v-else class="bi bi-geo-alt-fill me-2"></i>
+        Începe Vizita
+      </button>
     </div>
 
     <div v-else class="row">
@@ -116,10 +142,34 @@
                   <span v-else class="text-muted">-</span>
                 </div>
               </div>
-              <div class="col-md-6" v-if="customer.companyName">
-                <div class="small text-muted">Denumire firmă</div>
+              <div class="col-md-6" v-if="customer.companyName || customer.company_name || customer.legal_name">
+                <div class="small text-muted">Companie / Denumire Legală</div>
                 <div class="fw-semibold">
-                  {{ customer.companyName }}
+                  {{ customer.legal_name || customer.company_name || customer.companyName }}
+                </div>
+              </div>
+              <div class="col-md-6" v-if="customer.cif || customer.vatNumber">
+                <div class="small text-muted">CUI / CIF</div>
+                <div class="fw-semibold">
+                  {{ customer.cif || customer.vatNumber }}
+                </div>
+              </div>
+              <div class="col-md-6" v-if="customer.reg_com || customer.regCom">
+                <div class="small text-muted">Reg. Com.</div>
+                <div class="fw-semibold">
+                  {{ customer.reg_com || customer.regCom }}
+                </div>
+              </div>
+              <div class="col-md-6" v-if="customer.iban">
+                <div class="small text-muted">IBAN</div>
+                <div class="fw-semibold text-break">
+                  {{ customer.iban }}
+                </div>
+              </div>
+              <div class="col-md-6" v-if="customer.bank_name || customer.bankName">
+                <div class="small text-muted">Banca</div>
+                <div class="fw-semibold">
+                  {{ customer.bank_name || customer.bankName }}
                 </div>
               </div>
             </div>
@@ -483,73 +533,113 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useCustomersStore } from '@/store/customers'
 import { useAuthStore } from '@/store/auth'
+import { useVisitStore } from '@/store/visit'
+import { fetchCustomer, updateCustomer } from '@/services/admin/customers'
+import CustomerFormModal from './CustomerFormModal.vue'
+import { useToast } from 'vue-toastification'
 
 const route = useRoute()
 const router = useRouter()
 const customersStore = useCustomersStore()
 const authStore = useAuthStore()
+const visitStore = useVisitStore()
+const toast = useToast()
 
 const loading = ref(true)
 const customer = ref(null)
-const demoCredit = computed(() => {
-  if (!customer.value || customer.value.clientType !== 'B2B') return null
+const showFormModal = ref(false)
 
-  const creditLimit = 50000
-  const currentBalance = 24500
-  const overdueBalance = 2500
+const isAgentOrDirector = computed(() => {
+  return authStore.hasRole('sales_agent') || authStore.hasRole('sales_director')
+})
 
-  return {
-    paymentTermDays: 30,
-    creditLimit,
-    currentBalance,
-    overdueBalance,
-    availableCredit: Math.max(0, creditLimit - currentBalance),
-    currency: 'RON'
+const hasActiveVisitWithThisCustomer = computed(() => {
+  return visitStore.activeVisit && visitStore.activeVisit.customer_id === Number(route.params.id)
+})
+
+const canViewDetails = computed(() => {
+  if (authStore.hasRole('admin')) return true
+  if (isAgentOrDirector.value) {
+    return hasActiveVisitWithThisCustomer.value
   }
+  return true // Default for others
 })
 
-const demoReceipts = computed(() => {
-  if (!customer.value || customer.value.clientType !== 'B2B') return []
+const loadCustomerData = async () => {
+  loading.value = true
+  try {
+    const data = await fetchCustomer(route.params.id)
+    customer.value = data
+  } catch (e) {
+    console.error('Error loading customer', e)
+    toast.error('Nu s-a putut încărca clientul.')
+  } finally {
+    loading.value = false
+  }
+}
 
-  return [
-    {
-      id: 1,
-      date: '2025-02-20',
-      type: 'CHS',
-      amount: 5000.0,
-      documentNumber: 'CHS-2025-001'
-    },
-    {
-      id: 2,
-      date: '2025-02-18',
-      type: 'BO',
-      amount: 20000.0,
-      documentNumber: 'BO-2025-010'
-    },
-    {
-      id: 3,
-      date: '2025-02-15',
-      type: 'CEC',
-      amount: 15000.5,
-      documentNumber: 'CEC-2025-002'
-    }
-  ]
+onMounted(async () => {
+  await visitStore.checkActiveVisit()
+  loadCustomerData()
 })
 
+const handleStartVisit = async () => {
+  if (visitStore.hasActiveVisit) {
+    if (!confirm('Aveți deja o vizită activă. Doriți să o încheiați și să începeți una nouă?')) return
+    await visitStore.endVisit()
+  }
+  
+  try {
+    await visitStore.startVisit(route.params.id)
+    toast.success(`Vizită începută pentru ${customer.value.name}`)
+  } catch (e) {
+    toast.error('Eroare la începerea vizitei: ' + (e.response?.data?.message || e.message))
+  }
+}
+
+const handleSaveCustomer = async (formData) => {
+  try {
+    await updateCustomer(customer.value.id, formData)
+    toast.success('Client actualizat cu succes!')
+    showFormModal.value = false
+    loadCustomerData()
+  } catch (e) {
+    console.error(e)
+    toast.error('Eroare la salvarea clientului.')
+  }
+}
 
 const goBack = () => {
   router.push({ name: 'admin-customers' })
 }
 
-onMounted(() => {
-  const id = route.params.id
-  const fromStore = customersStore.getById
-    ? customersStore.getById(id)
-    : null
+const demoCredit = computed(() => {
+  if (!customer.value || (customer.value.clientType !== 'B2B' && customer.value.type !== 'b2b')) return null
 
-  customer.value = fromStore || null
-  loading.value = false
+  // Use real data if available, fallback to demo
+  const creditLimit = customer.value.credit_limit || 0
+  const currentBalance = customer.value.balance || customer.value.current_balance || 0
+  const paymentTermDays = customer.value.payment_term_days || 0
+
+  return {
+    paymentTermDays,
+    creditLimit,
+    currentBalance,
+    overdueBalance: 0, // Not tracked yet
+    availableCredit: Math.max(0, creditLimit - currentBalance),
+    currency: customer.value.currency || 'RON'
+  }
 })
+
+const demoReceipts = computed(() => {
+  // Placeholder for now
+  return []
+})
+
+
+const openEditModal = () => {
+  showFormModal.value = true
+}
 
 const canImpersonateCustomer = computed(() => {
   if (!authStore.user || !customer.value) return false

@@ -33,8 +33,8 @@ class UserController extends Controller
             });
         }
 
-        if ($request->has('is_active') && $request->query('is_active') !== '') {
-            $query->where('is_active', (bool) $request->query('is_active'));
+        if ($request->filled('is_active')) {
+             $query->where('is_active', (bool) $request->query('is_active'));
         }
 
         $query->orderBy('created_at', 'desc');
@@ -61,6 +61,7 @@ class UserController extends Controller
             'phone'      => ['nullable', 'string', 'max:50'],
             'password'   => ['required', 'string', 'min:8'],
             'is_active'  => ['nullable', 'boolean'],
+            'director_id' => ['nullable', 'integer', 'exists:users,id'],
             'role_ids'   => ['nullable', 'array'],
             'role_ids.*' => ['integer', 'exists:roles,id'],
         ]);
@@ -109,6 +110,7 @@ class UserController extends Controller
             'phone'      => ['nullable', 'string', 'max:50'],
             'password'   => ['nullable', 'string', 'min:8'],
             'is_active'  => ['nullable', 'boolean'],
+            'director_id' => ['nullable', 'integer', 'exists:users,id'],
             'role_ids'   => ['nullable', 'array'],
             'role_ids.*' => ['integer', 'exists:roles,id'],
         ]);
@@ -149,10 +151,10 @@ class UserController extends Controller
     /**
      * Dezactivare utilizator (nu-l ștergem complet).
      */
-    public function destroy(User $user)
+    public function destroy(Request $request, User $user)
     {
         // opțional: nu permiți să te dezactivezi singur
-        if (auth()->id() === $user->id) {
+        if ($request->user()?->id === $user->id) {
             return response()->json([
                 'message' => 'Nu poți dezactiva propriul utilizator.',
             ], 422);
@@ -173,6 +175,7 @@ class UserController extends Controller
             'name'       => trim($user->first_name . ' ' . ($user->last_name ?? '')),
             'email'      => $user->email,
             'phone'      => $user->phone,
+            'director_id' => $user->director_id,
             'is_active'  => (bool) $user->is_active,
             'created_at' => optional($user->created_at)->toDateTimeString(),
             'roles'      => $user->roles->map(function (Role $role) {

@@ -23,5 +23,9 @@ export default {
 
   cancelReceipt(data) {
     return http.post('/account/agent/payments/cancel-receipt', data);
+  },
+
+  getRoutes(params) {
+    return http.get('/account/agent/routes', { params });
   }
 };

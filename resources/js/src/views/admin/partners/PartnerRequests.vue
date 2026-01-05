@@ -182,16 +182,16 @@
               <div class="row g-2 align-items-center">
                 <div class="col-7">
                   <select
-                    v-model="agentSelection"
+                    v-model="agentSelectionId"
                     class="form-select form-select-sm"
                   >
-                    <option value="">Nealocat</option>
+                    <option :value="null">Nealocat</option>
                     <option
-                      v-for="rep in allAgents"
+                      v-for="rep in agents"
                       :key="rep.id"
-                      :value="rep.name"
+                      :value="rep.id"
                     >
-                      {{ rep.name }} – {{ rep.region }}
+                      {{ getAgentLabel(rep) }}
                     </option>
                   </select>
                 </div>
@@ -259,12 +259,9 @@
 </template>
 
 <script setup>
-import { computed, reactive, ref } from 'vue'
-import { usePartnerRequestsStore } from '@/store/partnerRequests'
-import { useRepresentativesStore } from '@/store/representatives'
-
-const partnerStore = usePartnerRequestsStore()
-const repsStore = useRepresentativesStore()
+import { computed, reactive, ref, onMounted } from 'vue'
+import { fetchPartnerRequests, updatePartnerRequestStatus } from '@/services/admin/partners'
+import { fetchAgents } from '@/services/admin/receiptBooks'
 
 const filters = reactive({
   status: '',
@@ -274,28 +271,70 @@ const filters = reactive({
 })
 
 const selectedRequest = ref(null)
-const agentSelection = ref('')
+const agentSelectionId = ref(null)
 const infoMessage = ref('')
 
-const allRequests = computed(() => partnerStore.all)
-const allAgents = computed(() => repsStore.all)
+const requests = ref([])
+const agents = ref([])
+
+const getAgentLabel = (agent) => {
+  const fn = [agent.first_name, agent.last_name].filter(Boolean).join(' ')
+  return fn || agent.email || `User #${agent.id}`
+}
+
+const normalizeRequest = (r) => {
+  return {
+    id: r.id,
+    companyName: r.company_name,
+    cui: r.cif,
+    regCom: r.reg_com,
+    iban: r.iban,
+    contactPerson: r.contact_name,
+    email: r.email,
+    phone: r.phone,
+    region: r.region,
+    activityType: r.activity_type,
+    notes: r.notes,
+    status: r.status || 'pending',
+    assignedAgent: r.assigned_agent
+      ? [r.assigned_agent.first_name, r.assigned_agent.last_name].filter(Boolean).join(' ')
+      : null,
+    assignedAgentId: r.assigned_agent_id ?? null,
+    createdAt: r.created_at
+  }
+}
+
+const loadData = async () => {
+  try {
+    const [reqRes, agentsRes] = await Promise.all([
+      fetchPartnerRequests(),
+      fetchAgents()
+    ])
+    const rawList = reqRes?.data ?? reqRes
+    requests.value = (rawList?.data ?? rawList ?? []).map(normalizeRequest)
+    agents.value = agentsRes ?? []
+  } catch (e) {
+    console.error(e)
+    infoMessage.value = 'Eroare la încărcarea solicitărilor sau a agenților.'
+  }
+}
 
 const distinctRegions = computed(() => {
-  const regs = allRequests.value
+  const regs = requests.value
     .map((r) => r.region)
     .filter((r) => !!r)
   return Array.from(new Set(regs)).sort()
 })
 
 const distinctAgents = computed(() => {
-  const agents = allRequests.value
+  const agentNames = requests.value
     .map((r) => r.assignedAgent)
     .filter((a) => !!a)
-  return Array.from(new Set(agents)).sort()
+  return Array.from(new Set(agentNames)).sort()
 })
 
 const filteredRequests = computed(() => {
-  return allRequests.value.filter((r) => {
+  return requests.value.filter((r) => {
     if (filters.status && r.status !== filters.status) return false
     if (filters.region && r.region !== filters.region) return false
     if (filters.assignedAgent) {
@@ -359,23 +398,47 @@ const formatDateTime = (iso) => {
 
 const selectRequest = (req) => {
   selectedRequest.value = req
-  agentSelection.value = req.assignedAgent || ''
+  agentSelectionId.value = req.assignedAgentId || null
   infoMessage.value = ''
 }
 
 const assignAgentToRequest = () => {
   if (!selectedRequest.value) return
-  partnerStore.assignAgent(selectedRequest.value.id, agentSelection.value || null)
-  infoMessage.value =
-    'Template: agentul a fost salvat pentru această solicitare. În implementarea reală, se trimit notificări către agent și se actualizează și în CRM / ERP.'
+  const id = selectedRequest.value.id
+  const payload = { assigned_agent_id: agentSelectionId.value || null }
+  updatePartnerRequestStatus(id, payload)
+    .then((updated) => {
+      const idx = requests.value.findIndex((r) => r.id === id)
+      if (idx !== -1) {
+        requests.value[idx] = normalizeRequest(updated)
+        // reflect in selection
+        selectedRequest.value = requests.value[idx]
+      }
+      infoMessage.value = 'Alocarea agentului a fost salvată.'
+    })
+    .catch((e) => {
+      console.error(e)
+      infoMessage.value = 'Eroare la salvarea alocării agentului.'
+    })
 }
 
 const updateStatus = (status) => {
   if (!selectedRequest.value) return
-  partnerStore.updateStatus(selectedRequest.value.id, status)
-  infoMessage.value =
-    'Template: statusul solicitării a fost actualizat la &bdquo;' +
-    statusLabel(status) +
-    '&rdquo;. În implementarea reală, se pot declanșa fluxuri automate (creare cont B2B, e-mail către client etc.).'
+  const id = selectedRequest.value.id
+  updatePartnerRequestStatus(id, { status })
+    .then((updated) => {
+      const idx = requests.value.findIndex((r) => r.id === id)
+      if (idx !== -1) {
+        requests.value[idx] = normalizeRequest(updated)
+        selectedRequest.value = requests.value[idx]
+      }
+      infoMessage.value = 'Statusul solicitării a fost actualizat.'
+    })
+    .catch((e) => {
+      console.error(e)
+      infoMessage.value = 'Eroare la actualizarea statusului solicitării.'
+    })
 }
+
+onMounted(loadData)
 </script>

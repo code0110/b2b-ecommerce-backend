@@ -1,316 +1,278 @@
 <template>
-  <div class="container-fluid py-3">
-    <div class="d-flex justify-content-between align-items-center mb-3">
+  <div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
       <div>
-        <h1 class="h4 mb-1">Utilizatori back-office</h1>
-        <p class="text-muted small mb-0">
-          Administrare utilizatori (admin, operator, agent, marketer etc.) și rolurile aferente.
-        </p>
+        <h1 class="h3 fw-bold mb-1 text-gray-800">Utilizatori Back-office</h1>
+        <p class="text-muted small mb-0">Gestionează administratorii, operatorii și agenții.</p>
+      </div>
+      <button class="btn btn-primary shadow-sm d-flex align-items-center gap-2" @click="openCreateModal">
+        <i class="bi bi-person-plus-fill"></i>
+        <span>Utilizator Nou</span>
+      </button>
+    </div>
+
+    <!-- Filters -->
+    <div class="card border-0 shadow-sm mb-4">
+      <div class="card-body p-3 bg-white rounded">
+        <form @submit.prevent="loadUsers(1)" class="row g-3 align-items-end">
+          <div class="col-md-4">
+            <label class="form-label text-muted small fw-bold text-uppercase">Căutare</label>
+            <div class="input-group">
+              <span class="input-group-text bg-light border-end-0">
+                <i class="bi bi-search text-muted"></i>
+              </span>
+              <input
+                v-model="filters.search"
+                type="text"
+                class="form-control bg-light border-start-0 ps-0"
+                placeholder="Nume, email..."
+              />
+            </div>
+          </div>
+          <div class="col-md-3">
+            <label class="form-label text-muted small fw-bold text-uppercase">Rol</label>
+            <select v-model="filters.role" class="form-select bg-light" @change="loadUsers(1)">
+              <option value="">Toate rolurile</option>
+              <option v-for="role in roles" :key="role.id" :value="role.slug">
+                {{ role.name }}
+              </option>
+            </select>
+          </div>
+          <div class="col-md-3">
+            <label class="form-label text-muted small fw-bold text-uppercase">Status</label>
+            <select v-model="filters.is_active" class="form-select bg-light" @change="loadUsers(1)">
+              <option value="">Toate statusurile</option>
+              <option value="1">Activi</option>
+              <option value="0">Inactivi</option>
+            </select>
+          </div>
+          <div class="col-md-2 d-flex gap-2">
+            <button type="submit" class="btn btn-primary flex-fill">
+              <i class="bi bi-funnel-fill me-1"></i> Filtrează
+            </button>
+            <button type="button" class="btn btn-light border" @click="resetFilters" title="Resetează">
+              <i class="bi bi-arrow-counterclockwise"></i>
+            </button>
+          </div>
+        </form>
       </div>
     </div>
 
-    <div class="row g-3">
-      <!-- LISTĂ UTILIZATORI -->
-      <div class="col-lg-7">
-        <div class="card">
-          <div class="card-body">
-            <form class="row g-2 align-items-end mb-3" @submit.prevent="loadUsers">
-              <div class="col-sm-4">
-                <label class="form-label form-label-sm">Căutare</label>
-                <input
-                  v-model="filters.search"
-                  type="text"
-                  class="form-control form-control-sm"
-                  placeholder="Nume sau email"
-                >
-              </div>
-              <div class="col-sm-3">
-                <label class="form-label form-label-sm">Rol</label>
-                <select v-model="filters.role" class="form-select form-select-sm">
-                  <option value="">Toate</option>
-                  <option
-                    v-for="role in roles"
-                    :key="role.id"
-                    :value="role.slug"
-                  >
-                    {{ role.name }}
-                  </option>
-                </select>
-              </div>
-              <div class="col-sm-3">
-                <label class="form-label form-label-sm">Status</label>
-                <select v-model="filters.is_active" class="form-select form-select-sm">
-                  <option value="">Toți</option>
-                  <option value="1">Activi</option>
-                  <option value="0">Inactivi</option>
-                </select>
-              </div>
-              <div class="col-sm-2 d-flex justify-content-end gap-2">
-                <button type="button" class="btn btn-link btn-sm" @click="resetFilters">
-                  Reset
-                </button>
-                <button type="submit" class="btn btn-primary btn-sm">
-                  Caută
-                </button>
-              </div>
-            </form>
-
-            <div v-if="loading" class="text-center text-muted py-4">
-              Se încarcă utilizatorii…
-            </div>
-
-            <div v-else-if="error" class="alert alert-danger">
-              {{ error }}
-            </div>
-
-            <div v-else>
-              <div v-if="users.length === 0" class="text-center text-muted py-4 small">
-                Nu există utilizatori pentru filtrele selectate.
-              </div>
-              <div v-else>
-                <div class="table-responsive">
-                  <table class="table table-sm table-hover align-middle mb-0">
-                    <thead class="table-light">
-                      <tr>
-                        <th>Nume</th>
-                        <th>Email</th>
-                        <th>Roluri</th>
-                        <th>Status</th>
-                        <th style="width: 120px;"></th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr v-for="u in users" :key="u.id">
-                        <td>
-                          <div class="fw-semibold">{{ u.name }}</div>
-                        </td>
-                        <td class="small">{{ u.email }}</td>
-                        <td class="small">
-                          <span
-                            v-for="r in u.roles"
-                            :key="r.id"
-                            class="badge bg-secondary me-1 mb-1"
-                          >
-                            {{ r.name }}
-                          </span>
-                        </td>
-                        <td>
-                          <span
-                            class="badge"
-                            :class="u.is_active ? 'bg-success' : 'bg-secondary'"
-                          >
-                            {{ u.is_active ? 'Activ' : 'Inactiv' }}
-                          </span>
-                        </td>
-                        <td class="text-end">
-                          <button
-                            type="button"
-                            class="btn btn-outline-secondary btn-sm me-1"
-                            @click="editUser(u)"
-                            title="Editează"
-                          >
-                            <i class="bi bi-pencil"></i>
-                          </button>
-                          
-                          <button
-                            v-if="u.is_active && u.id !== currentUserId"
-                            type="button"
-                            class="btn btn-outline-danger btn-sm"
-                            @click="deactivateUser(u)"
-                            title="Dezactivează"
-                          >
-                            <i class="bi bi-person-x"></i>
-                          </button>
-
-                          <button
-                            v-if="!u.is_active && u.id !== currentUserId"
-                            type="button"
-                            class="btn btn-outline-success btn-sm"
-                            @click="activateUser(u)"
-                            title="Activează"
-                          >
-                            <i class="bi bi-person-check"></i>
-                          </button>
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-
-                <!-- Pagination -->
-                <div class="d-flex justify-content-between align-items-center mt-3 small" v-if="pagination.last_page > 1">
-                  <div class="text-muted">
-                    Afișare {{ pagination.from }} - {{ pagination.to }} din {{ pagination.total }} utilizatori
-                  </div>
-                  <nav>
-                    <ul class="pagination pagination-sm mb-0">
-                      <li class="page-item" :class="{ disabled: pagination.current_page === 1 }">
-                        <button class="page-link" @click="changePage(pagination.current_page - 1)">
-                          &laquo;
-                        </button>
-                      </li>
-                      <li class="page-item" :class="{ disabled: pagination.current_page === pagination.last_page }">
-                        <button class="page-link" @click="changePage(pagination.current_page + 1)">
-                          &raquo;
-                        </button>
-                      </li>
-                    </ul>
-                  </nav>
-                </div>
-              </div>
-            </div>
-
+    <!-- Users Table -->
+    <div class="card border-0 shadow-sm overflow-hidden">
+      <div class="card-body p-0">
+        <div v-if="loading" class="text-center py-5">
+          <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Se încarcă...</span>
           </div>
         </div>
-      </div>
 
-      <!-- FORM UTILIZATOR -->
-      <div class="col-lg-5">
-        <div class="card">
-          <div class="card-header py-2 d-flex justify-content-between align-items-center">
-            <span class="small text-uppercase text-muted fw-semibold">
-              {{ form.id ? 'Editează utilizator' : 'Utilizator nou' }}
-            </span>
+        <div v-else-if="users.length === 0" class="text-center py-5">
+          <div class="mb-3">
+            <i class="bi bi-people text-muted opacity-25" style="font-size: 3rem;"></i>
           </div>
-          <div class="card-body">
-            <form @submit.prevent="submitForm" class="small">
-              <div class="row g-2">
-                <div class="col-sm-6">
-                  <label class="form-label form-label-sm">Prenume</label>
-                  <input
-                    v-model="form.first_name"
-                    type="text"
-                    class="form-control form-control-sm"
-                    required
-                  >
-                </div>
-                <div class="col-sm-6">
-                  <label class="form-label form-label-sm">Nume</label>
-                  <input
-                    v-model="form.last_name"
-                    type="text"
-                    class="form-control form-control-sm"
-                  >
-                </div>
-              </div>
+          <h5 class="text-muted">Nu au fost găsiți utilizatori</h5>
+          <p class="text-muted small">Încearcă să modifici filtrele de căutare.</p>
+        </div>
 
-              <div class="mt-2">
-                <label class="form-label form-label-sm">Email</label>
-                <input
-                  v-model="form.email"
-                  type="email"
-                  class="form-control form-control-sm"
-                  required
-                >
-              </div>
-
-              <div class="mt-2">
-                <label class="form-label form-label-sm">Telefon</label>
-                <input
-                  v-model="form.phone"
-                  type="text"
-                  class="form-control form-control-sm"
-                >
-              </div>
-
-              <div class="mt-2">
-                <label class="form-label form-label-sm">
-                  Parolă
-                  <span v-if="form.id" class="text-muted">(lasă gol pentru a nu o schimba)</span>
-                </label>
-                <input
-                  v-model="form.password"
-                  type="password"
-                  class="form-control form-control-sm"
-                  :required="!form.id"
-                >
-              </div>
-
-              <div class="mt-2">
-                <label class="form-label form-label-sm">Roluri</label>
-                <div class="border rounded p-2" style="max-height: 180px; overflow-y: auto;">
-                  <div
-                    v-for="role in roles"
-                    :key="role.id"
-                    class="form-check form-check-sm"
-                  >
-                    <input
-                      class="form-check-input"
-                      type="checkbox"
-                      :id="`role-${role.id}`"
-                      :value="role.id"
-                      v-model="form.role_ids"
+        <div v-else class="table-responsive">
+          <table class="table table-hover align-middle mb-0">
+            <thead class="bg-light">
+              <tr>
+                <th class="ps-4 py-3 text-muted small text-uppercase fw-bold border-0">Utilizator</th>
+                <th class="py-3 text-muted small text-uppercase fw-bold border-0">Roluri</th>
+                <th class="py-3 text-muted small text-uppercase fw-bold border-0">Telefon</th>
+                <th class="py-3 text-muted small text-uppercase fw-bold border-0">Status</th>
+                <th class="pe-4 py-3 text-muted small text-uppercase fw-bold border-0 text-end">Acțiuni</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="u in users" :key="u.id" class="cursor-pointer-row">
+                <td class="ps-4">
+                  <div class="d-flex align-items-center">
+                    <div class="avatar-circle me-3 bg-gradient-primary text-white fw-bold d-flex align-items-center justify-content-center rounded-circle shadow-sm" style="width: 40px; height: 40px;">
+                      {{ getInitials(u.name) }}
+                    </div>
+                    <div>
+                      <div class="fw-semibold text-dark">{{ u.name }}</div>
+                      <div class="small text-muted">{{ u.email }}</div>
+                    </div>
+                  </div>
+                </td>
+                <td>
+                  <div class="d-flex flex-wrap gap-1">
+                    <span v-for="r in u.roles" :key="r.id" class="badge bg-light text-dark border">
+                      {{ r.name }}
+                    </span>
+                  </div>
+                </td>
+                <td class="text-muted small">
+                  <div v-if="u.phone"><i class="bi bi-telephone me-1"></i>{{ u.phone }}</div>
+                  <div v-else>-</div>
+                </td>
+                <td>
+                  <span class="badge rounded-pill" :class="u.is_active ? 'bg-success bg-opacity-10 text-success' : 'bg-secondary bg-opacity-10 text-secondary'">
+                    {{ u.is_active ? 'Activ' : 'Inactiv' }}
+                  </span>
+                </td>
+                <td class="pe-4 text-end">
+                  <div class="btn-group">
+                    <button class="btn btn-sm btn-light border" @click="editUser(u)" title="Editează">
+                      <i class="bi bi-pencil"></i>
+                    </button>
+                    <button 
+                      v-if="u.is_active && u.id !== currentUserId" 
+                      class="btn btn-sm btn-light border text-danger" 
+                      @click="deactivateUser(u)" 
+                      title="Dezactivează"
                     >
-                    <label class="form-check-label" :for="`role-${role.id}`">
-                      {{ role.name }}
-                      <span class="text-muted small">({{ role.slug }})</span>
-                    </label>
+                      <i class="bi bi-person-x"></i>
+                    </button>
+                    <button 
+                      v-if="!u.is_active && u.id !== currentUserId" 
+                      class="btn btn-sm btn-light border text-success" 
+                      @click="activateUser(u)" 
+                      title="Activează"
+                    >
+                      <i class="bi bi-person-check"></i>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      
+      <!-- Pagination -->
+      <div v-if="pagination.last_page > 1" class="card-footer bg-white border-top py-3">
+        <div class="d-flex justify-content-between align-items-center">
+          <div class="small text-muted">
+            Afișare {{ pagination.from }} - {{ pagination.to }} din {{ pagination.total }} utilizatori
+          </div>
+          <nav>
+            <ul class="pagination pagination-sm mb-0">
+              <li class="page-item" :class="{ disabled: pagination.current_page === 1 }">
+                <button class="page-link border-0" @click="changePage(pagination.current_page - 1)">
+                  <i class="bi bi-chevron-left"></i>
+                </button>
+              </li>
+              <li class="page-item active">
+                <span class="page-link border-0 bg-primary">{{ pagination.current_page }}</span>
+              </li>
+              <li class="page-item" :class="{ disabled: pagination.current_page === pagination.last_page }">
+                <button class="page-link border-0" @click="changePage(pagination.current_page + 1)">
+                  <i class="bi bi-chevron-right"></i>
+                </button>
+              </li>
+            </ul>
+          </nav>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal Form -->
+    <div v-if="showModal" class="modal-backdrop-custom">
+      <div class="modal-panel-custom">
+        <div class="card border-0 shadow-lg" style="width: 600px; max-width: 95vw;">
+          <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
+            <h5 class="modal-title fw-bold mb-0">{{ form.id ? 'Editează Utilizator' : 'Utilizator Nou' }}</h5>
+            <button type="button" class="btn-close" @click="closeModal"></button>
+          </div>
+          <div class="card-body pt-4">
+            <form @submit.prevent="submitForm">
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <label class="form-label small fw-bold text-muted text-uppercase">Prenume</label>
+                  <input v-model="form.first_name" type="text" class="form-control" required />
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label small fw-bold text-muted text-uppercase">Nume</label>
+                  <input v-model="form.last_name" type="text" class="form-control" />
+                </div>
+                <div class="col-md-12">
+                  <label class="form-label small fw-bold text-muted text-uppercase">Email</label>
+                  <input v-model="form.email" type="email" class="form-control" required />
+                </div>
+                <div class="col-md-12">
+                  <label class="form-label small fw-bold text-muted text-uppercase">Telefon</label>
+                  <input v-model="form.phone" type="text" class="form-control" />
+                </div>
+                <div class="col-md-12">
+                  <label class="form-label small fw-bold text-muted text-uppercase">Parolă</label>
+                  <input 
+                    v-model="form.password" 
+                    type="password" 
+                    class="form-control" 
+                    :placeholder="form.id ? 'Lasă gol pentru a nu schimba' : 'Obligatoriu pentru utilizatori noi'"
+                    :required="!form.id"
+                  />
+                </div>
+                
+                <div class="col-md-12">
+                  <label class="form-label small fw-bold text-muted text-uppercase">Roluri</label>
+                  <div class="card bg-light border-0">
+                    <div class="card-body p-2" style="max-height: 150px; overflow-y: auto;">
+                      <div v-for="role in roles" :key="role.id" class="form-check">
+                        <input 
+                          class="form-check-input" 
+                          type="checkbox" 
+                          :value="role.id" 
+                          :id="'role-' + role.id"
+                          v-model="form.role_ids"
+                        >
+                        <label class="form-check-label small" :for="'role-' + role.id">
+                          {{ role.name }} <span class="text-muted">({{ role.slug }})</span>
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="col-md-12">
+                  <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" id="activeSwitch" v-model="form.is_active">
+                    <label class="form-check-label small fw-bold" for="activeSwitch">Cont Activ</label>
                   </div>
                 </div>
               </div>
 
-              <div class="mt-2 form-check form-switch">
-                <input
-                  v-model="form.is_active"
-                  class="form-check-input"
-                  type="checkbox"
-                  id="is-active"
-                >
-                <label class="form-check-label" for="is-active">
-                  Utilizator activ
-                </label>
-              </div>
-
-              <div v-if="formError" class="alert alert-danger mt-2 py-1 mb-2">
+              <div v-if="formError" class="alert alert-danger mt-3 mb-0 small">
                 {{ formError }}
               </div>
 
-              <div class="mt-3 d-flex justify-content-between">
-                <button
-                  type="button"
-                  class="btn btn-link btn-sm"
-                  @click="resetForm"
-                >
-                  Reset formular
-                </button>
-                <button
-                  type="submit"
-                  class="btn btn-primary btn-sm"
-                  :disabled="formLoading"
-                >
-                  <span
-                    v-if="formLoading"
-                    class="spinner-border spinner-border-sm me-1"
-                  ></span>
-                  {{ form.id ? 'Salvează modificările' : 'Creează utilizator' }}
+              <div class="mt-4 d-flex justify-content-end gap-2">
+                <button type="button" class="btn btn-light" @click="closeModal">Anulează</button>
+                <button type="submit" class="btn btn-primary" :disabled="formLoading">
+                  <span v-if="formLoading" class="spinner-border spinner-border-sm me-2"></span>
+                  {{ form.id ? 'Salvează' : 'Creează' }}
                 </button>
               </div>
             </form>
           </div>
         </div>
       </div>
-
     </div>
   </div>
 </template>
 
 <script setup>
-import { onMounted, reactive, ref, watch } from 'vue';
-import { useRoute } from 'vue-router';
+import { onMounted, reactive, ref, computed } from 'vue';
 import { fetchUsers, createUser, updateUser, deleteUser } from '@/services/admin/users';
 import { fetchRoles } from '@/services/admin/roles';
 import { useAuthStore } from '@/store/auth';
+import { useToast } from 'vue-toastification';
 
 const authStore = useAuthStore();
+const toast = useToast();
 const currentUserId = authStore.user?.id ?? null;
-const route = useRoute();
 
 const users = ref([]);
 const roles = ref([]);
-
+const directors = ref([]);
 const loading = ref(false);
-const error = ref('');
-
+const showModal = ref(false);
 const formLoading = ref(false);
 const formError = ref('');
 
@@ -329,6 +291,7 @@ const form = reactive({
   password: '',
   is_active: true,
   role_ids: [],
+  director_id: null,
 });
 
 const pagination = reactive({
@@ -338,6 +301,25 @@ const pagination = reactive({
   from: 0,
   to: 0,
 });
+
+const getInitials = (name) => {
+  if (!name) return '??';
+  return name
+    .split(' ')
+    .map(n => n[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2);
+};
+
+const loadDirectors = async () => {
+  try {
+    const data = await fetchUsers({ role: 'sales_director', per_page: 100 });
+    directors.value = data.data || data.items || [];
+  } catch (e) {
+    console.error('loadDirectors error', e);
+  }
+};
 
 const loadRoles = async () => {
   try {
@@ -349,13 +331,8 @@ const loadRoles = async () => {
 
 const loadUsers = async (page = 1) => {
   loading.value = true;
-  error.value = '';
-
   try {
-    const params = {
-      ...filters,
-      page,
-    };
+    const params = { ...filters, page };
     const data = await fetchUsers(params);
     users.value = data.data || data.items || [];
     
@@ -366,15 +343,16 @@ const loadUsers = async (page = 1) => {
     pagination.to = data.to || 0;
   } catch (e) {
     console.error('loadUsers error', e);
-    error.value = 'Nu s-au putut încărca utilizatorii.';
+    toast.error('Nu s-au putut încărca utilizatorii.');
   } finally {
     loading.value = false;
   }
 };
 
 const changePage = (page) => {
-  if (page < 1 || page > pagination.last_page) return;
-  loadUsers(page);
+  if (page >= 1 && page <= pagination.last_page) {
+    loadUsers(page);
+  }
 };
 
 const resetFilters = () => {
@@ -384,7 +362,13 @@ const resetFilters = () => {
   loadUsers(1);
 };
 
-const resetForm = () => {
+const isSalesAgent = computed(() => {
+  const agentRole = roles.value.find(r => r.slug === 'sales_agent');
+  if (!agentRole) return false;
+  return form.role_ids.includes(agentRole.id);
+});
+
+const openCreateModal = () => {
   form.id = null;
   form.first_name = '';
   form.last_name = '';
@@ -393,43 +377,28 @@ const resetForm = () => {
   form.password = '';
   form.is_active = true;
   form.role_ids = [];
+  form.director_id = null;
   formError.value = '';
+  showModal.value = true;
 };
 
 const editUser = (u) => {
   form.id = u.id;
-  form.first_name = u.first_name || (u.name || '').split(' ')[0];
-  form.last_name = u.last_name || (u.name || '').split(' ').slice(1).join(' ');
+  const nameParts = (u.name || '').split(' ');
+  form.first_name = u.first_name || nameParts[0];
+  form.last_name = u.last_name || nameParts.slice(1).join(' ');
   form.email = u.email;
   form.phone = u.phone || '';
   form.password = '';
   form.is_active = !!u.is_active;
-  form.role_ids = u.roles.map(r => r.id);
+  form.role_ids = u.roles ? u.roles.map(r => r.id) : [];
+  form.director_id = u.director_id || null;
   formError.value = '';
+  showModal.value = true;
 };
 
-const deactivateUser = async (u) => {
-  if (!confirm(`Sigur vrei să dezactivezi utilizatorul ${u.name}?`)) return;
-
-  try {
-    await deleteUser(u.id);
-    await loadUsers(pagination.current_page);
-  } catch (e) {
-    console.error('deactivateUser error', e);
-    alert('Nu s-a putut dezactiva utilizatorul.');
-  }
-};
-
-const activateUser = async (u) => {
-  if (!confirm(`Sigur vrei să activezi utilizatorul ${u.name}?`)) return;
-
-  try {
-    await updateUser(u.id, { is_active: true });
-    await loadUsers(pagination.current_page);
-  } catch (e) {
-    console.error('activateUser error', e);
-    alert('Nu s-a putut activa utilizatorul.');
-  }
+const closeModal = () => {
+  showModal.value = false;
 };
 
 const submitForm = async () => {
@@ -452,32 +421,83 @@ const submitForm = async () => {
   try {
     if (form.id) {
       await updateUser(form.id, payload);
+      toast.success('Utilizator actualizat cu succes!');
     } else {
       await createUser(payload);
+      toast.success('Utilizator creat cu succes!');
     }
-
     await loadUsers(pagination.current_page);
-    resetForm();
+    closeModal();
   } catch (e) {
     console.error('submitForm error', e);
-    formError.value = e.response?.data?.message || 'Eroare la salvarea utilizatorului.';
+    if (e.response && e.response.data && e.response.data.errors) {
+      formError.value = Object.values(e.response.data.errors).flat().join(', ');
+    } else {
+      formError.value = 'A apărut o eroare la salvarea utilizatorului.';
+    }
+    toast.error('Eroare la salvarea utilizatorului.');
   } finally {
     formLoading.value = false;
   }
 };
 
-onMounted(async () => {
-  await loadRoles();
-  const presetRole = typeof route.query.role === 'string' ? route.query.role : '';
-  if (presetRole) {
-    filters.role = presetRole;
+const deactivateUser = async (u) => {
+  if (!confirm(`Sigur vrei să dezactivezi utilizatorul ${u.name}?`)) return;
+  try {
+    await deleteUser(u.id); // Assuming deleteUser deactivates (soft delete)
+    await loadUsers(pagination.current_page);
+    toast.success('Utilizator dezactivat cu succes.');
+  } catch (e) {
+    toast.error('Nu s-a putut dezactiva utilizatorul.');
   }
-  await loadUsers();
-});
+};
 
-watch(() => route.query.role, (newRole) => {
-  const r = typeof newRole === 'string' ? newRole : '';
-  filters.role = r;
-  loadUsers(1);
+const activateUser = async (u) => {
+  if (!confirm(`Sigur vrei să activezi utilizatorul ${u.name}?`)) return;
+  try {
+    await updateUser(u.id, { is_active: true });
+    await loadUsers(pagination.current_page);
+    toast.success('Utilizator activat cu succes.');
+  } catch (e) {
+    toast.error('Nu s-a putut activa utilizatorul.');
+  }
+};
+
+onMounted(() => {
+  loadRoles();
+  loadDirectors();
+  loadUsers();
 });
 </script>
+
+<style scoped>
+.modal-backdrop-custom {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  backdrop-filter: blur(2px);
+  z-index: 1040;
+}
+.modal-panel-custom {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1050;
+  animation: slideIn 0.3s ease-out;
+}
+@keyframes slideIn {
+  from { opacity: 0; transform: translate(-50%, -48%); }
+  to { opacity: 1; transform: translate(-50%, -50%); }
+}
+.cursor-pointer-row {
+  transition: background-color 0.15s ease;
+}
+.avatar-circle {
+  font-size: 1rem;
+  background: linear-gradient(135deg, #4f46e5, #3b82f6);
+}
+.bg-gradient-primary {
+  background: linear-gradient(135deg, #4f46e5, #3b82f6);
+}
+</style>

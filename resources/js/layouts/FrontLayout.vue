@@ -4,6 +4,11 @@
     <div v-if="impersonatingClient" class="bg-warning text-dark py-2 px-3 text-center d-flex justify-content-center align-items-center gap-3">
       <strong><i class="bi bi-exclamation-triangle-fill"></i> Mod Impersonare:</strong>
       <span>Comandați în numele clientului <strong>{{ impersonatingClientName }}</strong></span>
+      
+      <span v-if="visitStore.activeVisit" class="badge bg-danger ms-2 animate-pulse">
+          <i class="bi bi-geo-alt-fill"></i> Vizită Activă
+      </span>
+
       <button @click="stopImpersonation" class="btn btn-sm btn-dark ms-2">
         Revenire la Dashboard
       </button>
@@ -165,10 +170,12 @@
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '@/store/auth';
+import { useVisitStore } from '@/store/visit';
 import CategoryMegaModal from '@/components/catalog/CategoryMegaModal.vue';
 
 const router = useRouter();
 const authStore = useAuthStore();
+const visitStore = useVisitStore();
 
 const showCatalog = ref(false);
 const searchQuery = ref('');
@@ -177,7 +184,17 @@ const showVat = ref(true);
 const impersonatingClient = ref(!!localStorage.getItem('impersonated_client_id'));
 const impersonatingClientName = ref(localStorage.getItem('impersonated_client_name'));
 
-const stopImpersonation = () => {
+const stopImpersonation = async () => {
+  if (visitStore.activeVisit) {
+      if(confirm('Doriți să încheiați și vizita curentă?')) {
+          try {
+              await visitStore.endVisit();
+          } catch(e) {
+              console.error(e);
+          }
+      }
+  }
+
   localStorage.removeItem('impersonated_client_id');
   localStorage.removeItem('impersonated_client_name');
   window.location.href = '/cont/agent';
@@ -209,6 +226,7 @@ const handleOpenCatalogEvent = () => {
 };
 
 onMounted(() => {
+  visitStore.checkActiveVisit();
   window.addEventListener('mb2b:open-catalog', handleOpenCatalogEvent);
 });
 

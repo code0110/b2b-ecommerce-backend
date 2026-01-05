@@ -54,6 +54,18 @@
         </RouterLink>
 
         <RouterLink
+          v-if="isAgentOrDirector"
+          :to="{ name: 'account-agent-routes' }"
+          class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
+          :class="{ active: isActive('account-agent-routes') }"
+        >
+          <span>
+            <i class="bi bi-map me-1"></i>
+            Planificare Rute
+          </span>
+        </RouterLink>
+
+        <RouterLink
           :to="{ name: 'account-orders' }"
           class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
           :class="{ active: isActive('account-orders') || isActive('account-order-details') }"

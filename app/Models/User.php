@@ -22,6 +22,7 @@ class User extends Authenticatable
         'phone',
         'password',
         'customer_id',
+        'director_id',
         'is_active',
     ];
 
@@ -107,5 +108,25 @@ public function roles(): BelongsToMany
     public function directedCustomers(): HasMany
     {
         return $this->hasMany(Customer::class, 'sales_director_user_id');
+    }
+
+    public function director(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'director_id');
+    }
+
+    public function subordinates(): HasMany
+    {
+        return $this->hasMany(User::class, 'director_id');
+    }
+
+    public function routes(): HasMany
+    {
+        return $this->hasMany(AgentRoute::class, 'agent_id');
+    }
+
+    public function visits(): HasMany
+    {
+        return $this->hasMany(CustomerVisit::class, 'agent_id');
     }
 }

@@ -214,6 +214,7 @@ Route::middleware(['auth:sanctum', 'impersonate'])->group(function () {
             Route::get('receipt-book/active', [App\Http\Controllers\Front\AgentDashboardController::class, 'getActiveReceiptBook']);
             Route::post('payments', [App\Http\Controllers\Front\AgentDashboardController::class, 'storePayment']);
             Route::post('payments/cancel-receipt', [App\Http\Controllers\Front\AgentDashboardController::class, 'cancelReceipt']);
+            Route::get('routes', [App\Http\Controllers\Front\AgentDashboardController::class, 'getRoutes']);
         });
         Route::post('company-users', [CompanyUserController::class, 'store']);
         Route::put('company-users/{user}', [CompanyUserController::class, 'update']);
@@ -270,7 +271,7 @@ Route::get('products/discounted', [HomeController::class, 'discountedProducts'])
 });
 
 Route::prefix('admin')
-    ->middleware(['auth:sanctum', 'role:admin,operator'])
+    ->middleware(['auth:sanctum', 'role:admin,operator,sales_agent,sales_director'])
     ->group(function () {
         // Dashboard
         Route::get('dashboard', [\App\Http\Controllers\Admin\DashboardController::class, 'index']);
@@ -290,6 +291,12 @@ Route::prefix('admin')
 
         // Customer Groups
         Route::apiResource('customer-groups', \App\Http\Controllers\Admin\CustomerGroupController::class);
+
+        // Agent Routes & Visits
+        Route::apiResource('agent-routes', \App\Http\Controllers\Admin\AgentRouteController::class);
+        Route::apiResource('customer-visits', \App\Http\Controllers\Admin\CustomerVisitController::class);
+        Route::post('customer-visits/start', [\App\Http\Controllers\Admin\CustomerVisitController::class, 'startVisit']);
+        Route::post('customer-visits/{id}/end', [\App\Http\Controllers\Admin\CustomerVisitController::class, 'endVisit']);
 
         // Promotions
         Route::apiResource('promotions', \App\Http\Controllers\Admin\PromotionController::class);

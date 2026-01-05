@@ -25,6 +25,7 @@ class Payment extends Model
         'bank',
         'due_date',
         'notes',
+        'customer_visit_id',
     ];
 
     protected $casts = [
@@ -57,5 +58,10 @@ class Payment extends Model
         return $this->belongsToMany(Invoice::class, 'payment_invoices')
             ->withPivot('amount')
             ->withTimestamps();
+    }
+
+    public function visit(): BelongsTo
+    {
+        return $this->belongsTo(CustomerVisit::class, 'customer_visit_id');
     }
 }

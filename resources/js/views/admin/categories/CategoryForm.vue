@@ -1,145 +1,151 @@
 <template>
-  <div class="container-fluid py-3">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-      <div>
-        <h1 class="h5 mb-0">
-          {{ isEdit ? 'Editează categorie' : 'Categorie nouă' }}
-        </h1>
-        <div class="small text-muted">
-          <RouterLink :to="{ name: 'admin-categories' }">
-            ← Înapoi la lista de categorii
+  <div class="container-fluid py-4">
+    <div class="row justify-content-center">
+      <div class="col-lg-8 col-xl-7">
+        <!-- Header -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <div>
+            <h1 class="h3 fw-bold mb-1 text-gray-800">{{ isEdit ? 'Editează Categorie' : 'Categorie Nouă' }}</h1>
+            <p class="text-muted small mb-0">Configurează detaliile și ierarhia categoriei.</p>
+          </div>
+          <RouterLink :to="{ name: 'admin-categories' }" class="btn btn-outline-secondary btn-sm shadow-sm">
+            <i class="bi bi-arrow-left me-1"></i> Înapoi la listă
           </RouterLink>
         </div>
-      </div>
-    </div>
 
-    <div v-if="error" class="alert alert-danger py-2">
-      {{ error }}
-    </div>
+        <div v-if="error" class="alert alert-danger py-2 mb-4 shadow-sm border-0">
+          {{ error }}
+        </div>
 
-    <div class="card">
-      <div class="card-body">
-        <form @submit.prevent="saveCategory">
-          <div class="row g-3">
-            <div class="col-md-6">
-              <label class="form-label form-label-sm">Denumire</label>
-              <input
-                v-model="form.name"
-                type="text"
-                class="form-control form-control-sm"
-                required
-              >
-            </div>
-            <div class="col-md-6">
-              <label class="form-label form-label-sm">Slug</label>
-              <input
-                v-model="form.slug"
-                type="text"
-                class="form-control form-control-sm"
-                required
-              >
-              <div class="form-text small">
-                Folosit în URL (ex: <code>materiale-constructii</code>).
+        <!-- Form Card -->
+        <div class="card border-0 shadow-sm">
+          <div class="card-body p-4">
+            <form @submit.prevent="saveCategory">
+              <div class="row g-4">
+                <!-- Basic Info -->
+                <div class="col-12">
+                  <h6 class="fw-bold text-uppercase text-muted small border-bottom pb-2 mb-3">Informații de bază</h6>
+                </div>
+                
+                <div class="col-md-6">
+                  <label class="form-label small fw-bold text-muted">Denumire</label>
+                  <input
+                    v-model="form.name"
+                    type="text"
+                    class="form-control"
+                    required
+                  >
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label small fw-bold text-muted">Slug</label>
+                  <div class="input-group">
+                    <span class="input-group-text bg-light text-muted small">/</span>
+                    <input
+                      v-model="form.slug"
+                      type="text"
+                      class="form-control"
+                      required
+                    >
+                  </div>
+                  <div class="form-text small">URL-ul prietenos pentru SEO.</div>
+                </div>
+
+                <div class="col-md-6">
+                  <label class="form-label small fw-bold text-muted">Categorie Părinte</label>
+                  <select
+                    v-model="form.parent_id"
+                    class="form-select"
+                  >
+                    <option :value="null">-- Niciun părinte (Categorie Principală) --</option>
+                    <option
+                      v-for="cat in parentOptions"
+                      :key="cat.id"
+                      :value="cat.id"
+                    >
+                      {{ cat.name }}
+                    </option>
+                  </select>
+                </div>
+
+                <div class="col-md-3">
+                  <label class="form-label small fw-bold text-muted">Ordine</label>
+                  <input
+                    v-model.number="form.sort_order"
+                    type="number"
+                    class="form-control"
+                    min="0"
+                  >
+                </div>
+
+                <div class="col-md-3">
+                  <label class="form-label small fw-bold text-muted">Status</label>
+                  <div class="form-check form-switch mt-2">
+                    <input
+                      v-model="form.is_active"
+                      class="form-check-input"
+                      type="checkbox"
+                      id="cat-active"
+                    >
+                    <label class="form-check-label small fw-semibold" for="cat-active">
+                      Activă
+                    </label>
+                  </div>
+                </div>
+
+                <!-- Attributes & Media -->
+                <div class="col-12 mt-4">
+                  <h6 class="fw-bold text-uppercase text-muted small border-bottom pb-2 mb-3">Detalii Suplimentare</h6>
+                </div>
+
+                <div class="col-md-12">
+                  <label class="form-label small fw-bold text-muted">Atribute Asociate</label>
+                  <textarea
+                    v-model="form.attributes_raw"
+                    rows="3"
+                    class="form-control"
+                    placeholder="Ex: material, culoare, dimensiune (separate prin virgulă)"
+                  />
+                  <div class="form-text small">
+                    Specifică ce atribute sunt relevante pentru produsele din această categorie.
+                  </div>
+                </div>
+                <div class="col-md-12">
+                  <label class="form-label small fw-bold text-muted">Imagine (URL)</label>
+                  <div class="input-group">
+                    <span class="input-group-text bg-light"><i class="bi bi-image text-muted"></i></span>
+                    <input
+                      v-model="form.image_url"
+                      type="text"
+                      class="form-control"
+                      placeholder="https://example.com/image.jpg"
+                    >
+                  </div>
+                </div>
               </div>
-            </div>
 
-            <div class="col-md-4">
-              <label class="form-label form-label-sm">Categorie părinte</label>
-              <select
-                v-model="form.parent_id"
-                class="form-select form-select-sm"
-              >
-                <option :value="null">— fără părinte —</option>
-                <option
-                  v-for="cat in parentOptions"
-                  :key="cat.id"
-                  :value="cat.id"
+              <div class="mt-5 d-flex justify-content-end gap-2 border-top pt-4">
+                <RouterLink
+                  class="btn btn-light border"
+                  :to="{ name: 'admin-categories' }"
                 >
-                  {{ cat.name }}
-                </option>
-              </select>
-            </div>
-
-            <div class="col-md-2">
-              <label class="form-label form-label-sm">Ordine sortare</label>
-              <input
-                v-model.number="form.sort_order"
-                type="number"
-                class="form-control form-control-sm"
-                min="0"
-              >
-            </div>
-
-            <div class="col-md-3 d-flex align-items-end">
-              <div class="form-check">
-                <input
-                  v-model="form.is_active"
-                  class="form-check-input"
-                  type="checkbox"
-                  id="cat-active"
+                  Anulează
+                </RouterLink>
+                <button
+                  class="btn btn-primary px-4"
+                  type="submit"
+                  :disabled="saving"
                 >
-                <label class="form-check-label small" for="cat-active">
-                  Publicată / vizibilă în front
-                </label>
+                  <span v-if="saving" class="spinner-border spinner-border-sm me-2"></span>
+                  {{ isEdit ? 'Salvează Modificările' : 'Creează Categorie' }}
+                </button>
               </div>
-            </div>
-          </div>
 
-          <!-- Atribute / imagine – deocamdată doar placeholder simplu -->
-          <hr class="my-3">
-
-          <div class="row g-3">
-            <div class="col-md-6">
-              <label class="form-label form-label-sm">Atribute asociate (text liber demo)</label>
-              <textarea
-                v-model="form.attributes_raw"
-                rows="3"
-                class="form-control form-control-sm"
-                placeholder="Ex: material, culoare, dimensiune..."
-              />
-              <div class="form-text small">
-                Pentru integrare reală cu atribute, poți mappa la un endpoint dedicat în backend.
+              <div v-if="formError" class="alert alert-danger mt-3 mb-0 small">
+                {{ formError }}
               </div>
-            </div>
-            <div class="col-md-6">
-              <label class="form-label form-label-sm">Imagine reprezentativă (URL simplu demo)</label>
-              <input
-                v-model="form.image_url"
-                type="text"
-                class="form-control form-control-sm"
-                placeholder="https://..."
-              >
-              <div class="form-text small">
-                Pentru upload real, se configurează endpoint separat.
-              </div>
-            </div>
+            </form>
           </div>
-
-          <div class="mt-3 d-flex justify-content-between">
-            <div>
-              <button
-                class="btn btn-sm btn-primary me-2"
-                type="submit"
-                :disabled="saving"
-              >
-                Salvează categoria
-              </button>
-              <RouterLink
-                class="btn btn-sm btn-outline-secondary"
-                :to="{ name: 'admin-categories' }"
-              >
-                Anulează
-              </RouterLink>
-            </div>
-            <div class="small text-muted" v-if="isEdit">
-              ID: {{ route.params.id }}
-            </div>
-          </div>
-
-          <div v-if="formError" class="text-danger small mt-2">
-            {{ formError }}
-          </div>
-        </form>
+        </div>
       </div>
     </div>
   </div>

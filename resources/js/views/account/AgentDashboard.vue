@@ -2,6 +2,32 @@
   <div class="agent-dashboard">
     <h1 class="h3 mb-4">Panou Control Vânzări</h1>
 
+    <!-- Active Visit Panel -->
+    <div v-if="visitStore.hasActiveVisit" class="card border-primary shadow-sm mb-4">
+      <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+        <h5 class="mb-0"><i class="bi bi-geo-alt-fill me-2"></i>Vizită Activă</h5>
+        <span class="badge bg-white text-primary">{{ visitStore.activeVisit.customer?.name }}</span>
+      </div>
+      <div class="card-body">
+        <div class="row align-items-center">
+          <div class="col-md-8">
+            <p class="mb-1"><strong>Client:</strong> {{ visitStore.activeVisit.customer?.name }}</p>
+            <p class="mb-1"><strong>CUI:</strong> {{ visitStore.activeVisit.customer?.cif }}</p>
+            <p class="mb-0 text-muted small">Vizită începută la: {{ new Date(visitStore.activeVisit.start_time).toLocaleTimeString() }}</p>
+          </div>
+          <div class="col-md-4 text-end">
+            <button class="btn btn-outline-primary me-2" @click="impersonateClient(visitStore.activeVisit.customer)">
+              <i class="bi bi-cart-plus me-1"></i> Comandă
+            </button>
+            <button class="btn btn-danger" @click="handleEndVisit" :disabled="visitStore.loading">
+              <span v-if="visitStore.loading" class="spinner-border spinner-border-sm me-1"></span>
+              <i v-else class="bi bi-stop-circle me-1"></i> Încheie Vizita
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div v-if="loading" class="text-center py-5">
       <div class="spinner-border text-primary" role="status">
         <span class="visually-hidden">Se încarcă...</span>
@@ -10,6 +36,15 @@
 
     <template v-else>
       <ul class="nav nav-tabs mb-4">
+        <li class="nav-item">
+          <button 
+            class="nav-link" 
+            :class="{ active: activeTab === 'routes' }" 
+            @click="activeTab = 'routes'"
+          >
+            Planificare Rute
+          </button>
+        </li>
         <li class="nav-item">
           <button 
             class="nav-link" 
@@ -29,6 +64,155 @@
           </button>
         </li>
       </ul>
+
+      <!-- Tab Planificare Rute -->
+      <div v-if="activeTab === 'routes'">
+        <!-- Filters -->
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-body p-3">
+                <div class="row align-items-center">
+                    <div class="col-md-6 mb-3 mb-md-0">
+                         <div class="btn-group w-100" role="group">
+                             <input type="radio" class="btn-check" name="weekType" id="wtAll" value="all" v-model="selectedWeekType">
+                             <label class="btn btn-outline-secondary" for="wtAll">Toate</label>
+
+                             <input type="radio" class="btn-check" name="weekType" id="wtOdd" value="odd" v-model="selectedWeekType">
+                             <label class="btn btn-outline-secondary" for="wtOdd">Săptămâni Impare</label>
+
+                             <input type="radio" class="btn-check" name="weekType" id="wtEven" value="even" v-model="selectedWeekType">
+                             <label class="btn btn-outline-secondary" for="wtEven">Săptămâni Pare</label>
+                         </div>
+                    </div>
+                    <div class="col-md-6">
+                         <ul class="nav nav-pills justify-content-center justify-content-md-end">
+                            <li class="nav-item" v-for="day in days" :key="day.value">
+                                <a 
+                                    class="nav-link py-1 px-2 small" 
+                                    :class="{ active: currentDay === day.value }" 
+                                    href="#" 
+                                    @click.prevent="currentDay = day.value"
+                                >
+                                    {{ day.label.substring(0, 3) }}
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- KPI Stats -->
+        <div class="row mb-4">
+            <div class="col-md-4 mb-3 mb-md-0">
+                <div class="card bg-primary text-white h-100">
+                    <div class="card-body text-center">
+                        <h6 class="text-uppercase small opacity-75 mb-1">Total Clienți Rută</h6>
+                        <h2 class="display-6 fw-bold mb-0">{{ kpiStats.total }}</h2>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-3 mb-md-0">
+                <div class="card bg-success text-white h-100">
+                     <div class="card-body text-center">
+                        <h6 class="text-uppercase small opacity-75 mb-1">Vizitați</h6>
+                        <h2 class="display-6 fw-bold mb-0">{{ kpiStats.visited }}</h2>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card bg-light text-dark h-100 border">
+                     <div class="card-body text-center">
+                        <h6 class="text-uppercase small text-muted mb-1">De Vizitat</h6>
+                        <h2 class="display-6 fw-bold mb-0 text-muted">{{ kpiStats.unvisited }}</h2>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Progress Bar -->
+        <div class="progress mb-4" style="height: 10px;">
+            <div 
+                class="progress-bar bg-success" 
+                role="progressbar" 
+                :style="{ width: kpiStats.percent + '%' }" 
+                :aria-valuenow="kpiStats.percent" 
+                aria-valuemin="0" 
+                aria-valuemax="100"
+            ></div>
+        </div>
+
+        <!-- Route List -->
+        <div class="card border-0 shadow-sm">
+             <div class="card-header bg-white py-3">
+                 <h6 class="mb-0 fw-bold text-uppercase">
+                     Lista Clienți - {{ days.find(d => d.value === currentDay)?.label }}
+                 </h6>
+             </div>
+             <div class="card-body p-0">
+                 <div v-if="filteredRoutes.length === 0" class="p-5 text-center text-muted">
+                     <i class="bi bi-calendar-x fs-1 mb-3 d-block opacity-25"></i>
+                     Nu sunt vizite planificate pentru această zi.
+                 </div>
+                 <div class="list-group list-group-flush" v-else>
+                     <div 
+                        v-for="(item, index) in filteredRoutes" 
+                        :key="item.id" 
+                        class="list-group-item p-3"
+                        :class="{'bg-light': item.customer?.visits_count > 0}"
+                     >
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="fw-bold text-muted h4 mb-0 opacity-50" style="width: 30px;">
+                                    {{ index + 1 }}
+                                </div>
+                                <div>
+                                    <div class="fw-bold text-dark d-flex align-items-center gap-2">
+                                        {{ item.customer.name }}
+                                        <span v-if="item.customer?.visits_count > 0" class="badge bg-success rounded-pill">
+                                            <i class="bi bi-check-lg"></i> Vizitat
+                                        </span>
+                                    </div>
+                                    <div class="small text-muted">
+                                        {{ item.customer.address || 'Fără adresă' }}
+                                    </div>
+                                    <div class="small text-muted mt-1" v-if="item.customer.phone">
+                                        <i class="bi bi-telephone me-1"></i> {{ item.customer.phone }}
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="d-flex gap-2">
+                                <button 
+                                    v-if="!item.customer?.visits_count && (!visitStore.activeVisit || visitStore.activeVisit.customer_id !== item.customer.id)"
+                                    class="btn btn-outline-primary btn-sm"
+                                    @click="handleStartVisit(item.customer)"
+                                    :disabled="visitStore.loading"
+                                >
+                                    <i class="bi bi-geo-alt me-1"></i> Începe Vizita
+                                </button>
+                                <button 
+                                    v-if="visitStore.activeVisit?.customer_id === item.customer.id"
+                                    class="btn btn-primary btn-sm"
+                                    disabled
+                                >
+                                    <i class="bi bi-geo-alt-fill me-1"></i> În curs...
+                                </button>
+                                
+                                <button 
+                                    class="btn btn-light border btn-sm"
+                                    @click="activeTab = 'clients'; searchClient = item.customer.name"
+                                    title="Vezi Detalii Client"
+                                >
+                                    <i class="bi bi-eye"></i>
+                                </button>
+                            </div>
+                        </div>
+                     </div>
+                 </div>
+             </div>
+        </div>
+
+      </div>
 
       <!-- Tab Clienti -->
       <div v-if="activeTab === 'clients'">
@@ -60,7 +244,7 @@
               </tr>
             </thead>
             <tbody>
-              <tr v-for="client in filteredClients" :key="client.id">
+              <tr v-for="client in filteredClients" :key="client.id" :class="{'table-primary': visitStore.activeVisit?.customer_id === client.id}">
                 <td>
                   <div class="fw-bold">{{ client.name }}</div>
                   <small class="text-muted">{{ client.email }}</small>
@@ -78,10 +262,22 @@
                     <span v-else class="text-muted">-</span>
                 </td>
                 <td class="text-end">
+                   <!-- Start/End Visit Buttons -->
+                   <button 
+                    v-if="!visitStore.activeVisit || visitStore.activeVisit.customer_id !== client.id"
+                    class="btn btn-sm btn-outline-primary me-2"
+                    @click="handleStartVisit(client)"
+                    :disabled="visitStore.loading || (visitStore.activeVisit && visitStore.activeVisit.customer_id !== client.id)"
+                    title="Începe Vizită"
+                  >
+                    <i class="bi bi-geo-alt"></i> Vizită
+                  </button>
+
                   <button 
                     class="btn btn-sm btn-success me-2"
                     @click="openPaymentModal(client)"
                     title="Adaugă Încasare"
+                    :disabled="!canPerformAction(client)"
                   >
                     <i class="bi bi-cash-stack"></i> Încasare
                   </button>
@@ -89,6 +285,7 @@
                     class="btn btn-sm btn-primary"
                     @click="impersonateClient(client)"
                     title="Plasează Comandă"
+                    :disabled="!canPerformAction(client)"
                   >
                     <i class="bi bi-cart-plus"></i> Comandă
                   </button>
@@ -359,16 +556,46 @@ import { ref, computed, onMounted, watch } from 'vue';
 import { useAuthStore } from '@/store/auth';
 import agentService from '@/services/account/agent';
 import { useRouter } from 'vue-router';
+import { useVisitStore } from '@/store/visit';
+import { useToast } from 'vue-toastification';
 
 const authStore = useAuthStore();
 const router = useRouter();
+const visitStore = useVisitStore();
+const toast = useToast();
 
-const activeTab = ref('clients');
+const activeTab = ref('routes'); // Default to routes
 const clients = ref([]);
 const agents = ref([]);
+const routes = ref([]); // Store all routes
 const loading = ref(true);
 const searchClient = ref('');
 const showAgentClientsOnly = ref(false);
+
+const days = [
+  { value: 'Monday', label: 'Luni' },
+  { value: 'Tuesday', label: 'Marți' },
+  { value: 'Wednesday', label: 'Miercuri' },
+  { value: 'Thursday', label: 'Joi' },
+  { value: 'Friday', label: 'Vineri' },
+  { value: 'Saturday', label: 'Sâmbătă' },
+  { value: 'Sunday', label: 'Duminică' },
+];
+
+const currentDay = ref(new Date().toLocaleDateString('en-US', { weekday: 'long' }));
+const selectedWeekType = ref('all'); // Will be set to current week type
+
+// Helper to get week number and type
+const getWeekType = () => {
+    const d = new Date();
+    const date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+    date.setUTCDate(date.getUTCDate() + 4 - (date.getUTCDay()||7));
+    const yearStart = new Date(Date.UTC(date.getUTCFullYear(),0,1));
+    const weekNo = Math.ceil(( ( (date - yearStart) / 86400000) + 1)/7);
+    return weekNo % 2 === 0 ? 'even' : 'odd';
+};
+
+selectedWeekType.value = getWeekType();
 
 const showPaymentModal = ref(false);
 const showCancelModal = ref(false);
@@ -395,6 +622,33 @@ const paymentForm = ref({
 const isDirector = computed(() => {
   const roles = (authStore.user?.roles || []).map(r => r.slug || r.code);
   return roles.includes('sales_director');
+});
+
+const filteredRoutes = computed(() => {
+  return routes.value.filter(r => {
+      // Filter by Day
+      if (r.day_of_week !== currentDay.value) return false;
+      
+      // Filter by Week Type
+      // If route is 'all', it shows every week.
+      // If route is 'odd', it shows only on odd weeks.
+      // If route is 'even', it shows only on even weeks.
+      // BUT, we are viewing a specific week type (selectedWeekType).
+      // So we show:
+      // 1. Routes that are 'all'
+      // 2. Routes that match the selected week type
+      if (r.week_type === 'all') return true;
+      return r.week_type === selectedWeekType.value;
+  });
+});
+
+const kpiStats = computed(() => {
+    const total = filteredRoutes.value.length;
+    const visited = filteredRoutes.value.filter(r => r.customer?.visits_count > 0).length;
+    const unvisited = total - visited;
+    const percent = total > 0 ? Math.round((visited / total) * 100) : 0;
+    
+    return { total, visited, unvisited, percent };
 });
 
 const filteredClients = computed(() => {
@@ -450,6 +704,13 @@ const loadData = async () => {
   try {
     const clientsRes = await agentService.getClients({ page: 1, limit: 100 });
     clients.value = clientsRes.data.data; // Paginated response
+
+    try {
+        const routesRes = await agentService.getRoutes();
+        routes.value = routesRes.data;
+    } catch (e) {
+        console.warn('Failed to load routes', e);
+    }
 
     try {
         const rbRes = await agentService.getActiveReceiptBook();
@@ -564,7 +825,8 @@ const submitPayment = async () => {
     await agentService.storePayment({
       customer_id: selectedClient.value.id,
       ...paymentForm.value,
-      selected_invoices: selectedInvoiceIds.value
+      selected_invoices: selectedInvoiceIds.value,
+      customer_visit_id: visitStore.activeVisit?.id
     });
     alert('Chitanța a fost emisă cu succes!');
     closePaymentModal();
@@ -578,7 +840,45 @@ const submitPayment = async () => {
   }
 };
 
+const handleStartVisit = async (customer) => {
+  if (visitStore.activeVisit) {
+    if (!confirm('Aveți deja o vizită activă. Doriți să o încheiați pe cea curentă și să începeți una nouă?')) {
+      return;
+    }
+    await visitStore.endVisit();
+  }
+  
+  try {
+    await visitStore.startVisit(customer.id);
+    toast.success(`Vizită începută cu ${customer.name}`);
+  } catch (e) {
+    console.error(e);
+    toast.error('Nu s-a putut începe vizita.');
+  }
+};
+
+const handleEndVisit = async () => {
+  if (!confirm('Sigur doriți să încheiați vizita?')) return;
+  try {
+    await visitStore.endVisit();
+    toast.success('Vizită încheiată cu succes.');
+  } catch (e) {
+    console.error(e);
+    toast.error('Eroare la încheierea vizitei.');
+  }
+};
+
+const canPerformAction = (customer) => {
+  // Can perform action only if there is an active visit with THIS customer
+  return visitStore.activeVisit && visitStore.activeVisit.customer_id === customer.id;
+};
+
 const impersonateClient = (client) => {
+  if (!canPerformAction(client)) {
+    toast.warning('Trebuie să începeți o vizită pentru a plasa comenzi!');
+    return;
+  }
+  
   if (confirm(`Sunteți sigur că doriți să plasați comenzi în numele clientului ${client.name}?`)) {
     localStorage.setItem('impersonated_client_id', client.id);
     localStorage.setItem('impersonated_client_name', client.name);
@@ -589,6 +889,7 @@ const impersonateClient = (client) => {
 
 onMounted(() => {
   loadData();
+  visitStore.checkActiveVisit();
 });
 </script>
 

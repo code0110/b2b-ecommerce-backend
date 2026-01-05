@@ -41,6 +41,7 @@ import AccountTickets from '@/views/account/AccountTickets.vue'
 import AccountOffers from '@/views/account/AccountOffers.vue'
 import AccountNotifications from '@/views/account/AccountNotifications.vue'
 import AgentDashboard from '@/views/account/AgentDashboard.vue'
+import AccountAgentRoutes from '@/views/account/AgentRoutes.vue'
 
 // Admin
 import AdminDashboard from '@/views/admin/Dashboard.vue'
@@ -69,6 +70,7 @@ import AccountLayout from '@/layouts/AccountLayout.vue';
 import AdminOrdersList from '@/views/admin/orders/OrderList.vue';
 import AdminOrderDetails from '@/views/admin/orders/OrderDetails.vue';
 import AdminUsers from '@/views/admin/settings/Users.vue';
+import AgentRoutes from '@/views/admin/routes/AgentRoutes.vue';
 
 import { useAuthStore } from '@/store/auth'
 
@@ -271,6 +273,12 @@ const router = createRouter({
           name: 'account-company-users',
           component: CompanyUsers,
           meta: { requiresAuth: true }
+        },
+        {
+          path: 'rute',
+          name: 'account-agent-routes',
+          component: AccountAgentRoutes,
+          meta: { requiresAuth: true }
         }
       ]
     }
@@ -403,6 +411,11 @@ const router = createRouter({
           path: 'receipt-books',
           name: 'admin-receipt-books',
           component: ReceiptBookList
+        },
+        {
+          path: 'routes',
+          name: 'admin-agent-routes',
+          component: AgentRoutes
         },
         {
   path: 'settings/users',

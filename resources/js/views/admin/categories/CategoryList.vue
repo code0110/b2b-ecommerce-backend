@@ -1,92 +1,97 @@
 <template>
-  <div class="container-fluid py-3">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-      <h1 class="h5 mb-0">Categorii produse</h1>
+  <div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <div>
+        <h1 class="h3 fw-bold mb-1 text-gray-800">Categorii Produse</h1>
+        <p class="text-muted small mb-0">Gestionează ierarhia de categorii pentru magazin.</p>
+      </div>
       <RouterLink
-        class="btn btn-sm btn-primary"
+        class="btn btn-primary shadow-sm"
         :to="{ name: 'admin-categories-new' }"
       >
-        Adaugă categorie
+        <i class="bi bi-plus-lg me-2"></i>Adaugă Categorie
       </RouterLink>
     </div>
 
-    <div v-if="error" class="alert alert-danger py-2">
+    <div v-if="error" class="alert alert-danger py-2 mb-4 shadow-sm border-0">
       {{ error }}
     </div>
 
-    <div class="card">
+    <div class="card border-0 shadow-sm">
       <div class="card-body p-0">
-        <table class="table table-sm mb-0 align-middle">
-          <thead class="table-light">
-            <tr>
-              <th>Denumire</th>
-              <th>Slug</th>
-              <th>Categorie părinte</th>
-              <th>Ordine</th>
-              <th>Status</th>
-              <th style="width: 140px;">Acțiuni</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-if="loading">
-              <td colspan="6" class="text-center text-muted py-3">
-                Se încarcă...
-              </td>
-            </tr>
-            <tr v-if="!loading && !categories.length">
-              <td colspan="6" class="text-center text-muted py-3">
-                Nu există categorii definite.
-              </td>
-            </tr>
-            <tr
-              v-for="cat in categories"
-              :key="cat.id"
-            >
-              <td class="small">
-                <RouterLink
-                  class="fw-semibold text-decoration-none"
-                  :to="{ name: 'admin-categories-edit', params: { id: cat.id } }"
-                >
-                  {{ cat.name }}
-                </RouterLink>
-              </td>
-              <td class="small">
-                <code>{{ cat.slug }}</code>
-              </td>
-              <td class="small">
-                {{ cat.parent_name || cat.parent?.name || '-' }}
-              </td>
-              <td class="small">
-                {{ cat.sort_order ?? '-' }}
-              </td>
-              <td class="small">
-                <span
-                  class="badge"
-                  :class="cat.is_active ? 'bg-success' : 'bg-secondary'"
-                >
-                  {{ cat.is_active ? 'Publicată' : 'Ascunsă' }}
-                </span>
-              </td>
-              <td class="small">
-                <div class="btn-group btn-group-sm">
+        <div v-if="loading" class="text-center py-5">
+          <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Se încarcă...</span>
+          </div>
+        </div>
+
+        <div v-else-if="!categories.length" class="text-center py-5">
+          <div class="mb-3">
+            <i class="bi bi-folder text-muted" style="font-size: 3rem;"></i>
+          </div>
+          <h5 class="text-muted">Nu există categorii definite</h5>
+          <p class="text-muted small">Începe prin a adăuga o categorie nouă.</p>
+        </div>
+
+        <div v-else class="table-responsive">
+          <table class="table table-hover align-middle mb-0">
+            <thead class="bg-light">
+              <tr>
+                <th class="ps-4 py-3 text-muted small text-uppercase fw-bold border-0">Denumire</th>
+                <th class="py-3 text-muted small text-uppercase fw-bold border-0">Slug</th>
+                <th class="py-3 text-muted small text-uppercase fw-bold border-0">Părinte</th>
+                <th class="py-3 text-muted small text-uppercase fw-bold border-0">Ordine</th>
+                <th class="py-3 text-muted small text-uppercase fw-bold border-0">Status</th>
+                <th class="pe-4 py-3 text-muted small text-uppercase fw-bold border-0 text-end">Acțiuni</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="cat in categories" :key="cat.id">
+                <td class="ps-4">
                   <RouterLink
-                    class="btn btn-outline-secondary"
+                    class="fw-semibold text-dark text-decoration-none"
                     :to="{ name: 'admin-categories-edit', params: { id: cat.id } }"
                   >
-                    Editează
+                    {{ cat.name }}
                   </RouterLink>
-                  <button
-                    class="btn btn-outline-danger"
-                    type="button"
-                    @click="removeCategory(cat)"
-                  >
-                    Șterge
-                  </button>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+                </td>
+                <td><code class="text-muted bg-light px-2 py-1 rounded small">{{ cat.slug }}</code></td>
+                <td class="text-muted small">
+                  <span v-if="cat.parent_name || cat.parent?.name">
+                    <i class="bi bi-arrow-return-right me-1 text-muted"></i>
+                    {{ cat.parent_name || cat.parent?.name }}
+                  </span>
+                  <span v-else class="text-muted opacity-50">-</span>
+                </td>
+                <td class="text-muted">{{ cat.sort_order ?? '-' }}</td>
+                <td>
+                  <span class="badge rounded-pill" :class="cat.is_active ? 'bg-success bg-opacity-10 text-success' : 'bg-secondary bg-opacity-10 text-secondary'">
+                    {{ cat.is_active ? 'Publicată' : 'Ascunsă' }}
+                  </span>
+                </td>
+                <td class="pe-4 text-end">
+                  <div class="btn-group">
+                    <RouterLink
+                      class="btn btn-sm btn-light border"
+                      :to="{ name: 'admin-categories-edit', params: { id: cat.id } }"
+                      title="Editează"
+                    >
+                      <i class="bi bi-pencil"></i>
+                    </RouterLink>
+                    <button
+                      class="btn btn-sm btn-light border text-danger"
+                      type="button"
+                      @click="removeCategory(cat)"
+                      title="Șterge"
+                    >
+                      <i class="bi bi-trash"></i>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   </div>

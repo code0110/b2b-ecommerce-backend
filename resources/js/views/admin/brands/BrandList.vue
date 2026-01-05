@@ -1,185 +1,126 @@
 <template>
-  <div class="container-fluid py-3">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-      <h1 class="h5 mb-0">Mărci / Branduri</h1>
-      <button
-        class="btn btn-sm btn-primary"
-        type="button"
-        @click="startCreate"
-      >
-        Adaugă brand
+  <div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <div>
+        <h1 class="h3 fw-bold mb-1 text-gray-800">Mărci / Branduri</h1>
+        <p class="text-muted small mb-0">Gestionează brandurile comercializate.</p>
+      </div>
+      <button class="btn btn-primary shadow-sm" @click="startCreate">
+        <i class="bi bi-plus-lg me-2"></i>Adaugă Brand
       </button>
     </div>
 
-    <div v-if="error" class="alert alert-danger py-2">
+    <div v-if="error" class="alert alert-danger py-2 mb-4 shadow-sm border-0">
       {{ error }}
     </div>
 
-    <!-- Formular brand (create / edit) -->
-    <div class="card mb-3">
-      <div class="card-header py-2 d-flex justify-content-between align-items-center">
-        <span class="small fw-semibold">
-          {{ currentBrand?.id ? 'Editează brand' : 'Brand nou' }}
-        </span>
-        <span v-if="saving" class="small text-muted">
-          Salvare...
-        </span>
-      </div>
-      <div class="card-body">
-        <form @submit.prevent="saveBrand">
-          <div class="row g-3">
-            <div class="col-md-4">
-              <label class="form-label form-label-sm">Denumire</label>
-              <input
-                v-model="form.name"
-                type="text"
-                class="form-control form-control-sm"
-                required
-              >
-            </div>
-            <div class="col-md-4">
-              <label class="form-label form-label-sm">Slug</label>
-              <input
-                v-model="form.slug"
-                type="text"
-                class="form-control form-control-sm"
-                required
-              >
-              <div class="form-text small">
-                Identificator URL (ex: <code>brand-x</code>).
-              </div>
-            </div>
-            <div class="col-md-4">
-              <label class="form-label form-label-sm">Ordine sortare</label>
-              <input
-                v-model.number="form.sort_order"
-                type="number"
-                class="form-control form-control-sm"
-                min="0"
-              >
-            </div>
+    <!-- Brands Table -->
+    <div class="card border-0 shadow-sm">
+      <div class="card-body p-0">
+        <div v-if="loading" class="text-center py-5">
+          <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Se încarcă...</span>
           </div>
+        </div>
 
-          <div class="row g-3 mt-1">
-            <div class="col-md-6">
-              <label class="form-label form-label-sm">Descriere</label>
-              <textarea
-                v-model="form.description"
-                class="form-control form-control-sm"
-                rows="2"
-              />
-            </div>
-            <div class="col-md-3 d-flex align-items-center">
-              <div class="form-check mt-3">
-                <input
-                  v-model="form.is_active"
-                  class="form-check-input"
-                  type="checkbox"
-                  id="brand-active"
-                >
-                <label class="form-check-label small" for="brand-active">
-                  Publicat / activ
-                </label>
-              </div>
-            </div>
+        <div v-else-if="!brands.length" class="text-center py-5">
+          <div class="mb-3">
+            <i class="bi bi-tags text-muted" style="font-size: 3rem;"></i>
           </div>
+          <h5 class="text-muted">Nu există branduri definite</h5>
+          <p class="text-muted small">Adaugă primul brand folosind butonul de mai sus.</p>
+        </div>
 
-          <div class="mt-3 d-flex justify-content-between align-items-center">
-            <div>
-              <button
-                class="btn btn-sm btn-primary me-2"
-                type="submit"
-                :disabled="saving"
-              >
-                Salvează
-              </button>
-              <button
-                class="btn btn-sm btn-outline-secondary"
-                type="button"
-                @click="resetForm"
-                :disabled="saving"
-              >
-                Reset
-              </button>
-            </div>
-            <div class="small text-muted" v-if="currentBrand?.id">
-              ID: {{ currentBrand.id }}
-            </div>
-          </div>
-
-          <div v-if="formError" class="text-danger small mt-2">
-            {{ formError }}
-          </div>
-        </form>
+        <div v-else class="table-responsive">
+          <table class="table table-hover align-middle mb-0">
+            <thead class="bg-light">
+              <tr>
+                <th class="ps-4 py-3 text-muted small text-uppercase fw-bold border-0">Denumire</th>
+                <th class="py-3 text-muted small text-uppercase fw-bold border-0">Slug</th>
+                <th class="py-3 text-muted small text-uppercase fw-bold border-0">Ordine</th>
+                <th class="py-3 text-muted small text-uppercase fw-bold border-0">Status</th>
+                <th class="pe-4 py-3 text-muted small text-uppercase fw-bold border-0 text-end">Acțiuni</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="brand in brands" :key="brand.id">
+                <td class="ps-4 fw-semibold text-dark">{{ brand.name }}</td>
+                <td><code class="text-muted bg-light px-2 py-1 rounded small">{{ brand.slug }}</code></td>
+                <td class="text-muted">{{ brand.sort_order ?? '-' }}</td>
+                <td>
+                  <span class="badge rounded-pill" :class="brand.is_active ? 'bg-success bg-opacity-10 text-success' : 'bg-secondary bg-opacity-10 text-secondary'">
+                    {{ brand.is_active ? 'Activ' : 'Inactiv' }}
+                  </span>
+                </td>
+                <td class="pe-4 text-end">
+                  <div class="btn-group">
+                    <button class="btn btn-sm btn-light border" @click="editBrand(brand)" title="Editează">
+                      <i class="bi bi-pencil"></i>
+                    </button>
+                    <button class="btn btn-sm btn-light border text-danger" @click="removeBrand(brand)" title="Șterge">
+                      <i class="bi bi-trash"></i>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
 
-    <!-- Lista branduri -->
-    <div class="card">
-      <div class="card-body p-0">
-        <table class="table table-sm mb-0 align-middle">
-          <thead class="table-light">
-            <tr>
-              <th>Denumire</th>
-              <th>Slug</th>
-              <th>Ordine</th>
-              <th>Status</th>
-              <th style="width: 140px;">Acțiuni</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-if="loading">
-              <td colspan="5" class="text-center text-muted py-3">
-                Se încarcă...
-              </td>
-            </tr>
-            <tr v-if="!loading && !brands.length">
-              <td colspan="5" class="text-center text-muted py-3">
-                Nu există branduri definite.
-              </td>
-            </tr>
-            <tr
-              v-for="brand in brands"
-              :key="brand.id"
-            >
-              <td class="small">
-                <div class="fw-semibold">{{ brand.name }}</div>
-              </td>
-              <td class="small">
-                <code>{{ brand.slug }}</code>
-              </td>
-              <td class="small">
-                {{ brand.sort_order ?? '-' }}
-              </td>
-              <td class="small">
-                <span
-                  class="badge"
-                  :class="brand.is_active ? 'bg-success' : 'bg-secondary'"
-                >
-                  {{ brand.is_active ? 'Activ' : 'Inactiv' }}
-                </span>
-              </td>
-              <td class="small">
-                <div class="btn-group btn-group-sm">
-                  <button
-                    class="btn btn-outline-secondary"
-                    type="button"
-                    @click="editBrand(brand)"
-                  >
-                    Editează
-                  </button>
-                  <button
-                    class="btn btn-outline-danger"
-                    type="button"
-                    @click="removeBrand(brand)"
-                  >
-                    Șterge
-                  </button>
+    <!-- Modal Form -->
+    <div v-if="showModal" class="modal-backdrop fade show"></div>
+    <div v-if="showModal" class="modal fade show d-block" tabindex="-1">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg">
+          <div class="modal-header border-bottom-0 pb-0">
+            <h5 class="modal-title fw-bold">{{ currentBrand?.id ? 'Editează Brand' : 'Brand Nou' }}</h5>
+            <button type="button" class="btn-close" @click="closeModal"></button>
+          </div>
+          <div class="modal-body pt-4">
+            <form @submit.prevent="saveBrand">
+              <div class="row g-3">
+                <div class="col-md-12">
+                  <label class="form-label small fw-bold text-muted">Denumire</label>
+                  <input v-model="form.name" type="text" class="form-control" required />
                 </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+                <div class="col-md-12">
+                  <label class="form-label small fw-bold text-muted">Slug</label>
+                  <input v-model="form.slug" type="text" class="form-control" required />
+                  <div class="form-text small">Identificator URL unic (ex: brand-x).</div>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label small fw-bold text-muted">Ordine</label>
+                  <input v-model.number="form.sort_order" type="number" class="form-control" min="0" />
+                </div>
+                <div class="col-md-12">
+                  <label class="form-label small fw-bold text-muted">Descriere</label>
+                  <textarea v-model="form.description" class="form-control" rows="3"></textarea>
+                </div>
+                <div class="col-md-12">
+                  <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" id="brandActive" v-model="form.is_active">
+                    <label class="form-check-label small fw-bold" for="brandActive">Brand Activ</label>
+                  </div>
+                </div>
+              </div>
+
+              <div v-if="formError" class="alert alert-danger mt-3 mb-0 small">
+                {{ formError }}
+              </div>
+
+              <div class="mt-4 d-flex justify-content-end gap-2">
+                <button type="button" class="btn btn-light" @click="closeModal">Anulează</button>
+                <button type="submit" class="btn btn-primary" :disabled="saving">
+                  <span v-if="saving" class="spinner-border spinner-border-sm me-2"></span>
+                  {{ currentBrand?.id ? 'Salvează' : 'Creează' }}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -200,6 +141,7 @@ const saving = ref(false)
 const error = ref('')
 const formError = ref('')
 const currentBrand = ref(null)
+const showModal = ref(false)
 
 const form = ref({
   name: '',
@@ -257,6 +199,7 @@ const resetForm = () => {
 
 const startCreate = () => {
   resetForm()
+  showModal.value = true
 }
 
 const editBrand = (brand) => {
@@ -269,6 +212,11 @@ const editBrand = (brand) => {
     sort_order: brand.sort_order ?? 0
   }
   formError.value = ''
+  showModal.value = true
+}
+
+const closeModal = () => {
+  showModal.value = false
 }
 
 const saveBrand = async () => {
@@ -285,7 +233,7 @@ const saveBrand = async () => {
     }
 
     await loadBrands()
-    resetForm()
+    closeModal()
   } catch (e) {
     console.error(e)
     formError.value =

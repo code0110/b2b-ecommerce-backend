@@ -5,6 +5,7 @@ import router from './router';
 
 // Bootstrap (dacă îl folosești)
 import 'bootstrap/dist/css/bootstrap.min.css';
+import 'bootstrap-icons/font/bootstrap-icons.css';
 import 'bootstrap';
 
 // CSS-ul tău

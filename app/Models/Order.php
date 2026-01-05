@@ -29,6 +29,7 @@ class Order extends Model
         'credit_blocked',
         'placed_at',
         'due_date',
+        'customer_visit_id',
     ];
 
     protected $casts = [
@@ -77,5 +78,10 @@ class Order extends Model
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function visit(): BelongsTo
+    {
+        return $this->belongsTo(CustomerVisit::class, 'customer_visit_id');
     }
 }

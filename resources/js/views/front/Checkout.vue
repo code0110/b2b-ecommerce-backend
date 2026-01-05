@@ -495,6 +495,10 @@ const onPlaceOrder = async () => {
         payload.shipping_address = { ...newShippingAddress };
     }
 
+    if (visitStore.activeVisit) {
+        payload.customer_visit_id = visitStore.activeVisit.id;
+    }
+
     const order = await placeOrder(payload);
 
     successMessage.value = `Comanda #${order.id} a fost plasată cu succes.`;

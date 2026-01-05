@@ -97,6 +97,7 @@ class CheckoutController extends Controller
             'shipping_address_id'  => ['nullable', 'integer', 'exists:addresses,id'],
             'billing_address'      => ['nullable', 'array'],
             'shipping_address'     => ['nullable', 'array'],
+            'customer_visit_id'    => ['nullable', 'integer', 'exists:customer_visits,id'],
         ]);
 
         if ($validator->fails()) {

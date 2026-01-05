@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Customer;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
@@ -11,7 +12,9 @@ class CustomerController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Customer::query()->with(['group', 'agent:id,first_name,last_name,email', 'salesDirector:id,first_name,last_name,email']);
+        $query = Customer::query()
+            ->visibleTo($request->user())
+            ->with(['group', 'agent:id,first_name,last_name,email', 'salesDirector:id,first_name,last_name,email']);
 
         if ($type = $request->get('type')) {
             $query->where('type', $type);
@@ -53,6 +56,13 @@ class CustomerController extends Controller
             'sales_director_user_id'=> ['nullable', 'integer', 'exists:users,id'],
         ]);
 
+        if (array_key_exists('agent_user_id', $data) && !empty($data['agent_user_id'])) {
+            $agent = User::find($data['agent_user_id']);
+            if ($agent && $agent->director_id) {
+                $data['sales_director_user_id'] = $agent->director_id;
+            }
+        }
+
         $customer = Customer::create($data);
 
         return response()->json($customer, 201);
@@ -84,6 +94,15 @@ class CustomerController extends Controller
             'agent_user_id'         => ['nullable', 'integer', 'exists:users,id'],
             'sales_director_user_id'=> ['nullable', 'integer', 'exists:users,id'],
         ]);
+
+        if (array_key_exists('agent_user_id', $data)) {
+            if (!empty($data['agent_user_id'])) {
+                $agent = User::find($data['agent_user_id']);
+                if ($agent && $agent->director_id) {
+                    $data['sales_director_user_id'] = $agent->director_id;
+                }
+            }
+        }
 
         $customer->update($data);
 

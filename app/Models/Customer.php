@@ -24,6 +24,8 @@ class Customer extends Model
         'currency',
         'is_active',
         'is_partner',
+        'agent_user_id',
+        'sales_director_user_id',
     ];
 
     protected $casts = [
@@ -67,5 +69,27 @@ class Customer extends Model
     public function invoices(): HasMany
     {
         return $this->hasMany(Invoice::class);
+    }
+
+    public function visits(): HasMany
+    {
+        return $this->hasMany(CustomerVisit::class);
+    }
+
+    public function scopeVisibleTo($query, $user)
+    {
+        if ($user->hasRole('admin')) {
+            return $query;
+        }
+
+        if ($user->hasRole('sales_director')) {
+            return $query->where('sales_director_user_id', $user->id);
+        }
+
+        if ($user->hasRole('sales_agent')) {
+            return $query->where('agent_user_id', $user->id);
+        }
+
+        return $query;
     }
 }

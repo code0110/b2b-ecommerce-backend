@@ -45,7 +45,6 @@ class AgentDashboardController extends Controller
                 }
             });
         } else {
-            // Agent sees only their assigned clients
             $query->where('agent_user_id', $user->id);
         }
 
@@ -72,7 +71,6 @@ class AgentDashboardController extends Controller
         // Find agents who have customers assigned to this director
         $agentIds = Customer::where('sales_director_user_id', $user->id)
             ->whereNotNull('agent_user_id')
-            ->distinct()
             ->pluck('agent_user_id');
 
         $query = User::query();
@@ -182,6 +180,7 @@ class AgentDashboardController extends Controller
             'number' => 'nullable|string|max:50',
             'bank' => 'nullable|string|max:100',
             'due_date' => 'nullable|date',
+            'customer_visit_id' => 'nullable|exists:customer_visits,id',
         ]);
 
         // Validation for BO/CEC
@@ -290,7 +289,6 @@ class AgentDashboardController extends Controller
             if ($validated['instrument'] === 'numerar') {
                 $docNumber = $receiptBook->series . ' ' . $receiptBook->current_number;
             } else {
-                // BO/CEC
                 $docNumber = ($validated['series'] ?? '') . ' ' . ($validated['number'] ?? '');
             }
 
@@ -310,6 +308,7 @@ class AgentDashboardController extends Controller
                 'due_date' => $validated['due_date'] ?? null,
                 'notes' => ($validated['notes'] ? $validated['notes'] . ' ' : '') . "(Tip: " . ucfirst($validated['type']) . ")",
                 'channel' => 'offline',
+                'customer_visit_id' => $validated['customer_visit_id'] ?? null,
             ]);
 
             foreach ($invoicesToAttach as $inv) {
@@ -354,23 +353,50 @@ class AgentDashboardController extends Controller
         }
 
         DB::transaction(function () use ($user, $receiptBook, $validated) {
+            $docNumber = $receiptBook->series . ' ' . $receiptBook->current_number;
+
+            // Create a "cancelled" payment record
             Payment::create([
-                'customer_id' => null, // No specific customer for voided receipt
+                'customer_id' => null, // Optional if general cancellation, or could link to dummy
                 'recorded_by_user_id' => $user->id,
                 'receipt_book_id' => $receiptBook->id,
-                'type' => 'chs', // Cash type but amount 0
+                'type' => 'chs',
                 'amount' => 0,
                 'currency' => 'RON',
                 'status' => 'cancelled',
                 'payment_date' => now(),
-                'document_number' => $receiptBook->series . ' ' . $receiptBook->current_number,
-                'notes' => 'ANULATĂ. ' . ($validated['notes'] ?? ''),
+                'document_number' => $docNumber,
+                'notes' => "ANULAT. Motiv: " . $validated['notes'],
                 'channel' => 'offline',
             ]);
 
             $receiptBook->increment('current_number');
         });
 
-        return response()->json(['message' => 'Chitanța a fost anulată cu succes.']);
+        return response()->json(['message' => 'Chitanța a fost anulată.']);
+    }
+
+    public function getRoutes(Request $request)
+    {
+        $user = $request->user();
+        
+        $agentId = $user->id;
+        if ($request->has('agent_id') && $user->hasRole('sales_director')) {
+             $agentId = $request->get('agent_id');
+        }
+
+        $routes = \App\Models\AgentRoute::where('agent_id', $agentId)
+            ->with(['customer' => function($q) use ($agentId) {
+                // Check if visited today by this agent
+                $q->withCount(['visits' => function($q2) use ($agentId) {
+                    $q2->where('agent_id', $agentId)
+                       ->whereDate('start_time', now()->toDateString())
+                       ->where('status', '!=', 'cancelled');
+                }]);
+            }])
+            ->orderBy('sort_order')
+            ->get();
+
+        return response()->json($routes);
     }
 }

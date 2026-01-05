@@ -21,7 +21,7 @@ import CompareProducts from '@/views/front/CompareProducts.vue'
 import SalesRepresentatives from '@/views/front/SalesRepresentatives.vue'
 import Cart from '@/views/front/Cart.vue'
 import Checkout from '@/views/front/Checkout.vue'
-import QuickOrder from '@/views/front/QuickOrder.vue'
+import QuickOrder from '@/views/admin/orders/QuickOrder.vue'
 import BlogList from '@/views/front/content/BlogList.vue'
 import BlogPost from '@/views/front/content/BlogPost.vue'
 import StaticPage from '@/views/front/content/StaticPage.vue'
@@ -167,11 +167,6 @@ const router = createRouter({
           component: Checkout
         },
         {
-          path: 'comanda-rapida',
-          name: 'quick-order',
-          component: QuickOrder
-        },
-        {
           path: 'blog',
           name: 'blog-list',
           component: BlogList
@@ -222,12 +217,18 @@ const router = createRouter({
             },
             {
               path: 'dashboard',
-          name: 'account-dashboard',
-          component: AccountDashboard,
-          meta: { requiresAuth: true }
-        },
-        {
-          path: 'notificari',
+              name: 'account-dashboard',
+              component: AccountDashboard,
+              meta: { requiresAuth: true }
+            },
+            {
+              path: 'comanda-rapida',
+              name: 'quick-order',
+              component: QuickOrder,
+              meta: { requiresAuth: true }
+            },
+            {
+              path: 'notificari',
           name: 'account-notifications',
           component: AccountNotifications,
           meta: { requiresAuth: true }
@@ -416,8 +417,13 @@ const router = createRouter({
           name: 'admin-orders',
           component: AdminOrdersList
         },
-{
-  path: 'orders/:id',
+        {
+          path: 'orders/quick-order',
+          name: 'admin-quick-order',
+          component: QuickOrder
+        },
+        {
+          path: 'orders/:id',
   name: 'admin-order-details',
   component: AdminOrderDetails
 },

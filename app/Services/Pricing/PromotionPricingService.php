@@ -294,17 +294,10 @@ class PromotionPricingService
 
 
     /**
-     * Calculează prețurile pe coș (per linie + totaluri), incluzând promoții.
-     *
-     * Returnează un array:
-     * [
-     *   'items' => [...],
-     *   'subtotal' => ...,
-     *   'discount_total' => ...,
-     *   'total' => ...
-     * ]
+     * Calculates prices for a collection of items.
+     * Items must have 'product' relation/property and 'quantity' property.
      */
-    public function priceCart(Cart $cart, ?Customer $customer = null): array
+    public function priceItems(Collection $items, ?Customer $customer = null, ?Coupon $coupon = null): array
     {
         $promotions = $this->getActivePromotionsForCustomer($customer);
 
@@ -312,7 +305,7 @@ class PromotionPricingService
         $tempItems = [];
         $cartSubtotal = 0.0;
 
-        foreach ($cart->items as $item) {
+        foreach ($items as $item) {
             $product = $item->product;
             if (!$product) continue;
 
@@ -454,10 +447,9 @@ class PromotionPricingService
         $couponDiscount = 0.0;
         $appliedCoupon = null;
 
-        if ($cart->coupon_id) {
-            $coupon = $cart->coupon;
+        if ($coupon) {
             
-            if ($coupon && $coupon->isValid()) {
+            if ($coupon->isValid()) {
                 // Check min_cart_value
                 if (!$coupon->min_cart_value || $totalAfterLineDiscounts >= $coupon->min_cart_value) {
                     // Check stackable
@@ -491,5 +483,13 @@ class PromotionPricingService
             'total'          => round($finalTotal, 2),
             'applied_coupon' => $appliedCoupon,
         ];
+    }
+
+    /**
+     * Wrapper for priceCart to maintain backward compatibility.
+     */
+    public function priceCart(Cart $cart, ?Customer $customer = null): array
+    {
+        return $this->priceItems($cart->items, $customer, $cart->coupon);
     }
 }

@@ -70,6 +70,17 @@
         </RouterLink>
 
         <RouterLink
+          :to="{ name: 'quick-order' }"
+          class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
+          :class="{ active: isActive('quick-order') }"
+        >
+          <span>
+            <i class="bi bi-lightning-charge me-1"></i>
+            Comandă Rapidă
+          </span>
+        </RouterLink>
+
+        <RouterLink
           v-if="isAgentOrDirector"
           :to="{ name: 'agent-dashboard' }"
           class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"

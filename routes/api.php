@@ -234,6 +234,10 @@ Route::middleware(['auth:sanctum', 'impersonate'])->group(function () {
         Route::post('tickets', [FrontTicketController::class, 'store']);
         Route::get('tickets/{id}', [FrontTicketController::class, 'show']);
         Route::post('tickets/{id}/messages', [FrontTicketController::class, 'storeMessage']);
+
+        // Quick Order (Account Access)
+        Route::post('quick-order/calculate', [\App\Http\Controllers\Admin\QuickOrderController::class, 'calculate']);
+        Route::post('quick-order/create', [\App\Http\Controllers\Admin\QuickOrderController::class, 'createOrder']);
     });
 
     Route::get('orders', [OrderController::class, 'index']);
@@ -374,6 +378,11 @@ Route::apiResource('partner-requests', AdminPartnerRequestController::class)->on
         Route::apiResource('offers', \App\Http\Controllers\Admin\OfferController::class);
         Route::post('offers/{id}/status', [\App\Http\Controllers\Admin\OfferController::class, 'changeStatus']);
         Route::post('offers/{id}/messages', [\App\Http\Controllers\Admin\OfferController::class, 'addMessage']);
+        Route::post('offers/{id}/convert-to-order', [\App\Http\Controllers\Admin\OfferController::class, 'convertToOrder']);
+
+        // Quick Orders
+        Route::post('quick-order/calculate', [\App\Http\Controllers\Admin\QuickOrderController::class, 'calculate']);
+        Route::post('quick-order/create', [\App\Http\Controllers\Admin\QuickOrderController::class, 'createOrder']);
 
         // Quotes / oferte (OLD system - keep if needed or remove)
         Route::apiResource('quotes', \App\Http\Controllers\Admin\QuoteController::class)->only(['index', 'show', 'update']);

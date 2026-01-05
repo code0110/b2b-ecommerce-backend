@@ -120,7 +120,6 @@ class OfferController extends Controller
             return response()->json(['message' => 'Eroare la crearea comenzii: ' . $e->getMessage()], 500);
         }
     }
-}
 
     /**
      * Display a listing of the resource.

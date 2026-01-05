@@ -262,7 +262,9 @@ const statusLabel = (s) => {
         'pending_approval': 'În Așteptare Aprobare',
         'approved': 'Aprobată',
         'negotiation': 'Negociere',
-        'rejected': 'Respinsă'
+        'rejected': 'Respinsă',
+        'accepted': 'Acceptată',
+        'completed': 'Finalizată (Comandă)'
     };
     return map[s] || s;
 };
@@ -274,7 +276,9 @@ const statusBadge = (s) => {
         'pending_approval': 'bg-warning text-dark',
         'approved': 'bg-success',
         'negotiation': 'bg-info text-dark',
-        'rejected': 'bg-danger'
+        'rejected': 'bg-danger',
+        'accepted': 'bg-success',
+        'completed': 'bg-secondary'
     };
     return map[s] || 'bg-secondary';
 };
@@ -287,6 +291,24 @@ const getRouteName = (base) => {
 
 const viewOffer = (offer) => {
     router.push({ name: getRouteName('edit'), params: { id: offer.id } });
+};
+
+const convertToOrder = async (offer) => {
+    if (!confirm('Ești sigur că vrei să transformi această ofertă în comandă?')) return;
+    try {
+        const { data } = await adminApi.post(`/offers/${offer.id}/convert-to-order`);
+        toast.success('Oferta a fost transformată în comandă cu succes!');
+        
+        if (data.order_id) {
+            const routeName = authStore.role === 'admin' ? 'admin-order-details' : 'account-order-details';
+            router.push({ name: routeName, params: { id: data.order_id } });
+        } else {
+            loadOffers();
+        }
+    } catch (e) {
+        console.error(e);
+        toast.error(e.response?.data?.message || 'Eroare la transformarea în comandă');
+    }
 };
 
 const convertToOffer = (req) => {

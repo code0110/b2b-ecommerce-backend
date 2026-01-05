@@ -64,9 +64,15 @@
                         </button>
                     </div>
 
+                    <div v-if="['sent', 'approved', 'accepted'].includes(currentStatus)" class="d-grid gap-2 mb-2">
+                        <button class="btn btn-success" @click="convertToOrder">
+                            <i class="bi bi-cart-check me-2"></i> Transformă în Comandă
+                        </button>
+                    </div>
+
                     <div v-if="['sent', 'negotiation', 'approved'].includes(currentStatus)" class="d-grid gap-2">
                         <button class="btn btn-outline-primary" @click="changeStatus('completed')">
-                            <i class="bi bi-check-circle me-2"></i> Marchează Finalizat
+                            <i class="bi bi-check-circle me-2"></i> Marchează Finalizat (Manual)
                         </button>
                         <button class="btn btn-outline-danger" @click="changeStatus('rejected')">
                             Anulează Oferta
@@ -478,6 +484,24 @@ const changeStatus = async (status) => {
         // Reload to get latest state if needed
     } catch (e) {
         toast.error('Eroare la actualizarea statusului.');
+    }
+};
+
+const convertToOrder = async () => {
+    if (!confirm('Ești sigur că vrei să transformi această ofertă în comandă?')) return;
+    try {
+        const { data } = await adminApi.post(`/offers/${route.params.id}/convert-to-order`);
+        toast.success('Oferta a fost transformată în comandă cu succes!');
+        
+        if (data.order_id) {
+            const routeName = authStore.role === 'admin' ? 'admin-order-details' : 'account-order-details';
+            router.push({ name: routeName, params: { id: data.order_id } });
+        } else {
+            router.push({ name: getRouteName() }); // Back to list
+        }
+    } catch (e) {
+        console.error(e);
+        toast.error(e.response?.data?.message || 'Eroare la transformarea în comandă');
     }
 };
 

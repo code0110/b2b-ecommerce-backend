@@ -40,6 +40,14 @@
 </template>
 
 <script setup>
+import { onMounted } from 'vue';
 import { RouterLink, RouterView } from 'vue-router';
 import AccountSidebar from '@/components/account/AccountSidebar.vue';
+import { useVisitStore } from '@/store/visit';
+
+const visitStore = useVisitStore();
+
+onMounted(() => {
+  visitStore.checkActiveVisit();
+});
 </script>

@@ -46,11 +46,11 @@ class DirectorDashboardController extends Controller
         // Ideally rely on `placed_by_user_id` for all orders placed by agent.
         $todaySales = Order::whereIn('placed_by_user_id', $agentIds)
             ->whereDate('created_at', $today)
-            ->sum('total');
+            ->sum('grand_total');
 
         $monthSales = Order::whereIn('placed_by_user_id', $agentIds)
             ->whereDate('created_at', '>=', $startOfMonth)
-            ->sum('total');
+            ->sum('grand_total');
 
         // 2. Visits
         $todayVisits = CustomerVisit::whereIn('agent_id', $agentIds)
@@ -110,7 +110,7 @@ class DirectorDashboardController extends Controller
                 
                 $todaySales = Order::where('placed_by_user_id', $agent->id)
                     ->whereDate('created_at', Carbon::today())
-                    ->sum('total');
+                    ->sum('grand_total');
 
                 return [
                     'id' => $agent->id,

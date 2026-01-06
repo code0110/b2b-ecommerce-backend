@@ -103,19 +103,21 @@ class SalesTargetController extends Controller
     
     public function show($id)
     {
-        return SalesTarget::findOrFail($id);
+        $target = SalesTarget::findOrFail($id);
+        $this->ensureTargetAccess($target);
+        return $target;
     }
 
     public function destroy($id)
     {
+        $target = SalesTarget::findOrFail($id);
+        
         /** @var \App\Models\User $currentUser */
         $currentUser = Auth::user();
 
         if (!$currentUser->hasRole(['admin', 'sales_director'])) {
              return response()->json(['message' => 'Unauthorized.'], 403);
         }
-
-        $target = SalesTarget::findOrFail($id);
 
         if ($currentUser->hasRole('sales_director') && !$currentUser->hasRole('admin')) {
              $isSubordinate = User::where('id', $target->user_id)
@@ -128,5 +130,28 @@ class SalesTargetController extends Controller
 
         $target->delete();
         return response()->noContent();
+    }
+
+    private function ensureTargetAccess(SalesTarget $target)
+    {
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+
+        if ($user->hasRole('admin')) {
+            return;
+        }
+
+        if ($user->hasRole('sales_agent')) {
+            if ($target->user_id !== $user->id) {
+                abort(403, 'Unauthorized access to sales target.');
+            }
+        } elseif ($user->hasRole('sales_director')) {
+            $isSubordinate = User::where('id', $target->user_id)
+                                 ->where('director_id', $user->id)
+                                 ->exists();
+            if ($target->user_id !== $user->id && !$isSubordinate) {
+                abort(403, 'Unauthorized access to sales target.');
+            }
+        }
     }
 }

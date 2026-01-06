@@ -51,6 +51,10 @@ class BrandController extends Controller
 
     public function destroy(Brand $brand)
     {
+        if ($brand->products()->exists()) {
+            abort(400, 'Cannot delete brand with attached products.');
+        }
+
         $brand->delete();
 
         return response()->json(['message' => 'Deleted.']);

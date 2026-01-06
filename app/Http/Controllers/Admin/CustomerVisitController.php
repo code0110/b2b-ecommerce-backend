@@ -21,6 +21,7 @@ class CustomerVisitController extends Controller
             $query->where('agent_id', $user->id);
         } elseif ($user->hasRole('sales_director')) {
             $subordinates = $user->subordinates()->pluck('id');
+            $subordinates->push($user->id);
             $query->whereIn('agent_id', $subordinates);
         }
 

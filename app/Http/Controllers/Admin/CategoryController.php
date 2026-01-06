@@ -51,7 +51,10 @@ class CategoryController extends Controller
 
     public function destroy(Category $category)
     {
-        // TODO: validare că nu are produse atașate, înainte de ștergere
+        if ($category->products()->exists()) {
+            abort(400, 'Cannot delete category with attached products.');
+        }
+        
         $category->delete();
 
         return response()->json(['message' => 'Deleted.']);

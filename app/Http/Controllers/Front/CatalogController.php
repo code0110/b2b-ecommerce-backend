@@ -111,7 +111,7 @@ class CatalogController extends Controller
 
 
         // pricing principal produs
-        $pricingData = $pricing->calculateProductPrice($product, $customer);
+        $pricingData = $this->pricingService->calculateProductPrice($product, $customer);
 
         $productArray = $product->toArray();
         $productArray['price']            = $pricingData['price'];
@@ -154,14 +154,14 @@ class CatalogController extends Controller
 
         // produse similare / complementare cu pricing
         $relatedProducts = $product->relatedProducts
-            ? $product->relatedProducts->map(function (Product $p) use ($pricing, $customer) {
-                return $pricing->formatProductForFrontend($p, $customer);
+            ? $product->relatedProducts->map(function (Product $p) use ($customer) {
+                return $this->pricingService->formatProductForFrontend($p, $customer);
             })->values()
             : [];
 
         $complementaryProducts = $product->complementaryProducts
-            ? $product->complementaryProducts->map(function (Product $p) use ($pricing, $customer) {
-                return $pricing->formatProductForFrontend($p, $customer);
+            ? $product->complementaryProducts->map(function (Product $p) use ($customer) {
+                return $this->pricingService->formatProductForFrontend($p, $customer);
             })->values()
             : [];
 

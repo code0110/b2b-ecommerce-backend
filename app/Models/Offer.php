@@ -6,7 +6,23 @@ use Illuminate\Database\Eloquent\Model;
 
 class Offer extends Model
 {
-    protected $guarded = [];
+    protected $fillable = [
+        'agent_id',
+        'customer_id',
+        'customer_visit_id',
+        'status',
+        'total_amount',
+        'discount_amount',
+        'notes',
+        'requires_director_approval',
+        'valid_until',
+        'quote_request_id'
+    ];
+
+    public function visit()
+    {
+        return $this->belongsTo(CustomerVisit::class, 'customer_visit_id');
+    }
 
     protected $casts = [
         'valid_until' => 'datetime',

@@ -487,7 +487,7 @@ const removeItem = (index) => {
     form.items.splice(index, 1);
 };
 
-const formatPrice = (val) => new Intl.NumberFormat('ro-RO', { style: 'currency', currency: 'RON' }).format(val);
+const formatPrice = (val) => new Intl.NumberFormat('ro-RO', { style: 'currency', currency: 'RON' }).format(val || 0);
 const formatDate = (val, time = false) => {
     if (!val) return '';
     const d = new Date(val);
@@ -602,6 +602,7 @@ const saveOffer = async () => {
     try {
         const payload = {
             customer_id: form.customer_id,
+            customer_visit_id: visitStore.activeVisit?.id,
             quote_request_id: form.quote_request_id,
             valid_until: form.valid_until,
             notes: form.notes,

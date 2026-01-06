@@ -10,6 +10,7 @@ use App\Models\OrderItem;
 use App\Notifications\QuoteStatusChangedNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 
 class QuoteController extends Controller
@@ -55,11 +56,13 @@ class QuoteController extends Controller
 
     public function show(QuoteRequest $quoteRequest)
     {
+        $this->ensureQuoteAccess($quoteRequest);
         return $quoteRequest->load('customer', 'items.product', 'assignedAgent', 'createdBy');
     }
 
     public function update(Request $request, QuoteRequest $quoteRequest)
     {
+        $this->ensureQuoteAccess($quoteRequest);
         $data = $request->validate([
             'status'                        => ['sometimes', 'string', 'max:50'],
             'valid_until'                   => ['nullable', 'date'],
@@ -113,6 +116,7 @@ class QuoteController extends Controller
 
     public function convertToOrder(QuoteRequest $quoteRequest, Request $request)
     {
+        $this->ensureQuoteAccess($quoteRequest);
         $data = $request->validate([
             'payment_method'       => ['required', 'in:card,op,b2b_terms'],
             'shipping_method_id'   => ['required', 'integer', 'exists:shipping_methods,id'],
@@ -179,5 +183,41 @@ class QuoteController extends Controller
 
             return response()->json($order->load('items'), 201);
         });
+    }
+
+    private function ensureQuoteAccess(QuoteRequest $quoteRequest)
+    {
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+
+        if ($user->hasRole('admin')) {
+            return;
+        }
+
+        if ($user->hasRole('sales_agent')) {
+            // Agent sees requests assigned to them OR from their customers
+            $isAssigned = $quoteRequest->assigned_agent_id === $user->id;
+            $isCustomerAgent = $quoteRequest->customer && $quoteRequest->customer->agent_user_id === $user->id;
+            
+            if (!$isAssigned && !$isCustomerAgent) {
+                 abort(403, 'Unauthorized access to quote request.');
+            }
+        } elseif ($user->hasRole('sales_director')) {
+            // Director sees requests from their team
+            $subordinateIds = \App\Models\User::where('director_id', $user->id)->pluck('id');
+            $subordinateIds->push($user->id); // Include self
+            
+            $isAssigned = $subordinateIds->contains($quoteRequest->assigned_agent_id);
+            $isCustomerAgent = $quoteRequest->customer && $subordinateIds->contains($quoteRequest->customer->agent_user_id);
+
+            if (!$isAssigned && !$isCustomerAgent) {
+                 abort(403, 'Unauthorized access to quote request.');
+            }
+        } else {
+             // Client access
+             if ($quoteRequest->customer_id !== $user->customer_id) {
+                 abort(403, 'Unauthorized access to quote request.');
+             }
+        }
     }
 }

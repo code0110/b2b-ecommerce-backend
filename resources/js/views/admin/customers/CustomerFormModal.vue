@@ -322,6 +322,14 @@ onMounted(async () => {
          form.value.first_name = parts[0]
          form.value.last_name = parts.slice(1).join(' ')
       }
+    } else {
+        // Defaults for Create
+        if (isAgent.value) {
+            form.value.agent_user_id = authStore.user.id
+            form.value.sales_director_user_id = authStore.user.director_id
+        } else if (isDirector.value) {
+             form.value.sales_director_user_id = authStore.user.id
+        }
     }
   } catch (e) {
     console.error('Error fetching groups', e)

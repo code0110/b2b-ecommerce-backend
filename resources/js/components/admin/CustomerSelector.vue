@@ -75,9 +75,10 @@ const onSearch = () => {
                     per_page: 10 
                 }
             });
-            results.value = data.data;
+            results.value = Array.isArray(data.data) ? data.data : [];
         } catch (e) {
             console.error(e);
+            results.value = [];
         } finally {
             loading.value = false;
         }

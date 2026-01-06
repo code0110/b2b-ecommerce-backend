@@ -155,6 +155,13 @@ class UserController extends Controller
             'role_ids.*' => ['integer', 'exists:roles,id'],
         ]);
 
+        // RBAC: Director restrictions
+        if ($request->user()->hasRole('sales_director') && !$request->user()->hasRole('admin')) {
+            // Directors cannot transfer agents or change their roles
+            unset($data['director_id']);
+            unset($data['role_ids']);
+        }
+
         if (array_key_exists('first_name', $data)) {
             $user->first_name = $data['first_name'];
         }
@@ -201,6 +208,8 @@ class UserController extends Controller
      */
     public function destroy(Request $request, User $user)
     {
+        $this->ensureDirectorAccess($request, $user);
+
         // opțional: nu permiți să te dezactivezi singur
         if ($request->user()?->id === $user->id) {
             return response()->json([

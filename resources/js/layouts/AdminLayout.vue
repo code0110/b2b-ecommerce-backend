@@ -228,6 +228,7 @@ const formatRouteName = (name) => {
 
 onMounted(() => {
   notificationsStore.fetchAdminUnreadCount()
+  visitStore.checkActiveVisit()
 })
 </script>
 

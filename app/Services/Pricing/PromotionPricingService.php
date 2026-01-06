@@ -141,7 +141,7 @@ class PromotionPricingService
     /**
      * Aplică o promoție pe un preț brut și returnează [promoPrice, discountPercent].
      */
-    protected function applyPromotionOnPrice(Promotion $promotion, float $basePrice): array
+    public function applyPromotionOnPrice(Promotion $promotion, float $basePrice): array
     {
         $promoPrice = $basePrice;
         $discountPercent = 0.0;
@@ -217,7 +217,7 @@ class PromotionPricingService
      * 2. Contract Price (Grup Client)
      * 3. List Price (sau override) - Discount Grup
      */
-    protected function getBasePrice(Product $product, ?Customer $customer = null): float
+    public function getBasePrice(Product $product, ?Customer $customer = null): float
     {
         // 1. Contract Price (Client specific)
         if ($customer) {

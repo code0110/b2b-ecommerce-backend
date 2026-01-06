@@ -173,7 +173,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed, watch } from 'vue';
+import { ref, onMounted, computed, onUnmounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { adminApi } from '@/services/http';
 import { useAuthStore } from '@/store/auth';
@@ -185,6 +185,12 @@ const route = useRoute();
 const authStore = useAuthStore();
 const trackingStore = useTrackingStore();
 const toast = useToast();
+
+const isMounted = ref(true);
+
+onUnmounted(() => {
+    isMounted.value = false;
+});
 
 const activeTab = ref('offers');
 const offers = ref([]);
@@ -199,29 +205,42 @@ const filters = ref({
 const canApprove = computed(() => authStore.role === 'admin' || authStore.role === 'sales_director');
 
 const loadOffers = async () => {
+    if (!isMounted.value) return;
     loading.value = true;
     try {
         const { data } = await adminApi.get('/offers', { params: filters.value });
+        if (!isMounted.value) return;
         offers.value = data.data;
         meta.value = data; // Laravel pagination object
     } catch (e) {
+        if (!isMounted.value) return;
         console.error(e);
-        toast.error('Eroare la încărcarea ofertelor');
+        // Only show toast if not aborted/cancelled
+        if (e.code !== 'ERR_CANCELED' && e.message !== 'canceled') {
+            toast.error('Eroare la încărcarea ofertelor');
+        }
     } finally {
-        loading.value = false;
+        if (isMounted.value) {
+            loading.value = false;
+        }
     }
 };
 
 const loadRequests = async () => {
+    if (!isMounted.value) return;
     loading.value = true;
     try {
         const { data } = await adminApi.get('/quotes');
+        if (!isMounted.value) return;
         requests.value = data.data;
     } catch (e) {
+        if (!isMounted.value) return;
         console.error(e);
         toast.error('Eroare la încărcarea cererilor');
     } finally {
-        loading.value = false;
+        if (isMounted.value) {
+            loading.value = false;
+        }
     }
 };
 
@@ -319,7 +338,14 @@ const openCreateModal = () => {
 onMounted(async () => {
     if (['sales_agent', 'sales_director'].includes(authStore.role)) {
         if (!trackingStore.isShiftActive) {
-            await trackingStore.checkStatus();
+            try {
+                await trackingStore.checkStatus();
+            } catch (e) {
+                console.error('Check status failed', e);
+            }
+            
+            if (!isMounted.value) return;
+
             if (!trackingStore.isShiftActive) {
                  toast.error('Trebuie să începeți programul de lucru pentru a vedea ofertele!');
                  router.push({ name: 'agent-dashboard' });
@@ -327,6 +353,8 @@ onMounted(async () => {
             }
         }
     }
+
+    if (!isMounted.value) return;
 
     if (route.query.tab) {
         activeTab.value = route.query.tab;

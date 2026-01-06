@@ -214,12 +214,11 @@ class ProductController extends Controller
      */
     public function destroy(Product $product)
     {
-        // Exemplu dacă ai OrderItem:
-        // if ($product->orderItems()->exists()) {
-        //     return response()->json([
-        //         'message' => 'Produsul are comenzi asociate și nu poate fi șters.',
-        //     ], 422);
-        // }
+        if ($product->orderItems()->exists()) {
+            return response()->json([
+                'message' => 'Produsul are comenzi asociate și nu poate fi șters.',
+            ], 422);
+        }
 
         $product->categories()->detach();
         $product->images()->delete();

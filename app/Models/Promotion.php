@@ -107,12 +107,24 @@ class Promotion extends Model
 
         if ($this->customer_type && $this->customer_type !== 'both') {
             if (!$user) {
-                return false;
-            }
-
-            // presupunem că user-ul are ceva de genul $user->customer_type = 'b2b' / 'b2c'
-            if ($user->customer_type && $user->customer_type !== $this->customer_type) {
-                return false;
+                // If promotion is B2B, guests (assumed B2C) don't qualify.
+                if ($this->customer_type === 'b2b') {
+                    return false;
+                }
+            } else {
+                // Check the user's customer type
+                $customer = $user->customer;
+                if ($customer) {
+                    if ($this->customer_type === 'b2b' && $customer->type !== 'b2b') return false;
+                    if ($this->customer_type === 'b2c' && $customer->type !== 'b2c') return false;
+                } else {
+                     // User has no customer linked? Treat as B2C or check role?
+                     // Usually internal users (admin/agent) don't have customer linked, so this might block them.
+                     // But this method is for "does this promotion apply to THIS user as a buyer?".
+                     // If user is admin/agent buying for themselves? 
+                     // Let's assume if no customer linked, they are generic/B2C.
+                     if ($this->customer_type === 'b2b') return false;
+                }
             }
         }
 
@@ -125,6 +137,11 @@ class Promotion extends Model
 
             if ($this->customerGroups()->exists()) {
                 $groupId = $user->customer_group_id ?? null;
+                // If user has no group directly on model, check via customer relation
+                if (!$groupId && $user->customer) {
+                    $groupId = $user->customer->group_id;
+                }
+
                 if (!$groupId) {
                     return false;
                 }

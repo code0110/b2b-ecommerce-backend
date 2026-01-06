@@ -21,6 +21,11 @@ class AgentRouteController extends Controller
         }
 
         if ($user->hasRole('sales_director')) {
+            // Director can manage themselves
+            if ($user->id == $targetAgentId) {
+                return true;
+            }
+
             // Director can manage subordinates
             $isSubordinate = User::where('id', $targetAgentId)
                 ->where('director_id', $user->id)
@@ -58,6 +63,7 @@ class AgentRouteController extends Controller
             $query->where('agent_id', $user->id);
         } elseif ($user->hasRole('sales_director')) {
             $subordinates = $user->subordinates()->pluck('id');
+            $subordinates->push($user->id);
             $query->whereIn('agent_id', $subordinates);
         }
 

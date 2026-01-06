@@ -147,4 +147,9 @@ class Product extends Model
     {
         return $this->relatedProducts();
     }
+
+    public function orderItems(): HasMany
+    {
+        return $this->hasMany(OrderItem::class);
+    }
 }

@@ -63,6 +63,7 @@ class OfferController extends Controller
             $order = new \App\Models\Order();
             $order->order_number = $orderNumber;
             $order->customer_id = $offer->customer_id;
+            $order->customer_visit_id = $offer->customer_visit_id;
             $order->placed_by_user_id = Auth::id();
             $order->status = 'pending'; 
             $order->type = 'b2b';
@@ -191,6 +192,7 @@ class OfferController extends Controller
             'valid_until' => 'nullable|date',
             'notes' => 'nullable|string',
             'quote_request_id' => 'nullable|integer|exists:quote_requests,id',
+            'customer_visit_id' => 'nullable|exists:customer_visits,id',
         ]);
 
         DB::beginTransaction();
@@ -198,6 +200,7 @@ class OfferController extends Controller
             $offer = new Offer();
             $offer->agent_id = Auth::id();
             $offer->customer_id = $request->customer_id;
+            $offer->customer_visit_id = $request->customer_visit_id;
             $offer->quote_request_id = $request->quote_request_id;
             $offer->status = 'draft';
             $offer->notes = $request->notes;

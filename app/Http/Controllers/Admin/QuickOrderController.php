@@ -150,6 +150,7 @@ class QuickOrderController extends Controller
                 'line_total' => round($lineTotal, 2),
                 'line_discount' => round($lineDiscount, 2),
                 'is_overridden' => $isOverridden,
+                'applied_promotions' => $cItem['applied_promotions'] ?? [],
             ];
 
             $subtotal += ($unitPrice * $virtualItem->quantity);
@@ -167,10 +168,113 @@ class QuickOrderController extends Controller
     }
 
     /**
+     * Get available promotions for a specific product and customer.
+     */
+    public function availablePromotions(Request $request)
+    {
+        $request->validate([
+            'customer_id' => 'required|exists:customers,id',
+            'product_id' => 'required|exists:products,id',
+        ]);
+
+        $customer = Customer::findOrFail($request->customer_id);
+        $product = Product::findOrFail($request->product_id);
+
+        $activePromotions = $this->pricingService->getActivePromotionsForCustomer($customer);
+        
+        $applicablePromotions = $activePromotions->filter(function ($promotion) use ($product) {
+            return $this->pricingService->promotionAppliesToProduct($promotion, $product);
+        })->values();
+
+        $basePrice = $this->pricingService->getBasePrice($product, $customer);
+        
+        $results = $applicablePromotions->map(function ($promotion) use ($basePrice) {
+            [$promoPrice, $discountPercent] = $this->pricingService->applyPromotionOnPrice($promotion, $basePrice);
+            
+            return [
+                'id' => $promotion->id,
+                'name' => $promotion->name,
+                'description' => $promotion->description,
+                'bonus_type' => $promotion->bonus_type,
+                'discount_percent' => $promotion->discount_percent,
+                'discount_value' => $promotion->discount_value,
+                'min_qty' => $promotion->min_qty_per_product,
+                'promo_price' => $promoPrice,
+                'calculated_discount_percent' => $discountPercent,
+                'start_at' => $promotion->start_at,
+                'end_at' => $promotion->end_at,
+            ];
+        });
+
+        return response()->json([
+            'base_price' => $basePrice,
+            'promotions' => $results
+        ]);
+    }
+
+    /**
+     * Get all active promotions for a customer, potentially with associated products.
+     */
+    public function getCustomerPromotions(Request $request)
+    {
+        $request->validate([
+            'customer_id' => 'required|exists:customers,id',
+        ]);
+
+        $customer = Customer::findOrFail($request->customer_id);
+        
+        // Get all active promotions
+        $promotions = $this->pricingService->getActivePromotionsForCustomer($customer);
+        
+        // Enrich with product details if applicable
+        $result = $promotions->map(function ($promotion) use ($customer) {
+            $data = [
+                'id' => $promotion->id,
+                'name' => $promotion->name,
+                'description' => $promotion->description,
+                'bonus_type' => $promotion->bonus_type,
+                'applies_to' => $promotion->applies_to,
+                'min_qty' => $promotion->min_qty_per_product,
+                'discount_percent' => $promotion->discount_percent,
+                'discount_value' => $promotion->discount_value,
+                'products' => [],
+            ];
+
+            // If promotion applies to specific products, load them
+            if ($promotion->applies_to === 'products') {
+                $productIds = $promotion->products->pluck('id');
+                $products = Product::whereIn('id', $productIds)->take(50)->get();
+                
+                $data['products'] = $products->map(function ($product) use ($promotion, $customer) {
+                    // Calculate price with this promotion
+                    [$promoPrice, $discountPercent] = $this->pricingService->applyPromotionOnPrice($promotion, $this->pricingService->getBasePrice($product, $customer));
+                    
+                    return [
+                        'id' => $product->id,
+                        'name' => $product->name,
+                        'sku' => $product->internal_code ?? $product->sku,
+                        'base_price' => $this->pricingService->getBasePrice($product, $customer),
+                        'promo_price' => $promoPrice,
+                        'discount_percent' => $discountPercent
+                    ];
+                });
+            }
+            
+            return $data;
+        });
+
+        return response()->json($result);
+    }
+
+    /**
      * Create Order from Quick Order form.
      */
     public function createOrder(Request $request)
     {
+        $request->validate([
+            'customer_visit_id' => 'nullable|exists:customer_visits,id',
+        ]);
+
         // Re-use logic or trust the input?
         // Better to re-calculate to ensure integrity.
         // But for "Quick Order", user sees the calculation.
@@ -194,6 +298,7 @@ class QuickOrderController extends Controller
             $order = new Order();
             $order->order_number = $orderNumber;
             $order->customer_id = $request->customer_id;
+            $order->customer_visit_id = $request->customer_visit_id;
             $order->placed_by_user_id = Auth::id();
             $order->type = 'b2b';
             $order->currency = 'RON';

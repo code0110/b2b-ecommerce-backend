@@ -240,6 +240,8 @@ Route::middleware(['auth:sanctum', 'impersonate'])->group(function () {
 
         // Quick Order (Account Access)
         Route::post('quick-order/calculate', [\App\Http\Controllers\Admin\QuickOrderController::class, 'calculate']);
+        Route::post('quick-order/available-promotions', [\App\Http\Controllers\Admin\QuickOrderController::class, 'availablePromotions']);
+        Route::post('quick-order/customer-promotions', [\App\Http\Controllers\Admin\QuickOrderController::class, 'getCustomerPromotions']);
         Route::post('quick-order/create', [\App\Http\Controllers\Admin\QuickOrderController::class, 'createOrder']);
     });
 
@@ -308,6 +310,22 @@ Route::middleware(['auth:sanctum', 'role:admin'])->prefix('admin')->group(functi
     Route::apiResource('pages', \App\Http\Controllers\Admin\PageController::class);
     Route::apiResource('settings', \App\Http\Controllers\Admin\SettingController::class);
     Route::apiResource('products', \App\Http\Controllers\Admin\ProductController::class);
+    Route::apiResource('invoices', AdminInvoiceController::class)->only(['index', 'show']);
+    Route::apiResource('payments', AdminPaymentController::class)->only(['index', 'show']);
+    
+    Route::apiResource('blog', AdminBlogController::class);
+    Route::apiResource('sales-representatives', AdminSalesRepController::class);
+    Route::apiResource('partner-requests', AdminPartnerRequestController::class);
+    Route::apiResource('receipt-books', \App\Http\Controllers\Admin\ReceiptBookController::class);
+    Route::apiResource('tickets', AdminTicketController::class)->only(['index', 'show', 'update']);
+    Route::apiResource('roles', AdminRoleController::class);
+    Route::apiResource('permissions', AdminPermissionController::class);
+    Route::get('dashboard/stats', [\App\Http\Controllers\Admin\DashboardController::class, 'index']);
+    Route::get('dashboard/overview', [\App\Http\Controllers\Admin\DashboardController::class, 'overview']);
+    Route::apiResource('audit-logs', AuditLogController::class)->only(['index', 'show']);
+    
+    Route::get('erp/logs', [ErpController::class, 'logs']);
+    Route::post('erp/orders/{id}/sync', [ErpController::class, 'syncOrder']);
 });
 
 // Users Management (Admin & Sales Director)
@@ -318,6 +336,7 @@ Route::middleware(['auth:sanctum', 'role:admin,sales_director'])->prefix('admin'
 // Customer Visits (Agent/Admin/Director) - Shared routes with 'admin' prefix
 Route::middleware(['auth:sanctum', 'role:admin,sales_agent,sales_director'])->prefix('admin')->group(function () {
     Route::apiResource('customers', AdminCustomerController::class);
+    Route::get('categories', [AdminCategoryController::class, 'index']);
     Route::get('customer-visits', [\App\Http\Controllers\Admin\CustomerVisitController::class, 'index']);
     Route::post('customer-visits/start', [\App\Http\Controllers\Admin\CustomerVisitController::class, 'startVisit']);
     Route::post('customer-visits/{id}/end', [\App\Http\Controllers\Admin\CustomerVisitController::class, 'endVisit']);

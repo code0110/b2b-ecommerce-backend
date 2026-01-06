@@ -538,6 +538,8 @@ onMounted(async () => {
 const isAgentOrDirector = computed(() => {
   return authStore.hasRole('sales_agent') || authStore.hasRole('sales_director')
 })
+const isAgent = computed(() => authStore.hasRole('sales_agent'))
+const isDirector = computed(() => authStore.hasRole('sales_director') && !authStore.hasRole('admin'))
 
 import { useRouter } from 'vue-router'
 

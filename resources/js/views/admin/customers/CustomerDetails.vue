@@ -374,7 +374,7 @@
               <dt class="col-6">Discount standard</dt>
               <dd class="col-6 text-end">
                 <span v-if="customer.defaultDiscount != null">
-                  {{ customer.defaultDiscount.toFixed(1) }}%
+                  {{ Number(customer.defaultDiscount).toFixed(1) }}%
                 </span>
                 <span v-else class="text-muted">-</span>
               </dd>

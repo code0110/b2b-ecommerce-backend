@@ -1,21 +1,26 @@
 <template>
-  <div class="container">
-    <PageHeader title="Pagină de conținut" subtitle="Pagini statice: Despre noi, Termeni, GDPR etc.">
-      <!-- Slot pentru butoane de acțiune (ex: Adaugă, Export etc.) -->
-    </PageHeader>
-
-    <div class="card shadow-sm">
-      <div class="card-body">
-        <p class="text-muted">
-          Aceasta este o pagină de template pentru <strong>Pagină de conținut</strong>.
-          Completează cu tabele, formulare și componente specifice proiectului tău.
-        </p>
-        <ul class="small text-muted">
-          <li>Respectă structura și câmpurile din specificația funcțională.</li>
-          <li>Leagă această pagină de API-ul backend / ERP / procesator plăți.</li>
-          <li>Extinde componentele Bootstrap sau creează componente personalizate.</li>
-        </ul>
+  <div class="container py-5">
+    <div v-if="loading" class="text-center py-5">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Se încarcă...</span>
       </div>
+    </div>
+
+    <div v-else-if="error" class="alert alert-danger" role="alert">
+      {{ error }}
+    </div>
+
+    <div v-else-if="page" class="static-page">
+      <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+          <li class="breadcrumb-item"><router-link to="/">Acasă</router-link></li>
+          <li class="breadcrumb-item active" aria-current="page">{{ page.title }}</li>
+        </ol>
+      </nav>
+
+      <h1 class="h2 mb-4">{{ page.title }}</h1>
+      
+      <div class="content" v-html="page.content"></div>
     </div>
   </div>
 </template>
@@ -26,6 +31,13 @@ import { ref, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { fetchStaticPage } from '@/services/content'
 import { setTitle, setMeta, setMetaProperty, setCanonical, setJsonLd } from '@/utils/seo'
+
+const props = defineProps({
+  slug: {
+    type: String,
+    default: null
+  }
+})
 
 const route = useRoute()
 const router = useRouter()
@@ -38,7 +50,7 @@ const load = async () => {
   error.value = ''
   page.value = null
   try {
-    const slug = route.params.slug
+    const slug = props.slug || route.params.slug
     const data = await fetchStaticPage(slug)
     page.value = data.page ?? data
     const title = (page.value?.meta_title || page.value?.title || 'Pagină') + ' | ' + (document?.querySelector('meta[name=\"application-name\"]')?.getAttribute('content') || '')

@@ -25,6 +25,8 @@ class User extends Authenticatable
         'director_id',
         'is_active',
         'notification_preferences',
+        'company_role',
+        'requires_approval',
     ];
 
     protected $hidden = [

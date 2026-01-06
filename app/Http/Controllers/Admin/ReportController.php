@@ -156,21 +156,7 @@ class ReportController extends Controller
     {
         /** @var \App\Models\User $user */
         $user = Auth::user();
-        $allowedAgentIds = $this->getAllowedAgentIds($user);
-
-        // Include directors in the list if user is admin
-        $agentIds = $allowedAgentIds;
-        if ($user->hasRole('admin')) {
-             // Add directors to the list if we want to track them too, 
-             // but user request said "locatia agentilor/ directorilor".
-             // If directors perform visits, they act as agents.
-             // If we want to see directors' locations even if they don't do visits?
-             // Usually tracking is via visits.
-             // Let's stick to users who have visits.
-             $directorIds = User::role('sales_director')->pluck('id')->toArray();
-             $agentIds = array_merge($agentIds, $directorIds);
-             $agentIds = array_unique($agentIds);
-        }
+        $agentIds = $this->getAllowedAgentIds($user);
 
         $agents = User::whereIn('id', $agentIds)
             ->select('id', 'first_name', 'last_name')
@@ -227,7 +213,7 @@ class ReportController extends Controller
                         'name' => $agent->first_name . ' ' . $agent->last_name,
                         'roles' => $agent->getRoleNames(),
                         'status' => $activeVisit ? 'in_visit' : 'idle',
-                        'customer_name' => $activeVisit ? $activeVisit->customer->name : ($lastVisit ? $lastVisit->customer->name : null),
+                        'customer_name' => $activeVisit && $activeVisit->customer ? $activeVisit->customer->name : ($lastVisit && $lastVisit->customer ? $lastVisit->customer->name : null),
                         'visit_start_time' => $activeVisit ? $activeVisit->start_time : null,
                         'latitude' => $currentLat,
                         'longitude' => $currentLng,
@@ -250,11 +236,15 @@ class ReportController extends Controller
     {
         /** @var \App\Models\User $user */
         if ($user->hasRole('admin')) {
-            return User::role('sales_agent')->pluck('id')->toArray();
+            $agentIds = User::role('sales_agent')->pluck('id')->toArray();
+            $directorIds = User::role('sales_director')->pluck('id')->toArray();
+            return array_unique(array_merge($agentIds, $directorIds));
         }
         
         if ($user->hasRole('sales_director')) {
-            return $user->subordinates()->pluck('id')->toArray();
+            $ids = $user->subordinates()->pluck('id')->toArray();
+            $ids[] = $user->id; // Include self
+            return array_unique($ids);
         }
 
         if ($user->hasRole('sales_agent')) {

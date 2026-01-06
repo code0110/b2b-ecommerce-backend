@@ -17,6 +17,7 @@ use App\Http\Controllers\Admin\ShippingController as AdminShippingController;
 use App\Http\Controllers\Admin\OrderController as AdminOrderController;
 
 use App\Http\Controllers\Front\CatalogController;
+use App\Http\Controllers\Front\ProductReviewController;
 use App\Http\Controllers\Front\CartController;
 use App\Http\Controllers\Front\CheckoutController;
 use App\Http\Controllers\Front\OrderController;
@@ -81,6 +82,7 @@ Route::prefix('auth')->group(function () {
 
 // Public Config
 Route::get('config', [\App\Http\Controllers\Admin\SettingController::class, 'publicConfig']);
+Route::get('content-blocks', [\App\Http\Controllers\Api\ContentController::class, 'index']);
 
 // Front-office public catalog
 // Route::get('home', [CatalogController::class, 'home']);
@@ -91,6 +93,7 @@ Route::get('categories/{slug}', [CatalogController::class, 'category']);
 Route::get('products/{slug}', [CatalogController::class, 'product']);
 Route::get('brands', [CatalogController::class, 'brands']);
 Route::get('brands/{slug}', [CatalogController::class, 'brand']);
+Route::post('products/{product}/reviews', [ProductReviewController::class, 'store']);
 // Search
 Route::get('search', [SearchController::class, 'search']);
 Route::get('search/autocomplete', [SearchController::class, 'autocomplete']);
@@ -119,8 +122,6 @@ Route::get('sales-representatives', [FrontSalesRepController::class, 'index']);
 // Blog & pagini
 Route::get('blog', [FrontBlogController::class, 'index']);
 Route::get('blog/{slug}', [FrontBlogController::class, 'show']);
-Route::get('pages/{slug}', [FrontBlogController::class, 'page']);
-
 
 Route::get('pages/{slug}', [PageController::class, 'show']);
 // Devino partener
@@ -247,8 +248,8 @@ Route::middleware(['auth:sanctum', 'impersonate'])->group(function () {
     Route::post('orders/{id}/reorder', [OrderController::class, 'reorder']);
 
     Route::get('notifications', [NotificationController::class, 'index']);
-Route::get('notifications/unread-count', [NotificationController::class, 'unreadCount']);
-Route::post('notifications/{id}/read', [NotificationController::class, 'markAsRead']);
+    Route::get('notifications/unread-count', [NotificationController::class, 'unreadCount']);
+    Route::post('notifications/{id}/read', [NotificationController::class, 'markAsRead']);
     Route::post('notifications/read-all', [NotificationController::class, 'markAllAsRead']);
     Route::get('notifications/preferences', [NotificationController::class, 'getPreferences']);
     Route::post('notifications/preferences', [NotificationController::class, 'updatePreferences']);
@@ -264,199 +265,118 @@ Route::post('notifications/{id}/read', [NotificationController::class, 'markAsRe
     Route::post('client-offers/{id}/messages', [\App\Http\Controllers\Front\OfferController::class, 'addMessage']);
 
     Route::get('quotes', [QuoteController::class, 'index']);
-Route::post('quotes', [QuoteController::class, 'store']);
-Route::get('quotes/{id}', [QuoteController::class, 'show']);
-Route::post('quotes/from-product', [QuoteController::class, 'fromProduct']);
-Route::post('quotes/from-cart', [QuoteController::class, 'fromCart']);
-// Documente financiare (cont client)
-Route::get('invoices', [FrontInvoiceController::class, 'index']);
-Route::get('invoices/{id}', [FrontInvoiceController::class, 'show']);
+    Route::post('quotes', [QuoteController::class, 'store']);
+    Route::get('quotes/{id}', [QuoteController::class, 'show']);
+    Route::post('quotes/from-product', [QuoteController::class, 'fromProduct']);
+    Route::post('quotes/from-cart', [QuoteController::class, 'fromCart']);
+    // Documente financiare (cont client)
+    Route::get('invoices', [FrontInvoiceController::class, 'index']);
+    Route::get('invoices/{id}', [FrontInvoiceController::class, 'show']);
 
-// Multi-user B2B – administrare utilizatori companie (doar owner)
-Route::get('company/users', [CompanyUserController::class, 'index']);
-Route::post('company/users', [CompanyUserController::class, 'store']);
-Route::put('company/users/{id}', [CompanyUserController::class, 'update']);
-Route::delete('company/users/{id}', [CompanyUserController::class, 'destroy']);
+    // Multi-user B2B – administrare utilizatori companie (doar owner)
+    Route::get('company/users', [CompanyUserController::class, 'index']);
+    Route::post('company/users', [CompanyUserController::class, 'store']);
+    Route::put('company/users/{id}', [CompanyUserController::class, 'update']);
+    Route::delete('company/users/{id}', [CompanyUserController::class, 'destroy']);
 
-// Workflow aprobare comenzi B2B
-Route::get('company/orders/pending-approval', [OrderApprovalController::class, 'pending']);
-Route::post('company/orders/{order}/approve', [OrderApprovalController::class, 'approve']);
-Route::post('company/orders/{order}/reject', [OrderApprovalController::class, 'reject']);
+    // Workflow aprobare comenzi B2B
+    Route::get('company/orders/pending-approval', [OrderApprovalController::class, 'pending']);
+    Route::post('company/orders/{order}/approve', [OrderApprovalController::class, 'approve']);
+    Route::post('company/orders/{order}/reject', [OrderApprovalController::class, 'reject']);
 
-Route::get('shipments', [FrontShipmentController::class, 'index']);
-Route::get('shipments/{id}', [FrontShipmentController::class, 'show']);
+    Route::get('shipments', [FrontShipmentController::class, 'index']);
+    Route::get('shipments/{id}', [FrontShipmentController::class, 'show']);
 
-// Homepage data - Moved to public area
-// Route::get('home', [HomeController::class, 'homepage']);
+    // Homepage data - Moved to public area
+    // Route::get('home', [HomeController::class, 'homepage']);
 
-// Produse noi
-Route::get('products/new', [HomeController::class, 'newProducts']);
+    // Produse noi
+    Route::get('products/new', [HomeController::class, 'newProducts']);
 
-// Produse în promoție / reduceri
-Route::get('products/discounted', [HomeController::class, 'discountedProducts']);
+    // Produse în promoție / reduceri
+    Route::get('products/discounted', [HomeController::class, 'discountedProducts']);
+
+    // Content Blocks (Front)
+    Route::get('content-blocks', [\App\Http\Controllers\Front\ContentBlockController::class, 'index']);
+    Route::get('pages/{slug}', [\App\Http\Controllers\Front\PageController::class, 'show']);
 
 });
 
-Route::prefix('admin')
-    ->middleware(['auth:sanctum', 'role:admin,operator,sales_agent,sales_director'])
-    ->group(function () {
-        // Dashboard
-        Route::get('dashboard', [\App\Http\Controllers\Admin\DashboardController::class, 'index']);
-        Route::get('dashboard/overview', [\App\Http\Controllers\Admin\DashboardController::class, 'overview']);
+// Admin Routes
+Route::middleware(['auth:sanctum', 'role:admin'])->prefix('admin')->group(function () {
+    Route::apiResource('content-blocks', \App\Http\Controllers\Admin\ContentBlockController::class);
+    Route::apiResource('pages', \App\Http\Controllers\Admin\PageController::class);
+    Route::apiResource('settings', \App\Http\Controllers\Admin\SettingController::class);
+    Route::apiResource('products', \App\Http\Controllers\Admin\ProductController::class);
+});
 
-        // Products
-        Route::apiResource('products', \App\Http\Controllers\Admin\ProductController::class);
+// Users Management (Admin & Sales Director)
+Route::middleware(['auth:sanctum', 'role:admin,sales_director'])->prefix('admin')->group(function () {
+    Route::apiResource('users', AdminUserController::class);
+});
 
-        // Categories
-        Route::apiResource('categories', \App\Http\Controllers\Admin\CategoryController::class);
+// Customer Visits (Agent/Admin/Director) - Shared routes with 'admin' prefix
+Route::middleware(['auth:sanctum', 'role:admin,sales_agent,sales_director'])->prefix('admin')->group(function () {
+    Route::apiResource('customers', AdminCustomerController::class);
+    Route::get('customer-visits', [\App\Http\Controllers\Admin\CustomerVisitController::class, 'index']);
+    Route::post('customer-visits/start', [\App\Http\Controllers\Admin\CustomerVisitController::class, 'startVisit']);
+    Route::post('customer-visits/{id}/end', [\App\Http\Controllers\Admin\CustomerVisitController::class, 'endVisit']);
+    Route::post('customer-visits/{id}/location', [\App\Http\Controllers\Admin\CustomerVisitController::class, 'recordLocation']);
 
-        // Brands
-        Route::apiResource('brands', \App\Http\Controllers\Admin\BrandController::class);
+    // Orders (Agent/Admin/Director)
+    Route::get('orders', [\App\Http\Controllers\Admin\OrderController::class, 'index']);
+    Route::get('orders/{order}', [\App\Http\Controllers\Admin\OrderController::class, 'show']);
+    Route::put('orders/{order}', [\App\Http\Controllers\Admin\OrderController::class, 'update']);
+    Route::post('orders/{order}/status', [\App\Http\Controllers\Admin\OrderController::class, 'updateStatus']);
+    Route::post('orders/{order}/payment-status', [\App\Http\Controllers\Admin\OrderController::class, 'updatePaymentStatus']);
 
-        // Pages (CMS)
-        Route::apiResource('pages', AdminPageController::class);
+    // Offers (Agent/Admin/Director)
+    Route::get('offers', [\App\Http\Controllers\Admin\OfferController::class, 'index']);
+    Route::post('offers', [\App\Http\Controllers\Admin\OfferController::class, 'store']);
+    Route::get('offers/{id}', [\App\Http\Controllers\Admin\OfferController::class, 'show']);
+    Route::put('offers/{id}', [\App\Http\Controllers\Admin\OfferController::class, 'update']);
+    Route::post('offers/{id}/status', [\App\Http\Controllers\Admin\OfferController::class, 'changeStatus']);
+    Route::post('offers/{id}/convert-to-order', [\App\Http\Controllers\Admin\OfferController::class, 'convertToOrder']);
+    Route::post('offers/{id}/messages', [\App\Http\Controllers\Admin\OfferController::class, 'addMessage']);
+    Route::post('offers/check-price', [\App\Http\Controllers\Admin\OfferController::class, 'checkPrice']);
+    Route::delete('offers/{id}', [\App\Http\Controllers\Admin\OfferController::class, 'destroy']);
 
-        // Customers
-        Route::apiResource('customers', \App\Http\Controllers\Admin\CustomerController::class);
+    // Quote Requests (Agent/Admin/Director)
+    Route::get('quotes', [\App\Http\Controllers\Admin\QuoteController::class, 'index']);
+    Route::get('quotes/{quoteRequest}', [\App\Http\Controllers\Admin\QuoteController::class, 'show']);
+    Route::put('quotes/{quoteRequest}', [\App\Http\Controllers\Admin\QuoteController::class, 'update']);
+    Route::post('quotes/{quoteRequest}/convert-to-order', [\App\Http\Controllers\Admin\QuoteController::class, 'convertToOrder']);
 
-        // Customer Groups
-        Route::apiResource('customer-groups', \App\Http\Controllers\Admin\CustomerGroupController::class);
-
-        // Agent Routes & Visits
-        Route::apiResource('agent-routes', \App\Http\Controllers\Admin\AgentRouteController::class);
-        
-        // Tracking (Rute Zilnice)
-        Route::post('tracking/start-day', [\App\Http\Controllers\Admin\AgentTrackingController::class, 'startDay']);
-        Route::post('tracking/end-day', [\App\Http\Controllers\Admin\AgentTrackingController::class, 'endDay']);
-        Route::post('tracking/ping', [\App\Http\Controllers\Admin\AgentTrackingController::class, 'pingLocation']);
-        Route::get('tracking/history', [\App\Http\Controllers\Admin\AgentTrackingController::class, 'getHistory']);
-        Route::get('tracking/status', [\App\Http\Controllers\Admin\AgentTrackingController::class, 'status']);
-
-        Route::apiResource('customer-visits', \App\Http\Controllers\Admin\CustomerVisitController::class);
-        Route::post('customer-visits/start', [\App\Http\Controllers\Admin\CustomerVisitController::class, 'startVisit']);
-        Route::post('customer-visits/{id}/end', [\App\Http\Controllers\Admin\CustomerVisitController::class, 'endVisit']);
-        Route::post('customer-visits/{id}/location', [\App\Http\Controllers\Admin\CustomerVisitController::class, 'recordLocation']);
-
-        // Reports
-        Route::get('reports/dashboard-stats', [\App\Http\Controllers\Admin\ReportController::class, 'dashboardStats']);
-        Route::get('reports/visits-chart', [\App\Http\Controllers\Admin\ReportController::class, 'visitsChart']);
-        Route::get('reports/outcomes-chart', [\App\Http\Controllers\Admin\ReportController::class, 'outcomesChart']);
-        Route::get('reports/agent-performance', [\App\Http\Controllers\Admin\ReportController::class, 'agentPerformance']);
-        Route::get('reports/locations', [\App\Http\Controllers\Admin\ReportController::class, 'locations']);
-
-        // Sales Targets
-        Route::apiResource('sales-targets', \App\Http\Controllers\Admin\SalesTargetController::class);
-
-        // Director Dashboard
-        Route::get('director/dashboard/summary', [\App\Http\Controllers\Admin\DirectorDashboardController::class, 'summary']);
-        Route::get('director/dashboard/team-status', [\App\Http\Controllers\Admin\DirectorDashboardController::class, 'teamStatus']);
-
-        // Promotions
-        Route::apiResource('promotions', \App\Http\Controllers\Admin\PromotionController::class);
-
-
-// Users (admin)
-Route::apiResource('users', AdminUserController::class);
-
-// Roles
-Route::apiResource('roles', AdminRoleController::class);
-
-// Permissions
-Route::apiResource('permissions', AdminPermissionController::class);
-
-
-        // Invoices
-        Route::apiResource('invoices', \App\Http\Controllers\Admin\InvoiceController::class);
-
-        // Tickets
-Route::apiResource('tickets', AdminTicketController::class)->only(['index', 'show', 'update']);
-
-// Sales representatives
-Route::apiResource('sales-representatives', AdminSalesRepController::class);
-
-// Partner requests
-Route::apiResource('partner-requests', AdminPartnerRequestController::class)->only(['index', 'show', 'update']);
-
-// Payments
-        Route::apiResource('payments', AdminPaymentController::class)->only(['index', 'show', 'store', 'update']);
-
-        // Receipt Books
-        Route::apiResource('receipt-books', \App\Http\Controllers\Admin\ReceiptBookController::class);
-        Route::get('receipt-books-agents', [\App\Http\Controllers\Admin\ReceiptBookController::class, 'getAgents']);
-
-        // Offers (Agent/Director System)
-        Route::post('offers/check-price', [\App\Http\Controllers\Admin\OfferController::class, 'checkPrice']);
-        Route::apiResource('offers', \App\Http\Controllers\Admin\OfferController::class);
-        Route::post('offers/{id}/status', [\App\Http\Controllers\Admin\OfferController::class, 'changeStatus']);
-        Route::post('offers/{id}/messages', [\App\Http\Controllers\Admin\OfferController::class, 'addMessage']);
-        Route::post('offers/{id}/convert-to-order', [\App\Http\Controllers\Admin\OfferController::class, 'convertToOrder']);
-
-        // Notifications (Send)
-        Route::post('notifications/send', [\App\Http\Controllers\Admin\NotificationController::class, 'send']);
-        Route::get('notifications/users-search', [\App\Http\Controllers\Admin\NotificationController::class, 'searchUsers']);
-        Route::get('notifications/history', [\App\Http\Controllers\Admin\NotificationController::class, 'history']);
-
-        // Quick Orders
-        Route::post('quick-order/calculate', [\App\Http\Controllers\Admin\QuickOrderController::class, 'calculate']);
-        Route::post('quick-order/create', [\App\Http\Controllers\Admin\QuickOrderController::class, 'createOrder']);
-
-        // Quotes / oferte (OLD system - keep if needed or remove)
-        Route::apiResource('quotes', \App\Http\Controllers\Admin\QuoteController::class)->only(['index', 'show', 'update']);
-        Route::post('quotes/{quoteRequest}/convert-to-order', [\App\Http\Controllers\Admin\QuoteController::class, 'convertToOrder']);
-
-        // Shipping config
-        Route::get('shipping/config', [\App\Http\Controllers\Admin\ShippingController::class, 'index']);
-        Route::post('shipping/config', [\App\Http\Controllers\Admin\ShippingController::class, 'store']);
-        Route::put('shipping/config/{id}', [\App\Http\Controllers\Admin\ShippingController::class, 'update']);
-        Route::delete('shipping/config/{id}', [\App\Http\Controllers\Admin\ShippingController::class, 'destroy']);
-
-        // Shipments
-        Route::get('shipments', [\App\Http\Controllers\Admin\ShipmentController::class, 'index']);
-        Route::post('shipments', [\App\Http\Controllers\Admin\ShipmentController::class, 'store']);
-        Route::post('shipments/{id}/status', [\App\Http\Controllers\Admin\ShipmentController::class, 'updateStatus']);
-
-        // ERP helper
-        Route::get('erp/logs', [\App\Http\Controllers\Admin\ErpController::class, 'logs']);
-        Route::post('erp/orders/{order}/sync', [\App\Http\Controllers\Admin\ErpController::class, 'syncOrder']);
-
-        // Audit logs
-        Route::get('audit-logs', [\App\Http\Controllers\Admin\AuditLogController::class, 'index']);
-        Route::get('audit-logs/{id}', [\App\Http\Controllers\Admin\AuditLogController::class, 'show']);
-
-        // Settings (Offers configuration)
-        Route::get('settings', [\App\Http\Controllers\Admin\SettingController::class, 'index']);
-        Route::put('settings', [\App\Http\Controllers\Admin\SettingController::class, 'update']);
-
-        // Notifications
-        Route::get('notifications', [\App\Http\Controllers\Front\NotificationController::class, 'index']);
-        Route::get('notifications/unread-count', [\App\Http\Controllers\Front\NotificationController::class, 'unreadCount']);
-        Route::post('notifications/{id}/read', [\App\Http\Controllers\Front\NotificationController::class, 'markAsRead']);
-        Route::post('notifications/read-all', [\App\Http\Controllers\Front\NotificationController::class, 'markAllAsRead']);
-
-        // ORDERS (NOU) – foarte important să fie în ACEST grup
-        Route::get('orders', [AdminOrderController::class, 'index']);
-        Route::get('orders/{order}', [AdminOrderController::class, 'show']);
-        Route::put('orders/{order}', [AdminOrderController::class, 'update']);
-        Route::post('orders/{order}/status', [AdminOrderController::class, 'updateStatus']);
-        Route::post('orders/{order}/payment-status', [AdminOrderController::class, 'updatePaymentStatus']);
-
-
-    });
-
-
+    // Agent Tracking (Shift & GPS)
+    Route::get('tracking/status', [\App\Http\Controllers\Admin\AgentTrackingController::class, 'status']);
+    Route::post('tracking/start-day', [\App\Http\Controllers\Admin\AgentTrackingController::class, 'startDay']);
+    Route::post('tracking/end-day', [\App\Http\Controllers\Admin\AgentTrackingController::class, 'endDay']);
+    Route::post('tracking/ping', [\App\Http\Controllers\Admin\AgentTrackingController::class, 'pingLocation']);
+    Route::get('tracking/history', [\App\Http\Controllers\Admin\AgentTrackingController::class, 'getHistory']);
     
+    // Agent Routes (CRUD)
+    Route::get('agent-routes', [\App\Http\Controllers\Admin\AgentRouteController::class, 'index']);
+    Route::post('agent-routes', [\App\Http\Controllers\Admin\AgentRouteController::class, 'store']);
+    Route::put('agent-routes/{id}', [\App\Http\Controllers\Admin\AgentRouteController::class, 'update']);
+    Route::delete('agent-routes/{id}', [\App\Http\Controllers\Admin\AgentRouteController::class, 'destroy']);
+    Route::post('agent-routes/generate', [\App\Http\Controllers\Admin\AgentRouteController::class, 'generate']);
 
-// Blog
-Route::apiResource('blog-posts', AdminBlogController::class);
-Route::get('blog-categories', [AdminBlogController::class, 'categories']);
-Route::post('blog-categories', [AdminBlogController::class, 'storeCategory']);
-Route::put('blog-categories/{id}', [AdminBlogController::class, 'updateCategory']);
-Route::delete('blog-categories/{id}', [AdminBlogController::class, 'destroyCategory']);
+    // Sales Targets
+    Route::get('sales-targets', [\App\Http\Controllers\Admin\SalesTargetController::class, 'index']);
+    Route::post('sales-targets', [\App\Http\Controllers\Admin\SalesTargetController::class, 'store']);
+    Route::get('sales-targets/{id}', [\App\Http\Controllers\Admin\SalesTargetController::class, 'show']);
+    Route::delete('sales-targets/{id}', [\App\Http\Controllers\Admin\SalesTargetController::class, 'destroy']);
 
+    // Reports
+    Route::get('reports/dashboard-stats', [\App\Http\Controllers\Admin\ReportController::class, 'dashboardStats']);
+    Route::get('reports/visits-chart', [\App\Http\Controllers\Admin\ReportController::class, 'visitsChart']);
+    Route::get('reports/outcomes-chart', [\App\Http\Controllers\Admin\ReportController::class, 'outcomesChart']);
+    Route::get('reports/agent-performance', [\App\Http\Controllers\Admin\ReportController::class, 'agentPerformance']);
+    Route::get('reports/locations', [\App\Http\Controllers\Admin\ReportController::class, 'locations']);
+});
 
-// Fallback pentru 404 API
-Route::fallback(function () {
-    return response()->json([
-        'message' => 'Endpoint not found.'
-    ], 404);
+// Director Dashboard
+Route::middleware(['auth:sanctum', 'role:admin,sales_director'])->prefix('admin/director')->group(function () {
+    Route::get('dashboard/summary', [\App\Http\Controllers\Admin\DirectorDashboardController::class, 'summary']);
+    Route::get('dashboard/team-status', [\App\Http\Controllers\Admin\DirectorDashboardController::class, 'teamStatus']);
 });

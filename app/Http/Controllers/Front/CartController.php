@@ -88,7 +88,13 @@ class CartController extends Controller
     protected function respondWithEnrichedCart(Cart $cart, Request $request)
     {
         $user     = $request->user();
-        $customer = $user?->customer ?? null;
+        // If cart has a specific customer_id, use it. Otherwise fall back to user's customer.
+        $customer = null;
+        if ($cart->customer_id) {
+            $customer = Customer::find($cart->customer_id);
+        } elseif ($user) {
+            $customer = $user->customer;
+        }
 
         $pricing = $this->promotionPricingService->priceCart($cart, $customer);
 
@@ -264,6 +270,7 @@ class CartController extends Controller
         $cart = $this->resolveCart($request);
         $cart->items()->delete();
 
-        return response()->json($this->transformCart($cart));
+        $cart->refresh();
+        return $this->respondWithEnrichedCart($cart, $request);
     }
 }

@@ -28,6 +28,10 @@
         </span>
       </div>
 
+      <div v-if="post.image_url" class="mb-4">
+        <img :src="post.image_url" :alt="post.title" class="img-fluid rounded shadow-sm w-100" style="max-height: 500px; object-fit: cover;">
+      </div>
+
       <div
         class="mb-4 cms-content"
         v-html="post.content"

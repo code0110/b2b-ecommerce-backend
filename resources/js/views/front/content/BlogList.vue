@@ -72,8 +72,15 @@
             <article
               v-for="post in posts.data"
               :key="post.id"
-              class="card border-0 shadow-sm"
+              class="card border-0 shadow-sm h-100"
             >
+              <img 
+                v-if="post.image_url" 
+                :src="post.image_url" 
+                class="card-img-top" 
+                :alt="post.title"
+                style="height: 200px; object-fit: cover;"
+              >
               <div class="card-body">
                 <RouterLink
                   :to="`/blog/${post.slug}`"

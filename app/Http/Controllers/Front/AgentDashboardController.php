@@ -387,7 +387,18 @@ class AgentDashboardController extends Controller
         
         $agentId = $user->id;
         if ($request->has('agent_id') && $user->hasRole('sales_director')) {
-             $agentId = $request->get('agent_id');
+             $requestedAgentId = $request->get('agent_id');
+             
+             // Verify that the requested agent is a subordinate of this director
+             $isSubordinate = User::where('id', $requestedAgentId)
+                ->where('director_id', $user->id)
+                ->exists();
+
+             if ($isSubordinate || $requestedAgentId == $user->id) {
+                 $agentId = $requestedAgentId;
+             } else {
+                 return response()->json(['message' => 'Unauthorized access to this agent route'], 403);
+             }
         }
 
         $routes = \App\Models\AgentRoute::where('agent_id', $agentId)

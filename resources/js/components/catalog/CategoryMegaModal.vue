@@ -4,23 +4,65 @@
       <!-- Header portocaliu -->
       <div class="catalog-header d-flex justify-content-between align-items-center px-4 py-3">
         <div>
-          <div class="text-uppercase small text-light-50 mb-1">
+          <div class="text-uppercase small text-white-50 mb-1">
             Categorie
           </div>
-          <h2 class="h5 mb-0 text-white">
-            {{ selectedCategory?.name || 'Catalog produse' }}
+          <h2 class="h5 mb-0 text-white d-flex align-items-center gap-2 catalog-title">
+            <i class="bi bi-collection"></i>
+            <span>{{ selectedCategory?.name || 'Catalog produse' }}</span>
+            <span
+              v-if="selectedCategory"
+              class="badge bg-white bg-opacity-25 text-white rounded-pill"
+            >
+              {{ (selectedCategory?.children || []).length }} subcategorii
+            </span>
           </h2>
+          <ul v-if="selectedCategory" class="breadcrumb mb-1">
+            <li class="breadcrumb-item">
+              <span class="text-white-50">Catalog</span>
+            </li>
+            <li
+              v-for="(item, i) in breadcrumbPath"
+              :key="item.slug || item.name || i"
+              class="breadcrumb-item"
+              :class="{ active: i === breadcrumbPath.length - 1 }"
+              aria-current="page"
+            >
+              <RouterLink
+                v-if="i !== breadcrumbPath.length - 1 && item.slug"
+                :to="{ name: 'category', params: { slug: item.slug } }"
+                class="text-white-50 text-decoration-none"
+              >
+                {{ item.name }}
+              </RouterLink>
+              <span v-else class="text-white">
+                {{ item.name }}
+              </span>
+            </li>
+          </ul>
           <p class="small text-white-50 mb-0">
             Explorați subcategoriile sau vedeți toate produsele din categorie.
           </p>
         </div>
-        <div class="d-flex align-items-center gap-2">
+        <div class="d-flex align-items-center gap-2 flex-wrap header-actions">
+          <div class="input-group input-group-sm header-search me-2">
+            <span class="input-group-text bg-white bg-opacity-25 border-0 text-white">
+              <i class="bi bi-search"></i>
+            </span>
+            <input
+              v-model="searchTerm"
+              type="search"
+              class="form-control bg-white bg-opacity-25 border-0 text-white"
+              placeholder="Caută categorie..."
+            />
+          </div>
           <button
             v-if="selectedCategory"
             type="button"
             class="btn btn-light btn-sm"
             @click="goToCategory(selectedCategory)"
           >
+            <i class="bi bi-arrow-right-short me-1"></i>
             Vezi tot
           </button>
           <button
@@ -28,6 +70,7 @@
             class="btn btn-outline-light btn-sm"
             @click="close"
           >
+            <i class="bi bi-x-lg me-1"></i>
             Închide
           </button>
         </div>
@@ -188,6 +231,27 @@ const handleKey = (e) => {
   }
 };
 
+const breadcrumbPath = computed(() => {
+  if (!selectedCategory.value) return [];
+  const matchId = selectedCategory.value.id;
+  const matchSlug = selectedCategory.value.slug;
+  const find = (list, trail = []) => {
+    for (const cat of list) {
+      const t = [...trail, cat];
+      if ((matchId && cat.id === matchId) || (matchSlug && cat.slug === matchSlug)) {
+        return t;
+      }
+      if (Array.isArray(cat.children) && cat.children.length) {
+        const r = find(cat.children, t);
+        if (r) return r;
+      }
+    }
+    return null;
+  };
+  const res = find(categories.value) || [selectedCategory.value];
+  return res.map((c) => ({ name: c.name, slug: c.slug }));
+});
+
 const loadCategories = async () => {
   loading.value = true;
   error.value = '';
@@ -240,8 +304,24 @@ onBeforeUnmount(() => {
 
 /* Header portocaliu */
 .catalog-header {
-  background: linear-gradient(135deg, #f97316, #ea580c);
+  background: linear-gradient(135deg, #f97316, #ea580c 60%, #c2410c);
   color: #fff;
+  box-shadow: inset 0 -1px 0 rgba(255,255,255,0.15);
+}
+.catalog-header .breadcrumb {
+  --bs-breadcrumb-divider: '›';
+}
+.catalog-header .breadcrumb .breadcrumb-item {
+  font-size: .75rem;
+}
+.catalog-header .breadcrumb .breadcrumb-item + .breadcrumb-item::before {
+  color: rgba(255,255,255,.5);
+}
+.catalog-header .text-white-50 {
+  color: rgba(255,255,255,.75) !important;
+}
+.catalog-header .breadcrumb .breadcrumb-item a.text-white-50:hover {
+  color: rgba(255,255,255,.9) !important;
 }
 
 /* Body */
@@ -262,13 +342,38 @@ onBeforeUnmount(() => {
 .category-item {
   border-radius: 0.5rem;
   margin-bottom: 0.25rem;
+  background: #ffffff;
+  color: #0f172a;
 }
 
 .category-item.active,
 .category-item:hover {
-  background: #eef2ff;
+  background: rgba(234, 88, 12, 0.10);
 }
 
+.category-item .badge {
+  background-color: #f1f5f9;
+  color: #475569;
+}
+
+.category-item:hover .badge {
+  background-color: #ffffff;
+  color: #0f172a;
+}
+
+.category-item.active {
+  background-color: rgba(234, 88, 12, 0.14);
+}
+
+.category-item.active .badge {
+  background-color: #ffffff;
+  color: #0f172a;
+}
+
+.category-item:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(234, 88, 12, 0.35);
+}
 /* Content */
 .catalog-content {
   max-height: 100%;
@@ -293,5 +398,57 @@ onBeforeUnmount(() => {
   height: 56px;
   border-radius: 0.75rem;
   background: linear-gradient(90deg, #f5f5f5, #f0f0f0);
+}
+
+.catalog-title {
+  letter-spacing: .2px;
+}
+.header-actions .btn {
+  border-radius: 999px;
+}
+.header-actions .btn.btn-light {
+  color: #0f172a;
+}
+.header-actions .btn:hover {
+  filter: brightness(1.05);
+}
+.header-search .form-control::placeholder {
+  color: rgba(255,255,255,.7);
+}
+.header-search .form-control:focus {
+  box-shadow: none;
+}
+.header-search {
+  width: 240px;
+  min-width: 0;
+}
+@media (max-width: 992px) {
+  .header-search {
+    width: 200px;
+  }
+}
+@media (max-width: 768px) {
+  .catalog-header {
+    padding: 1rem;
+  }
+  .catalog-title {
+    flex-wrap: wrap;
+  }
+  .header-actions {
+    justify-content: flex-end;
+  }
+  .header-search {
+    width: 100%;
+    order: 3;
+    margin-top: .5rem;
+  }
+  .header-actions .btn {
+    flex: 1 1 auto;
+  }
+}
+@media (max-width: 576px) {
+  .catalog-header .breadcrumb {
+    display: none;
+  }
 }
 </style>

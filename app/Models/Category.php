@@ -11,6 +11,7 @@ class Category extends Model
 {
     protected $fillable = [
         'name',
+        'description',
         'slug',
         'parent_id',
         'sort_order',
@@ -18,6 +19,8 @@ class Category extends Model
         'image_path',
         'banner_desktop',
         'banner_mobile',
+        'meta_title',
+        'meta_description',
     ];
 
     protected $casts = [

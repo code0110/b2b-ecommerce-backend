@@ -27,8 +27,10 @@ class AgentTrackingController extends Controller
         }
         
         if ($user->hasRole('sales_director')) {
-            // Director sees their subordinates
-            return $user->subordinates()->pluck('id')->toArray();
+            // Director sees their subordinates and themselves
+            $ids = $user->subordinates()->pluck('id')->toArray();
+            $ids[] = $user->id;
+            return array_unique($ids);
         }
 
         if ($user->hasRole('sales_agent')) {

@@ -11,6 +11,38 @@ use Illuminate\Validation\Rule;
 
 class AgentRouteController extends Controller
 {
+    /**
+     * Helper to ensure the current user has permission to manage the target agent's routes.
+     */
+    protected function ensurePermission($user, $targetAgentId)
+    {
+        if ($user->hasRole('admin')) {
+            return true;
+        }
+
+        if ($user->hasRole('sales_director')) {
+            // Director can manage subordinates
+            $isSubordinate = User::where('id', $targetAgentId)
+                ->where('director_id', $user->id)
+                ->exists();
+            
+            if (!$isSubordinate) {
+                abort(403, 'Nu aveți permisiunea de a gestiona rutele acestui agent.');
+            }
+            return true;
+        }
+
+        if ($user->hasRole('sales_agent')) {
+            // Agent can only manage their own routes
+            if ($user->id != $targetAgentId) {
+                abort(403, 'Nu aveți permisiunea de a gestiona rutele altui agent.');
+            }
+            return true;
+        }
+
+        abort(403, 'Unauthorized');
+    }
+
     public function index(Request $request)
     {
         /** @var User $user */
@@ -50,6 +82,8 @@ class AgentRouteController extends Controller
             'sort_order'  => ['integer'],
         ]);
 
+        $this->ensurePermission(Auth::user(), $data['agent_id']);
+
         $route = AgentRoute::create($data);
 
         return response()->json($route, 201);
@@ -57,6 +91,8 @@ class AgentRouteController extends Controller
 
     public function update(Request $request, AgentRoute $route)
     {
+        $this->ensurePermission(Auth::user(), $route->agent_id);
+
         $data = $request->validate([
             'day_of_week' => ['sometimes', Rule::in(['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'])],
             'week_type'   => ['sometimes', Rule::in(['all', 'odd', 'even'])],
@@ -70,6 +106,8 @@ class AgentRouteController extends Controller
 
     public function destroy(AgentRoute $route)
     {
+        $this->ensurePermission(Auth::user(), $route->agent_id);
+
         $route->delete();
         return response()->json(['message' => 'Route deleted']);
     }

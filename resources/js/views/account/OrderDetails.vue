@@ -8,14 +8,11 @@
         </h1>
         <p class="text-muted small mb-0">
           Plasată {{ order.placed_at || order.created_at }}
-          ·
-          {{ customer ? customer.name : 'Client necunoscut' }}
-          ({{ customer && customer.type ? customer.type.toUpperCase() : '—' }})
         </p>
       </div>
       <div class="d-flex gap-2">
         <RouterLink
-          :to="{ name: 'admin-orders', query: $route.query }"
+          :to="{ name: 'account-orders', query: $route.query }"
           class="btn btn-outline-secondary btn-sm"
         >
           ← Înapoi la listă
@@ -42,38 +39,9 @@
                 {{ statusLabel(order.status) }}
               </span>
             </div>
-            <div class="mb-3">
-              <label class="form-label form-label-sm">Modifică status</label>
-              <select
-                v-model="statusForm.status"
-                class="form-select form-select-sm mb-2"
-              >
-                <option value="pending">În așteptare</option>
-                <option value="processing">În procesare</option>
-                <option value="completed">Finalizată</option>
-                <option value="cancelled">Anulată</option>
-                <option value="awaiting_payment">Așteaptă plată</option>
-                <option value="on_hold">On hold</option>
-              </select>
-              <input
-                v-if="statusForm.status === 'cancelled'"
-                v-model="statusForm.cancel_reason"
-                type="text"
-                class="form-control form-control-sm mb-2"
-                placeholder="Motiv anulare (opțional)"
-              >
-              <button
-                class="btn btn-primary btn-sm w-100"
-                type="button"
-                :disabled="statusLoading"
-                @click="submitStatus"
-              >
-                <span
-                  v-if="statusLoading"
-                  class="spinner-border spinner-border-sm me-1"
-                ></span>
-                Salvează status
-              </button>
+            <div v-if="order.status === 'cancelled' && order.cancel_reason" class="mt-2">
+               <div class="small text-muted mb-1">Motiv anulare</div>
+               <div class="small">{{ order.cancel_reason }}</div>
             </div>
           </div>
         </div>
@@ -90,41 +58,14 @@
                 {{ paymentStatusLabel(order.payment_status) }}
               </span>
             </div>
-            <div class="mb-3">
-              <label class="form-label form-label-sm">Modifică status plată</label>
-              <select
-                v-model="paymentForm.payment_status"
-                class="form-select form-select-sm mb-2"
-              >
-                <option value="pending">Neplătită</option>
-                <option value="paid">Plătită</option>
-                <option value="failed">Eșuată</option>
-                <option value="refunded">Rambursată</option>
-                <option value="partially_paid">Parțial plătită</option>
-              </select>
-              <input
-                v-model="paymentForm.payment_method"
-                type="text"
-                class="form-control form-control-sm mb-2"
-                placeholder="Metodă plată (card/OP/chs/bo/cec)"
-              >
-              <button
-                class="btn btn-outline-primary btn-sm w-100"
-                type="button"
-                :disabled="paymentLoading"
-                @click="submitPaymentStatus"
-              >
-                <span
-                  v-if="paymentLoading"
-                  class="spinner-border spinner-border-sm me-1"
-                ></span>
-                Salvează status plată
-              </button>
+            <div v-if="order.payment_method">
+               <div class="small text-muted mb-1">Metodă plată</div>
+               <div class="small">{{ order.payment_method }}</div>
             </div>
           </div>
         </div>
 
-        <!-- Info client -->
+        <!-- Info client (Only if relevant for the user to see their own info, otherwise redundant but okay) -->
         <div class="card">
           <div class="card-header py-2">
             <span class="small text-uppercase text-muted fw-semibold">Client</span>
@@ -137,27 +78,6 @@
               <div class="text-muted mb-1">
                 {{ customer.email }} · {{ customer.phone || '—' }}
               </div>
-              <div class="mb-1">
-                Tip client:
-                <span
-                  class="badge"
-                  :class="customer.type === 'b2b' ? 'bg-primary' : 'bg-secondary'"
-                >
-                  {{ customer.type ? customer.type.toUpperCase() : '' }}
-                </span>
-              </div>
-              <div class="mb-1">
-                Termen plată: <strong>{{ customer.payment_terms_days }} zile</strong>
-              </div>
-              <div>
-                Credit:
-                <strong>{{ formatMoney(customer.credit_limit) }} RON</strong>
-                · Sold curent:
-                <strong>{{ formatMoney(customer.current_balance) }} RON</strong>
-              </div>
-            </div>
-            <div v-else class="text-muted">
-              Client indisponibil (șters sau nealocat).
             </div>
           </div>
         </div>
@@ -173,12 +93,6 @@
                 <div class="text-muted mb-1">Date comandă</div>
                 <div>Nr. comandă: <strong>{{ order.order_number }}</strong></div>
                 <div>Plasată: <strong>{{ order.placed_at || order.created_at }}</strong></div>
-                <div v-if="order.cancelled_at">
-                  Anulată: <strong>{{ order.cancelled_at }}</strong>
-                </div>
-                <div v-if="order.cancel_reason">
-                  Motiv anulare: <strong>{{ order.cancel_reason }}</strong>
-                </div>
               </div>
               <div class="col-md-5 mb-2 mb-md-0">
                 <div class="text-muted mb-1">Adrese</div>
@@ -258,10 +172,10 @@
                 <tbody>
                   <tr v-for="item in items" :key="item.id">
                     <td>
-                      <div class="fw-semibold">{{ item.product_name }}</div>
+                      <div class="fw-semibold">{{ item.product_name || (item.product ? item.product.name : 'Produs necunoscut') }}</div>
                     </td>
                     <td>
-                      <span class="small text-muted">{{ item.sku }}</span>
+                      <span class="small text-muted">{{ item.sku || (item.product ? item.product.sku : '') }}</span>
                     </td>
                     <td class="text-end">
                       {{ item.quantity }}
@@ -323,11 +237,7 @@
 <script setup>
 import { onMounted, reactive, ref } from 'vue';
 import { useRoute } from 'vue-router';
-import {
-  fetchOrder,
-  updateOrderStatus,
-  updateOrderPaymentStatus,
-} from '@/services/admin/orders';
+import { fetchOrder } from '@/services/account/orders';
 
 const route = useRoute();
 
@@ -340,18 +250,6 @@ const billingAddress = ref(null);
 const shippingAddress = ref(null);
 const items = ref([]);
 
-const statusForm = reactive({
-  status: 'pending',
-  cancel_reason: '',
-});
-const statusLoading = ref(false);
-
-const paymentForm = reactive({
-  payment_status: 'pending',
-  payment_method: '',
-});
-const paymentLoading = ref(false);
-
 const loadOrder = async () => {
   loaded.value = false;
   error.value = '';
@@ -360,61 +258,25 @@ const loadOrder = async () => {
     const id = route.params.id;
     const data = await fetchOrder(id);
 
-    Object.assign(order, data.order || {});
-    customer.value = data.customer || null;
-    billingAddress.value = data.billing_address || null;
-    shippingAddress.value = data.shipping_address || null;
+    // The backend returns the order object directly (from AccountOrderController::show)
+    // with relations (items, billingAddress, shippingAddress, etc.) already loaded.
+    
+    Object.assign(order, data);
+    
     items.value = data.items || [];
+    
+    // Handle both snake_case (typical JSON) and camelCase (Laravel relations)
+    billingAddress.value = data.billing_address || data.billingAddress || null;
+    shippingAddress.value = data.shipping_address || data.shippingAddress || null;
+    
+    // For customer info
+    customer.value = data.customer || null; 
 
-    statusForm.status = order.status;
-    statusForm.cancel_reason = order.cancel_reason || '';
-    paymentForm.payment_status = order.payment_status;
-    paymentForm.payment_method = order.payment_method || '';
   } catch (e) {
-    console.error('Admin order details error', e);
+    console.error('Order details error', e);
     error.value = 'Nu s-au putut încărca detaliile comenzii.';
   } finally {
     loaded.value = true;
-  }
-};
-
-const submitStatus = async () => {
-  if (!order.id) return;
-  statusLoading.value = true;
-  error.value = '';
-
-  try {
-    const data = await updateOrderStatus(order.id, {
-      status: statusForm.status,
-      cancel_reason: statusForm.cancel_reason,
-    });
-
-    Object.assign(order, data.order || {});
-  } catch (e) {
-    console.error('Update status error', e);
-    error.value = 'Nu s-a putut actualiza statusul comenzii.';
-  } finally {
-    statusLoading.value = false;
-  }
-};
-
-const submitPaymentStatus = async () => {
-  if (!order.id) return;
-  paymentLoading.value = true;
-  error.value = '';
-
-  try {
-    const data = await updateOrderPaymentStatus(order.id, {
-      payment_status: paymentForm.payment_status,
-      payment_method: paymentForm.payment_method,
-    });
-
-    Object.assign(order, data.order || {});
-  } catch (e) {
-    console.error('Update payment status error', e);
-    error.value = 'Nu s-a putut actualiza statusul plății.';
-  } finally {
-    paymentLoading.value = false;
   }
 };
 

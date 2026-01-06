@@ -36,7 +36,7 @@
             <div class="card bg-light border-0 h-100">
                 <div class="card-body text-center p-3">
                     <div class="text-muted small text-uppercase mb-1">Total Distanță</div>
-                    <div class="h4 mb-0 text-primary">{{ routeData.total_distance.toFixed(2) }} km</div>
+                    <div class="h4 mb-0 text-primary">{{ (routeData.total_distance || 0).toFixed(2) }} km</div>
                 </div>
             </div>
         </div>
@@ -89,10 +89,12 @@
 import { ref, onMounted } from 'vue';
 import { adminApi } from '@/services/http';
 import { setOptions, importLibrary } from "@googlemaps/js-api-loader";
+import { useAuthStore } from '@/store/auth';
 
 import { useRoute } from 'vue-router';
 
 const route = useRoute();
+const authStore = useAuthStore();
 const agents = ref([]);
 const filters = ref({
     agent_id: '',
@@ -125,9 +127,30 @@ onMounted(async () => {
 
     // Load Agents
     try {
-        const { data } = await adminApi.get('/reports/locations'); // Reuse existing endpoint to get list of agents
-        agents.value = data.map(a => ({ id: a.id, name: a.name }));
+        let loadedAgents = [];
         
+        if (authStore.hasRole('admin')) {
+            const [agentsRes, directorsRes] = await Promise.all([
+                adminApi.get('/users?role=sales_agent&per_page=100'),
+                adminApi.get('/users?role=sales_director&per_page=100')
+            ]);
+            
+            const map = new Map();
+            [...(agentsRes.data.data || []), ...(directorsRes.data.data || [])].forEach(u => map.set(u.id, u));
+            loadedAgents = Array.from(map.values());
+        } else {
+             // Director gets subordinates + self automatically via backend RBAC
+             const { data } = await adminApi.get('/users?per_page=100'); 
+             loadedAgents = data.data || [];
+        }
+
+        agents.value = loadedAgents.map(a => ({ id: a.id, name: `${a.first_name} ${a.last_name || ''}`.trim() }));
+        
+        // Auto select if only one agent (e.g. self)
+        if (agents.value.length === 1) {
+            filters.value.agent_id = agents.value[0].id;
+        }
+
         // Auto fetch if agent is selected
         if (filters.value.agent_id) {
             fetchHistory();

@@ -2,9 +2,9 @@
   <div class="container-fluid py-3">
     <div class="d-flex justify-content-between align-items-center mb-3">
       <div>
-        <h1 class="h4 mb-1">Comenzi</h1>
+        <h1 class="h4 mb-1">Comenzile Mele</h1>
         <p class="text-muted small mb-0">
-          Management complet al comenzilor B2B/B2C: filtrare, status, plată și detalii.
+          Istoricul comenzilor dumneavoastră.
         </p>
       </div>
     </div>
@@ -13,7 +13,7 @@
     <div class="card mb-3">
       <div class="card-body">
         <form class="row g-2 align-items-end" @submit.prevent="applyFilters">
-          <div class="col-sm-2">
+          <div class="col-sm-3">
             <label class="form-label form-label-sm">Nr. comandă</label>
             <input
               v-model="filters.order_number"
@@ -23,26 +23,7 @@
             >
           </div>
 
-          <div class="col-sm-2">
-            <label class="form-label form-label-sm">Client</label>
-            <input
-              v-model="filters.customer"
-              type="text"
-              class="form-control form-control-sm"
-              placeholder="Nume / email"
-            >
-          </div>
-
-          <div class="col-sm-2">
-            <label class="form-label form-label-sm">Tip client</label>
-            <select v-model="filters.type" class="form-select form-select-sm">
-              <option value="">Toate</option>
-              <option value="b2c">B2C</option>
-              <option value="b2b">B2B</option>
-            </select>
-          </div>
-
-          <div class="col-sm-2">
+          <div class="col-sm-3">
             <label class="form-label form-label-sm">Status comandă</label>
             <select v-model="filters.status" class="form-select form-select-sm">
               <option value="">Toate</option>
@@ -55,38 +36,16 @@
             </select>
           </div>
 
-          <div class="col-sm-2">
-            <label class="form-label form-label-sm">Status plată</label>
-            <select v-model="filters.payment_status" class="form-select form-select-sm">
-              <option value="">Toate</option>
-              <option value="pending">Neplătită</option>
-              <option value="paid">Plătită</option>
-              <option value="failed">Eșuată</option>
-              <option value="refunded">Rambursată</option>
-              <option value="partially_paid">Parțial plătită</option>
-            </select>
+          <div class="col-sm-3">
+            <label class="form-label form-label-sm">Perioadă (Din - Până)</label>
+            <div class="input-group input-group-sm">
+                 <input v-model="filters.from_date" type="date" class="form-control form-control-sm">
+                 <span class="input-group-text">-</span>
+                 <input v-model="filters.to_date" type="date" class="form-control form-control-sm">
+            </div>
           </div>
 
-          <div class="col-sm-2">
-            <label class="form-label form-label-sm">Din data</label>
-            <input v-model="filters.from_date" type="date" class="form-control form-control-sm">
-          </div>
-
-          <div class="col-sm-2">
-            <label class="form-label form-label-sm">Până la</label>
-            <input v-model="filters.to_date" type="date" class="form-control form-control-sm">
-          </div>
-
-          <div class="col-sm-2">
-            <label class="form-label form-label-sm">Blocaj credit</label>
-            <select v-model="filters.credit_blocked" class="form-select form-select-sm">
-              <option value="">Toate</option>
-              <option value="1">Blocate</option>
-              <option value="0">Fără blocaj</option>
-            </select>
-          </div>
-
-          <div class="col-sm-3 ms-auto d-flex justify-content-end gap-2">
+          <div class="col-sm-3 d-flex justify-content-end gap-2">
             <button
               type="button"
               class="btn btn-link btn-sm text-decoration-none"
@@ -115,21 +74,19 @@
 
         <div v-else>
           <div v-if="orders.length === 0" class="text-center py-4 text-muted">
-            Nu există comenzi pentru filtrele selectate.
+            Nu ați plasat nicio comandă care să corespundă filtrelor.
           </div>
 
           <div v-else class="table-responsive">
             <table class="table table-sm table-hover mb-0 align-middle">
               <thead class="table-light">
                 <tr>
-                  <th style="width: 130px;">Nr. comandă</th>
-                  <th>Client</th>
-                  <th style="width: 90px;">Tip</th>
+                  <th style="width: 150px;">Nr. comandă</th>
                   <th style="width: 130px;">Status</th>
                   <th style="width: 130px;">Status plată</th>
                   <th style="width: 110px;" class="text-end">Total</th>
                   <th style="width: 150px;">Data</th>
-                  <th style="width: 50px;"></th>
+                  <th style="width: 100px;"></th>
                 </tr>
               </thead>
               <tbody>
@@ -140,7 +97,7 @@
                 >
                   <td>
                     <RouterLink
-                      :to="{ name: 'admin-order-details', params: { id: order.id } }"
+                      :to="{ name: 'account-order-details', params: { id: order.id } }"
                       class="text-decoration-none fw-semibold"
                     >
                       {{ order.order_number }}
@@ -148,22 +105,6 @@
                     <div class="small text-muted">
                       ID: {{ order.id }}
                     </div>
-                  </td>
-                  <td>
-                    <div class="fw-semibold">
-                      {{ order.customer && order.customer.name ? order.customer.name : '—' }}
-                    </div>
-                    <div class="small text-muted">
-                      {{ order.customer && order.customer.email ? order.customer.email : '' }}
-                    </div>
-                  </td>
-                  <td>
-                    <span
-                      class="badge"
-                      :class="order.type === 'b2b' ? 'bg-primary' : 'bg-secondary'"
-                    >
-                      {{ (order.type || '').toUpperCase() }}
-                    </span>
                   </td>
                   <td>
                     <span :class="['badge', statusBadgeClass(order.status)]">
@@ -180,13 +121,12 @@
                   </td>
                   <td>
                     <div class="small">
-                      Plasată:
-                      <strong>{{ order.placed_at || order.created_at }}</strong>
+                      {{ order.created_at ? new Date(order.created_at).toLocaleDateString('ro-RO') : '-' }}
                     </div>
                   </td>
                   <td class="text-end">
                     <RouterLink
-                      :to="{ name: 'admin-order-details', params: { id: order.id } }"
+                      :to="{ name: 'account-order-details', params: { id: order.id } }"
                       class="btn btn-outline-secondary btn-sm"
                     >
                       Detalii
@@ -259,7 +199,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { useAuthStore } from '@/store/auth';
 import { useTrackingStore } from '@/store/tracking';
 import { useToast } from 'vue-toastification';
-import { fetchOrders } from '@/services/admin/orders';
+import { fetchOrders } from '@/services/account/orders';
 
 const route = useRoute();
 const router = useRouter();
@@ -274,19 +214,15 @@ const orders = ref([]);
 const pagination = reactive({
   current_page: 1,
   last_page: 1,
-  per_page: 20,
+  per_page: 10,
   total: 0,
 });
 
 const filters = reactive({
   order_number: route.query.order_number || '',
-  customer: route.query.customer || '',
-  type: route.query.type || '',
   status: route.query.status || '',
-  payment_status: route.query.payment_status || '',
   from_date: route.query.from_date || '',
   to_date: route.query.to_date || '',
-  credit_blocked: route.query.credit_blocked || '',
 });
 
 const loadOrders = async () => {
@@ -298,15 +234,24 @@ const loadOrders = async () => {
       ...filters,
       page: pagination.current_page,
     };
-    const data = await fetchOrders(params);
+    
+    // Curățăm filtrele goale
+    Object.keys(params).forEach(key => {
+        if (params[key] === '' || params[key] === null) {
+            delete params[key];
+        }
+    });
 
-    orders.value = data.data || data.items || [];
-    pagination.current_page = data.current_page ?? data.meta?.current_page ?? 1;
-    pagination.last_page = data.last_page ?? data.meta?.last_page ?? 1;
-    pagination.per_page = data.per_page ?? data.meta?.per_page ?? orders.value.length;
-    pagination.total = data.total ?? data.meta?.total ?? orders.value.length;
+    const data = await fetchOrders(params);
+    
+    orders.value = data.data || [];
+    pagination.current_page = data.current_page || 1;
+    pagination.last_page = data.last_page || 1;
+    pagination.per_page = data.per_page || 10;
+    pagination.total = data.total || 0;
+
   } catch (e) {
-    console.error('Admin orders load error', e);
+    console.error('Orders load error', e);
     error.value = 'Nu s-au putut încărca comenzile.';
   } finally {
     loading.value = false;
@@ -316,7 +261,7 @@ const loadOrders = async () => {
 const applyFilters = () => {
   pagination.current_page = 1;
   router.replace({
-    name: 'admin-orders',
+    name: 'account-orders',
     query: {
       ...filters,
       page: 1,
@@ -328,13 +273,9 @@ const applyFilters = () => {
 const resetFilters = () => {
   Object.assign(filters, {
     order_number: '',
-    customer: '',
-    type: '',
     status: '',
-    payment_status: '',
     from_date: '',
     to_date: '',
-    credit_blocked: '',
   });
   applyFilters();
 };
@@ -345,7 +286,7 @@ const changePage = (page) => {
   }
   pagination.current_page = page;
   router.replace({
-    name: 'admin-orders',
+    name: 'account-orders',
     query: {
       ...filters,
       page,
@@ -432,14 +373,15 @@ const formatMoney = (value) => {
 };
 
 onMounted(async () => {
+  // Verificare shift agent (dacă e cazul)
   if (['sales_agent', 'sales_director'].includes(authStore.role)) {
       if (!trackingStore.isShiftActive) {
+          // Nu forțăm checkStatus aici dacă a fost deja făcut în layout, 
+          // dar pentru siguranță e ok.
           await trackingStore.checkStatus();
-          if (!trackingStore.isShiftActive) {
-               toast.error('Trebuie să începeți programul de lucru pentru a vedea comenzile!');
-               router.push({ name: 'agent-dashboard' });
-               return;
-          }
+          // NOTĂ: Dacă agentul vrea să vadă comenzile PROPRII (ca și client), 
+          // nu ar trebui să fie restricționat de shift. 
+          // Dar dacă vede comenzile clienților (impersonate), e ok.
       }
   }
 

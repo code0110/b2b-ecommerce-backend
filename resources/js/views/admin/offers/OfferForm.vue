@@ -414,7 +414,8 @@ const calculateItemSystemPrice = async (item) => {
             }]
         };
         
-        const { data } = await api.post('/quick-order/calculate', payload);
+        // Use the account route which maps to Admin\QuickOrderController@calculate
+        const { data } = await api.post('/account/quick-order/calculate', payload);
         if (data && data.items && data.items[0]) {
             const result = data.items[0];
             item.unit_price = result.unit_base_price;
@@ -563,6 +564,21 @@ const convertToOrder = async () => {
     } catch (e) {
         console.error(e);
         toast.error(e.response?.data?.message || 'Eroare la transformarea în comandă');
+    }
+};
+
+const deleteOffer = async () => {
+    if (!confirm('Ești sigur că vrei să ștergi această ofertă definitv?')) return;
+    try {
+        await adminApi.delete(`/offers/${route.params.id}`);
+        toast.success('Oferta a fost ștearsă.');
+        
+        // Go back to list
+        const routeName = authStore.role === 'admin' ? 'admin-offers' : 'account-offers-list';
+        router.push({ name: routeName });
+    } catch (e) {
+        console.error(e);
+        toast.error(e.response?.data?.message || 'Eroare la ștergerea ofertei');
     }
 };
 

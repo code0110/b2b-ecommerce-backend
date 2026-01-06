@@ -156,25 +156,7 @@
     </main>
 
     <!-- FOOTER -->
-    <footer class="border-top bg-white small text-muted py-3 mt-4">
-      <div class="container d-flex flex-wrap justify-content-between gap-2">
-        <div>
-          &copy; {{ currentYear }} MB2B – demo B2B/B2C e-commerce.
-        </div>
-        <div class="d-flex gap-3">
-          <RouterLink
-            :to="{ name: 'static-page', params: { slug: 'termeni-conditii' } }"
-          >
-            Termeni &amp; condiții
-          </RouterLink>
-          <RouterLink
-            :to="{ name: 'static-page', params: { slug: 'gdpr' } }"
-          >
-            GDPR
-          </RouterLink>
-        </div>
-      </div>
-    </footer>
+    <Footer />
 
     <!-- Catalog overlay -->
     <CategoryMegaModal
@@ -191,6 +173,7 @@ import { useAuthStore } from '@/store/auth';
 import { useVisitStore } from '@/store/visit';
 import CategoryMegaModal from '@/components/catalog/CategoryMegaModal.vue';
 import NotificationsDropdown from '@/components/common/NotificationsDropdown.vue';
+import Footer from '@/components/common/Footer.vue';
 
 const router = useRouter();
 const authStore = useAuthStore();

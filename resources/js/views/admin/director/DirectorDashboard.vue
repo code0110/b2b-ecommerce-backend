@@ -128,10 +128,12 @@ import { ref, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { adminApi } from '@/services/http';
 import { useTrackingStore } from '@/store/tracking';
+import { useAuthStore } from '@/store/auth';
 import { useToast } from 'vue-toastification';
 
 const router = useRouter();
 const trackingStore = useTrackingStore();
+const authStore = useAuthStore();
 const toast = useToast();
 
 const summary = ref({
@@ -156,7 +158,8 @@ const formatTime = (dateString) => {
 };
 
 const goToApprovals = () => {
-    router.push({ name: 'account-offers-list', query: { status: 'pending_approval' } });
+    const routeName = authStore.hasRole('admin') ? 'admin-offers' : 'account-offers-list';
+    router.push({ name: routeName, query: { status: 'pending_approval' } });
 };
 
 const fetchData = async () => {
@@ -174,12 +177,14 @@ const fetchData = async () => {
 };
 
 onMounted(async () => {
-    if (!trackingStore.isShiftActive) {
-        await trackingStore.checkStatus();
+    if (!authStore.hasRole('admin')) {
         if (!trackingStore.isShiftActive) {
-             toast.error('Trebuie să începeți programul de lucru pentru a accesa dashboard-ul!');
-             router.push({ name: 'agent-dashboard' });
-             return;
+            await trackingStore.checkStatus();
+            if (!trackingStore.isShiftActive) {
+                 toast.error('Trebuie să începeți programul de lucru pentru a accesa dashboard-ul!');
+                 router.push({ name: 'agent-dashboard' });
+                 return;
+            }
         }
     }
 

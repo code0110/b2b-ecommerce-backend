@@ -328,7 +328,7 @@ onMounted(async () => {
         }
     }
 
-    if (route.query.status) {
+    if (route.query.tab) {
         activeTab.value = route.query.tab;
     }
     if (route.query.status) {

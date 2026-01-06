@@ -12,8 +12,17 @@ class OrderController extends Controller
     {
         /** @var \App\Models\User $user */
         $user = $request->user();
+        $customerId = $user->customer_id;
 
-        return Order::where('customer_id', $user->customer_id)
+        if (!$customerId && ($user->hasRole('sales_agent') || $user->hasRole('sales_director') || $user->hasRole('admin'))) {
+             $customerId = $request->input('customer_id') ?? $request->header('X-Customer-Id');
+        }
+
+        if (!$customerId) {
+            return response()->json(['data' => []]);
+        }
+
+        return Order::where('customer_id', $customerId)
             ->orderByDesc('placed_at')
             ->paginate(20);
     }
@@ -22,8 +31,17 @@ class OrderController extends Controller
     {
         /** @var \App\Models\User $user */
         $user = $request->user();
+        $customerId = $user->customer_id;
 
-        $order = Order::where('customer_id', $user->customer_id)
+        if (!$customerId && ($user->hasRole('sales_agent') || $user->hasRole('sales_director') || $user->hasRole('admin'))) {
+             $customerId = $request->input('customer_id') ?? $request->header('X-Customer-Id');
+        }
+        
+        if (!$customerId) {
+            abort(403, 'Context client lipsă.');
+        }
+
+        $order = Order::where('customer_id', $customerId)
             ->where('id', $id)
             ->with('items.product')
             ->firstOrFail();

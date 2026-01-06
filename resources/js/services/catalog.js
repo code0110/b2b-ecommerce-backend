@@ -23,6 +23,16 @@ export async function fetchProductBySlug(slug) {
   return data;
 }
 
+export async function fetchBrands() {
+  const { data } = await api.get('/brands');
+  return data;
+}
+
+export async function submitProductReview(productId, payload) {
+  const { data } = await api.post(`/products/${productId}/reviews`, payload);
+  return data;
+}
+
 // Căutare produse: /api/catalog/search
 // folosit și pentru paginile /noutati, /reduceri etc.
 export async function searchProducts(params = {}) {

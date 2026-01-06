@@ -61,9 +61,12 @@
                     <div class="me-3 text-muted fw-bold" style="width: 25px;">{{ index + 1 }}.</div>
                     <div class="flex-grow-1">
                         <div class="d-flex justify-content-between align-items-start">
-                            <div>
+                            <div v-if="item.customer">
                                 <h6 class="mb-1 fw-bold text-dark">{{ item.customer.name }}</h6>
                                 <div class="small text-muted">{{ item.customer.address || 'Fără adresă' }}</div>
+                            </div>
+                            <div v-else>
+                                <h6 class="mb-1 fw-bold text-danger">Client Indisponibil</h6>
                             </div>
                             <div class="text-end ms-2">
                                 <span v-if="item.visitStatus === 'completed'" class="badge bg-success mb-1 d-block"><i class="bi bi-check-lg"></i> Vizitat</span>
@@ -80,7 +83,7 @@
                             class="btn btn-sm"
                             :class="item.visitStatus === 'active' ? 'btn-primary' : (item.visitStatus === 'completed' ? 'btn-outline-secondary' : 'btn-outline-primary')"
                             @click="handleStartVisit(item.customer)"
-                            :disabled="visitStore.loading || (visitStore.activeVisit && visitStore.activeVisit.customer_id !== item.customer.id)"
+                            :disabled="visitStore.loading || !item.customer || (visitStore.activeVisit && item.customer && visitStore.activeVisit.customer_id !== item.customer.id)"
                          >
                             <i class="bi" :class="item.visitStatus === 'active' ? 'bi-eye' : 'bi-geo-alt'"></i>
                             {{ item.visitStatus === 'active' ? 'Vezi' : 'Vizită' }}
@@ -172,6 +175,13 @@ const changeDay = (dayValue) => {
 const loadData = async () => {
     loading.value = true;
     try {
+        if (!authStore.user) {
+            await authStore.refreshUser();
+            if (!authStore.user) {
+                 throw new Error('User not authenticated');
+            }
+        }
+
         // 1. Fetch Routes for me
         const routesData = await fetchRoutes({ 
             agent_id: authStore.user.id,
@@ -191,7 +201,8 @@ const loadData = async () => {
         
     } catch (e) {
         console.error(e);
-        toast.error('Eroare la încărcarea datelor.');
+        const errorMsg = e.response?.data?.message || e.message || 'Eroare la încărcarea datelor.';
+        toast.error(errorMsg);
     } finally {
         loading.value = false;
     }

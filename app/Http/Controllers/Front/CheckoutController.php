@@ -48,7 +48,12 @@ class CheckoutController extends Controller
             ], 400);
         }
 
-        $customer = $user ? \App\Models\Customer::find($user->customer_id) : null;
+        $customer = null;
+        if ($cart->customer_id) {
+            $customer = \App\Models\Customer::find($cart->customer_id);
+        } elseif ($user && $user->customer_id) {
+            $customer = \App\Models\Customer::find($user->customer_id);
+        }
 
         $priced = $pricing->priceCart($cart, $customer);
 

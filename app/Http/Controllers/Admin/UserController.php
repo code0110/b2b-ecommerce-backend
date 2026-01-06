@@ -25,6 +25,9 @@ class UserController extends Controller
                 $q->where('director_id', $request->user()->id)
                   ->orWhere('id', $request->user()->id);
             });
+        } elseif ($request->user()->hasRole('sales_agent') && !$request->user()->hasRole('admin')) {
+            // Agents only see themselves
+            $query->where('id', $request->user()->id);
         }
 
         if ($search = $request->query('search')) {
@@ -63,6 +66,8 @@ class UserController extends Controller
      */
     public function store(Request $request)
     {
+        $isDirector = $request->user()->hasRole('sales_director') && !$request->user()->hasRole('admin');
+
         $data = $request->validate([
             'first_name' => ['required', 'string', 'max:255'],
             'last_name'  => ['nullable', 'string', 'max:255'],
@@ -75,12 +80,26 @@ class UserController extends Controller
             'role_ids.*' => ['integer', 'exists:roles,id'],
         ]);
 
+        // RBAC enforcement for Sales Director
+        if ($isDirector) {
+            // Director can only create users assigned to themselves
+            $data['director_id'] = $request->user()->id;
+            
+            // Director can only assign 'sales_agent' role
+            $agentRole = Role::where('slug', 'sales_agent')->first();
+            if (!$agentRole) {
+                abort(500, 'Role sales_agent not found');
+            }
+            $data['role_ids'] = [$agentRole->id];
+        }
+
         $user = new User();
         $user->first_name = $data['first_name'];
         $user->last_name  = $data['last_name'] ?? null;
         $user->email      = $data['email'];
         $user->phone      = $data['phone'] ?? null;
         $user->is_active  = $data['is_active'] ?? true;
+        $user->director_id = $data['director_id'] ?? null; // Added this line
         $user->password   = Hash::make($data['password']);
         $user->save();
 
@@ -91,11 +110,21 @@ class UserController extends Controller
         return response()->json($this->transformUser($user->fresh('roles')), 201);
     }
 
+    protected function ensureDirectorAccess(Request $request, User $user)
+    {
+        if ($request->user()->hasRole('sales_director') && !$request->user()->hasRole('admin')) {
+            if ($user->director_id !== $request->user()->id && $user->id !== $request->user()->id) {
+                abort(403, 'Nu aveți permisiunea de a accesa acest utilizator.');
+            }
+        }
+    }
+
     /**
      * Detaliu utilizator.
      */
-    public function show(User $user)
+    public function show(Request $request, User $user)
     {
+        $this->ensureDirectorAccess($request, $user);
         $user->load('roles');
 
         return response()->json($this->transformUser($user));
@@ -106,6 +135,8 @@ class UserController extends Controller
      */
     public function update(Request $request, User $user)
     {
+        $this->ensureDirectorAccess($request, $user);
+        
         $data = $request->validate([
             'first_name' => ['sometimes', 'required', 'string', 'max:255'],
             'last_name'  => ['nullable', 'string', 'max:255'],

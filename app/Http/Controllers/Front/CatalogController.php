@@ -8,21 +8,31 @@ use App\Models\Category;
 use App\Models\Brand;
 use App\Models\Promotion;
 use Illuminate\Http\Request;
-use App\Services\Pricing\PromotionEngine;
 use App\Services\Pricing\PromotionPricingService;
 use App\Models\Customer;
 
 class CatalogController extends Controller
 {
     public function __construct(
-        protected PromotionEngine $promotionEngine
+        protected PromotionPricingService $pricingService
     ){}
-    public function home()
+
+    public function home(Request $request)
     {
+        $customer = optional($request->user())->customer;
+
+        $promotions = Promotion::where('status', 'active')->take(5)->get();
+        
+        $newProducts = Product::where('is_new', true)->take(8)->get()
+            ->map(fn($p) => $this->pricingService->formatProductForFrontend($p, $customer));
+
+        $recommended = Product::where('is_best_seller', true)->take(8)->get()
+            ->map(fn($p) => $this->pricingService->formatProductForFrontend($p, $customer));
+
         return response()->json([
-            'promotions' => Promotion::where('status', 'active')->take(5)->get(),
-            'new_products' => Product::where('is_new', true)->take(8)->get(),
-            'recommended' => Product::where('is_best_seller', true)->take(8)->get(),
+            'promotions' => $promotions,
+            'new_products' => $newProducts,
+            'recommended' => $recommended,
         ]);
     }
 
@@ -38,6 +48,7 @@ class CatalogController extends Controller
 
     public function category($slug, Request $request)
     {
+        $customer = optional($request->user())->customer;
         $category = Category::where('slug', $slug)->firstOrFail();
 
         $query = $category->products()->with('brand');
@@ -64,13 +75,20 @@ class CatalogController extends Controller
             }
         }
 
+        $paginator = $query->paginate(24);
+
+        // Transform items using pricing service
+        $paginator->getCollection()->transform(function ($product) use ($customer) {
+            return $this->pricingService->formatProductForFrontend($product, $customer);
+        });
+
         return response()->json([
             'category' => $category,
-            'products' => $query->paginate(24),
+            'products' => $paginator,
         ]);
     }
 
-    public function product(string $slug, Request $request, PromotionPricingService $pricing)
+    public function product(string $slug, Request $request)
     {
         $customer = optional($request->user())->customer;
 
@@ -87,6 +105,7 @@ class CatalogController extends Controller
         'documents',
         'relatedProducts',
         'complementaryProducts',
+        'reviews',
     ])
     ->firstOrFail();
 
@@ -146,6 +165,22 @@ class CatalogController extends Controller
             })->values()
             : [];
 
+        $approved = $product->reviews()->where('status', 'approved')->get();
+        $avg = $approved->count() ? round($approved->avg('rating'), 2) : null;
+        $count = $approved->count();
+        $productArray['aggregate_rating'] = $avg ? ['ratingValue' => (float) $avg, 'ratingCount' => (int) $count] : null;
+        $productArray['average_rating'] = $avg;
+        $productArray['rating_count'] = $count;
+        $productArray['reviews'] = $approved->sortByDesc('created_at')->take(10)->map(function ($r) {
+            return [
+                'author_name' => $r->author_name,
+                'rating' => (int) $r->rating,
+                'title' => $r->title,
+                'body' => $r->body,
+                'created_at' => $r->created_at?->toDateString(),
+            ];
+        })->values();
+
         return response()->json([
             'product'                => $productArray,
             'related_products'       => $relatedProducts,
@@ -158,13 +193,20 @@ class CatalogController extends Controller
         return Brand::where('is_published', true)->orderBy('sort_order')->get();
     }
 
-    public function brand($slug)
+    public function brand($slug, Request $request)
     {
+        $customer = optional($request->user())->customer;
         $brand = Brand::where('slug', $slug)->firstOrFail();
+
+        $paginator = $brand->products()->paginate(24);
+
+        $paginator->getCollection()->transform(function ($product) use ($customer) {
+            return $this->pricingService->formatProductForFrontend($product, $customer);
+        });
 
         return response()->json([
             'brand'    => $brand,
-            'products' => $brand->products()->paginate(24),
+            'products' => $paginator,
         ]);
     }
 }

@@ -106,10 +106,59 @@ class OrderController extends Controller
     }
 
     /**
+     * Helper pentru verificarea permisiunilor RBAC pe o comandă specifică.
+     */
+    protected function ensureOrderAccess(Request $request, Order $order)
+    {
+        $user = $request->user();
+
+        if ($user->hasRole('admin')) {
+            return;
+        }
+
+        if ($user->hasRole('sales_director')) {
+            // Director: poate vedea comenzi ale clienților asignați lui sau agenților din subordine
+            $customer = $order->customer;
+            if (!$customer) return; // sau abort 404
+
+            $subordinateIds = \App\Models\User::where('director_id', $user->id)->pluck('id')->toArray();
+            
+            $isDirectClient = $customer->sales_director_user_id == $user->id;
+            $isSubordinateClient = in_array($customer->agent_user_id, $subordinateIds);
+            
+            if (!$isDirectClient && !$isSubordinateClient) {
+                 abort(403, 'Nu aveți permisiunea de a accesa această comandă.');
+            }
+            return;
+        }
+
+        if ($user->hasRole('sales_agent')) {
+            // Agent: doar clienții asignați direct sau membri ai echipei
+            $customer = $order->customer;
+            if (!$customer) return;
+
+            // Check direct assignment
+            if ($customer->agent_user_id == $user->id) {
+                return;
+            }
+
+            // Check team membership
+            $isInTeam = $customer->teamMembers()->where('users.id', $user->id)->exists();
+            if ($isInTeam) {
+                return;
+            }
+
+            abort(403, 'Nu aveți permisiunea de a accesa această comandă.');
+        }
+    }
+
+    /**
      * Detaliu comandă – info generală + items + adrese.
      */
-    public function show(Order $order)
+    public function show(Request $request, Order $order)
     {
+        $this->ensureOrderAccess($request, $order);
+
         $order->load(['customer', 'items']);
 
         $billingAddress  = null;
@@ -182,6 +231,8 @@ class OrderController extends Controller
      */
     public function update(Request $request, Order $order)
     {
+        $this->ensureOrderAccess($request, $order);
+
         $data = $request->validate([
             'cancel_reason'  => ['nullable', 'string', 'max:255'],
             'due_date'       => ['nullable', 'date'],
@@ -192,7 +243,7 @@ class OrderController extends Controller
         $order->fill($data);
         $order->save();
 
-        return $this->show($order->fresh());
+        return $this->show($request, $order->fresh());
     }
 
     /**
@@ -200,6 +251,8 @@ class OrderController extends Controller
      */
     public function updateStatus(Request $request, Order $order)
     {
+        $this->ensureOrderAccess($request, $order);
+
         $data = $request->validate([
             'status'        => ['required', 'string', 'in:pending,processing,completed,cancelled,awaiting_payment,on_hold'],
             'cancel_reason' => ['nullable', 'string', 'max:255'],
@@ -239,7 +292,7 @@ class OrderController extends Controller
             }
         }
 
-        return $this->show($order->fresh());
+        return $this->show($request, $order->fresh());
     }
 
     /**
@@ -247,6 +300,8 @@ class OrderController extends Controller
      */
     public function updatePaymentStatus(Request $request, Order $order)
     {
+        $this->ensureOrderAccess($request, $order);
+
         $data = $request->validate([
             'payment_status' => ['required', 'string', 'in:pending,paid,failed,refunded,partially_paid'],
             'payment_method' => ['nullable', 'string', 'max:50'],
@@ -260,6 +315,6 @@ class OrderController extends Controller
 
         $order->save();
 
-        return $this->show($order->fresh());
+        return $this->show($request, $order->fresh());
     }
 }

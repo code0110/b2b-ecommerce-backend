@@ -17,12 +17,26 @@ class BlogPost extends Model
         'published_at',
         'meta_title',
         'meta_description',
+        'image_path',
     ];
 
     protected $casts = [
         'is_published' => 'boolean',
         'published_at' => 'datetime',
     ];
+
+    protected $appends = ['image_url'];
+
+    public function getImageUrlAttribute()
+    {
+        if (!$this->image_path) {
+            return null;
+        }
+        if (str_starts_with($this->image_path, 'http')) {
+            return $this->image_path;
+        }
+        return asset('storage/' . $this->image_path);
+    }
 
     public function category()
     {

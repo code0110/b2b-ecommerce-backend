@@ -24,12 +24,16 @@ class SalesTargetController extends Controller
             $query->where('user_id', $userId);
         }
         
-        // RBAC: Director sees only his agents
+        // RBAC: Director sees only his agents, Agent sees only himself
         /** @var \App\Models\User $currentUser */
         $currentUser = Auth::user();
-        if ($currentUser->hasRole('sales_director') && !$currentUser->hasRole('admin')) {
-             // Find agents where director_id = current user
-             $agentIds = User::where('director_id', $currentUser->id)->pluck('id');
+        
+        if ($currentUser->hasRole('sales_agent')) {
+            $query->where('user_id', $currentUser->id);
+        } elseif ($currentUser->hasRole('sales_director') && !$currentUser->hasRole('admin')) {
+             // Find agents where director_id = current user OR it is the director themselves
+             $agentIds = User::where('director_id', $currentUser->id)->pluck('id')->toArray();
+             $agentIds[] = $currentUser->id;
              $query->whereIn('user_id', $agentIds);
         }
 
@@ -38,6 +42,13 @@ class SalesTargetController extends Controller
 
     public function store(Request $request)
     {
+        /** @var \App\Models\User $currentUser */
+        $currentUser = Auth::user();
+
+        if (!$currentUser->hasRole(['admin', 'sales_director'])) {
+             return response()->json(['message' => 'Unauthorized.'], 403);
+        }
+
         $request->validate([
             'user_id' => 'required|exists:users,id',
             'year' => 'required|integer|min:2025',
@@ -97,7 +108,25 @@ class SalesTargetController extends Controller
 
     public function destroy($id)
     {
-        SalesTarget::findOrFail($id)->delete();
+        /** @var \App\Models\User $currentUser */
+        $currentUser = Auth::user();
+
+        if (!$currentUser->hasRole(['admin', 'sales_director'])) {
+             return response()->json(['message' => 'Unauthorized.'], 403);
+        }
+
+        $target = SalesTarget::findOrFail($id);
+
+        if ($currentUser->hasRole('sales_director') && !$currentUser->hasRole('admin')) {
+             $isSubordinate = User::where('id', $target->user_id)
+                                  ->where('director_id', $currentUser->id)
+                                  ->exists();
+             if (!$isSubordinate) {
+                 return response()->json(['message' => 'Unauthorized.'], 403);
+             }
+        }
+
+        $target->delete();
         return response()->noContent();
     }
 }

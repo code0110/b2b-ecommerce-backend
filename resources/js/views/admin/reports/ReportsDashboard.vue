@@ -279,13 +279,13 @@ const stats = ref({
 });
 
 const conversionRate = computed(() => {
-    if (stats.value.total_visits === 0) return 0;
-    return Math.round((stats.value.visits_with_orders / stats.value.total_visits) * 100);
+    if (!stats.value || !stats.value.total_visits) return 0;
+    return Math.round(((stats.value.visits_with_orders || 0) / stats.value.total_visits) * 100);
 });
 
 const completionRate = computed(() => {
-    if (stats.value.total_visits === 0) return 0;
-    return Math.round((stats.value.completed_visits / stats.value.total_visits) * 100);
+    if (!stats.value || !stats.value.total_visits) return 0;
+    return Math.round(((stats.value.completed_visits || 0) / stats.value.total_visits) * 100);
 });
 
 const visitsChartData = ref(null);
@@ -378,8 +378,38 @@ const fetchData = async () => {
 const loadAgents = async () => {
     if (!canFilterAgents.value) return;
     try {
-        const res = await adminApi.get('/users?role=sales_agent&per_page=100');
-        agents.value = res.data.data;
+        let loadedAgents = [];
+        
+        if (authStore.hasRole('admin')) {
+            // Fetch agents and directors for admin
+            const [agentsRes, directorsRes] = await Promise.all([
+                adminApi.get('/users?role=sales_agent&per_page=100'),
+                adminApi.get('/users?role=sales_director&per_page=100')
+            ]);
+            
+            const agentsList = agentsRes.data.data || [];
+            const directorsList = directorsRes.data.data || [];
+            
+            // Merge and dedup by ID
+            const map = new Map();
+            [...agentsList, ...directorsList].forEach(u => map.set(u.id, u));
+            loadedAgents = Array.from(map.values());
+            
+        } else {
+            // For Director: fetch without role param to get subordinates + self
+            // (Assuming backend UserController logic handles the filtering based on authenticated user)
+            const res = await adminApi.get('/users?per_page=100');
+            loadedAgents = res.data.data || [];
+        }
+        
+        // Sort by name
+        loadedAgents.sort((a, b) => {
+            const nameA = (a.first_name + ' ' + (a.last_name || '')).toLowerCase();
+            const nameB = (b.first_name + ' ' + (b.last_name || '')).toLowerCase();
+            return nameA.localeCompare(nameB);
+        });
+
+        agents.value = loadedAgents;
     } catch (e) {
         console.error(e);
     }

@@ -42,6 +42,8 @@ class OfferController extends Controller
     {
         $offer = Offer::with(['items.product', 'customer'])->findOrFail($id);
         
+        $this->ensureOfferAccess($offer);
+
         // Ensure offer is in a state that can be converted
         if (!in_array($offer->status, ['accepted', 'sent', 'approved'])) {
             return response()->json(['message' => 'Oferta trebuie să fie acceptată de client pentru a fi transformată în comandă.'], 400);
@@ -452,6 +454,8 @@ class OfferController extends Controller
         ]);
 
         $offer = Offer::findOrFail($id);
+        
+        $this->ensureOfferAccess($offer);
 
         $msg = OfferMessage::create([
             'offer_id' => $offer->id,
@@ -486,11 +490,57 @@ class OfferController extends Controller
     public function destroy($id)
     {
         $offer = Offer::findOrFail($id);
-        if ($offer->status !== 'draft') {
-            // Soft delete or restrict?
-            // Allow delete if rejected?
+        
+        $this->ensureOfferAccess($offer);
+
+        if ($offer->status !== 'draft' && $offer->status !== 'rejected') {
+             return response()->json(['message' => 'Doar ofertele draft sau respinse pot fi șterse.'], 400);
         }
+
+        $offer->items()->delete();
+        $offer->messages()->delete();
         $offer->delete();
+
         return response()->noContent();
+    }
+
+    private function ensureOfferAccess(Offer $offer)
+    {
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+
+        if ($user->hasRole('admin')) {
+            return;
+        }
+
+        if ($user->hasRole('sales_director')) {
+            if ($offer->agent_id === $user->id) {
+                return;
+            }
+            
+            $isSubordinate = User::where('id', $offer->agent_id)
+                ->where('director_id', $user->id)
+                ->exists();
+                
+            if ($isSubordinate) {
+                return;
+            }
+        }
+
+        if ($user->hasRole('sales_agent')) {
+            if ($offer->agent_id === $user->id) {
+                return;
+            }
+        }
+
+        // For clients, ensure they only see their own offers
+        if ($user->customer_id && $offer->customer_id === $user->customer_id) {
+            // Clients should only see 'sent', 'approved', 'negotiation' etc (non-internal)
+            if (in_array($offer->status, ['sent', 'approved', 'negotiation', 'rejected', 'completed', 'accepted'])) {
+                return;
+            }
+        }
+
+        abort(403, 'Unauthorized access to offer.');
     }
 }

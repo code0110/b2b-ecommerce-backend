@@ -39,6 +39,9 @@ class AccountOrderController extends Controller
             'items.product',
             'items.variant',
             'shippingMethod',
+            'billingAddress',
+            'shippingAddress',
+            'customer',
         ]);
 
         return response()->json($order);

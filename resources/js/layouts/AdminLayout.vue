@@ -86,6 +86,9 @@
           <RouterLink :to="{ name: 'admin-pages' }" class="nav-link text-white rounded d-flex align-items-center px-3 py-2" active-class="active-link" title="Pagini">
             <i class="bi bi-file-richtext me-2"></i> <span class="link-text">Pagini</span>
           </RouterLink>
+          <RouterLink :to="{ name: 'admin-content-blocks' }" class="nav-link text-white rounded d-flex align-items-center px-3 py-2" active-class="active-link" title="Blocuri Conținut">
+            <i class="bi bi-layout-text-window-reverse me-2"></i> <span class="link-text">Blocuri Conținut</span>
+          </RouterLink>
 
           <div class="nav-section-title text-uppercase text-muted fw-bold small mt-4 mb-2 px-2">Operațional</div>
           

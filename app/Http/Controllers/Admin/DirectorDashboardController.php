@@ -16,9 +16,17 @@ class DirectorDashboardController extends Controller
 {
     public function summary(Request $request)
     {
-        $director = Auth::user();
-        // Get agents assigned to this director
-        $agentIds = User::where('director_id', $director->id)->pluck('id')->toArray();
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+        
+        if ($user->hasRole('admin')) {
+            $agentIds = User::role('sales_agent')->pluck('id')->toArray();
+            // Optionally include directors too if they sell? 
+            // For now, let's stick to sales_agents as "team" for admin.
+        } else {
+            // Get agents assigned to this director
+            $agentIds = User::where('director_id', $user->id)->pluck('id')->toArray();
+        }
 
         if (empty($agentIds)) {
             return response()->json([
@@ -70,9 +78,18 @@ class DirectorDashboardController extends Controller
 
     public function teamStatus(Request $request)
     {
-        $director = Auth::user();
-        $agents = User::where('director_id', $director->id)
-            ->with(['visits' => function($q) {
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+        
+        $query = User::query();
+        
+        if ($user->hasRole('admin')) {
+            $query->role('sales_agent');
+        } else {
+            $query->where('director_id', $user->id);
+        }
+
+        $agents = $query->with(['visits' => function($q) {
                 $q->where('status', 'in_progress')
                   ->with('customer:id,name,cui');
             }])
@@ -99,7 +116,7 @@ class DirectorDashboardController extends Controller
                     'id' => $agent->id,
                     'name' => $agent->first_name . ' ' . $agent->last_name,
                     'status' => $activeVisit ? 'in_visit' : 'idle',
-                    'current_customer' => $activeVisit ? $activeVisit->customer->name : null,
+                    'current_customer' => $activeVisit && $activeVisit->customer ? $activeVisit->customer->name : null,
                     'visit_start_time' => $activeVisit ? $activeVisit->start_time : null,
                     'latitude' => $activeVisit ? $activeVisit->latitude : ($lastVisit ? ($lastVisit->end_latitude ?? $lastVisit->latitude) : null),
                     'longitude' => $activeVisit ? $activeVisit->longitude : ($lastVisit ? ($lastVisit->end_longitude ?? $lastVisit->longitude) : null),

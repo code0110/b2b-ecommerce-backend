@@ -31,6 +31,9 @@ class DatabaseSeeder extends Seeder
             RoleSeeder::class,
             TestScenarioSeeder::class,
             InvoiceSeeder::class,
+            ContentBlockSeeder::class,
+            BlogSeeder::class,
+            PageSeeder::class,
         ]);
         
     }

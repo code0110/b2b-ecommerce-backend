@@ -174,17 +174,19 @@ const router = createRouter({
         {
           path: 'blog/:slug',
           name: 'blog-post',
-          component: BlogPost
+          component: BlogPost,
+          props: true
         },
         {
-          path: 'pagina/:slug',
-          name: 'static-page',
-          component: StaticPage
-        },
-        {
-          path: 'devino-partener',
+          path: 'become-partner',
           name: 'become-partner',
           component: BecomePartner
+        },
+        {
+          path: ':slug',
+          name: 'static-page',
+          component: StaticPage,
+          props: true
         }
       ]
     },
@@ -472,17 +474,22 @@ const router = createRouter({
         {
           path: 'pages',
           name: 'admin-pages',
-          component: () => import('@/views/admin/pages/PageList.vue')
+          component: () => import('@/views/admin/content/PageList.vue')
         },
         {
           path: 'pages/new',
-          name: 'admin-pages-new',
-          component: () => import('@/views/admin/pages/PageForm.vue')
+          name: 'admin-pages-create',
+          component: () => import('@/views/admin/content/PageForm.vue')
         },
         {
           path: 'pages/:id',
           name: 'admin-pages-edit',
-          component: () => import('@/views/admin/pages/PageForm.vue')
+          component: () => import('@/views/admin/content/PageForm.vue')
+        },
+        {
+          path: 'content-blocks',
+          name: 'admin-content-blocks',
+          component: () => import('@/views/admin/content/ContentBlockList.vue')
         },
         {
           path: 'customers',

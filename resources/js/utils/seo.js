@@ -21,6 +21,16 @@ export function setMetaProperty(property, content) {
   }
   el.setAttribute('content', content || '');
 }
+export function setMetaPropertyList(property, contents) {
+  if (typeof document === 'undefined') return;
+  Array.from(document.querySelectorAll(`meta[property="${property}"]`)).forEach(el => el.remove());
+  (contents || []).filter(Boolean).forEach(content => {
+    const el = document.createElement('meta');
+    el.setAttribute('property', property);
+    el.setAttribute('content', content);
+    document.head.appendChild(el);
+  });
+}
 export function setCanonical(url) {
   if (typeof document === 'undefined') return;
   let el = document.querySelector('link[rel="canonical"]');
@@ -42,4 +52,14 @@ export function setJsonLd(obj) {
     document.head.appendChild(el);
   }
   el.textContent = json;
+}
+export function setLink(rel, href) {
+  if (typeof document === 'undefined') return;
+  let el = document.querySelector(`link[rel="${rel}"]`);
+  if (!el) {
+    el = document.createElement('link');
+    el.setAttribute('rel', rel);
+    document.head.appendChild(el);
+  }
+  el.setAttribute('href', href || '');
 }

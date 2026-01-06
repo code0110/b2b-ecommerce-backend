@@ -167,7 +167,7 @@
                   </div>
                 </td>
                 <td class="text-end">
-                  {{ product.listPrice.toFixed(2) }} RON
+                  {{ Number(product.listPrice || 0).toFixed(2) }} RON
                 </td>
                 <td class="text-center">
                   <span

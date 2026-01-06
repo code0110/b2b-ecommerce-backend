@@ -83,10 +83,10 @@
                                           {{ agent.telemetry.battery_level }}%
                                       </span>
                                   </div>
-                                  <div class="col-6 d-flex justify-content-between" v-if="agent.telemetry.speed !== null">
+                                  <div class="col-6 d-flex justify-content-between" v-if="agent.telemetry.speed !== null && agent.telemetry.speed !== undefined">
                                       <span class="text-muted"><i class="bi bi-speedometer2"></i> Vit:</span>
                                       <span :class="{'text-danger fw-bold': agent.telemetry.speed > 8.3}">
-                                          {{ (agent.telemetry.speed * 3.6).toFixed(1) }} km/h
+                                          {{ (Number(agent.telemetry.speed || 0) * 3.6).toFixed(1) }} km/h
                                       </span>
                                   </div>
                                   <div class="col-6 d-flex justify-content-between" v-if="agent.telemetry.network_type">
@@ -96,7 +96,7 @@
                                   <div class="col-6 d-flex justify-content-between" v-if="agent.telemetry.accuracy">
                                       <span class="text-muted"><i class="bi bi-crosshair"></i> Acc:</span>
                                       <span :class="{'text-danger': agent.telemetry.accuracy > 50}">
-                                          {{ agent.telemetry.accuracy.toFixed(0) }}m
+                                          {{ Number(agent.telemetry.accuracy || 0).toFixed(0) }}m
                                       </span>
                                   </div>
                               </div>
@@ -107,7 +107,7 @@
                               <a :href="`https://www.google.com/maps/search/?api=1&query=${agent.latitude},${agent.longitude}`" target="_blank" class="btn btn-sm btn-outline-primary flex-grow-1">
                                   <i class="bi bi-map me-1"></i> Harta
                               </a>
-                              <RouterLink :to="{ name: 'admin-reports-route-history', query: { agent_id: agent.id } }" class="btn btn-sm btn-outline-secondary flex-grow-1">
+                              <RouterLink :to="{ name: historyRouteName, query: { agent_id: agent.id } }" class="btn btn-sm btn-outline-secondary flex-grow-1">
                                   <i class="bi bi-clock-history me-1"></i> Istoric
                               </RouterLink>
                           </div>
@@ -121,12 +121,18 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { adminApi } from '@/services/http';
 import { useToast } from 'vue-toastification';
+import { useAuthStore } from '@/store/auth';
 
 const toast = useToast();
+const authStore = useAuthStore();
 const agents = ref([]);
+
+const historyRouteName = computed(() => {
+    return authStore.hasRole('admin') ? 'admin-reports-route-history' : 'account-route-history';
+});
 
 const fetchData = async () => {
     try {

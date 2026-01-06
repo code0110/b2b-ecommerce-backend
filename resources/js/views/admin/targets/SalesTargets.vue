@@ -29,7 +29,7 @@
                                     <h6 class="fw-bold mb-0">{{ agent.first_name }} {{ agent.last_name }}</h6>
                                     <small class="text-muted">{{ agent.email }}</small>
                                 </div>
-                                <div v-if="editingId !== agent.id">
+                                <div v-if="editingId !== agent.id && canEdit">
                                     <button class="btn btn-sm btn-outline-primary rounded-circle" @click="editTarget(agent)">
                                         <i class="bi bi-pencil"></i>
                                     </button>
@@ -120,8 +120,10 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue';
 import { adminApi } from '@/services/http';
+import { useAuthStore } from '@/store/auth';
 import { useToast } from 'vue-toastification';
 
+const authStore = useAuthStore();
 const toast = useToast();
 
 const selectedYear = ref(new Date().getFullYear());
@@ -136,6 +138,8 @@ const editingId = ref(null);
 const tempTarget = ref({});
 const saving = ref(false);
 
+const canEdit = computed(() => ['admin', 'sales_director'].includes(authStore.role));
+
 const getTarget = (userId) => {
     return targets.value.find(t => t.user_id === userId) || {};
 };
@@ -146,8 +150,35 @@ const formatPrice = (value) => {
 
 const fetchAgents = async () => {
     try {
-        const res = await adminApi.get('/users?role=sales_agent&per_page=100');
-        agents.value = res.data.data;
+        let loadedAgents = [];
+        if (authStore.role === 'admin') {
+             const [agentsRes, directorsRes] = await Promise.all([
+                adminApi.get('/users?role=sales_agent&per_page=100'),
+                adminApi.get('/users?role=sales_director&per_page=100')
+            ]);
+            const agentsList = agentsRes.data.data || [];
+            const directorsList = directorsRes.data.data || [];
+            
+            // Merge and dedup
+            const map = new Map();
+            [...agentsList, ...directorsList].forEach(u => map.set(u.id, u));
+            loadedAgents = Array.from(map.values());
+        } else {
+            // Director or Agent
+            // Director sees subordinates + self (handled by backend if no role param)
+            // Agent sees self (handled by backend)
+            const res = await adminApi.get('/users?per_page=100');
+            loadedAgents = res.data.data || [];
+        }
+
+        // Sort by name
+        loadedAgents.sort((a, b) => {
+            const nameA = (a.first_name + ' ' + (a.last_name || '')).toLowerCase();
+            const nameB = (b.first_name + ' ' + (b.last_name || '')).toLowerCase();
+            return nameA.localeCompare(nameB);
+        });
+
+        agents.value = loadedAgents;
     } catch (e) {
         console.error(e);
         toast.error('Eroare la încărcarea agenților');

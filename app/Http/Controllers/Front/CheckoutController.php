@@ -251,6 +251,23 @@ class CheckoutController extends Controller
                      // Log notification error
                  }
              }
+             
+             // Notify Agent & Director about new order (if not blocked)
+             // Blocked orders are handled below
+             if (!$order->credit_blocked) {
+                 try {
+                     if ($customer->agent_user_id) {
+                         $agent = \App\Models\User::find($customer->agent_user_id);
+                         $agent?->notify(new OrderPlacedNotification($order));
+                     }
+                     if ($customer->sales_director_user_id) {
+                         $director = \App\Models\User::find($customer->sales_director_user_id);
+                         $director?->notify(new OrderPlacedNotification($order));
+                     }
+                 } catch (\Exception $e) {
+                     // Log error
+                 }
+             }
 
              // Notify Sales Agents if credit blocked
              if ($order->credit_blocked) {

@@ -97,6 +97,7 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue';
 import { useAuthStore } from '@/store/auth';
+import { useTrackingStore } from '@/store/tracking';
 import { fetchRoutes } from '@/services/admin/agentRoutes';
 import { fetchVisits } from '@/services/admin/customerVisits';
 import { useVisitStore } from '@/store/visit';
@@ -104,6 +105,7 @@ import { useToast } from 'vue-toastification';
 import { useRouter } from 'vue-router';
 
 const authStore = useAuthStore();
+const trackingStore = useTrackingStore();
 const visitStore = useVisitStore();
 const toast = useToast();
 const router = useRouter();
@@ -259,7 +261,16 @@ const createOffer = (customer) => {
     });
 };
 
-onMounted(() => {
+onMounted(async () => {
+    if (!trackingStore.isShiftActive) {
+        await trackingStore.checkStatus();
+        if (!trackingStore.isShiftActive) {
+             toast.error('Trebuie să începeți programul de lucru pentru a vedea rutele!');
+             router.push({ name: 'agent-dashboard' });
+             return;
+        }
+    }
+
     setToday();
     loadData();
 });
@@ -273,5 +284,23 @@ watch(currentDay, () => {
 <style scoped>
 .nav-link {
     cursor: pointer;
+}
+.route-card {
+    transition: transform 0.2s;
+}
+.route-card.active {
+    border: 1px solid var(--bs-primary) !important;
+}
+.route-card.completed {
+    background-color: #f8f9fa;
+    opacity: 0.85;
+}
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.6; }
+    100% { opacity: 1; }
+}
+.animate-pulse {
+    animation: pulse 2s infinite;
 }
 </style>

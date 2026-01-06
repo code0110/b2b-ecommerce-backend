@@ -2,6 +2,42 @@
   <div class="agent-dashboard">
     <h1 class="h3 mb-4">Panou Control Vânzări</h1>
 
+    <!-- Start/End Day Panel -->
+    <div class="card shadow-sm mb-4" :class="trackingStore.isShiftActive ? 'border-success' : 'border-warning'">
+      <div class="card-body d-flex justify-content-between align-items-center">
+        <div>
+          <h5 class="mb-1" :class="trackingStore.isShiftActive ? 'text-success' : 'text-dark'">
+            <i class="bi" :class="trackingStore.isShiftActive ? 'bi-check-circle-fill' : 'bi-clock'"></i>
+            {{ trackingStore.isShiftActive ? 'Program de lucru ACTIV' : 'Program de lucru INACTIV' }}
+          </h5>
+          <p class="mb-0 text-muted small">
+            {{ trackingStore.isShiftActive 
+               ? 'Puteți efectua vizite, prelua comenzi și vizualiza date.' 
+               : 'Trebuie să începeți programul pentru a accesa funcționalitățile.' }}
+          </p>
+        </div>
+        <div>
+           <button v-if="!trackingStore.isShiftActive" class="btn btn-success btn-lg" @click="trackingStore.startDay" :disabled="trackingStore.loading">
+              <span v-if="trackingStore.loading" class="spinner-border spinner-border-sm me-2"></span>
+              <i class="bi bi-play-circle me-1"></i> Start Program
+           </button>
+           <button v-else class="btn btn-outline-danger" @click="trackingStore.endDay" :disabled="trackingStore.loading || visitStore.hasActiveVisit">
+              <span v-if="trackingStore.loading" class="spinner-border spinner-border-sm me-2"></span>
+              <i class="bi bi-stop-circle me-1"></i> Încheie Program
+           </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Block content if shift not active -->
+    <div v-if="!trackingStore.isShiftActive" class="text-center py-5 opacity-50">
+        <i class="bi bi-lock-fill display-1 text-muted"></i>
+        <h3 class="mt-3 text-muted">Programul nu a început</h3>
+        <p>Vă rugăm să apăsați butonul "Start Program" pentru a începe activitatea.</p>
+    </div>
+
+    <div v-else>
+
     <!-- Active Visit Panel -->
     <div v-if="visitStore.hasActiveVisit" class="card border-primary shadow-sm mb-4">
       <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
@@ -58,7 +94,7 @@
           <button 
             class="nav-link" 
             :class="{ active: activeTab === 'history' }" 
-            @click="loadHistory"
+            @click="activeTab = 'history'; loadHistory()"
           >
             Istoric Vizite
           </button>
@@ -256,84 +292,61 @@
           </div>
         </div>
 
-        <div class="table-responsive">
-          <table class="table table-hover align-middle">
-            <thead class="table-light">
-              <tr>
-                <th>Nume Client</th>
-                <th>CUI / CIF</th>
-                <th>Sold Curent</th>
-                <th>Limită Credit</th>
-                <th v-if="isDirector">Agent</th>
-                <th class="text-end">Acțiuni</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="client in filteredClients" :key="client.id" :class="{'table-primary': visitStore.activeVisit?.customer_id === client.id}">
-                <td>
-                  <div class="fw-bold">
-                    {{ client.name }}
-                    <span v-if="!isDirector && client.agent_user_id !== authStore.user.id" class="badge bg-warning text-dark ms-2" style="font-size: 0.7rem;">Acces Echipă</span>
+        <div class="row row-cols-1 g-3">
+          <div class="col" v-for="client in filteredClients" :key="client.id">
+            <div class="card border-0 shadow-sm h-100" :class="{'border-primary': visitStore.activeVisit?.customer_id === client.id}">
+              <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start">
+                  <div class="d-flex flex-column">
+                    <div class="d-flex align-items-center gap-2">
+                      <h6 class="mb-0 fw-bold">{{ client.name }}</h6>
+                      <span v-if="!isDirector && client.agent_user_id !== authStore.user.id" class="badge bg-warning text-dark" style="font-size: 0.7rem;">Acces Echipă</span>
+                      <span v-if="isDirector && client.agent" class="badge bg-secondary">
+                        {{ [client.agent.first_name, client.agent.last_name].filter(Boolean).join(' ') }}
+                      </span>
+                      <span v-else-if="isDirector && client.agent_user_id === authStore.user.id" class="badge bg-info">Eu</span>
+                    </div>
+                    <small class="text-muted">{{ client.email }}</small>
                   </div>
-                  <small class="text-muted">{{ client.email }}</small>
-                </td>
-                <td>{{ client.cif }}</td>
-                <td :class="client.current_balance > 0 ? 'text-danger' : 'text-success'">
-                  {{ formatPrice(client.current_balance, client.currency) }}
-                </td>
-                <td>{{ formatPrice(client.credit_limit, client.currency) }}</td>
-                <td v-if="isDirector">
-                    <span v-if="client.agent_user_id === authStore.user.id" class="badge bg-info">Eu</span>
-                    <span v-else-if="client.agent" class="badge bg-secondary">
-                      {{ [client.agent.first_name, client.agent.last_name].filter(Boolean).join(' ') }}
-                    </span>
-                    <span v-else class="text-muted">-</span>
-                </td>
-                <td class="text-end">
-                   <!-- Start/End Visit Buttons -->
-                   <button 
-                    v-if="!visitStore.activeVisit || visitStore.activeVisit.customer_id !== client.id"
-                    class="btn btn-sm btn-outline-primary me-2"
-                    @click="handleStartVisit(client)"
-                    :disabled="visitStore.loading || (visitStore.activeVisit && visitStore.activeVisit.customer_id !== client.id)"
-                    title="Începe Vizită"
-                  >
-                    <i class="bi bi-geo-alt"></i> Vizită
+                  <div class="text-end">
+                    <div :class="client.current_balance > 0 ? 'text-danger fw-bold' : 'text-success fw-bold'">
+                      {{ formatPrice(client.current_balance, client.currency) }}
+                    </div>
+                    <small class="text-muted d-block">Sold curent</small>
+                  </div>
+                </div>
+                <div class="mt-2 d-flex flex-wrap gap-3">
+                  <div class="small">
+                    <span class="text-muted">CUI/CIF:</span>
+                    <span class="fw-semibold">{{ client.cif || '-' }}</span>
+                  </div>
+                  <div class="small">
+                    <span class="text-muted">Limită credit:</span>
+                    <span class="fw-semibold">{{ formatPrice(client.credit_limit, client.currency) }}</span>
+                  </div>
+                </div>
+                <div class="mt-3 d-flex flex-wrap gap-2">
+                  <button v-if="!visitStore.activeVisit || visitStore.activeVisit.customer_id !== client.id" class="btn btn-outline-primary btn-sm" @click="handleStartVisit(client)" :disabled="visitStore.loading || (visitStore.activeVisit && visitStore.activeVisit.customer_id !== client.id)" title="Începe Vizită">
+                    <i class="bi bi-geo-alt me-1"></i> Vizită
                   </button>
-
-                  <button 
-                    class="btn btn-sm btn-success me-2"
-                    @click="openPaymentModal(client)"
-                    title="Adaugă Încasare"
-                    :disabled="!canPerformAction(client)"
-                  >
-                    <i class="bi bi-cash-stack"></i> Încasare
+                  <button class="btn btn-success btn-sm" @click="openPaymentModal(client)" title="Adaugă Încasare" :disabled="!canPerformAction(client)">
+                    <i class="bi bi-cash-stack me-1"></i> Încasare
                   </button>
-                  <button 
-                    class="btn btn-sm btn-warning me-2 text-dark"
-                    @click="createOffer(client)"
-                    title="Creează Ofertă"
-                    :disabled="!canPerformAction(client)"
-                  >
-                    <i class="bi bi-file-earmark-text"></i> Ofertă
+                  <button class="btn btn-warning btn-sm text-dark" @click="createOffer(client)" title="Creează Ofertă" :disabled="!canPerformAction(client)">
+                    <i class="bi bi-file-earmark-text me-1"></i> Ofertă
                   </button>
-                  <button 
-                    class="btn btn-sm btn-primary"
-                    @click="impersonateClient(client)"
-                    title="Plasează Comandă"
-                    :disabled="!canPerformAction(client)"
-                  >
-                    <i class="bi bi-cart-plus"></i> Comandă
+                  <button class="btn btn-primary btn-sm" @click="impersonateClient(client)" title="Plasează Comandă" :disabled="!canPerformAction(client)">
+                    <i class="bi bi-cart-plus me-1"></i> Comandă
                   </button>
-                </td>
-              </tr>
-              <tr v-if="filteredClients.length === 0">
-                <td colspan="6" class="text-center py-4 text-muted">
-                  Nu s-au găsit clienți.
-                </td>
-              </tr>
-            </tbody>
-          </table>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div v-if="filteredClients.length === 0" class="col">
+            <div class="text-center py-4 text-muted">
+              Nu s-au găsit clienți.
+            </div>
+          </div>
         </div>
       </div>
 
@@ -435,62 +448,41 @@
             </div>
         </div>
         <div v-else>
-             <div class="table-responsive">
-                <table class="table table-hover align-middle">
-                    <thead class="table-light">
-                        <tr>
-                            <th>Data/Ora</th>
-                            <th>Client</th>
-                            <th>Durata</th>
-                            <th>Acțiuni</th>
-                            <th>Rezultat</th>
-                            <th>Notițe</th>
-                            <th>Status</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr v-for="visit in historyVisits" :key="visit.id">
-                            <td>
-                                {{ new Date(visit.start_time).toLocaleDateString() }} <br>
-                                <span class="text-muted small">{{ new Date(visit.start_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) }}</span>
-                            </td>
-                            <td>
-                                <div class="fw-bold">{{ visit.customer?.name }}</div>
-                                <div class="small text-muted">{{ visit.customer?.address }}</div>
-                            </td>
-                            <td>
-                                {{ calculateDuration(visit.start_time, visit.end_time) }}
-                            </td>
-                            <td>
-                                <div v-if="visit.orders && visit.orders.length > 0">
-                                    <span class="badge bg-primary">
-                                        {{ visit.orders.length }} Comenzi
-                                        ({{ formatPrice(visit.orders.reduce((acc, o) => acc + parseFloat(o.total), 0)) }})
-                                    </span>
+             <div class="row row-cols-1 g-3">
+                <div class="col" v-for="visit in historyVisits" :key="visit.id">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <div class="fw-bold">{{ visit.customer?.name }}</div>
+                                    <div class="small text-muted">{{ visit.customer?.address }}</div>
                                 </div>
-                                <div v-if="visit.payments && visit.payments.length > 0" class="mt-1">
-                                    <span class="badge bg-success">
-                                        {{ visit.payments.length }} Încasări
-                                        ({{ formatPrice(visit.payments.reduce((acc, p) => acc + parseFloat(p.amount), 0)) }})
-                                    </span>
+                                <div class="text-end">
+                                    <div class="fw-semibold">{{ calculateDuration(visit.start_time, visit.end_time) }}</div>
+                                    <small class="text-muted d-block">Durată</small>
                                 </div>
-                                <div v-if="(!visit.orders || visit.orders.length === 0) && (!visit.payments || visit.payments.length === 0)" class="text-muted small">
-                                    -
+                            </div>
+                            <div class="mt-2 d-flex flex-wrap gap-3">
+                                <div class="small">
+                                    <span class="text-muted">Dată:</span>
+                                    <span class="fw-semibold">{{ new Date(visit.start_time).toLocaleDateString() }}</span>
                                 </div>
-                            </td>
-                            <td>
-                                <span class="badge bg-info text-dark" v-if="visit.outcome">
-                                    {{ visitOutcomes.find(o => o.value === visit.outcome)?.label || visit.outcome }}
+                                <div class="small">
+                                    <span class="text-muted">Ora:</span>
+                                    <span class="fw-semibold">{{ new Date(visit.start_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) }}</span>
+                                </div>
+                                <div class="small" v-if="visit.outcome">
+                                    <span class="text-muted">Rezultat:</span>
+                                    <span class="badge bg-info text-dark">{{ visitOutcomes.find(o => o.value === visit.outcome)?.label || visit.outcome }}</span>
+                                </div>
+                            </div>
+                            <div class="mt-2 d-flex flex-wrap gap-2">
+                                <span v-if="visit.orders && visit.orders.length > 0" class="badge bg-primary">
+                                    {{ visit.orders.length }} Comenzi ({{ formatPrice(visit.orders.reduce((acc, o) => acc + parseFloat(o.total), 0)) }})
                                 </span>
-                                <span v-else class="text-muted small">-</span>
-                            </td>
-                            <td>
-                                <span v-if="visit.notes" class="text-truncate d-inline-block" style="max-width: 200px;" :title="visit.notes">
-                                    {{ visit.notes }}
+                                <span v-if="visit.payments && visit.payments.length > 0" class="badge bg-success">
+                                    {{ visit.payments.length }} Încasări ({{ formatPrice(visit.payments.reduce((acc, p) => acc + parseFloat(p.amount), 0)) }})
                                 </span>
-                                <span v-else class="text-muted small">-</span>
-                            </td>
-                            <td>
                                 <span class="badge" :class="{
                                     'bg-success': visit.status === 'completed',
                                     'bg-primary': visit.status === 'in_progress',
@@ -500,15 +492,18 @@
                                     {{ visit.status === 'completed' ? 'Finalizată' : 
                                        visit.status === 'in_progress' ? 'În desfășurare' : visit.status }}
                                 </span>
-                            </td>
-                        </tr>
-                        <tr v-if="historyVisits.length === 0">
-                            <td colspan="5" class="text-center py-4 text-muted">
-                                Nu există istoric de vizite.
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
+                            </div>
+                            <div class="mt-2 small text-muted">
+                                {{ visit.notes || '-' }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div v-if="historyVisits.length === 0" class="col">
+                    <div class="text-center py-4 text-muted">
+                        Nu există istoric de vizite.
+                    </div>
+                </div>
              </div>
              <!-- Pagination if needed -->
              <div class="d-flex justify-content-center mt-3" v-if="historyMeta.last_page > 1">
@@ -533,25 +528,27 @@
 
       <!-- Tab Agenti -->
       <div v-if="activeTab === 'agents'">
-        <div class="table-responsive">
-          <table class="table table-hover align-middle">
-            <thead class="table-light">
-              <tr>
-                <th>Nume Agent</th>
-                <th>Email</th>
-                <th>Telefon</th>
-                <th>Clienți Asignați</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="agent in agents" :key="agent.id">
-                <td>{{ agent.first_name }} {{ agent.last_name }}</td>
-                <td>{{ agent.email }}</td>
-                <td>{{ agent.phone }}</td>
-                <td>{{ agent.customers_count || 0 }}</td>
-              </tr>
-            </tbody>
-          </table>
+        <div class="row row-cols-1 g-3">
+          <div class="col" v-for="agent in agents" :key="agent.id">
+            <div class="card border-0 shadow-sm h-100">
+              <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start">
+                  <div>
+                    <h6 class="mb-0 fw-bold">{{ agent.first_name }} {{ agent.last_name }}</h6>
+                    <small class="text-muted d-block">{{ agent.email }}</small>
+                    <small class="text-muted d-block" v-if="agent.phone">{{ agent.phone }}</small>
+                  </div>
+                  <div class="text-end">
+                    <div class="fw-semibold">{{ agent.customers_count || 0 }}</div>
+                    <small class="text-muted d-block">Clienți asignați</small>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div v-if="agents.length === 0" class="col">
+            <div class="text-center py-4 text-muted">Nu există agenți.</div>
+          </div>
         </div>
       </div>
     </template>
@@ -822,6 +819,8 @@
         </div>
       </div>
     </div>
+    </div>
+
   </div>
 </template>
 
@@ -832,11 +831,13 @@ import agentService from '@/services/account/agent';
 import { adminApi } from '@/services/http';
 import { useRouter } from 'vue-router';
 import { useVisitStore } from '@/store/visit';
+import { useTrackingStore } from '@/store/tracking';
 import { useToast } from 'vue-toastification';
 
 const authStore = useAuthStore();
 const router = useRouter();
 const visitStore = useVisitStore();
+const trackingStore = useTrackingStore();
 const toast = useToast();
 
 const activeTab = ref('routes'); // Default to routes
@@ -1257,6 +1258,7 @@ const impersonateClient = (client) => {
 };
 
 onMounted(() => {
+  trackingStore.checkStatus();
   loadData();
   visitStore.checkActiveVisit();
 });

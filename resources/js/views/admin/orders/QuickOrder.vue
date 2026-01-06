@@ -111,18 +111,20 @@
             <h6 class="mb-0 fw-bold">Client</h6>
           </div>
           <div class="card-body">
-            <div class="mb-3">
-              <CustomerSelector v-if="canSelectCustomer" @select="selectCustomer" ref="customerSelectorRef" />
-              <div v-if="selectedCustomer" class="mt-3 p-3 bg-light rounded border">
-                <div class="fw-bold mb-1">{{ selectedCustomer.name }}</div>
-                <div class="small text-muted mb-1"><i class="bi bi-upc-scan me-2"></i>{{ selectedCustomer.cif }}</div>
-                <div class="small text-muted"><i class="bi bi-geo-alt me-2"></i>{{ selectedCustomer.address }}</div>
-                <div class="small text-muted mt-2" v-if="selectedCustomer.group">
-                  <span class="badge bg-secondary">{{ selectedCustomer.group.name }}</span>
-                </div>
+            <div class="mb-4">
+              <label class="form-label small fw-bold text-muted">Client</label>
+              <div v-if="selectedCustomer" class="d-flex align-items-center justify-content-between p-3 border rounded bg-light mb-2">
+                 <div>
+                    <div class="fw-bold">{{ selectedCustomer.name }}</div>
+                    <div class="small text-muted">CUI: {{ selectedCustomer.cif }}</div>
+                 </div>
+                 <button v-if="canSelectCustomer" class="btn btn-sm btn-outline-danger" @click="selectedCustomer = null; items = []">
+                    Schimbă
+                 </button>
               </div>
-              <div v-else class="alert alert-warning mt-3 small">
-                <i class="bi bi-exclamation-triangle me-2"></i> Selectează un client pentru a vedea prețurile corecte.
+              <CustomerSelector v-else-if="canSelectCustomer" @select="selectCustomer" :disabled="!canSelectCustomer" />
+              <div v-else class="alert alert-info small">
+                 Selectarea clientului este restricționată.
               </div>
             </div>
           </div>
@@ -160,14 +162,18 @@
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import api from '@/services/http';
+import { adminApi } from '@/services/http';
 import { useAuthStore } from '@/store/auth';
+import { useVisitStore } from '@/store/visit';
+import { useTrackingStore } from '@/store/tracking';
 import { useToast } from 'vue-toastification';
 import CustomerSelector from '@/components/admin/CustomerSelector.vue';
 import ProductSelector from '@/components/admin/ProductSelector.vue';
 
 const router = useRouter();
 const authStore = useAuthStore();
+const visitStore = useVisitStore();
+const trackingStore = useTrackingStore();
 const toast = useToast();
 
 const selectedCustomer = ref(null);
@@ -180,22 +186,53 @@ const totals = ref({
 const requiresApproval = ref(false);
 const submitting = ref(false);
 const calculating = ref(false);
+const isCustomerLocked = ref(false);
 
 const canOverride = computed(() => {
   return ['admin', 'sales_director', 'sales_agent'].includes(authStore.role);
 });
 
 const canSelectCustomer = computed(() => {
-  return ['admin', 'sales_director', 'sales_agent'].includes(authStore.role);
+  return ['admin', 'sales_director', 'sales_agent'].includes(authStore.role) && !isCustomerLocked.value;
 });
 
 onMounted(async () => {
-    if (!canSelectCustomer.value && authStore.user && authStore.user.customer_id) {
+    // Check for active visit restriction for Agents and Directors
+    if (['sales_agent', 'sales_director'].includes(authStore.role)) {
+        // Check Shift Status first
+        if (!trackingStore.isShiftActive) {
+            // Try to fetch status just in case
+            await trackingStore.checkStatus();
+            if (!trackingStore.isShiftActive) {
+                 toast.error('Trebuie să începeți programul de lucru pentru a prelua comenzi!');
+                 router.push({ name: 'agent-dashboard' });
+                 return;
+            }
+        }
+
+        if (!visitStore.activeVisit) {
+             // Allow impersonation as fallback when no active visit
+             if (authStore.impersonatedCustomer) {
+                 selectedCustomer.value = authStore.impersonatedCustomer;
+                 isCustomerLocked.value = true;
+             } else {
+                 toast.error('Trebuie să aveți o vizită activă pentru a crea o comandă rapidă!');
+                 router.push({ name: 'agent-dashboard' }); // Redirect to dashboard to start visit
+                 return;
+             }
+        } else {
+             selectedCustomer.value = visitStore.activeVisit.customer;
+             isCustomerLocked.value = true;
+        }
+    }
+    
+    // Legacy/Admin fallback logic
+    if (!selectedCustomer.value && !canSelectCustomer.value && authStore.user && authStore.user.customer_id) {
         if (authStore.user.customer) {
             selectedCustomer.value = authStore.user.customer;
         } else {
              try {
-                 const { data } = await api.get(`/customers/${authStore.user.customer_id}`);
+                const { data } = await adminApi.get(`/customers/${authStore.user.customer_id}`);
                  selectedCustomer.value = data;
              } catch(e) {
                  console.error("Failed to load customer", e);
@@ -259,7 +296,7 @@ const calculateTotals = async () => {
       }))
     };
 
-    const { data } = await api.post('/quick-order/calculate', payload);
+    const { data } = await adminApi.post('/quick-order/calculate', payload);
     
     // Merge results back into items
     data.items.forEach((cItem, idx) => {
@@ -315,7 +352,7 @@ const submitOrder = async () => {
       }))
     };
 
-    const { data } = await api.post('/quick-order/create', payload);
+    const { data } = await adminApi.post('/quick-order/create', payload);
     
     toast.success(data.message);
     

@@ -58,7 +58,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue';
-import adminApi from '@/services/adminApi';
+import { adminApi } from '@/services/http';
 import { useToast } from 'vue-toastification';
 
 const toast = useToast();

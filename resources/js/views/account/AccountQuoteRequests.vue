@@ -7,6 +7,25 @@
       </router-link>
     </div>
     <div class="card-body p-0">
+      
+      <!-- Filters -->
+      <div class="p-3 bg-light border-bottom">
+        <div class="row g-2">
+            <div class="col-6 col-md-4">
+                <select v-model="filters.status" class="form-select form-select-sm" @change="loadRequests(1)">
+                    <option value="">Toate statusurile</option>
+                    <option value="new">Nouă</option>
+                    <option value="processed">Procesată</option>
+                    <option value="converted">Ofertată</option>
+                    <option value="rejected">Respinsă</option>
+                </select>
+            </div>
+            <div class="col-6 col-md-4">
+                 <!-- Future date filter or search -->
+            </div>
+        </div>
+      </div>
+
       <div v-if="loading" class="text-center py-5">
         <div class="spinner-border text-primary" role="status">
           <span class="visually-hidden">Se încarcă...</span>
@@ -18,39 +37,40 @@
         Nu ai trimis nicio cerere de ofertă.
       </div>
 
-      <div v-else class="table-responsive">
-        <table class="table table-hover align-middle mb-0">
-          <thead class="bg-light">
-            <tr>
-              <th class="ps-4">ID</th>
-              <th>Data</th>
-              <th>Status</th>
-              <th>Notițe</th>
-              <th class="text-end pe-4">Acțiuni</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="req in requests" :key="req.id">
-              <td class="ps-4 fw-bold">#{{ req.id }}</td>
-              <td>{{ new Date(req.created_at).toLocaleDateString('ro-RO') }}</td>
-              <td>
-                <span class="badge" :class="statusBadge(req.status)">
-                  {{ statusLabel(req.status) }}
-                </span>
-              </td>
-              <td>
-                <div class="text-truncate" style="max-width: 250px;" :title="req.customer_notes">
+      <div v-else class="p-3">
+        <div class="row row-cols-1 g-3">
+          <div class="col" v-for="req in requests" :key="req.id">
+            <div class="card border-0 shadow-sm h-100">
+              <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start">
+                  <div>
+                    <div class="fw-bold">Cerere #{{ req.id }}</div>
+                    <div class="small text-muted">{{ new Date(req.created_at).toLocaleDateString('ro-RO') }}</div>
+                    <div class="mt-1">
+                      <span class="badge" :class="statusBadge(req.status)">
+                        {{ statusLabel(req.status) }}
+                      </span>
+                    </div>
+                  </div>
+                  <div class="text-end">
+                    <router-link
+                      :to="{ name: 'account-quote-requests-show', params: { id: req.id } }"
+                      class="btn btn-sm btn-outline-primary"
+                    >
+                      Detalii
+                    </router-link>
+                  </div>
+                </div>
+                <div class="small text-muted mt-2">
                   {{ req.customer_notes || '-' }}
                 </div>
-              </td>
-              <td class="text-end pe-4">
-                <router-link :to="{ name: 'account-quote-requests-show', params: { id: req.id } }" class="btn btn-sm btn-outline-primary">
-                  Detalii
-                </router-link>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+              </div>
+            </div>
+          </div>
+          <div v-if="requests.length === 0" class="col">
+            <div class="text-center py-4 text-muted">Nu ai trimis nicio cerere de ofertă.</div>
+          </div>
+        </div>
       </div>
       
       <!-- Pagination -->
@@ -84,6 +104,9 @@ import axios from 'axios';
 
 const requests = ref([]);
 const loading = ref(true);
+const filters = ref({
+    status: ''
+});
 const pagination = ref({
     current_page: 1,
     last_page: 1
@@ -112,7 +135,12 @@ const statusBadge = (s) => {
 const loadRequests = async (page = 1) => {
     loading.value = true;
     try {
-        const { data } = await axios.get(`/api/account/offers?page=${page}`); // Using existing 'offers' route which points to QuoteController
+        const { data } = await axios.get(`/api/account/offers`, {
+            params: {
+                page,
+                status: filters.value.status
+            }
+        });
         requests.value = data.data;
         pagination.value = {
             current_page: data.current_page,

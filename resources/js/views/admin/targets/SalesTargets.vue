@@ -14,94 +14,103 @@
     </div>
 
     <div class="card shadow-sm border-0">
-        <div class="card-body">
-            <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
-                    <thead class="table-light">
-                        <tr>
-                            <th>Agent</th>
-                            <th class="text-end">Target Vânzări (RON)</th>
-                            <th class="text-end">Target Vizite</th>
-                            <th class="text-end">Target Clienți Noi</th>
-                            <th class="text-end">Acțiuni</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr v-for="agent in agents" :key="agent.id">
-                            <td>
-                                <div class="fw-bold">{{ agent.first_name }} {{ agent.last_name }}</div>
-                                <small class="text-muted">{{ agent.email }}</small>
-                            </td>
-                            <td class="text-end">
-                                <div v-if="editingId === agent.id">
-                                    <input type="number" v-model="tempTarget.target_sales_amount" class="form-control form-control-sm text-end" min="0" step="100">
+        <div class="card-body p-3">
+            <div v-if="agents.length === 0" class="text-center text-muted py-4">
+                Nu există agenți asignați.
+            </div>
+
+            <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-3">
+                <div v-for="agent in agents" :key="agent.id" class="col">
+                    <div class="card h-100 border shadow-sm" :class="{'border-primary': editingId === agent.id}">
+                        <div class="card-body">
+                            <!-- Header -->
+                            <div class="d-flex justify-content-between align-items-start mb-3">
+                                <div>
+                                    <h6 class="fw-bold mb-0">{{ agent.first_name }} {{ agent.last_name }}</h6>
+                                    <small class="text-muted">{{ agent.email }}</small>
                                 </div>
-                                <span v-else>{{ formatPrice(getTarget(agent.id)?.target_sales_amount) }}</span>
-                            </td>
-                            <td class="text-end">
-                                <div v-if="editingId === agent.id">
-                                    <input type="number" v-model="tempTarget.target_visits_count" class="form-control form-control-sm text-end" min="0">
-                                </div>
-                                <span v-else>{{ getTarget(agent.id)?.target_visits_count || 0 }}</span>
-                            </td>
-                            <td class="text-end">
-                                <div v-if="editingId === agent.id">
-                                    <input type="number" v-model="tempTarget.target_new_customers" class="form-control form-control-sm text-end" min="0">
-                                </div>
-                                <span v-else>{{ getTarget(agent.id)?.target_new_customers || 0 }}</span>
-                            </td>
-                            <td class="text-end">
-                                <div v-if="editingId === agent.id" class="d-flex justify-content-end gap-2">
-                                    <button class="btn btn-sm btn-success" @click="saveTarget(agent.id)" :disabled="saving">
-                                        <i class="bi bi-check-lg"></i>
-                                    </button>
-                                    <button class="btn btn-sm btn-outline-secondary" @click="cancelEdit">
-                                        <i class="bi bi-x-lg"></i>
+                                <div v-if="editingId !== agent.id">
+                                    <button class="btn btn-sm btn-outline-primary rounded-circle" @click="editTarget(agent)">
+                                        <i class="bi bi-pencil"></i>
                                     </button>
                                 </div>
-                                <button v-else class="btn btn-sm btn-outline-primary" @click="editTarget(agent)">
-                                    <i class="bi bi-pencil"></i>
-                                </button>
-                            </td>
-                        </tr>
-                        <tr v-if="editingId && agents.find(a => a.id === editingId)" :key="'details-' + editingId" class="table-light">
-                            <td colspan="5">
-                                <div class="p-3">
-                                    <div class="d-flex justify-content-between align-items-center mb-2">
-                                        <h6 class="mb-0">Targeturi pe Categorii</h6>
-                                        <button class="btn btn-sm btn-outline-primary" @click="addTargetItem">
-                                            <i class="bi bi-plus-lg"></i> Adaugă Categorie
-                                        </button>
+                            </div>
+
+                            <!-- View Mode -->
+                            <div v-if="editingId !== agent.id">
+                                <div class="mb-2 d-flex justify-content-between align-items-center">
+                                    <span class="text-muted small">Target Vânzări</span>
+                                    <span class="fw-bold">{{ formatPrice(getTarget(agent.id)?.target_sales_amount) }}</span>
+                                </div>
+                                <div class="mb-2 d-flex justify-content-between align-items-center">
+                                    <span class="text-muted small">Target Vizite</span>
+                                    <span class="fw-bold">{{ getTarget(agent.id)?.target_visits_count || 0 }}</span>
+                                </div>
+                                <div class="mb-2 d-flex justify-content-between align-items-center">
+                                    <span class="text-muted small">Target Clienți Noi</span>
+                                    <span class="fw-bold">{{ getTarget(agent.id)?.target_new_customers || 0 }}</span>
+                                </div>
+                            </div>
+
+                            <!-- Edit Mode -->
+                            <div v-else>
+                                <div class="mb-3">
+                                    <label class="form-label small fw-bold">Target Vânzări (RON)</label>
+                                    <input type="number" v-model="tempTarget.target_sales_amount" class="form-control form-control-sm" min="0" step="100">
+                                </div>
+                                <div class="row g-2 mb-3">
+                                    <div class="col-6">
+                                        <label class="form-label small fw-bold">Vizite</label>
+                                        <input type="number" v-model="tempTarget.target_visits_count" class="form-control form-control-sm" min="0">
                                     </div>
-                                    <div v-if="tempTarget.items && tempTarget.items.length > 0" class="row g-2">
-                                        <div v-for="(item, index) in tempTarget.items" :key="index" class="col-md-6">
-                                            <div class="card card-body p-2 bg-white">
-                                                <div class="d-flex gap-2 align-items-center">
-                                                    <select v-model="item.target_id" class="form-select form-select-sm">
-                                                        <option value="" disabled>Selectează Categoria</option>
-                                                        <option v-for="cat in categories" :key="cat.id" :value="cat.id">
-                                                            {{ cat.name }}
-                                                        </option>
-                                                    </select>
-                                                    <input type="number" v-model="item.target_amount" class="form-control form-control-sm" placeholder="Sumă (RON)" min="0" step="100" style="width: 120px;">
-                                                    <button class="btn btn-sm btn-outline-danger" @click="removeTargetItem(index)">
-                                                        <i class="bi bi-trash"></i>
-                                                    </button>
-                                                </div>
-                                            </div>
+                                    <div class="col-6">
+                                        <label class="form-label small fw-bold">Clienți Noi</label>
+                                        <input type="number" v-model="tempTarget.target_new_customers" class="form-control form-control-sm" min="0">
+                                    </div>
+                                </div>
+
+                                <hr class="my-3">
+                                
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <label class="form-label small fw-bold mb-0">Categorii</label>
+                                    <button class="btn btn-xs btn-outline-primary py-0" @click="addTargetItem" style="font-size: 0.75rem;">
+                                        <i class="bi bi-plus-lg"></i> Adaugă
+                                    </button>
+                                </div>
+
+                                <div v-if="tempTarget.items && tempTarget.items.length > 0" class="d-flex flex-column gap-2 mb-3">
+                                    <div v-for="(item, index) in tempTarget.items" :key="index" class="bg-light p-2 rounded border">
+                                        <select v-model="item.target_id" class="form-select form-select-sm mb-2">
+                                            <option value="" disabled>Categorie</option>
+                                            <option v-for="cat in categories" :key="cat.id" :value="cat.id">
+                                                {{ cat.name }}
+                                            </option>
+                                        </select>
+                                        <div class="d-flex gap-2">
+                                            <input type="number" v-model="item.target_amount" class="form-control form-control-sm" placeholder="Sumă" min="0" step="100">
+                                            <button class="btn btn-sm btn-outline-danger" @click="removeTargetItem(index)">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
                                         </div>
                                     </div>
-                                    <div v-else class="text-muted small fst-italic">
-                                        Nu sunt definite targeturi specifice pe categorii.
-                                    </div>
                                 </div>
-                            </td>
-                        </tr>
-                        <tr v-if="agents.length === 0">
-                            <td colspan="5" class="text-center py-4 text-muted">Nu există agenți asignați.</td>
-                        </tr>
-                    </tbody>
-                </table>
+                                <div v-else class="text-muted small fst-italic mb-3">
+                                    Fără target pe categorii.
+                                </div>
+
+                                <div class="d-flex gap-2">
+                                    <button class="btn btn-sm btn-success flex-grow-1" @click="saveTarget(agent.id)" :disabled="saving">
+                                        <i class="bi bi-check-lg me-1"></i> Salvează
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-secondary flex-grow-1" @click="cancelEdit">
+                                        <i class="bi bi-x-lg me-1"></i> Anulează
+                                    </button>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

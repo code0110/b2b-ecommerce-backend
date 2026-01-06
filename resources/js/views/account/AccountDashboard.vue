@@ -142,47 +142,39 @@
                   <div v-if="!overview?.orders?.recent?.length" class="p-3 text-muted small">
                     Nu aveți comenzi înregistrate încă.
                   </div>
-                  <div v-else class="table-responsive">
-                    <table class="table table-sm mb-0 align-middle">
-                      <thead class="table-light">
-                        <tr>
-                          <th>#</th>
-                          <th>Data</th>
-                          <th>Total</th>
-                          <th>Status</th>
-                          <th></th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        <tr
-                          v-for="order in overview.orders.recent"
-                          :key="order.id"
-                        >
-                          <td class="small">
+                  <div v-else class="list-group list-group-flush">
+                    <div
+                      class="list-group-item"
+                      v-for="order in overview.orders.recent"
+                      :key="order.id"
+                    >
+                      <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                          <div class="fw-semibold small">
                             {{ order.order_number || ('ORD-' + order.id) }}
-                          </td>
-                          <td class="small">
+                          </div>
+                          <div class="small text-muted">
                             {{ formatDate(order.created_at) }}
-                          </td>
-                          <td class="small fw-semibold">
+                          </div>
+                        </div>
+                        <div class="text-end">
+                          <div class="small fw-bold">
                             {{ formatMoney(order.total) }}
-                          </td>
-                          <td class="small">
-                            <span class="badge" :class="statusBadgeClass(order.status)">
-                              {{ order.status }}
-                            </span>
-                          </td>
-                          <td class="text-end">
-                            <RouterLink
-                              :to="{ name: 'account-order-details', params: { id: order.id } }"
-                              class="btn btn-link btn-sm text-decoration-none"
-                            >
-                              Detalii
-                            </RouterLink>
-                          </td>
-                        </tr>
-                      </tbody>
-                    </table>
+                          </div>
+                          <span class="badge small" :class="statusBadgeClass(order.status)">
+                            {{ order.status }}
+                          </span>
+                        </div>
+                      </div>
+                      <div class="mt-2 text-end">
+                        <RouterLink
+                          :to="{ name: 'account-order-details', params: { id: order.id } }"
+                          class="btn btn-link btn-sm text-decoration-none"
+                        >
+                          Detalii
+                        </RouterLink>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -205,38 +197,29 @@
                   <div v-if="!overview?.invoices?.recent?.length" class="p-3 text-muted small">
                     Nu aveți facturi disponibile încă.
                   </div>
-                  <div v-else class="table-responsive">
-                    <table class="table table-sm mb-0 align-middle">
-                      <thead class="table-light">
-                        <tr>
-                          <th>Factură</th>
-                          <th>Data</th>
-                          <th>Total</th>
-                          <th>Status</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        <tr
-                          v-for="invoice in overview.invoices.recent"
-                          :key="invoice.id"
-                        >
-                          <td class="small">
-                            {{ invoice.series }} {{ invoice.number }}
-                          </td>
-                          <td class="small">
-                            {{ formatDate(invoice.issue_date) }}
-                          </td>
-                          <td class="small fw-semibold">
-                            {{ formatMoney(invoice.total) }}
-                          </td>
-                          <td class="small">
-                            <span class="badge bg-light text-dark">
-                              {{ invoice.status }}
-                            </span>
-                          </td>
-                        </tr>
-                      </tbody>
-                    </table>
+                  <div v-else class="list-group list-group-flush">
+                    <div
+                      class="list-group-item d-flex justify-content-between align-items-start"
+                      v-for="invoice in overview.invoices.recent"
+                      :key="invoice.id"
+                    >
+                      <div>
+                        <div class="fw-semibold small">
+                          {{ invoice.series }} {{ invoice.number }}
+                        </div>
+                        <div class="small text-muted">
+                          {{ formatDate(invoice.issue_date) }}
+                        </div>
+                      </div>
+                      <div class="text-end">
+                        <div class="small fw-bold">
+                          {{ formatMoney(invoice.total) }}
+                        </div>
+                        <span class="badge bg-light text-dark small">
+                          {{ invoice.status }}
+                        </span>
+                      </div>
+                    </div>
                   </div>
                 </div>
                 <div class="card-footer bg-white small text-muted">

@@ -49,75 +49,70 @@
       </div>
     </div>
 
-    <!-- Table Offers -->
-    <div class="card shadow-sm border-0" v-if="activeTab === 'offers'">
-        <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
-                    <thead class="bg-light">
-                        <tr>
-                            <th class="ps-4">#ID</th>
-                            <th>Client</th>
-                            <th>Agent</th>
-                            <th>Total</th>
-                            <th>Status</th>
-                            <th>Data</th>
-                            <th class="text-end pe-4">Acțiuni</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr v-if="loading">
-                            <td colspan="7" class="text-center py-5">
-                                <div class="spinner-border text-primary" role="status"></div>
-                            </td>
-                        </tr>
-                        <tr v-else-if="offers.length === 0">
-                            <td colspan="7" class="text-center py-5 text-muted">
-                                Nu există oferte înregistrate.
-                            </td>
-                        </tr>
-                        <tr v-for="offer in offers" :key="offer.id">
-                            <td class="ps-4 fw-bold">#{{ offer.id }}</td>
-                            <td>
-                                <div>{{ offer.customer?.name || 'Client Necunoscut' }}</div>
-                                <div class="small text-muted">{{ offer.customer?.cif }}</div>
-                            </td>
-                            <td>
-                                <span class="badge bg-light text-dark border">{{ offer.agent?.name }}</span>
-                            </td>
-                            <td class="fw-bold">{{ formatPrice(offer.total_amount) }}</td>
-                            <td>
-                                <span class="badge" :class="statusBadge(offer.status)">
-                                    {{ statusLabel(offer.status) }}
-                                </span>
-                                <div v-if="offer.requires_director_approval" class="mt-1">
-                                    <span class="badge bg-danger">Necesită Derogare</span>
-                                </div>
-                            </td>
-                            <td class="small text-muted">{{ formatDate(offer.created_at) }}</td>
-                            <td class="text-end pe-4">
-                                <button class="btn btn-sm btn-outline-primary me-2" @click="viewOffer(offer)" title="Vezi Detalii">
-                                    <i class="bi bi-eye"></i>
-                                </button>
-                                <button 
-                                    v-if="['accepted', 'sent', 'approved'].includes(offer.status)" 
-                                    class="btn btn-sm btn-outline-success me-2" 
-                                    @click="convertToOrder(offer)"
-                                    title="Transformă în Comandă"
-                                >
-                                    <i class="bi bi-cart-check"></i>
-                                </button>
-                                <button v-if="offer.requires_director_approval && canApprove" class="btn btn-sm btn-success" @click="approveDerogation(offer)">
-                                    Aprobă Derogare
-                                </button>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
+    <!-- Mobile-first Offers List -->
+    <div v-if="activeTab === 'offers'">
+        <div v-if="loading" class="text-center py-5">
+            <div class="spinner-border text-primary" role="status"></div>
+        </div>
+        <div v-else-if="offers.length === 0" class="text-center py-5 text-muted">
+            Nu există oferte înregistrate.
+        </div>
+        <div v-else class="row g-3">
+            <div v-for="offer in offers" :key="offer.id" class="col-12 col-md-6 col-lg-4">
+                <div class="card shadow-sm border h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <span class="fw-bold text-primary">#{{ offer.id }}</span>
+                            <span class="badge" :class="statusBadge(offer.status)">
+                                {{ statusLabel(offer.status) }}
+                            </span>
+                        </div>
+                        
+                        <h6 class="card-title mb-1 text-truncate">{{ offer.customer?.name || 'Client Necunoscut' }}</h6>
+                        <div class="small text-muted mb-2">{{ offer.customer?.cif }}</div>
+                        
+                        <div class="mb-2">
+                            <span class="badge bg-light text-dark border">{{ offer.agent?.name || 'Fără agent' }}</span>
+                        </div>
+
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="small text-muted">Total:</span>
+                            <span class="fw-bold">{{ formatPrice(offer.total_amount) }}</span>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <span class="small text-muted">Data:</span>
+                            <span class="small">{{ formatDate(offer.created_at) }}</span>
+                        </div>
+
+                        <div v-if="offer.requires_director_approval" class="alert alert-warning py-1 px-2 small mb-3">
+                            <i class="bi bi-exclamation-triangle me-1"></i> Necesită Derogare
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-sm btn-outline-primary" @click="viewOffer(offer)">
+                                <i class="bi bi-eye me-1"></i> Vezi Detalii
+                            </button>
+                            
+                            <button 
+                                v-if="['accepted', 'sent', 'approved'].includes(offer.status)" 
+                                class="btn btn-sm btn-outline-success" 
+                                @click="convertToOrder(offer)"
+                            >
+                                <i class="bi bi-cart-check me-1"></i> Transformă în Comandă
+                            </button>
+                            
+                            <button v-if="offer.requires_director_approval && canApprove" class="btn btn-sm btn-success" @click="approveDerogation(offer)">
+                                Aprobă Derogare
+                            </button>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
-         <div class="card-footer bg-white border-top-0 py-3" v-if="meta && meta.last_page > 1">
-            <!-- Pagination logic here -->
+
+        <!-- Pagination -->
+        <div class="mt-4" v-if="meta && meta.last_page > 1">
              <nav>
                 <ul class="pagination justify-content-center mb-0">
                     <li class="page-item" :class="{ disabled: meta.current_page === 1 }">
@@ -132,56 +127,45 @@
         </div>
     </div>
     
-    <!-- Table Requests -->
-    <div class="card shadow-sm border-0" v-if="activeTab === 'requests'">
-        <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
-                    <thead class="bg-light">
-                        <tr>
-                            <th class="ps-4">#ID</th>
-                            <th>Client</th>
-                            <th>Notițe Client</th>
-                            <th>Status</th>
-                            <th>Data</th>
-                            <th class="text-end pe-4">Acțiuni</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr v-if="loading">
-                            <td colspan="6" class="text-center py-5">
-                                <div class="spinner-border text-primary" role="status"></div>
-                            </td>
-                        </tr>
-                        <tr v-else-if="requests.length === 0">
-                            <td colspan="6" class="text-center py-5 text-muted">
-                                Nu există cereri de ofertă.
-                            </td>
-                        </tr>
-                        <tr v-for="req in requests" :key="req.id">
-                            <td class="ps-4 fw-bold">#{{ req.id }}</td>
-                            <td>
-                                <div>{{ req.customer?.name || 'Client Necunoscut' }}</div>
-                                <div class="small text-muted">{{ req.customer?.cif }}</div>
-                            </td>
-                            <td>
-                                <div class="text-truncate" style="max-width: 300px;">{{ req.customer_notes }}</div>
-                            </td>
-                            <td>
-                                <span class="badge bg-secondary">{{ req.status }}</span>
-                            </td>
-                            <td class="small text-muted">{{ formatDate(req.created_at) }}</td>
-                            <td class="text-end pe-4">
-                                <button v-if="!req.offer" class="btn btn-sm btn-primary" @click="convertToOffer(req)" :disabled="req.status === 'completed' || req.status === 'offered'">
-                                    Creează Ofertă
-                                </button>
-                                <button v-else class="btn btn-sm btn-outline-primary" @click="viewOffer(req.offer)">
-                                    Vezi Ofertă #{{ req.offer.id }}
-                                </button>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
+    <!-- Mobile-first Requests List -->
+    <div v-if="activeTab === 'requests'">
+        <div v-if="loading" class="text-center py-5">
+            <div class="spinner-border text-primary" role="status"></div>
+        </div>
+        <div v-else-if="requests.length === 0" class="text-center py-5 text-muted">
+            Nu există cereri de ofertă.
+        </div>
+        <div v-else class="row g-3">
+            <div v-for="req in requests" :key="req.id" class="col-12 col-md-6 col-lg-4">
+                <div class="card shadow-sm border h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <span class="fw-bold text-primary">#{{ req.id }}</span>
+                            <span class="badge bg-secondary">{{ req.status }}</span>
+                        </div>
+                        
+                        <h6 class="card-title mb-1 text-truncate">{{ req.customer?.name || 'Client Necunoscut' }}</h6>
+                        <div class="small text-muted mb-2">{{ req.customer?.cif }}</div>
+                        
+                        <div class="bg-light p-2 rounded small mb-3 text-truncate" style="max-width: 100%;">
+                            {{ req.customer_notes || 'Fără notițe' }}
+                        </div>
+                        
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <span class="small text-muted">Data:</span>
+                            <span class="small">{{ formatDate(req.created_at) }}</span>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button v-if="!req.offer" class="btn btn-sm btn-primary" @click="convertToOffer(req)" :disabled="req.status === 'completed' || req.status === 'offered'">
+                                <i class="bi bi-file-earmark-plus me-1"></i> Creează Ofertă
+                            </button>
+                            <button v-else class="btn btn-sm btn-outline-primary" @click="viewOffer(req.offer)">
+                                <i class="bi bi-eye me-1"></i> Vezi Ofertă #{{ req.offer.id }}
+                            </button>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -193,11 +177,13 @@ import { ref, onMounted, computed, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { adminApi } from '@/services/http';
 import { useAuthStore } from '@/store/auth';
+import { useTrackingStore } from '@/store/tracking';
 import { useToast } from 'vue-toastification';
 
 const router = useRouter();
 const route = useRoute();
 const authStore = useAuthStore();
+const trackingStore = useTrackingStore();
 const toast = useToast();
 
 const activeTab = ref('offers');
@@ -330,8 +316,19 @@ const openCreateModal = () => {
     router.push({ name: getRouteName('new') });
 };
 
-onMounted(() => {
-    if (route.query.tab) {
+onMounted(async () => {
+    if (['sales_agent', 'sales_director'].includes(authStore.role)) {
+        if (!trackingStore.isShiftActive) {
+            await trackingStore.checkStatus();
+            if (!trackingStore.isShiftActive) {
+                 toast.error('Trebuie să începeți programul de lucru pentru a vedea ofertele!');
+                 router.push({ name: 'agent-dashboard' });
+                 return;
+            }
+        }
+    }
+
+    if (route.query.status) {
         activeTab.value = route.query.tab;
     }
     if (route.query.status) {

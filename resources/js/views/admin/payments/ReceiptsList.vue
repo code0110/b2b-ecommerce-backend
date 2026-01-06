@@ -74,107 +74,97 @@
       </div>
     </div>
 
-    <div class="card shadow-sm">
-      <div class="card-header py-2 d-flex justify-content-between align-items-center">
-        <strong class="small text-uppercase">Încasări recente</strong>
-        <span class="badge bg-light text-dark">
-          {{ filteredReceipts.length }} înregistrări demo
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h6 class="fw-bold text-uppercase text-muted mb-0">Încasări recente</h6>
+        <span class="badge bg-light text-dark border">
+          {{ filteredReceipts.length }} înregistrări
         </span>
-      </div>
-      <div class="card-body p-0">
-        <div class="table-responsive">
-          <table class="table table-sm table-hover align-middle mb-0">
-            <thead class="table-light">
-              <tr>
-                <th style="width: 120px;">Data</th>
-                <th>Client</th>
-                <th style="width: 80px;">Tip</th>
-                <th style="width: 130px;">Sumă (RON)</th>
-                <th style="width: 140px;">Doc. încasare</th>
-                <th style="width: 140px;">Ref. factură</th>
-                <th style="width: 180px;">Agent / Director</th>
-                <th style="width: 130px;">Status ERP</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="receipt in filteredReceipts" :key="receipt.id">
-                <td>{{ receipt.date }}</td>
-                <td>
-                  <div class="fw-semibold">{{ receipt.customerName }}</div>
-                  <div class="small text-muted">
-                    {{ receipt.customerIdentifier }}
-                  </div>
-                </td>
-                <td>
-                  <span
-                    class="badge"
-                    :class="{
-                      'bg-success': receipt.type === 'CHS',
-                      'bg-primary': receipt.type === 'BO',
-                      'bg-info text-dark': receipt.type === 'CEC'
-                    }"
-                  >
-                    {{ receipt.type }}
-                  </span>
-                </td>
-                <td class="text-end fw-semibold">
-                  {{ receipt.amount.toLocaleString('ro-RO', { minimumFractionDigits: 2 }) }}
-                </td>
-                <td>
-                  <div class="fw-semibold">{{ receipt.documentNumber }}</div>
-                  <div class="small text-muted">
-                    {{ receipt.collectionTypeLabel }}
-                  </div>
-                </td>
-                <td>
-                  <div class="fw-semibold">{{ receipt.invoiceCode || '—' }}</div>
-                  <div class="small text-muted" v-if="receipt.orderCode">
-                    comandă: {{ receipt.orderCode }}
-                  </div>
-                </td>
-                <td>
-                  <div class="small">
-                    <div>
-                      Agent:
-                      <strong>{{ receipt.agentName || '—' }}</strong>
-                    </div>
-                    <div>
-                      Director:
-                      <strong>{{ receipt.directorName || '—' }}</strong>
-                    </div>
-                  </div>
-                </td>
-                <td>
-                  <span
-                    class="badge"
-                    :class="{
-                      'bg-success': receipt.erpStatus === 'sync',
-                      'bg-warning text-dark': receipt.erpStatus === 'pending',
-                      'bg-danger': receipt.erpStatus === 'error'
-                    }"
-                  >
-                    {{
+    </div>
+
+    <div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-4 mb-4">
+      <div v-for="receipt in filteredReceipts" :key="receipt.id" class="col">
+        <div class="card h-100 border shadow-sm hover-shadow transition-all">
+          <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+             <div>
+                <span class="badge rounded-pill me-2" 
+                   :class="{
+                      'bg-success bg-opacity-10 text-success': receipt.type === 'CHS',
+                      'bg-primary bg-opacity-10 text-primary': receipt.type === 'BO',
+                      'bg-info bg-opacity-10 text-info': receipt.type === 'CEC'
+                   }">
+                   {{ receipt.type }}
+                </span>
+                <span class="small text-muted">{{ receipt.date }}</span>
+             </div>
+             <div class="fw-bold text-dark">
+                {{ receipt.amount.toLocaleString('ro-RO', { minimumFractionDigits: 2 }) }} RON
+             </div>
+          </div>
+          
+          <div class="card-body">
+             <div class="mb-3">
+                <small class="text-muted text-uppercase fw-bold" style="font-size: 0.65rem;">CLIENT</small>
+                <div class="fw-semibold text-dark text-truncate">{{ receipt.customerName }}</div>
+                <div class="small text-muted">{{ receipt.customerIdentifier }}</div>
+             </div>
+
+             <div class="mb-3">
+                <small class="text-muted text-uppercase fw-bold" style="font-size: 0.65rem;">DETALII DOCUMENT</small>
+                <div class="d-flex justify-content-between align-items-center mt-1">
+                   <span class="text-dark small"><i class="bi bi-file-text me-1 text-muted"></i> {{ receipt.documentNumber }}</span>
+                   <span class="badge bg-light text-dark border">{{ receipt.collectionTypeLabel }}</span>
+                </div>
+                <div class="mt-1 small text-muted" v-if="receipt.invoiceCode">
+                   Ref: {{ receipt.invoiceCode }} <span v-if="receipt.orderCode">/ {{ receipt.orderCode }}</span>
+                </div>
+             </div>
+
+             <div class="mb-3" v-if="receipt.agentName || receipt.directorName">
+                <small class="text-muted text-uppercase fw-bold" style="font-size: 0.65rem;">ASIGNARE</small>
+                <div class="d-flex flex-column gap-1 mt-1">
+                   <div v-if="receipt.agentName" class="d-flex align-items-center small text-dark">
+                      <i class="bi bi-person me-2 text-muted"></i> Agent: {{ receipt.agentName }}
+                   </div>
+                   <div v-if="receipt.directorName" class="d-flex align-items-center small text-dark">
+                      <i class="bi bi-person-badge me-2 text-muted"></i> Director: {{ receipt.directorName }}
+                   </div>
+                </div>
+             </div>
+          </div>
+
+          <div class="card-footer bg-white py-2 d-flex justify-content-between align-items-center">
+             <span class="small text-muted">Status ERP:</span>
+             <div class="d-flex align-items-center">
+                <span
+                   class="badge rounded-pill"
+                   :class="{
+                      'bg-success bg-opacity-10 text-success': receipt.erpStatus === 'sync',
+                      'bg-warning bg-opacity-10 text-warning': receipt.erpStatus === 'pending',
+                      'bg-danger bg-opacity-10 text-danger': receipt.erpStatus === 'error'
+                   }"
+                >
+                   <i class="bi me-1" :class="{
+                      'bi-check-circle-fill': receipt.erpStatus === 'sync',
+                      'bi-hourglass-split': receipt.erpStatus === 'pending',
+                      'bi-exclamation-circle-fill': receipt.erpStatus === 'error'
+                   }"></i>
+                   {{
                       receipt.erpStatus === 'sync'
-                        ? 'Sincronizată'
+                        ? 'Sincronizat'
                         : receipt.erpStatus === 'pending'
                           ? 'În așteptare'
                           : 'Eroare'
-                    }}
-                  </span>
-                  <div class="small text-muted" v-if="receipt.erpMessage">
-                    {{ receipt.erpMessage }}
-                  </div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+                   }}
+                </span>
+             </div>
+          </div>
         </div>
       </div>
-      <div class="card-footer small text-muted">
-        Aceasta este o listă statică de încasări demo. În implementarea reală,
-        înregistrarea CHS/BO/CEC ar actualiza soldul clientului, limita de credit
-        disponibilă și ar genera înregistrarea aferentă în ERP.
-      </div>
+    </div>
+    
+    <div class="alert alert-info small shadow-sm border-0">
+        <i class="bi bi-info-circle-fill me-2"></i>
+        Aceasta este o listă statică de încasări demo. În implementarea reală, înregistrarea CHS/BO/CEC ar actualiza soldul clientului, limita de credit disponibilă și ar genera înregistrarea aferentă în ERP.
     </div>
   </div>
 </template>

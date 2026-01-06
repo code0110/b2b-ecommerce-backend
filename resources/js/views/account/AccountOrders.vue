@@ -117,79 +117,73 @@
       <div class="card-header py-2">
         <strong class="small text-uppercase">Comenzile mele (demo)</strong>
       </div>
-      <div class="card-body p-0">
-        <div class="table-responsive">
-          <table class="table table-sm table-hover align-middle mb-0">
-            <thead class="table-light">
-              <tr>
-                <th style="width: 120px;">Cod</th>
-                <th style="width: 120px;">Data</th>
-                <th>Tip client</th>
-                <th style="width: 150px;">Status comandă</th>
-                <th style="width: 150px;">Status plată</th>
-                <th style="width: 120px;" class="text-end">Total (RON)</th>
-                <th style="width: 200px;">Mod plasare</th>
-                <th style="width: 120px;"></th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="order in filteredOrders" :key="order.id">
-                <td class="fw-semibold">{{ order.code }}</td>
-                <td>{{ order.date }}</td>
-                <td>
-                  <span
-                    class="badge"
-                    :class="order.clientType === 'B2B' ? 'bg-primary' : 'bg-secondary'"
-                  >
-                    {{ order.clientType }}
-                  </span>
-                </td>
-                <td>
-                  <span
-                    class="badge"
-                    :class="{
-                      'bg-warning text-dark': order.status === 'in_procesare',
-                      'bg-info text-dark': order.status === 'in_livrare',
-                      'bg-success': order.status === 'livrata',
-                      'bg-secondary': order.status === 'anulata'
-                    }"
-                  >
-                    {{
-                      order.status === 'in_procesare'
-                        ? 'În procesare'
-                        : order.status === 'in_livrare'
-                          ? 'În livrare'
-                          : order.status === 'livrata'
-                            ? 'Livrată'
-                            : 'Anulată'
-                    }}
-                  </span>
-                </td>
-                <td>
-                  <span
-                    class="badge"
-                    :class="{
-                      'bg-danger': order.paymentStatus === 'neplatita',
-                      'bg-warning text-dark': order.paymentStatus === 'in_asteptare',
-                      'bg-success': order.paymentStatus === 'platita',
-                      'bg-info text-dark': order.paymentStatus === 'ramburs'
-                    }"
-                  >
-                    {{
-                      order.paymentStatus === 'neplatita'
-                        ? 'Neplătită'
-                        : order.paymentStatus === 'in_asteptare'
-                          ? 'Plată în așteptare'
-                          : order.paymentStatus === 'platita'
-                            ? 'Plătită'
-                            : 'Ramburs'
-                    }}
-                  </span>
-                </td>
-                <td class="text-end fw-semibold">
-                  {{ order.total.toLocaleString('ro-RO', { minimumFractionDigits: 2 }) }}
-                </td>
-                <td class="small">
+      <div class="card-body">
+        <div class="row row-cols-1 g-3">
+          <div class="col" v-for="order in filteredOrders" :key="order.id">
+            <div class="card border-0 shadow-sm h-100">
+              <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start">
+                  <div>
+                    <div class="fw-semibold">{{ order.code }}</div>
+                    <div class="small text-muted">{{ order.date }}</div>
+                    <div class="mt-1">
+                      <span
+                        class="badge"
+                        :class="order.clientType === 'B2B' ? 'bg-primary' : 'bg-secondary'"
+                      >
+                        {{ order.clientType }}
+                      </span>
+                    </div>
+                  </div>
+                  <div class="text-end">
+                    <div class="mb-1">
+                      <span
+                        class="badge"
+                        :class="{
+                          'bg-warning text-dark': order.status === 'in_procesare',
+                          'bg-info text-dark': order.status === 'in_livrare',
+                          'bg-success': order.status === 'livrata',
+                          'bg-secondary': order.status === 'anulata'
+                        }"
+                      >
+                        {{
+                          order.status === 'in_procesare'
+                            ? 'În procesare'
+                            : order.status === 'in_livrare'
+                              ? 'În livrare'
+                              : order.status === 'livrata'
+                                ? 'Livrată'
+                                : 'Anulată'
+                        }}
+                      </span>
+                    </div>
+                    <div class="mb-1">
+                      <span
+                        class="badge"
+                        :class="{
+                          'bg-danger': order.paymentStatus === 'neplatita',
+                          'bg-warning text-dark': order.paymentStatus === 'in_asteptare',
+                          'bg-success': order.paymentStatus === 'platita',
+                          'bg-info text-dark': order.paymentStatus === 'ramburs'
+                        }"
+                      >
+                        {{
+                          order.paymentStatus === 'neplatita'
+                            ? 'Neplătită'
+                            : order.paymentStatus === 'in_asteptare'
+                              ? 'Plată în așteptare'
+                              : order.paymentStatus === 'platita'
+                                ? 'Plătită'
+                                : 'Ramburs'
+                        }}
+                      </span>
+                    </div>
+                    <div class="fw-bold">
+                      {{ order.total.toLocaleString('ro-RO', { minimumFractionDigits: 2 }) }} RON
+                    </div>
+                  </div>
+                </div>
+                <div class="mt-2 small">
                   <div v-if="order.isImpersonated">
                     Plasată în numele clientului
                   </div>
@@ -199,11 +193,11 @@
                   <div class="text-muted" v-if="order.agentName">
                     Agent: {{ order.agentName }}
                   </div>
-                </td>
-                <td class="text-end">
+                </div>
+                <div class="mt-3 d-flex justify-content-end gap-2">
                   <button
                     type="button"
-                    class="btn btn-sm btn-outline-primary me-2"
+                    class="btn btn-sm btn-outline-primary"
                     @click="repeatOrder(order)"
                   >
                     Comandă din nou
@@ -215,15 +209,15 @@
                   >
                     Detalii
                   </button>
-                </td>
-              </tr>
-              <tr v-if="filteredOrders.length === 0">
-                <td colspan="8" class="text-center text-muted py-4">
-                  Nu există comenzi care să corespundă filtrelor curente (demo).
-                </td>
-              </tr>
-            </tbody>
-          </table>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div v-if="filteredOrders.length === 0" class="col">
+            <div class="text-center py-4 text-muted">
+              Nu există comenzi care să corespundă filtrelor curente (demo).
+            </div>
+          </div>
         </div>
       </div>
       <div class="card-footer small text-muted">

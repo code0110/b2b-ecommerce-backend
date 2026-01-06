@@ -9,8 +9,9 @@
         v-model="searchQuery"
         @input="onSearch"
         @focus="showResults = true"
+        :disabled="disabled"
       />
-      <button v-if="searchQuery" class="btn btn-outline-secondary" @click="clearSearch">
+      <button v-if="searchQuery && !disabled" class="btn btn-outline-secondary" @click="clearSearch">
         <i class="bi bi-x"></i>
       </button>
     </div>
@@ -38,6 +39,13 @@
 <script setup>
 import { ref } from 'vue';
 import { adminApi } from '@/services/http';
+
+const props = defineProps({
+  disabled: {
+    type: Boolean,
+    default: false
+  }
+});
 
 const emit = defineEmits(['select']);
 

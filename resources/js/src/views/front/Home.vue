@@ -1,5 +1,9 @@
 <template>
-  <div class="bg-light border-bottom py-4 mb-4">
+  <div v-if="pageContent" class="bg-light border-bottom py-4 mb-4">
+    <div class="container" v-html="pageContent.content"></div>
+  </div>
+
+  <div v-else class="bg-light border-bottom py-4 mb-4">
     <div class="container">
       <div class="row align-items-center">
         <div class="col-md-7">
@@ -169,14 +173,23 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { fetchHomeData } from '@/services/catalog'
+import { fetchStaticPage } from '@/services/content'
 
 const homePromotions = ref([])
 const newProducts = ref([])
 const recommendedProducts = ref([])
 const loading = ref(true)
+const pageContent = ref(null)
 
 onMounted(async () => {
   try {
+    // Încercăm să încărcăm conținutul paginii "home"
+    try {
+      pageContent.value = await fetchStaticPage('home')
+    } catch (e) {
+      // Ignorăm eroarea dacă pagina nu există, folosim fallback-ul
+    }
+
     const data = await fetchHomeData()
     
     // Map API data to view structure

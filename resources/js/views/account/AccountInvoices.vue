@@ -31,58 +31,49 @@
           {{ documents.length }} documente demo
         </span>
       </div>
-      <div class="card-body p-0">
-        <div class="table-responsive">
-          <table class="table table-sm table-hover align-middle mb-0">
-            <thead class="table-light">
-              <tr>
-                <th style="width: 130px;">Număr</th>
-                <th style="width: 100px;">Tip</th>
-                <th style="width: 120px;">Data</th>
-                <th style="width: 130px;">Comandă</th>
-                <th style="width: 120px;" class="text-end">Valoare (RON)</th>
-                <th style="width: 130px;">Status plată</th>
-                <th style="width: 130px;"></th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="doc in documents" :key="doc.id">
-                <td class="fw-semibold">{{ doc.number }}</td>
-                <td>
-                  <span class="badge bg-secondary" v-if="doc.type === 'invoice'">
-                    Factură
-                  </span>
-                  <span class="badge bg-info text-dark" v-else>
-                    Proformă
-                  </span>
-                </td>
-                <td>{{ doc.date }}</td>
-                <td>{{ doc.orderCode || '—' }}</td>
-                <td class="text-end fw-semibold">
-                  {{ doc.amount.toLocaleString('ro-RO', { minimumFractionDigits: 2 }) }}
-                </td>
-                <td>
-                  <span
-                    class="badge"
-                    :class="{
-                      'bg-danger': doc.paymentStatus === 'neplatita',
-                      'bg-warning text-dark': doc.paymentStatus === 'in_asteptare',
-                      'bg-success': doc.paymentStatus === 'platita'
-                    }"
-                  >
-                    {{
-                      doc.paymentStatus === 'neplatita'
-                        ? 'Neplătită'
-                        : doc.paymentStatus === 'in_asteptare'
-                          ? 'Plată în așteptare'
-                          : 'Plătită'
-                    }}
-                  </span>
-                </td>
-                <td class="text-end">
+      <div class="card-body">
+        <div class="row row-cols-1 g-3">
+          <div class="col" v-for="doc in documents" :key="doc.id">
+            <div class="card border-0 shadow-sm h-100">
+              <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start">
+                  <div>
+                    <div class="fw-semibold">{{ doc.number }}</div>
+                    <div class="small text-muted">{{ doc.date }}</div>
+                    <div class="mt-1">
+                      <span class="badge bg-secondary" v-if="doc.type === 'invoice'">Factură</span>
+                      <span class="badge bg-info text-dark" v-else>Proformă</span>
+                    </div>
+                  </div>
+                  <div class="text-end">
+                    <div class="fw-bold mb-1">
+                      {{ doc.amount.toLocaleString('ro-RO', { minimumFractionDigits: 2 }) }} RON
+                    </div>
+                    <div class="mb-1" v-if="doc.orderCode">
+                      <span class="badge bg-light text-dark">Comanda {{ doc.orderCode }}</span>
+                    </div>
+                    <span
+                      class="badge"
+                      :class="{
+                        'bg-danger': doc.paymentStatus === 'neplatita',
+                        'bg-warning text-dark': doc.paymentStatus === 'in_asteptare',
+                        'bg-success': doc.paymentStatus === 'platita'
+                      }"
+                    >
+                      {{
+                        doc.paymentStatus === 'neplatita'
+                          ? 'Neplătită'
+                          : doc.paymentStatus === 'in_asteptare'
+                            ? 'Plată în așteptare'
+                            : 'Plătită'
+                      }}
+                    </span>
+                  </div>
+                </div>
+                <div class="mt-3 d-flex justify-content-end gap-2">
                   <button
                     type="button"
-                    class="btn btn-sm btn-outline-primary me-2"
+                    class="btn btn-sm btn-outline-primary"
                     @click="downloadDocument(doc)"
                   >
                     Descarcă PDF
@@ -95,15 +86,15 @@
                   >
                     Plătește acum
                   </button>
-                </td>
-              </tr>
-              <tr v-if="documents.length === 0">
-                <td colspan="7" class="text-center text-muted py-4">
-                  Nu există documente demo de afișat.
-                </td>
-              </tr>
-            </tbody>
-          </table>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div v-if="documents.length === 0" class="col">
+            <div class="text-center py-4 text-muted">
+              Nu există documente demo de afișat.
+            </div>
+          </div>
         </div>
       </div>
       <div class="card-footer small text-muted">

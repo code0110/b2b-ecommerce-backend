@@ -354,15 +354,19 @@
 
 <script setup>
 import { computed, ref, onMounted, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/store/auth'
 import { useProductsStore } from '@/store/products'
 import { fetchProductBySlug } from '@/services/catalog'
 import { addCartItem } from '@/services/cart'
+import axios from '@/services/http'
+import { useToast } from 'vue-toastification'
 
 const route = useRoute()
+const router = useRouter()
 const authStore = useAuthStore()
 const productsStore = useProductsStore()
+const toast = useToast()
 
 const loading = ref(false)
 const error = ref(null)
@@ -371,6 +375,8 @@ const quantity = ref(1)
 const addLoading = ref(false)
 const addMessage = ref('')
 const addError = ref('')
+const isSubscribed = ref(false)
+const subscribeLoading = ref(false)
 
 const frontClientType = computed(() => {
   if (authStore.impersonatedCustomer?.clientType) {
@@ -443,6 +449,7 @@ const loadProduct = async () => {
     if (product.value.variants && product.value.variants.length > 0) {
         selectedVariant.value = product.value.variants[0].code
     }
+    checkSubscriptionStatus()
   } catch (err) {
     console.error(err)
     if (err.response && err.response.status === 404) {
@@ -533,6 +540,7 @@ const addToCart = async () => {
 
     const cartData = await addCartItem(payload);
     addMessage.value = 'Produsul a fost adăugat în coș.';
+    // Refresh header cart count if needed
   } catch (e) {
     console.error('Add to cart error', e);
     if (e.response?.data?.message) {
@@ -546,6 +554,34 @@ const addToCart = async () => {
     addLoading.value = false;
   }
 };
+
+const subscribeToStock = async () => {
+    if (!authStore.user) {
+        toast.info("Trebuie să fii autentificat pentru a primi notificări.");
+        router.push('/login');
+        return;
+    }
+    
+    subscribeLoading.value = true;
+    try {
+        let variantId = null;
+        if (selectedVariant.value && product.value.variants) {
+             const v = product.value.variants.find(v => v.code === selectedVariant.value);
+             if (v) variantId = v.id;
+        }
+
+        await axios.post('/api/products/stock-alert', {
+            product_id: product.value.id,
+            product_variant_id: variantId
+        });
+        isSubscribed.value = true;
+        toast.success("Te-ai abonat cu succes la alerta de stoc!");
+    } catch (e) {
+        toast.error(e.response?.data?.message || "A apărut o eroare la abonare.");
+    } finally {
+        subscribeLoading.value = false;
+    }
+}
 
 const addToFavoritesDemo = () => {
   if (!product.value) return

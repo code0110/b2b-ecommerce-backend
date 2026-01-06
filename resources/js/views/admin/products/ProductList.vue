@@ -223,92 +223,73 @@
         </div>
 
         <div v-else>
-          <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0">
-              <thead class="bg-light sticky-header">
-                <tr>
-                  <th class="ps-3 py-3 border-0" style="width: 60px">ID</th>
-                  <th class="py-3 border-0">Produs</th>
-                  <th class="py-3 border-0">Categorie</th>
-                  <th class="py-3 border-0">Brand</th>
-                  <th class="text-end py-3 border-0">Preț Listă</th>
-                  <th class="text-center py-3 border-0">Stoc</th>
-                  <th class="text-center py-3 border-0">Flag-uri</th>
-                  <th class="py-3 border-0">Status</th>
-                  <th class="text-end pe-3 py-3 border-0" style="width: 140px">Acțiuni</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr v-if="products.length === 0">
-                  <td colspan="9" class="text-center py-5 text-muted">
-                    <i class="bi bi-inbox fs-1 d-block mb-2 opacity-50"></i>
-                    Nu s-au găsit produse pentru criteriile selectate.
-                  </td>
-                </tr>
+          <div v-if="products.length === 0" class="text-center py-5 text-muted">
+            <i class="bi bi-inbox fs-1 d-block mb-2 opacity-50"></i>
+            Nu s-au găsit produse pentru criteriile selectate.
+          </div>
 
-                <tr
-                  v-for="product in products"
-                  :key="product.id"
-                >
-                  <td class="ps-3 text-muted small">#{{ product.id }}</td>
-                  <td>
-                    <div class="d-flex align-items-center">
-                       <div class="bg-light rounded p-1 me-3 border d-flex align-items-center justify-content-center" style="width: 48px; height: 48px;">
-                          <img v-if="product.image_url" :src="product.image_url" alt="" class="img-fluid" style="max-height: 100%;">
-                          <i v-else class="bi bi-image text-muted fs-5"></i>
-                       </div>
+          <div v-else class="row row-cols-1 row-cols-sm-2 row-cols-lg-3 row-cols-xl-4 g-3 p-3">
+             <div v-for="product in products" :key="product.id" class="col">
+               <div class="card h-100 border shadow-sm product-card">
+                 <!-- Image & Flags Overlay -->
+                 <div class="position-relative border-bottom bg-light d-flex align-items-center justify-content-center" style="height: 180px; overflow: hidden;">
+                    <img v-if="product.image_url" :src="product.image_url" :alt="product.name" class="img-fluid" style="max-height: 100%; object-fit: contain;">
+                    <i v-else class="bi bi-image text-muted fs-1 opacity-25"></i>
+                    
+                    <div class="position-absolute top-0 end-0 p-2 d-flex flex-column gap-1">
+                      <span v-if="product.is_new" class="badge bg-info text-white shadow-sm" title="Nou">N</span>
+                      <span v-if="product.is_promo" class="badge bg-danger text-white shadow-sm" title="Promo">P</span>
+                      <span v-if="product.is_best_seller" class="badge bg-success text-white shadow-sm" title="Best Seller">B</span>
+                    </div>
+
+                    <div class="position-absolute top-0 start-0 p-2">
+                       <span class="badge shadow-sm" :class="statusBadgeClass(product.status)">
+                          {{ statusLabel(product.status) }}
+                       </span>
+                    </div>
+                 </div>
+
+                 <div class="card-body d-flex flex-column">
+                    <div class="mb-2">
+                      <div class="d-flex justify-content-between align-items-start mb-1">
+                         <small class="text-muted font-monospace">#{{ product.id }}</small>
+                         <small class="text-muted font-monospace">{{ product.internal_code || '-' }}</small>
+                      </div>
+                      <RouterLink :to="{ name: 'admin-products-edit', params: { id: product.id } }" 
+                                  class="h6 text-dark text-decoration-none fw-bold d-block text-truncate mb-1 hover-link" 
+                                  :title="product.name">
+                         {{ product.name }}
+                      </RouterLink>
+                      <div class="d-flex gap-1 flex-wrap small">
+                        <span v-if="product.main_category" class="text-muted">
+                          <i class="bi bi-folder2 me-1"></i>{{ product.main_category.name }}
+                        </span>
+                        <span v-if="product.brand" class="text-muted border-start ps-1 ms-1">
+                          <i class="bi bi-tag me-1"></i>{{ product.brand.name }}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div class="mt-auto pt-3 border-top d-flex justify-content-between align-items-end">
                        <div>
-                          <div class="fw-semibold text-dark">{{ product.name }}</div>
-                          <div class="small text-muted font-monospace">
-                            Cod: {{ product.internal_code || '-' }}
-                          </div>
+                          <div class="text-muted small" style="font-size: 0.75rem;">PREȚ LISTĂ</div>
+                          <div class="fw-bold text-dark fs-5">{{ formatPrice(product.list_price) }}</div>
+                       </div>
+                       <div class="text-end">
+                          <span class="badge mb-1 d-block" :class="stockBadgeClass(product.stock_status)">
+                              {{ stockStatusLabel(product.stock_status) }}
+                          </span>
+                          <div class="small text-muted">{{ product.stock_qty }} buc.</div>
                        </div>
                     </div>
-                  </td>
-                  <td>
-                    <span v-if="product.main_category" class="badge bg-light text-dark border">
-                      {{ product.main_category.name }}
-                    </span>
-                    <span v-else class="text-muted small">—</span>
-                  </td>
-                  <td>
-                    <div v-if="product.brand" class="fw-medium text-dark">
-                      {{ product.brand.name }}
-                    </div>
-                    <div v-else class="text-muted small">—</div>
-                  </td>
-                  <td class="text-end fw-bold text-dark">
-                    {{ formatPrice(product.list_price) }}
-                  </td>
-                  <td class="text-center">
-                    <span
-                      class="badge"
-                      :class="stockBadgeClass(product.stock_status)"
-                    >
-                      {{ stockStatusLabel(product.stock_status) }}
-                    </span>
-                    <div class="small text-muted mt-1">
-                      {{ product.stock_qty }} buc.
-                    </div>
-                  </td>
-                  <td class="text-center">
-                    <div class="d-flex justify-content-center gap-1">
-                      <span v-if="product.is_new" class="badge bg-info text-white" title="Nou">N</span>
-                      <span v-if="product.is_promo" class="badge bg-danger text-white" title="Promo">P</span>
-                      <span v-if="product.is_best_seller" class="badge bg-success text-white" title="Best Seller">B</span>
-                      <span v-if="!product.is_new && !product.is_promo && !product.is_best_seller" class="text-muted small">—</span>
-                    </div>
-                  </td>
-                  <td>
-                    <span
-                      class="badge"
-                      :class="statusBadgeClass(product.status)"
-                    >
-                      {{ statusLabel(product.status) }}
-                    </span>
-                  </td>
-                  <td class="text-end pe-3">
-                    <div class="d-flex gap-1 justify-content-end">
+                 </div>
+
+                 <div class="card-footer bg-white py-2 d-flex justify-content-between align-items-center">
+                    <button class="btn btn-sm btn-link text-muted p-0 text-decoration-none" disabled>
+                        <i class="bi bi-clock me-1"></i>
+                        <span style="font-size: 0.75rem;">Actualizat: {{ new Date(product.updated_at || product.created_at).toLocaleDateString('ro-RO') }}</span>
+                    </button>
+                    <div class="d-flex gap-1">
                       <RouterLink
                         :to="{
                           name: 'admin-products-edit',
@@ -328,10 +309,9 @@
                         <i class="bi bi-trash"></i>
                       </button>
                     </div>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+                 </div>
+               </div>
+             </div>
           </div>
 
           <!-- PAGINARE -->

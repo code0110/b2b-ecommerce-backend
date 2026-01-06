@@ -69,119 +69,147 @@
       {{ error }}
     </div>
 
-    <!-- Data Table -->
-    <div class="card border-0 shadow-sm overflow-hidden" v-if="customers.length || !loading">
-      <div class="table-responsive">
-        <table class="table table-hover align-middle mb-0">
-          <thead class="bg-light">
-            <tr>
-              <th class="ps-4 text-uppercase text-muted small fw-bold py-3">Client</th>
-              <th class="text-uppercase text-muted small fw-bold py-3">Tip & Grup</th>
-              <th class="text-uppercase text-muted small fw-bold py-3">Contact</th>
-              <th class="text-uppercase text-muted small fw-bold py-3">Asignări</th>
-              <th class="text-end text-uppercase text-muted small fw-bold py-3">Sold / Limită</th>
-              <th class="text-end text-uppercase text-muted small fw-bold py-3 pe-4">Acțiuni</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-if="!loading && !customers.length">
-              <td colspan="6" class="text-center text-muted py-5">
-                <div class="d-flex flex-column align-items-center">
-                  <i class="bi bi-inbox fs-1 mb-2 opacity-25"></i>
-                  <p class="mb-0">Nu au fost găsiți clienți conform filtrelor selectate.</p>
-                </div>
-              </td>
-            </tr>
-            <tr v-for="c in customers" :key="c.id" class="cursor-pointer-row">
-              <td class="ps-4">
-                <div class="d-flex align-items-center">
-                  <div class="avatar rounded-circle d-flex align-items-center justify-content-center text-white fw-bold me-3 shadow-sm"
+    <!-- Data Grid -->
+    <div v-if="customers.length || !loading">
+      <div v-if="!loading && !customers.length" class="text-center py-5 text-muted">
+        <div class="d-flex flex-column align-items-center">
+          <i class="bi bi-inbox fs-1 mb-2 opacity-25"></i>
+          <p class="mb-0">Nu au fost găsiți clienți conform filtrelor selectate.</p>
+        </div>
+      </div>
+
+      <div v-else class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-3 mb-4">
+        <div v-for="c in customers" :key="c.id" class="col">
+          <div class="card h-100 border shadow-sm customer-card">
+            <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+              <div class="d-flex align-items-center gap-2 overflow-hidden">
+                <span class="badge rounded-pill" :class="c.is_active ? 'bg-success-subtle text-success' : 'bg-danger-subtle text-danger'">
+                    {{ c.is_active ? 'ACTIV' : 'INACTIV' }}
+                </span>
+                <span v-if="c.code" class="text-muted small border-start ps-2 text-truncate">
+                    {{ c.code }}
+                </span>
+              </div>
+              <div class="dropdown">
+                  <button class="btn btn-link text-muted p-0" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                      <i class="bi bi-three-dots-vertical"></i>
+                  </button>
+                  <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0">
+                      <li>
+                          <RouterLink :to="{ name: 'admin-customer-details', params: { id: c.id } }" class="dropdown-item">
+                              <i class="bi bi-eye me-2 text-primary"></i> Detalii
+                          </RouterLink>
+                      </li>
+                      <li>
+                          <button class="dropdown-item" @click="openEditModal(c)">
+                              <i class="bi bi-pencil me-2 text-info"></i> Editează
+                          </button>
+                      </li>
+                      <li>
+                          <button class="dropdown-item" @click="openAssignModal(c)">
+                              <i class="bi bi-person-gear me-2 text-warning"></i> Asignează
+                          </button>
+                      </li>
+                      <li><hr class="dropdown-divider"></li>
+                      <li>
+                          <button class="dropdown-item text-danger" @click="handleDelete(c)">
+                              <i class="bi bi-trash me-2"></i> Șterge
+                          </button>
+                      </li>
+                  </ul>
+              </div>
+            </div>
+            
+            <div class="card-body">
+              <!-- Identity -->
+              <div class="d-flex align-items-center mb-3">
+                  <div class="avatar rounded-circle d-flex align-items-center justify-content-center text-white fw-bold me-3 shadow-sm flex-shrink-0"
                        :class="c.is_active ? 'bg-primary' : 'bg-secondary'"
-                       style="width: 40px; height: 40px; min-width: 40px; font-size: 0.9rem;">
+                       style="width: 48px; height: 48px; font-size: 1rem;">
                     {{ getInitials(c) }}
                   </div>
-                  <div>
+                  <div class="overflow-hidden">
                     <RouterLink :to="{ name: 'admin-customer-details', params: { id: c.id } }" 
-                                class="fw-bold text-dark text-decoration-none hover-link text-truncate d-block" style="max-width: 200px;">
+                                class="fw-bold text-dark text-decoration-none hover-link text-truncate d-block">
                       {{ c.name || c.company_name || c.full_name }}
                     </RouterLink>
-                    <div class="small text-muted d-flex align-items-center gap-1">
-                      <span class="badge rounded-pill" :class="c.is_active ? 'bg-success-subtle text-success' : 'bg-danger-subtle text-danger'" style="font-size: 0.65rem;">
-                        {{ c.is_active ? 'ACTIV' : 'INACTIV' }}
-                      </span>
-                      <span v-if="c.code" class="text-muted border-start ps-1 ms-1">{{ c.code }}</span>
+                    <div class="d-flex gap-1 mt-1 flex-wrap">
+                        <span class="badge" :class="c.type === 'b2b' || c.clientType === 'B2B' ? 'bg-info bg-opacity-10 text-info border border-info border-opacity-25' : 'bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25'">
+                            {{ (c.type || c.clientType || 'N/A').toUpperCase() }}
+                        </span>
+                        <span class="badge bg-light text-muted border" v-if="c.group || c.group_name">
+                            <i class="bi bi-people me-1"></i>
+                            {{ c.group?.name || c.group_name }}
+                        </span>
                     </div>
                   </div>
-                </div>
-              </td>
-              <td>
-                <div class="d-flex flex-column gap-1">
-                  <span class="badge w-fit" :class="c.type === 'b2b' || c.clientType === 'B2B' ? 'bg-info bg-opacity-10 text-info border border-info border-opacity-25' : 'bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25'">
-                    {{ (c.type || c.clientType || 'N/A').toUpperCase() }}
-                  </span>
-                  <span class="small text-muted" v-if="c.group || c.group_name">
-                    <i class="bi bi-people me-1"></i>
-                    {{ c.group?.name || c.group_name }}
-                  </span>
-                </div>
-              </td>
-              <td>
-                <div class="d-flex flex-column small">
-                  <div class="text-dark mb-1"><i class="bi bi-envelope text-muted me-2"></i>{{ c.email }}</div>
-                  <div class="text-muted" v-if="c.phone"><i class="bi bi-telephone text-muted me-2"></i>{{ c.phone }}</div>
-                </div>
-              </td>
-              <td>
-                <div class="d-flex flex-column gap-1 small">
-                  <div class="d-flex align-items-center text-muted" title="Agent">
-                    <i class="bi bi-person-badge me-2 text-primary"></i>
-                    <span :class="{'text-dark fw-medium': c.agent}">{{ c.agent ? formatUser(c.agent) : '—' }}</span>
+              </div>
+
+              <!-- Contact Info -->
+              <div class="bg-light rounded p-2 mb-3 small">
+                  <div class="d-flex align-items-center mb-1 text-truncate">
+                      <i class="bi bi-envelope text-muted me-2" style="width: 16px;"></i>
+                      <span class="text-dark">{{ c.email }}</span>
                   </div>
-                  <div class="d-flex align-items-center text-muted" title="Director">
-                    <i class="bi bi-person-video me-2 text-info"></i>
-                    <span :class="{'text-dark fw-medium': c.sales_director || c.salesDirector}">{{ c.sales_director || c.salesDirector ? formatUser(c.sales_director || c.salesDirector) : '—' }}</span>
+                  <div class="d-flex align-items-center text-truncate" v-if="c.phone">
+                      <i class="bi bi-telephone text-muted me-2" style="width: 16px;"></i>
+                      <span class="text-dark">{{ c.phone }}</span>
                   </div>
-                </div>
-              </td>
-              <td class="text-end">
-                <div class="fw-bold text-dark">{{ formatMoney(c.balance || c.current_balance || 0) }}</div>
-                <div class="small text-muted">Limită: {{ formatMoney(c.credit_limit || 0) }}</div>
-              </td>
-              <td class="text-end pe-4">
-                <div class="d-flex gap-1 justify-content-end">
-                  <RouterLink :to="{ name: 'admin-customer-details', params: { id: c.id } }" class="btn btn-sm btn-outline-secondary" title="Vezi Detalii">
-                    <i class="bi bi-eye"></i>
-                  </RouterLink>
-                  <button class="btn btn-sm btn-outline-primary" @click="openEditModal(c)" title="Editează">
-                    <i class="bi bi-pencil"></i>
-                  </button>
-                  <button class="btn btn-sm btn-outline-info" @click="openAssignModal(c)" title="Asignează Agent/Director">
-                    <i class="bi bi-person-gear"></i>
-                  </button>
-                  <button 
-                    v-if="isAgentOrDirector"
-                    class="btn btn-sm" 
-                    :class="visitStore.activeVisit?.customer_id === c.id ? 'btn-success' : 'btn-outline-success'"
+              </div>
+
+              <!-- Assignments -->
+              <div class="row g-2 mb-3 small">
+                  <div class="col-6">
+                      <div class="text-muted mb-1" style="font-size: 0.75rem;">AGENT</div>
+                      <div class="d-flex align-items-center text-truncate" :title="c.agent ? formatUser(c.agent) : 'Nealocat'">
+                          <i class="bi bi-person-badge me-1 text-primary"></i>
+                          <span class="text-truncate">{{ c.agent ? formatUser(c.agent) : '—' }}</span>
+                      </div>
+                  </div>
+                  <div class="col-6 border-start ps-3">
+                      <div class="text-muted mb-1" style="font-size: 0.75rem;">DIRECTOR</div>
+                      <div class="d-flex align-items-center text-truncate" :title="c.sales_director || c.salesDirector ? formatUser(c.sales_director || c.salesDirector) : 'Nealocat'">
+                          <i class="bi bi-person-video me-1 text-info"></i>
+                          <span class="text-truncate">{{ c.sales_director || c.salesDirector ? formatUser(c.sales_director || c.salesDirector) : '—' }}</span>
+                      </div>
+                  </div>
+              </div>
+
+              <!-- Financials -->
+              <div class="d-flex justify-content-between align-items-center pt-2 border-top">
+                  <div>
+                      <div class="text-muted small" style="font-size: 0.75rem;">SOLD CURENT</div>
+                      <div class="fw-bold text-dark">{{ formatMoney(c.balance || c.current_balance || 0) }}</div>
+                  </div>
+                  <div class="text-end">
+                      <div class="text-muted small" style="font-size: 0.75rem;">LIMITĂ CREDIT</div>
+                      <div class="text-dark">{{ formatMoney(c.credit_limit || 0) }}</div>
+                  </div>
+              </div>
+            </div>
+            
+            <div class="card-footer bg-white py-2" v-if="isAgentOrDirector">
+                 <button 
+                    class="btn btn-sm w-100 d-flex align-items-center justify-content-center gap-2" 
+                    :class="visitStore.activeVisit?.customer_id === c.id ? 'btn-success text-white' : 'btn-outline-success'"
                     @click="handleStartVisit(c)" 
                     :disabled="visitStore.loading || (visitStore.activeVisit?.customer_id === c.id)"
-                    :title="visitStore.activeVisit?.customer_id === c.id ? 'Vizită în curs' : 'Începe Vizită'"
                   >
                     <i class="bi" :class="visitStore.activeVisit?.customer_id === c.id ? 'bi-geo-alt-fill' : 'bi-geo-alt'"></i>
+                    <span>{{ visitStore.activeVisit?.customer_id === c.id ? 'Vizită în curs' : 'Începe Vizită' }}</span>
                   </button>
-                  <button class="btn btn-sm btn-outline-danger" @click="handleDelete(c)" title="Șterge">
-                    <i class="bi bi-trash"></i>
-                  </button>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+            </div>
+          </div>
+        </div>
       </div>
       
       <!-- Pagination -->
-      <div v-if="meta && (meta.current_page && meta.last_page) && customers.length" class="card-footer bg-white border-top py-3 d-flex justify-content-between align-items-center">
-        <span class="text-muted small">
+      <div v-if="meta && (meta.current_page && meta.last_page) && customers.length" class="d-flex justify-content-between align-items-center mt-3 bg-white p-3 rounded shadow-sm border">
+        <span class="text-muted small d-none d-md-inline">
           Afișare {{ (meta.current_page - 1) * 20 + 1 }} - {{ Math.min(meta.current_page * 20, meta.total || 9999) }} din {{ meta.total || 'multe' }} rezultate
+        </span>
+        <span class="text-muted small d-md-none">
+            Pagina {{ meta.current_page }} din {{ meta.last_page }}
         </span>
         <nav>
           <ul class="pagination pagination-sm mb-0">

@@ -31,36 +31,36 @@
     </div>
 
     <!-- Stats Summary -->
-    <div v-if="routeData" class="row mb-4">
-        <div class="col-md-3">
-            <div class="card bg-light border-0">
-                <div class="card-body text-center">
-                    <div class="text-muted small text-uppercase">Total Distanță</div>
-                    <div class="h3 mb-0 text-primary">{{ routeData.total_distance.toFixed(2) }} km</div>
+    <div v-if="routeData" class="row g-3 mb-4">
+        <div class="col-6 col-md-3">
+            <div class="card bg-light border-0 h-100">
+                <div class="card-body text-center p-3">
+                    <div class="text-muted small text-uppercase mb-1">Total Distanță</div>
+                    <div class="h4 mb-0 text-primary">{{ routeData.total_distance.toFixed(2) }} km</div>
                 </div>
             </div>
         </div>
-        <div class="col-md-3">
-            <div class="card bg-light border-0">
-                <div class="card-body text-center">
-                    <div class="text-muted small text-uppercase">Ora Start</div>
-                    <div class="h3 mb-0">{{ formatTime(routeData.start_time) }}</div>
+        <div class="col-6 col-md-3">
+            <div class="card bg-light border-0 h-100">
+                <div class="card-body text-center p-3">
+                    <div class="text-muted small text-uppercase mb-1">Ora Start</div>
+                    <div class="h4 mb-0">{{ formatTime(routeData.start_time) }}</div>
                 </div>
             </div>
         </div>
-        <div class="col-md-3">
-            <div class="card bg-light border-0">
-                <div class="card-body text-center">
-                    <div class="text-muted small text-uppercase">Ora Stop</div>
-                    <div class="h3 mb-0">{{ formatTime(routeData.end_time) }}</div>
+        <div class="col-6 col-md-3">
+            <div class="card bg-light border-0 h-100">
+                <div class="card-body text-center p-3">
+                    <div class="text-muted small text-uppercase mb-1">Ora Stop</div>
+                    <div class="h4 mb-0">{{ formatTime(routeData.end_time) }}</div>
                 </div>
             </div>
         </div>
-        <div class="col-md-3">
-            <div class="card bg-light border-0">
-                <div class="card-body text-center">
-                    <div class="text-muted small text-uppercase">Puncte Track</div>
-                    <div class="h3 mb-0">{{ routeData.route_points ? routeData.route_points.length : 0 }}</div>
+        <div class="col-6 col-md-3">
+            <div class="card bg-light border-0 h-100">
+                <div class="card-body text-center p-3">
+                    <div class="text-muted small text-uppercase mb-1">Puncte Track</div>
+                    <div class="h4 mb-0">{{ routeData.route_points ? routeData.route_points.length : 0 }}</div>
                 </div>
             </div>
         </div>

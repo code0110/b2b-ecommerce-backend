@@ -53,61 +53,70 @@
       {{ error }}
     </div>
 
-    <div class="card">
-      <div class="card-body p-0">
-        <table class="table table-sm mb-0 align-middle">
-          <thead class="table-light">
-            <tr>
-              <th>#</th>
-              <th>Subiect</th>
-              <th>Client</th>
-              <th>Status</th>
-              <th>Categorie</th>
-              <th>Creat la</th>
-              <th style="width: 120px;">Acțiuni</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-if="loading">
-              <td colspan="7" class="text-center text-muted py-3">
-                Se încarcă...
-              </td>
-            </tr>
-            <tr v-if="!loading && !tickets.length">
-              <td colspan="7" class="text-center text-muted py-3">
-                Nu există tichete pentru filtrele selectate sau endpoint-ul nu este încă implementat.
-              </td>
-            </tr>
-            <tr
-              v-for="t in tickets"
-              :key="t.id"
-            >
-              <td class="small">#{{ t.id }}</td>
-              <td class="small">{{ t.subject }}</td>
-              <td class="small">
-                {{ t.customer_name || '—' }}
-              </td>
-              <td class="small">
-                {{ statusLabel(t.status) }}
-              </td>
-              <td class="small">
-                {{ t.category || '—' }}
-              </td>
-              <td class="small">
-                {{ formatDate(t.created_at) }}
-              </td>
-              <td class="small">
-                <button
-                  type="button"
-                  class="btn btn-sm btn-outline-secondary"
-                  @click="openTicket(t)"
-                >
-                  Detalii
-                </button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+    <div v-if="loading" class="text-center py-5">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Se încarcă...</span>
+      </div>
+    </div>
+
+    <div v-else-if="!tickets.length" class="text-center py-5">
+      <div class="mb-3">
+        <i class="bi bi-ticket-perforated text-muted opacity-25" style="font-size: 3rem;"></i>
+      </div>
+      <h5 class="text-muted">Nu există tichete</h5>
+      <p class="text-muted small">Nu s-au găsit tichete pentru filtrele selectate.</p>
+    </div>
+
+    <div v-else class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-4">
+      <div v-for="t in tickets" :key="t.id" class="col">
+        <div class="card h-100 border shadow-sm hover-shadow transition-all">
+          <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+             <div>
+                <span class="badge rounded-pill me-2" 
+                   :class="{
+                      'bg-danger bg-opacity-10 text-danger': t.status === 'new',
+                      'bg-warning bg-opacity-10 text-warning': t.status === 'in_progress',
+                      'bg-success bg-opacity-10 text-success': t.status === 'resolved',
+                      'bg-secondary bg-opacity-10 text-secondary': t.status === 'closed'
+                   }">
+                   {{ statusLabel(t.status) }}
+                </span>
+                <small class="text-muted">#{{ t.id }}</small>
+             </div>
+             <small class="text-muted">{{ formatDate(t.created_at).split(',')[0] }}</small>
+          </div>
+          
+          <div class="card-body">
+             <h6 class="fw-bold text-dark mb-3">{{ t.subject }}</h6>
+             
+             <div class="mb-3">
+                <small class="text-muted text-uppercase fw-bold" style="font-size: 0.65rem;">CLIENT</small>
+                <div class="d-flex align-items-center mt-1">
+                   <div class="avatar-circle-sm me-2 bg-light text-primary rounded-circle d-flex align-items-center justify-content-center" style="width: 24px; height: 24px;">
+                      <i class="bi bi-person-fill small"></i>
+                   </div>
+                   <div class="fw-semibold text-dark text-truncate">{{ t.customer_name || '—' }}</div>
+                </div>
+             </div>
+
+             <div>
+                <small class="text-muted text-uppercase fw-bold" style="font-size: 0.65rem;">CATEGORIE</small>
+                <div class="mt-1">
+                   <span class="badge bg-light text-dark border">{{ t.category || 'General' }}</span>
+                </div>
+             </div>
+          </div>
+
+          <div class="card-footer bg-white py-3">
+             <button
+                type="button"
+                class="btn btn-sm btn-outline-primary w-100"
+                @click="openTicket(t)"
+             >
+                <i class="bi bi-eye me-1"></i> Vezi Detalii
+             </button>
+          </div>
+        </div>
       </div>
     </div>
 

@@ -1,195 +1,210 @@
 <template>
-  <div class="container-fluid py-3">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-      <h1 class="h5 mb-0">Grupuri de clienți</h1>
+  <div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <div>
+        <h1 class="h3 fw-bold mb-1 text-gray-800">Grupuri de clienți</h1>
+        <p class="text-muted small mb-0">Gestionează politicile comerciale pentru grupurile de clienți.</p>
+      </div>
       <button
-        class="btn btn-sm btn-primary"
+        class="btn btn-primary shadow-sm"
         type="button"
         @click="startCreate"
       >
-        Adaugă grup
+        <i class="bi bi-plus-lg me-1"></i> Adaugă grup
       </button>
     </div>
 
-    <div v-if="error" class="alert alert-danger py-2">
-      {{ error }}
+    <div v-if="error" class="alert alert-danger shadow-sm border-0 mb-4">
+      <i class="bi bi-exclamation-triangle-fill me-2"></i> {{ error }}
     </div>
 
-    <div class="card mb-3">
-      <div class="card-header py-2 small">
-        {{ currentGroup?.id ? 'Editează grup' : 'Grup nou' }}
-      </div>
-      <div class="card-body">
-        <form @submit.prevent="saveGroup">
-          <div class="row g-3">
-            <div class="col-md-4">
-              <label class="form-label form-label-sm">Denumire grup</label>
-              <input
-                v-model="form.name"
-                type="text"
-                class="form-control form-control-sm"
-                required
-              >
-            </div>
-            <div class="col-md-3">
-              <label class="form-label form-label-sm">Tip</label>
-              <select
-                v-model="form.type"
-                class="form-select form-select-sm"
-              >
-                <option value="b2b">B2B</option>
-                <option value="b2c">B2C</option>
-              </select>
-            </div>
-            <div class="col-md-2">
-              <label class="form-label form-label-sm">Discount default (%)</label>
-              <input
-                v-model.number="form.default_discount_percent"
-                type="number"
-                min="0"
-                max="100"
-                step="0.01"
-                class="form-control form-control-sm"
-              >
-            </div>
-            <div class="col-md-3">
-              <label class="form-label form-label-sm">Termen de plată (zile)</label>
-              <input
-                v-model.number="form.default_payment_terms_days"
-                type="number"
-                min="0"
-                class="form-control form-control-sm"
-              >
-            </div>
+    <div class="row g-4">
+      <!-- Form Section -->
+      <div class="col-lg-4">
+        <div class="card border-0 shadow-sm sticky-top" style="top: 1rem; z-index: 1020;">
+          <div class="card-header bg-white py-3 border-bottom-0">
+            <h5 class="fw-bold mb-0 text-primary">
+              <i class="bi bi-gear-fill me-2"></i>
+              {{ currentGroup?.id ? 'Editează grup' : 'Grup nou' }}
+            </h5>
           </div>
-
-          <div class="row g-3 mt-2">
-            <div class="col-md-3">
-              <label class="form-label form-label-sm">Limită credit (RON)</label>
-              <input
-                v-model.number="form.default_credit_limit"
-                type="number"
-                step="0.01"
-                class="form-control form-control-sm"
-              >
-            </div>
-            <div class="col-md-3 d-flex align-items-end">
-              <div class="form-check">
+          <div class="card-body pt-0">
+            <form @submit.prevent="saveGroup">
+              <div class="mb-3">
+                <label class="form-label small fw-bold text-muted text-uppercase">Denumire grup</label>
                 <input
-                  v-model="form.is_active"
-                  class="form-check-input"
-                  type="checkbox"
-                  id="group-active"
+                  v-model="form.name"
+                  type="text"
+                  class="form-control"
+                  placeholder="Ex: Distribuitori Gold"
+                  required
                 >
-                <label class="form-check-label small" for="group-active">
-                  Activ
-                </label>
               </div>
-            </div>
-          </div>
 
-          <div class="mt-3 d-flex justify-content-between">
-            <div>
-              <button
-                class="btn btn-sm btn-primary me-2"
-                type="submit"
-                :disabled="saving"
-              >
-                Salvează
-              </button>
-              <button
-                class="btn btn-sm btn-outline-secondary"
-                type="button"
-                @click="resetForm"
-              >
-                Reset
-              </button>
-            </div>
-            <div class="small text-muted" v-if="currentGroup?.id">
-              ID: {{ currentGroup.id }}
-            </div>
-          </div>
+              <div class="mb-3">
+                <label class="form-label small fw-bold text-muted text-uppercase">Tip Client</label>
+                <div class="d-flex gap-2">
+                   <div class="form-check form-check-inline">
+                      <input class="form-check-input" type="radio" name="type" id="type_b2b" value="b2b" v-model="form.type">
+                      <label class="form-check-label small" for="type_b2b">B2B</label>
+                   </div>
+                   <div class="form-check form-check-inline">
+                      <input class="form-check-input" type="radio" name="type" id="type_b2c" value="b2c" v-model="form.type">
+                      <label class="form-check-label small" for="type_b2c">B2C</label>
+                   </div>
+                </div>
+              </div>
 
-          <div v-if="formError" class="text-danger small mt-2">
-            {{ formError }}
-          </div>
-        </form>
-      </div>
-    </div>
+              <div class="row g-3 mb-3">
+                <div class="col-6">
+                  <label class="form-label small fw-bold text-muted text-uppercase">Discount (%)</label>
+                  <div class="input-group">
+                    <input
+                      v-model.number="form.default_discount_percent"
+                      type="number"
+                      min="0"
+                      max="100"
+                      step="0.01"
+                      class="form-control"
+                    >
+                    <span class="input-group-text bg-light text-muted">%</span>
+                  </div>
+                </div>
+                <div class="col-6">
+                  <label class="form-label small fw-bold text-muted text-uppercase">Termen (zile)</label>
+                   <div class="input-group">
+                    <input
+                      v-model.number="form.default_payment_terms_days"
+                      type="number"
+                      min="0"
+                      class="form-control"
+                    >
+                    <span class="input-group-text bg-light text-muted">Zile</span>
+                  </div>
+                </div>
+              </div>
 
-    <div class="card">
-      <div class="card-body p-0">
-        <table class="table table-sm mb-0 align-middle">
-          <thead class="table-light">
-            <tr>
-              <th>Denumire</th>
-              <th>Tip</th>
-              <th>Discount</th>
-              <th>Termen plată</th>
-              <th>Limită credit</th>
-              <th>Status</th>
-              <th style="width: 140px;">Acțiuni</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-if="loading">
-              <td colspan="7" class="text-center text-muted py-3">
-                Se încarcă...
-              </td>
-            </tr>
-            <tr v-if="!loading && !groups.length">
-              <td colspan="7" class="text-center text-muted py-3">
-                Nu există grupuri definite.
-              </td>
-            </tr>
-            <tr
-              v-for="g in groups"
-              :key="g.id"
-            >
-              <td class="small">
-                {{ g.name }}
-              </td>
-              <td class="small">
-                {{ g.type?.toUpperCase?.() || g.type }}
-              </td>
-              <td class="small">
-                {{ g.default_discount_percent ?? 0 }} %
-              </td>
-              <td class="small">
-                {{ g.default_payment_terms_days ?? '—' }} zile
-              </td>
-              <td class="small">
-                {{ formatMoney(g.default_credit_limit || 0) }}
-              </td>
-              <td class="small">
-                <span
-                  class="badge"
-                  :class="g.is_active ? 'bg-success' : 'bg-secondary'"
+              <div class="mb-3">
+                <label class="form-label small fw-bold text-muted text-uppercase">Limită credit (RON)</label>
+                <div class="input-group">
+                  <input
+                    v-model.number="form.default_credit_limit"
+                    type="number"
+                    step="0.01"
+                    class="form-control"
+                  >
+                  <span class="input-group-text bg-light text-muted">RON</span>
+                </div>
+              </div>
+              
+              <div class="mb-4">
+                 <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" id="group-active" v-model="form.is_active">
+                    <label class="form-check-label small fw-bold" for="group-active">Grup Activ</label>
+                 </div>
+              </div>
+
+              <div class="d-flex justify-content-between align-items-center">
+                <button
+                  class="btn btn-light text-muted border"
+                  type="button"
+                  @click="resetForm"
                 >
-                  {{ g.is_active ? 'Activ' : 'Inactiv' }}
-                </span>
-              </td>
-              <td class="small">
-                <div class="btn-group btn-group-sm">
+                  Anulează
+                </button>
+                <button
+                  class="btn btn-primary px-4"
+                  type="submit"
+                  :disabled="saving"
+                >
+                  <span v-if="saving" class="spinner-border spinner-border-sm me-2"></span>
+                  {{ currentGroup?.id ? 'Actualizează' : 'Salvează' }}
+                </button>
+              </div>
+
+              <div v-if="formError" class="alert alert-danger small mt-3 mb-0">
+                {{ formError }}
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      <!-- List Section -->
+      <div class="col-lg-8">
+        <div v-if="loading" class="text-center py-5">
+          <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Se încarcă...</span>
+          </div>
+        </div>
+        
+        <div v-else-if="!groups.length" class="text-center py-5">
+          <div class="mb-3">
+            <i class="bi bi-collection text-muted opacity-25" style="font-size: 3rem;"></i>
+          </div>
+          <h5 class="text-muted">Nu există grupuri definite</h5>
+          <p class="text-muted small">Creează primul grup folosind formularul.</p>
+        </div>
+
+        <div v-else class="row row-cols-1 row-cols-md-2 g-3">
+          <div v-for="g in groups" :key="g.id" class="col">
+             <div class="card h-100 border shadow-sm group-card hover-shadow transition-all" :class="{'border-primary': currentGroup?.id === g.id}">
+                <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                   <h6 class="fw-bold mb-0 text-dark">{{ g.name }}</h6>
+                   <span class="badge rounded-pill" :class="g.is_active ? 'bg-success bg-opacity-10 text-success' : 'bg-secondary bg-opacity-10 text-secondary'">
+                      {{ g.is_active ? 'Activ' : 'Inactiv' }}
+                   </span>
+                </div>
+                <div class="card-body">
+                   <div class="row g-2 mb-3">
+                      <div class="col-6">
+                         <small class="text-muted text-uppercase fw-bold" style="font-size: 0.65rem;">TIP</small>
+                         <div>
+                            <span v-if="g.type === 'b2b'" class="badge bg-info bg-opacity-10 text-info border border-info border-opacity-25">B2B</span>
+                            <span v-else class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25">B2C</span>
+                         </div>
+                      </div>
+                      <div class="col-6">
+                         <small class="text-muted text-uppercase fw-bold" style="font-size: 0.65rem;">DISCOUNT</small>
+                         <div class="fw-bold text-primary">{{ g.default_discount_percent ?? 0 }}%</div>
+                      </div>
+                   </div>
+                   
+                   <div class="mb-2">
+                      <small class="text-muted text-uppercase fw-bold" style="font-size: 0.65rem;">TERMEN DE PLATĂ</small>
+                      <div class="d-flex align-items-center small text-dark">
+                         <i class="bi bi-calendar-check me-2 text-muted"></i>
+                         {{ g.default_payment_terms_days ?? 0 }} zile
+                      </div>
+                   </div>
+                   
+                   <div>
+                      <small class="text-muted text-uppercase fw-bold" style="font-size: 0.65rem;">LIMITĂ CREDIT</small>
+                      <div class="d-flex align-items-center small text-dark">
+                         <i class="bi bi-wallet2 me-2 text-muted"></i>
+                         {{ formatMoney(g.default_credit_limit || 0) }}
+                      </div>
+                   </div>
+                </div>
+                <div class="card-footer bg-white py-2 d-flex justify-content-end gap-2">
                   <button
-                    class="btn btn-outline-secondary"
+                    class="btn btn-sm btn-outline-primary"
                     type="button"
                     @click="editGroup(g)"
                   >
-                    Editează
+                    <i class="bi bi-pencil me-1"></i> Editează
                   </button>
                   <button
-                    class="btn btn-outline-danger"
+                    class="btn btn-sm btn-outline-danger"
                     type="button"
                     @click="removeGroup(g)"
                   >
-                    Șterge
+                    <i class="bi bi-trash"></i>
                   </button>
                 </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+             </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>

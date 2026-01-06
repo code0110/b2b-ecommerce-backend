@@ -7,21 +7,25 @@
           Actualizări legate de comenzi, plăți, oferte și promoții.
         </p>
       </div>
-      <button
-        type="button"
-        class="btn btn-outline-secondary btn-sm"
-        :disabled="loading || notifications.length === 0"
-        @click="handleMarkAll"
-      >
-        Marchează toate ca citite
-      </button>
+      <div class="d-flex gap-2">
+        <RouterLink 
+            :to="{ name: 'account-notification-settings' }" 
+            class="btn btn-outline-primary btn-sm"
+        >
+            <i class="bi bi-gear-fill me-1"></i> Setări
+        </RouterLink>
+        <button
+            type="button"
+            class="btn btn-outline-secondary btn-sm"
+            :disabled="loading || notifications.length === 0"
+            @click="handleMarkAll"
+        >
+            Marchează toate ca citite
+        </button>
+      </div>
     </div>
 
-    <div v-if="error" class="alert alert-danger small mb-3">
-      {{ error }}
-    </div>
-
-    <div v-if="loading" class="text-center py-4">
+    <div v-if="loading && notifications.length === 0" class="text-center py-4">
       <div class="spinner-border spinner-border-sm" role="status" />
       <div class="small text-muted mt-2">Se încarcă notificările...</div>
     </div>
@@ -42,10 +46,10 @@
         >
           <div class="me-3">
             <div class="fw-semibold small">
-              {{ notif.title || 'Notificare' }}
+              {{ notif.data?.title || notif.title || 'Notificare' }}
             </div>
-            <div class="small">
-              {{ notif.message }}
+            <div class="small text-muted">
+              {{ notif.data?.message || notif.message || '' }}
             </div>
             <div class="small text-muted mt-1">
               {{ formatDateTime(notif.created_at) }}
@@ -58,6 +62,9 @@
             >
               Nou
             </span>
+            <div class="mt-2" v-if="notif.data?.level">
+                <i class="bi" :class="getIconForLevel(notif.data.level)" :style="{ color: getColorForLevel(notif.data.level) }"></i>
+            </div>
           </div>
         </button>
       </div>
@@ -66,71 +73,59 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
-import {
-  fetchNotifications,
-  markNotificationRead,
-  markAllNotificationsRead,
-} from '@/services/account/notifications';
+import { onMounted } from 'vue';
 import { useRouter } from 'vue-router';
+import { useNotificationsStore } from '@/store/notifications';
+import { storeToRefs } from 'pinia';
 
 const router = useRouter();
-
-const loading = ref(false);
-const error = ref('');
-const notifications = ref([]);
+const store = useNotificationsStore();
+const { notifications, loading } = storeToRefs(store);
 
 const formatDateTime = (value) => {
   if (!value) return '';
   return new Date(value).toLocaleString('ro-RO');
 };
 
-const loadNotifications = async () => {
-  loading.value = true;
-  error.value = '';
+const getIconForLevel = (level) => {
+    switch(level) {
+        case 'success': return 'bi-check-circle-fill';
+        case 'warning': return 'bi-exclamation-triangle-fill';
+        case 'error': return 'bi-x-circle-fill';
+        default: return 'bi-info-circle-fill';
+    }
+};
 
-  try {
-    const data = await fetchNotifications();
-    notifications.value = data.data ?? data;
-  } catch (e) {
-    console.error(e);
-    error.value =
-      e?.response?.data?.message ||
-      'Nu am putut încărca notificările.';
-  } finally {
-    loading.value = false;
-  }
+const getColorForLevel = (level) => {
+    switch(level) {
+        case 'success': return '#198754';
+        case 'warning': return '#ffc107';
+        case 'error': return '#dc3545';
+        default: return '#0d6efd';
+    }
 };
 
 const handleClick = async (notif) => {
   if (!notif.read_at) {
-    try {
-      await markNotificationRead(notif.id);
-      notif.read_at = new Date().toISOString();
-    } catch (e) {
-      console.error(e);
-    }
+    await store.markRead(notif.id);
   }
 
-  if (notif.link_url) {
-    router.push(notif.link_url);
+  const url = notif.data?.action_url || notif.action_url;
+  if (url) {
+      if (url.startsWith('http')) {
+          window.location.href = url;
+      } else {
+          router.push(url);
+      }
   }
 };
 
 const handleMarkAll = async () => {
-  try {
-    await markAllNotificationsRead();
-    notifications.value = notifications.value.map((n) => ({
-      ...n,
-      read_at: n.read_at || new Date().toISOString(),
-    }));
-  } catch (e) {
-    console.error(e);
-    error.value =
-      e?.response?.data?.message ||
-      'Nu am putut marca toate notificările ca citite.';
-  }
+  await store.markAllRead();
 };
 
-onMounted(loadNotifications);
+onMounted(() => {
+  store.fetchNotifications();
+  store.fetchUnreadCount();
+});
 </script>

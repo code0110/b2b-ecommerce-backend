@@ -82,6 +82,11 @@
             <i class="bi bi-map me-2"></i> <span class="link-text">Planificare Rute</span>
           </RouterLink>
 
+          <div class="nav-section-title text-uppercase text-muted fw-bold small mt-4 mb-2 px-2">Conținut</div>
+          <RouterLink :to="{ name: 'admin-pages' }" class="nav-link text-white rounded d-flex align-items-center px-3 py-2" active-class="active-link" title="Pagini">
+            <i class="bi bi-file-richtext me-2"></i> <span class="link-text">Pagini</span>
+          </RouterLink>
+
           <div class="nav-section-title text-uppercase text-muted fw-bold small mt-4 mb-2 px-2">Operațional</div>
           
           <RouterLink v-if="authStore.role === 'admin'" :to="{ name: 'admin-shipping' }" class="nav-link text-white rounded d-flex align-items-center px-3 py-2" active-class="active-link" title="Livrare & Config">

@@ -100,6 +100,9 @@
 
         <!-- Right: portal + coș -->
         <div class="d-flex align-items-center gap-2">
+          <!-- Notificări -->
+          <NotificationsDropdown v-if="authStore.isAuthenticated" />
+
           <RouterLink
             :to="accountLink"
             class="btn btn-outline-secondary btn-sm"
@@ -187,6 +190,7 @@ import { useRouter } from 'vue-router';
 import { useAuthStore } from '@/store/auth';
 import { useVisitStore } from '@/store/visit';
 import CategoryMegaModal from '@/components/catalog/CategoryMegaModal.vue';
+import NotificationsDropdown from '@/components/common/NotificationsDropdown.vue';
 
 const router = useRouter();
 const authStore = useAuthStore();

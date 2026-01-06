@@ -6,6 +6,11 @@ export async function fetchAdminNotifications(params = {}) {
   return data;
 }
 
+export async function fetchNotificationHistory() {
+  const { data } = await adminApi.get('/notifications/history');
+  return data;
+}
+
 export async function fetchUnreadCount() {
   const { data } = await adminApi.get('/notifications/unread-count');
   return data; // { unread: 5 }

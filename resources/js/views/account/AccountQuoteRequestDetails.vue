@@ -46,29 +46,22 @@
             <div class="card-header bg-white py-3">
                 <h6 class="mb-0 fw-bold">Produse Solicitate</h6>
             </div>
-            <div class="card-body p-0">
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle mb-0">
-                        <thead class="bg-light">
-                            <tr>
-                                <th class="ps-4">Produs</th>
-                                <th>Cantitate</th>
-                                <th class="text-end pe-4">Preț Listă (ref)</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr v-for="item in request.items" :key="item.id">
-                                <td class="ps-4">
-                                    <div class="fw-bold">{{ item.product?.name || 'Produs șters' }}</div>
-                                    <div class="small text-muted">{{ item.product?.internal_code }}</div>
-                                </td>
-                                <td>{{ item.quantity }}</td>
-                                <td class="text-end pe-4">
-                                    {{ formatPrice(item.list_price) }}
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
+            <div class="card-body">
+                <div class="list-group">
+                    <div 
+                        class="list-group-item d-flex justify-content-between align-items-start"
+                        v-for="item in request.items" 
+                        :key="item.id"
+                    >
+                        <div>
+                            <div class="fw-bold small">{{ item.product?.name || 'Produs șters' }}</div>
+                            <div class="small text-muted">{{ item.product?.internal_code }}</div>
+                        </div>
+                        <div class="text-end">
+                            <div class="small">Cant: <strong>{{ item.quantity }}</strong></div>
+                            <div class="small">Preț listă: <strong>{{ formatPrice(item.list_price) }}</strong></div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

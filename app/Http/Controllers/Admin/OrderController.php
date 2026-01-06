@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\OrderItem;
+use App\Notifications\OrderStatusChangedNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -204,6 +205,7 @@ class OrderController extends Controller
             'cancel_reason' => ['nullable', 'string', 'max:255'],
         ]);
 
+        $oldStatus = $order->status;
         $order->status = $data['status'];
 
         if ($data['status'] === 'cancelled') {
@@ -212,6 +214,30 @@ class OrderController extends Controller
         }
 
         $order->save();
+
+        // Notify customer if status changed
+        if ($oldStatus !== $order->status) {
+            try {
+                // Notificăm utilizatorul care a plasat comanda (dacă există)
+                $order->placedBy?->notify(new OrderStatusChangedNotification($order, $oldStatus));
+
+                // Dacă comanda nu a fost plasată de userul asociat clientului (ex: importată), notificăm userul principal al clientului
+                if ($order->customer && $order->customer->user_id && (!$order->placed_by_user_id || $order->placed_by_user_id !== $order->customer->user_id)) {
+                     $mainUser = \App\Models\User::find($order->customer->user_id);
+                     $mainUser?->notify(new OrderStatusChangedNotification($order, $oldStatus));
+                }
+                
+                // Notificăm și agentul alocat clientului
+                if ($order->customer && $order->customer->agent_user_id) {
+                     $agentUser = \App\Models\User::find($order->customer->agent_user_id);
+                     $agentUser?->notify(new OrderStatusChangedNotification($order, $oldStatus));
+                }
+
+            } catch (\Exception $e) {
+                // Log error but don't fail request
+                \Illuminate\Support\Facades\Log::error('Failed to send order status notification: ' . $e->getMessage());
+            }
+        }
 
         return $this->show($order->fresh());
     }

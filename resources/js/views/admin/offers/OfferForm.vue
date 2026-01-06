@@ -25,7 +25,7 @@
           <div class="card-body">
             <div class="mb-3">
               <label class="form-label small fw-bold text-muted">Client</label>
-              <CustomerSelector @select="selectCustomer" ref="customerSelectorRef" />
+              <CustomerSelector @select="selectCustomer" ref="customerSelectorRef" :disabled="isCustomerLocked" />
               <div v-if="form.customer" class="mt-2 p-2 bg-light rounded small">
                  <div class="fw-bold">{{ form.customer.name }}</div>
                  <div>{{ form.customer.cif }}</div>
@@ -114,8 +114,14 @@
         <div class="card shadow-sm border-0 h-100 mb-4">
             <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
                 <h6 class="mb-0 fw-bold">Produse</h6>
-                <div style="width: 300px;">
-                    <ProductSelector @select="addProduct" />
+                <div class="d-flex gap-2">
+                     <button class="btn btn-outline-secondary btn-sm" @click="recalculateAllPrices" :disabled="form.items.length === 0 || calculating" title="Recalculează prețurile conform sistemului (resetează modificările manuale)">
+                        <i class="bi bi-arrow-clockwise" :class="{'spinner-border spinner-border-sm': calculating}"></i>
+                        <span class="d-none d-md-inline ms-1">Recalculează Promoții</span>
+                    </button>
+                    <div style="width: 300px;">
+                        <ProductSelector @select="addProduct" />
+                    </div>
                 </div>
             </div>
             <div class="card-body p-0">
@@ -155,7 +161,10 @@
                                     </div>
                                 </td>
                                 <td class="text-end pe-4 fw-bold">
-                                    {{ formatPrice(item.final_total) }}
+                                    <div v-if="item.calculating" class="spinner-border spinner-border-sm text-primary" role="status">
+                                        <span class="visually-hidden">Loading...</span>
+                                    </div>
+                                    <span v-else>{{ formatPrice(item.final_total) }}</span>
                                 </td>
                                 <td>
                                     <button class="btn btn-sm text-danger" @click="removeItem(index)">
@@ -211,17 +220,21 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted, nextTick } from 'vue';
-import { useRouter, useRoute } from 'vue-router';
-import api, { adminApi } from '@/services/http';
+import { ref, reactive, onMounted, computed, watch, nextTick } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import { useAuthStore } from '@/store/auth';
+import { useVisitStore } from '@/store/visit';
+import { useTrackingStore } from '@/store/tracking';
 import { useToast } from 'vue-toastification';
+import api, { adminApi } from '@/services/http';
 import CustomerSelector from '@/components/admin/CustomerSelector.vue';
 import ProductSelector from '@/components/admin/ProductSelector.vue';
 
-const router = useRouter();
 const route = useRoute();
+const router = useRouter();
 const authStore = useAuthStore();
+const visitStore = useVisitStore();
+const trackingStore = useTrackingStore();
 const toast = useToast();
 
 const isEdit = computed(() => !!route.params.id);
@@ -232,6 +245,8 @@ const messages = ref([]);
 const newMessage = ref('');
 const isInternalMessage = ref(false);
 const messagesContainer = ref(null);
+const calculating = ref(false);
+const isCustomerLocked = ref(false);
 
 // Settings
 const config = reactive({
@@ -367,41 +382,87 @@ const addProduct = async (product) => {
         return;
     }
 
-    let unitPrice = parseFloat(product.list_price || product.price || 0);
-    let promoInfo = null;
-
-    if (form.customer_id) {
-        try {
-            const { data } = await adminApi.post('/offers/check-price', {
-                customer_id: form.customer_id,
-                product_id: product.id
-            });
-            
-            if (data.has_discount) {
-                promoInfo = {
-                    price: data.promo_price,
-                    discount: data.discount_percent,
-                    name: data.applied_promotion?.name || 'Promo'
-                };
-            }
-        } catch (e) {
-            console.error('Price check failed', e);
-        }
-    }
-
-    const newItem = {
+    const newItem = reactive({
         product_id: product.id,
         product_name: product.name,
         product_code: product.internal_code || product.sku,
         quantity: 1,
-        unit_price: unitPrice, // Base price
-        promo_info: promoInfo,
+        unit_price: parseFloat(product.list_price || product.price || 0), // Base price
         discount_percent: 0,
-        final_total: unitPrice
-    };
+        final_total: parseFloat(product.list_price || product.price || 0),
+        calculating: false
+    });
     
     form.items.push(newItem);
-    calculateLine(newItem);
+    
+    // Calculate system price immediately
+    await calculateItemSystemPrice(newItem);
+};
+
+const calculateItemSystemPrice = async (item) => {
+    if (!form.customer_id) return;
+    
+    try {
+        item.calculating = true;
+        const payload = {
+            customer_id: form.customer_id,
+            items: [{
+                product_id: item.product_id,
+                quantity: item.quantity,
+                price_override: null, 
+                discount_override: null
+            }]
+        };
+        
+        const { data } = await api.post('/quick-order/calculate', payload);
+        if (data && data.items && data.items[0]) {
+            const result = data.items[0];
+            item.unit_price = result.unit_base_price;
+            item.discount_percent = result.discount_percent;
+            item.final_total = result.line_total;
+        }
+    } catch (e) {
+        console.error("Pricing error", e);
+    } finally {
+        item.calculating = false;
+    }
+};
+
+const recalculateAllPrices = async () => {
+    if (!form.customer_id || form.items.length === 0) return;
+    
+    if (!confirm('Această acțiune va recalcula toate prețurile conform sistemului și va suprascrie modificările manuale. Continui?')) return;
+    
+    calculating.value = true;
+    try {
+        const payload = {
+            customer_id: form.customer_id,
+            items: form.items.map(i => ({
+                product_id: i.product_id,
+                quantity: i.quantity,
+                price_override: null,
+                discount_override: null
+            }))
+        };
+        
+        const { data } = await api.post('/account/quick-order/calculate', payload);
+        
+        data.items.forEach(resItem => {
+             const item = form.items.find(i => i.product_id === resItem.product_id);
+             if (item) {
+                 item.unit_price = resItem.unit_base_price;
+                 item.discount_percent = resItem.discount_percent;
+                 item.final_total = resItem.line_total;
+             }
+        });
+        
+        toast.success('Prețurile au fost actualizate conform promoțiilor active.');
+    } catch (e) {
+        console.error("Bulk pricing error", e);
+        toast.error('Eroare la recalcularea prețurilor.');
+    } finally {
+        calculating.value = false;
+    }
 };
 
 const calculateLine = (item) => {
@@ -555,6 +616,35 @@ const saveOffer = async () => {
 
 onMounted(async () => {
     await loadConfig();
+
+    // Check visit restriction for Agents/Directors creating NEW offers
+    if (!isEdit.value && ['sales_agent', 'sales_director'].includes(authStore.role)) {
+         // Check Shift Status first
+         if (!trackingStore.isShiftActive) {
+            await trackingStore.checkStatus();
+            if (!trackingStore.isShiftActive) {
+                 toast.error('Trebuie să începeți programul de lucru pentru a crea oferte!');
+                 router.push({ name: 'agent-dashboard' });
+                 return;
+            }
+         }
+
+         if (!visitStore.activeVisit) {
+             toast.error('Trebuie să aveți o vizită activă pentru a crea o ofertă!');
+             router.push({ name: 'agent-dashboard' });
+             return;
+         } else {
+             // Lock to visited customer
+             selectCustomer(visitStore.activeVisit.customer);
+             isCustomerLocked.value = true;
+             
+             nextTick(() => {
+                 if (customerSelectorRef.value) {
+                     customerSelectorRef.value.searchQuery = visitStore.activeVisit.customer.name;
+                 }
+             });
+         }
+    }
 
     if (isEdit.value) {
         // Load offer data

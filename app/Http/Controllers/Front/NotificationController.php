@@ -44,4 +44,37 @@ class NotificationController extends Controller
 
         return response()->json(['message' => 'All notifications marked as read']);
     }
+
+    public function getPreferences(Request $request)
+    {
+        $user = $request->user();
+        $preferences = $user->notification_preferences ?? $this->getDefaultPreferences();
+        return response()->json($preferences);
+    }
+
+    public function updatePreferences(Request $request)
+    {
+        $user = $request->user();
+        $validated = $request->validate([
+            'preferences' => 'required|array',
+        ]);
+
+        // Merge with defaults to ensure structure integrity
+        $newPreferences = array_merge($this->getDefaultPreferences(), $validated['preferences']);
+        
+        $user->notification_preferences = $newPreferences;
+        $user->save();
+
+        return response()->json($newPreferences);
+    }
+
+    private function getDefaultPreferences()
+    {
+        return [
+            'order_updates_database' => true,
+            'order_updates_email' => true,
+            'promotions_database' => true,
+            'promotions_email' => true,
+        ];
+    }
 }

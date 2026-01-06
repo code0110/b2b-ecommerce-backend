@@ -229,12 +229,18 @@ const router = createRouter({
             },
             {
               path: 'notificari',
-          name: 'account-notifications',
-          component: AccountNotifications,
-          meta: { requiresAuth: true }
-        },
-        {
-          path: 'comenzi',
+              name: 'account-notifications',
+              component: AccountNotifications,
+              meta: { requiresAuth: true }
+            },
+            {
+              path: 'notificari/setari',
+              name: 'account-notification-settings',
+              component: () => import('@/views/account/NotificationSettings.vue'),
+              meta: { requiresAuth: true }
+            },
+            {
+              path: 'comenzi',
           name: 'account-orders',
           component: Orders,
           meta: { requiresAuth: true }
@@ -462,6 +468,21 @@ const router = createRouter({
           path: 'brands',
           name: 'admin-brands',
           component: BrandList
+        },
+        {
+          path: 'pages',
+          name: 'admin-pages',
+          component: () => import('@/views/admin/pages/PageList.vue')
+        },
+        {
+          path: 'pages/new',
+          name: 'admin-pages-new',
+          component: () => import('@/views/admin/pages/PageForm.vue')
+        },
+        {
+          path: 'pages/:id',
+          name: 'admin-pages-edit',
+          component: () => import('@/views/admin/pages/PageForm.vue')
         },
         {
           path: 'customers',

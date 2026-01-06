@@ -24,6 +24,7 @@ class User extends Authenticatable
         'customer_id',
         'director_id',
         'is_active',
+        'notification_preferences',
     ];
 
     protected $hidden = [
@@ -34,6 +35,7 @@ class User extends Authenticatable
     protected $casts = [
         'email_verified_at' => 'datetime',
         'is_active' => 'boolean',
+        'notification_preferences' => 'array',
     ];
 
 

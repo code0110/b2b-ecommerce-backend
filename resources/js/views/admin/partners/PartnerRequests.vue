@@ -1,93 +1,113 @@
 <template>
-  <div class="container-fluid py-3">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-      <h1 class="h5 mb-0">Cereri „Devino partener”</h1>
+  <div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <div>
+        <h1 class="h3 fw-bold mb-1 text-gray-800">Cereri Parteneri</h1>
+        <p class="text-muted small mb-0">Gestionează cererile de înregistrare ca partener.</p>
+      </div>
       <button
-        class="btn btn-sm btn-outline-secondary"
+        class="btn btn-outline-primary shadow-sm"
         type="button"
         @click="loadRequests"
       >
-        Reîncarcă
+        <i class="bi bi-arrow-clockwise me-1"></i> Reîncarcă
       </button>
     </div>
 
-    <div v-if="error" class="alert alert-danger py-2">
-      {{ error }}
+    <div v-if="error" class="alert alert-danger shadow-sm border-0 mb-4">
+      <i class="bi bi-exclamation-triangle-fill me-2"></i> {{ error }}
     </div>
 
-    <div class="card">
-      <div class="card-body p-0">
-        <table class="table table-sm mb-0 align-middle">
-          <thead class="table-light">
-            <tr>
-              <th>Companie</th>
-              <th>Persoană contact</th>
-              <th>Regiune</th>
-              <th>Status</th>
-              <th>Creat la</th>
-              <th style="width: 180px;">Acțiuni</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-if="loading">
-              <td colspan="6" class="text-center text-muted py-3">
-                Se încarcă...
-              </td>
-            </tr>
-            <tr v-if="!loading && !requests.length">
-              <td colspan="6" class="text-center text-muted py-3">
-                Nu există cereri sau endpoint-ul nu este încă implementat.
-              </td>
-            </tr>
-            <tr
-              v-for="r in requests"
-              :key="r.id"
-            >
-              <td class="small">
-                <div class="fw-semibold">{{ r.company_name || r.firm_name }}</div>
-                <div class="text-muted">
-                  CUI: {{ r.cui || '—' }}
-                </div>
-              </td>
-              <td class="small">
-                {{ r.contact_name || '—' }}<br>
-                <span class="text-muted">{{ r.contact_email || '' }}</span>
-              </td>
-              <td class="small">
-                {{ r.region || r.county || '—' }}
-              </td>
-              <td class="small">
-                <span class="badge bg-light text-dark">
-                  {{ r.status || 'new' }}
-                </span>
-              </td>
-              <td class="small">
-                {{ formatDate(r.created_at) }}
-              </td>
-              <td class="small">
-                <div class="btn-group btn-group-sm">
-                  <button
-                    type="button"
-                    class="btn btn-outline-success"
-                    @click="changeStatus(r, 'approved')"
-                  >
-                    Acceptă
-                  </button>
-                  <button
-                    type="button"
-                    class="btn btn-outline-danger"
-                    @click="changeStatus(r, 'rejected')"
-                  >
-                    Respinge
-                  </button>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+    <div v-if="loading" class="text-center py-5">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Se încarcă...</span>
       </div>
     </div>
 
+    <div v-else-if="!requests.length" class="text-center py-5">
+      <div class="mb-3">
+        <i class="bi bi-inbox text-muted opacity-25" style="font-size: 3rem;"></i>
+      </div>
+      <h5 class="text-muted">Nu există cereri</h5>
+      <p class="text-muted small">Momentan nu sunt cereri de parteneriat în așteptare.</p>
+    </div>
+
+    <div v-else class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-4">
+      <div v-for="r in requests" :key="r.id" class="col">
+        <div class="card h-100 border shadow-sm hover-shadow transition-all">
+          <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+             <div class="d-flex align-items-center overflow-hidden">
+                <div class="avatar-circle me-3 bg-light text-primary fw-bold d-flex align-items-center justify-content-center rounded-circle border" style="width: 40px; height: 40px; min-width: 40px;">
+                  <i class="bi bi-building"></i>
+                </div>
+                <div class="text-truncate">
+                  <h6 class="fw-bold mb-0 text-dark text-truncate">{{ r.company_name || r.firm_name }}</h6>
+                  <div class="small text-muted">CUI: {{ r.cui || '—' }}</div>
+                </div>
+             </div>
+             <span class="badge rounded-pill ms-2" 
+                :class="{
+                  'bg-success bg-opacity-10 text-success': r.status === 'approved',
+                  'bg-danger bg-opacity-10 text-danger': r.status === 'rejected',
+                  'bg-warning bg-opacity-10 text-warning': !r.status || r.status === 'new'
+                }">
+                {{ r.status === 'approved' ? 'Acceptat' : (r.status === 'rejected' ? 'Respins' : 'Nou') }}
+             </span>
+          </div>
+          
+          <div class="card-body">
+             <div class="mb-3">
+                <small class="text-muted text-uppercase fw-bold" style="font-size: 0.65rem;">CONTACT</small>
+                <div class="d-flex align-items-center mt-1">
+                   <i class="bi bi-person me-2 text-muted"></i>
+                   <span class="fw-semibold text-dark">{{ r.contact_name || '—' }}</span>
+                </div>
+                <div class="d-flex align-items-center mt-1 text-muted small" v-if="r.contact_email">
+                   <i class="bi bi-envelope me-2"></i>
+                   <a :href="'mailto:' + r.contact_email" class="text-decoration-none text-muted">{{ r.contact_email }}</a>
+                </div>
+             </div>
+
+             <div class="row g-2">
+                <div class="col-6">
+                   <small class="text-muted text-uppercase fw-bold" style="font-size: 0.65rem;">REGIUNE</small>
+                   <div class="d-flex align-items-center mt-1 text-dark small">
+                      <i class="bi bi-geo-alt me-2 text-muted"></i>
+                      {{ r.region || r.county || '—' }}
+                   </div>
+                </div>
+                <div class="col-6">
+                   <small class="text-muted text-uppercase fw-bold" style="font-size: 0.65rem;">DATA</small>
+                   <div class="d-flex align-items-center mt-1 text-dark small">
+                      <i class="bi bi-calendar3 me-2 text-muted"></i>
+                      {{ formatDate(r.created_at).split(',')[0] }}
+                   </div>
+                </div>
+             </div>
+          </div>
+
+          <div class="card-footer bg-white py-3 d-flex justify-content-end gap-2" v-if="!r.status || r.status === 'new'">
+             <button
+                type="button"
+                class="btn btn-sm btn-outline-danger flex-grow-1"
+                @click="changeStatus(r, 'rejected')"
+             >
+                <i class="bi bi-x-lg me-1"></i> Respinge
+             </button>
+             <button
+                type="button"
+                class="btn btn-sm btn-success text-white flex-grow-1"
+                @click="changeStatus(r, 'approved')"
+             >
+                <i class="bi bi-check-lg me-1"></i> Acceptă
+             </button>
+          </div>
+           <div class="card-footer bg-white py-2 text-center text-muted small" v-else>
+              Cerere procesată
+           </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 

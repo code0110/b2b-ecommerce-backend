@@ -153,65 +153,79 @@
     </div>
 
     <!-- Lista încasări -->
-    <div class="card">
-      <div class="card-body p-0">
-        <table class="table table-sm mb-0 align-middle">
-          <thead class="table-light">
-            <tr>
-              <th>Data</th>
-              <th>Client</th>
-              <th>Tip</th>
-              <th>Sumă</th>
-              <th>Referință</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-if="loading">
-              <td colspan="5" class="text-center text-muted py-3">
-                Se încarcă...
-              </td>
-            </tr>
-            <tr v-if="!loading && !collections.length">
-              <td colspan="5" class="text-center text-muted py-3">
-                Nu există încasări sau endpoint-ul nu este încă implementat.
-              </td>
-            </tr>
-            <tr
-              v-for="c in collections"
-              :key="c.id"
-            >
-              <td class="small">
-                {{ formatDate(c.payment_date || c.created_at) }}
-              </td>
-              <td class="small">
-                <div v-if="c.customer">
-                  <strong>{{ c.customer.name || c.customer.company_name }}</strong>
-                  <div class="text-muted" style="font-size: 0.8em;" v-if="c.customer.cif">{{ c.customer.cif }}</div>
-                </div>
-                <div v-else>
-                  {{ c.customer_name || c.customer_reference || '—' }}
-                </div>
-              </td>
-              <td class="small">
-                {{ typeLabel(c.type) }}
-              </td>
-              <td class="small">
+    <div v-if="loading" class="text-center py-5">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Se încarcă...</span>
+      </div>
+    </div>
+
+    <div v-else-if="!collections.length" class="text-center py-5">
+      <div class="mb-3">
+        <i class="bi bi-wallet2 text-muted opacity-25" style="font-size: 3rem;"></i>
+      </div>
+      <h5 class="text-muted">Nu există încasări</h5>
+      <p class="text-muted small">Momentan nu sunt înregistrări de încasări.</p>
+    </div>
+
+    <div v-else class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-4">
+      <div v-for="c in collections" :key="c.id" class="col">
+        <div class="card h-100 border shadow-sm hover-shadow transition-all">
+          <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+             <div>
+                <span class="badge rounded-pill me-2" 
+                   :class="{
+                      'bg-success bg-opacity-10 text-success': c.type === 'chs',
+                      'bg-primary bg-opacity-10 text-primary': c.type === 'bo',
+                      'bg-info bg-opacity-10 text-info': c.type === 'cec',
+                      'bg-secondary bg-opacity-10 text-secondary': c.type === 'op'
+                   }">
+                   {{ c.type ? c.type.toUpperCase() : 'N/A' }}
+                </span>
+                <span class="small text-muted">{{ formatDate(c.payment_date || c.created_at) }}</span>
+             </div>
+             <div class="fw-bold text-dark">
                 {{ formatMoney(c.amount || 0) }}
-              </td>
-              <td class="small">
-                <div v-if="['bo', 'cec'].includes(c.type)">
-                  <div v-if="c.series || c.number"><strong>Doc:</strong> {{ c.series }} {{ c.number }}</div>
-                  <div v-if="c.bank"><strong>Bancă:</strong> {{ c.bank }}</div>
-                  <div v-if="c.due_date"><strong>Scadență:</strong> {{ formatDate(c.due_date) }}</div>
-                  <div v-if="c.document_number" class="text-muted">{{ c.document_number }}</div>
+             </div>
+          </div>
+          
+          <div class="card-body">
+             <div class="mb-3">
+                <small class="text-muted text-uppercase fw-bold" style="font-size: 0.65rem;">CLIENT</small>
+                <div v-if="c.customer">
+                   <div class="fw-semibold text-dark text-truncate">{{ c.customer.name || c.customer.company_name }}</div>
+                   <div class="small text-muted" v-if="c.customer.cif">{{ c.customer.cif }}</div>
                 </div>
-                <div v-else>
-                  {{ c.reference || c.document_number || '—' }}
+                <div v-else class="fw-semibold text-dark">
+                   {{ c.customer_name || c.customer_reference || '—' }}
                 </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+             </div>
+
+             <div>
+                <small class="text-muted text-uppercase fw-bold" style="font-size: 0.65rem;">DETALII</small>
+                <div v-if="['bo', 'cec'].includes(c.type)" class="small">
+                   <div v-if="c.series || c.number" class="d-flex align-items-center mt-1">
+                      <i class="bi bi-file-text me-2 text-muted"></i>
+                      <span><strong>Doc:</strong> {{ c.series }} {{ c.number }}</span>
+                   </div>
+                   <div v-if="c.bank" class="d-flex align-items-center mt-1">
+                      <i class="bi bi-bank me-2 text-muted"></i>
+                      <span>{{ c.bank }}</span>
+                   </div>
+                   <div v-if="c.due_date" class="d-flex align-items-center mt-1 text-danger">
+                      <i class="bi bi-calendar-event me-2"></i>
+                      <span>Scadență: {{ formatDate(c.due_date) }}</span>
+                   </div>
+                   <div v-if="c.document_number" class="mt-1 text-muted ps-4">{{ c.document_number }}</div>
+                </div>
+                <div v-else class="small mt-1">
+                   <div class="d-flex align-items-center">
+                      <i class="bi bi-hash me-2 text-muted"></i>
+                      {{ c.reference || c.document_number || 'Fără referință' }}
+                   </div>
+                </div>
+             </div>
+          </div>
+        </div>
       </div>
     </div>
 

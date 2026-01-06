@@ -1,65 +1,134 @@
 <template>
-  <div class="container-fluid">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-      <h1 class="h3">Rapoarte Activitate</h1>
-      
-      <div class="d-flex gap-2">
-         <select v-model="selectedAgent" class="form-select" style="width: 200px;" v-if="canFilterAgents">
-            <option :value="null">Toți Agenții</option>
-            <option v-for="agent in agents" :key="agent.id" :value="agent.id">
-                {{ agent.first_name }} {{ agent.last_name }}
-            </option>
-         </select>
-         
-         <input type="date" v-model="startDate" class="form-control" style="width: 150px;">
-         <input type="date" v-model="endDate" class="form-control" style="width: 150px;">
-         
-         <button class="btn btn-primary" @click="fetchData">Actualizează</button>
+  <div class="container-fluid py-3">
+    <!-- Header & Filters -->
+    <div class="card shadow-sm border-0 mb-4">
+      <div class="card-body p-3">
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+          <div>
+             <h1 class="h4 mb-1">Rapoarte Activitate</h1>
+             <p class="text-muted small mb-0">Statistici și performanță echipă vânzări</p>
+          </div>
+          
+          <div class="d-flex flex-column flex-md-row gap-2">
+             <select v-model="selectedAgent" class="form-select form-select-sm" v-if="canFilterAgents">
+                <option :value="null">Toți Agenții</option>
+                <option v-for="agent in agents" :key="agent.id" :value="agent.id">
+                    {{ agent.first_name }} {{ agent.last_name }}
+                </option>
+             </select>
+             
+             <div class="d-flex gap-2">
+                 <input type="date" v-model="startDate" class="form-control form-control-sm">
+                 <input type="date" v-model="endDate" class="form-control form-control-sm">
+             </div>
+             
+             <button class="btn btn-primary btn-sm" @click="fetchData" :disabled="loading">
+                <span v-if="loading" class="spinner-border spinner-border-sm me-1"></span>
+                <i v-else class="bi bi-arrow-clockwise me-1"></i> Actualizează
+             </button>
+         </div>
+        </div>
       </div>
     </div>
 
+    <div v-if="error" class="alert alert-danger border-0 shadow-sm mb-4">
+      <i class="bi bi-exclamation-triangle-fill me-2"></i>{{ error }}
+    </div>
+
     <!-- Summary Cards -->
-    <div class="row mb-4">
-      <div class="col-md-3">
+    <div class="row g-3 mb-4">
+      <!-- Total Vizite -->
+      <div class="col-6 col-lg-3">
         <div class="card bg-white shadow-sm border-0 h-100">
-          <div class="card-body">
-            <h6 class="text-muted text-uppercase small">Total Vizite</h6>
-            <h2 class="fw-bold mb-0">{{ stats.total_visits }}</h2>
-            <div class="d-flex justify-content-between small text-muted mt-2">
-                <span>{{ stats.completed_visits }} finalizate</span>
-                <span>{{ completionRate }}% rată fin.</span>
+          <div class="card-body p-3">
+            <div class="d-flex align-items-center mb-2">
+                <div class="bg-primary bg-opacity-10 text-primary rounded p-2 me-2">
+                    <i class="bi bi-geo-alt-fill"></i>
+                </div>
+                <h6 class="text-muted text-uppercase small mb-0">Vizite</h6>
+            </div>
+            <h2 class="fw-bold mb-0 h4">
+              <span v-if="loading" class="placeholder-glow"><span class="placeholder col-6"></span></span>
+              <span v-else>{{ stats.total_visits }}</span>
+            </h2>
+            <div class="d-flex flex-column small text-muted mt-1">
+                <span>
+                  <span v-if="loading" class="placeholder-glow"><span class="placeholder col-6"></span></span>
+                  <span v-else>{{ stats.completed_visits }} finalizate</span>
+                </span>
+                <span class="text-success">
+                  <span v-if="loading" class="placeholder-glow"><span class="placeholder col-6"></span></span>
+                  <span v-else>{{ completionRate }}% rată fin.</span>
+                </span>
             </div>
           </div>
         </div>
       </div>
-      <div class="col-md-3">
+
+      <!-- Comenzi -->
+      <div class="col-6 col-lg-3">
         <div class="card bg-white shadow-sm border-0 h-100">
-          <div class="card-body">
-            <h6 class="text-muted text-uppercase small">Comenzi ({{ stats.orders_count }})</h6>
-            <h2 class="fw-bold mb-0">{{ formatPrice(stats.orders_value) }}</h2>
-            <div class="small text-muted mt-2">
-                {{ stats.visits_with_orders }} vizite cu comandă
+          <div class="card-body p-3">
+            <div class="d-flex align-items-center mb-2">
+                <div class="bg-success bg-opacity-10 text-success rounded p-2 me-2">
+                    <i class="bi bi-cart-check-fill"></i>
+                </div>
+                <h6 class="text-muted text-uppercase small mb-0">
+                  Comenzi (
+                  <span v-if="loading" class="placeholder-glow"><span class="placeholder col-6"></span></span>
+                  <span v-else>{{ stats.orders_count }}</span>
+                  )
+                </h6>
+            </div>
+            <h2 class="fw-bold mb-0 h4">
+              <span v-if="loading" class="placeholder-glow"><span class="placeholder col-6"></span></span>
+              <span v-else>{{ formatPrice(stats.orders_value) }}</span>
+            </h2>
+            <div class="small text-muted mt-1">
+                <span v-if="loading" class="placeholder-glow"><span class="placeholder col-6"></span></span>
+                <span v-else>{{ stats.visits_with_orders }} vizite cu comandă</span>
             </div>
           </div>
         </div>
       </div>
-      <div class="col-md-3">
+
+      <!-- Încasări -->
+      <div class="col-6 col-lg-3">
         <div class="card bg-white shadow-sm border-0 h-100">
-          <div class="card-body">
-            <h6 class="text-muted text-uppercase small">Încasări</h6>
-            <h2 class="fw-bold mb-0">{{ formatPrice(stats.payments_value) }}</h2>
-             <div class="small text-muted mt-2">
-                {{ stats.visits_with_payments }} vizite cu încasare
+          <div class="card-body p-3">
+            <div class="d-flex align-items-center mb-2">
+                <div class="bg-info bg-opacity-10 text-info rounded p-2 me-2">
+                    <i class="bi bi-wallet2"></i>
+                </div>
+                <h6 class="text-muted text-uppercase small mb-0">Încasări</h6>
+            </div>
+            <h2 class="fw-bold mb-0 h4">
+              <span v-if="loading" class="placeholder-glow"><span class="placeholder col-6"></span></span>
+              <span v-else>{{ formatPrice(stats.payments_value) }}</span>
+            </h2>
+             <div class="small text-muted mt-1">
+                <span v-if="loading" class="placeholder-glow"><span class="placeholder col-6"></span></span>
+                <span v-else>{{ stats.visits_with_payments }} vizite cu încasare</span>
             </div>
           </div>
         </div>
       </div>
-      <div class="col-md-3">
+
+      <!-- Conversie -->
+      <div class="col-6 col-lg-3">
         <div class="card bg-white shadow-sm border-0 h-100">
-          <div class="card-body">
-            <h6 class="text-muted text-uppercase small">Rată Conversie</h6>
-            <h2 class="fw-bold mb-0">{{ conversionRate }}%</h2>
-            <div class="small text-success mt-2">
+          <div class="card-body p-3">
+            <div class="d-flex align-items-center mb-2">
+                <div class="bg-warning bg-opacity-10 text-warning rounded p-2 me-2">
+                    <i class="bi bi-graph-up-arrow"></i>
+                </div>
+                <h6 class="text-muted text-uppercase small mb-0">Conversie</h6>
+            </div>
+            <h2 class="fw-bold mb-0 h4">
+              <span v-if="loading" class="placeholder-glow"><span class="placeholder col-6"></span></span>
+              <span v-else>{{ conversionRate }}%</span>
+            </h2>
+            <div class="small text-success mt-1">
                 din vizitele efectuate
             </div>
           </div>
@@ -67,83 +136,104 @@
       </div>
     </div>
 
-    <div class="row mb-4">
+    <div class="row g-3 mb-4">
       <!-- Visits Chart -->
-      <div class="col-md-8">
-        <div class="card shadow-sm border-0">
+      <div class="col-lg-8">
+        <div class="card shadow-sm border-0 h-100">
           <div class="card-header bg-white py-3">
              <h6 class="mb-0 fw-bold">Evoluție Vizite</h6>
           </div>
           <div class="card-body">
              <div style="height: 300px; position: relative;">
-                <Bar v-if="visitsChartData" :data="visitsChartData" :options="chartOptions" />
+                <div v-if="loading" class="d-flex h-100 align-items-center justify-content-center">
+                  <div class="spinner-border text-primary" role="status"></div>
+                </div>
+                <Bar v-else-if="visitsChartData" :data="visitsChartData" :options="chartOptions" />
+                <div v-else class="h-100 d-flex align-items-center justify-content-center text-muted">
+                  Fără date pentru perioada selectată
+                </div>
              </div>
           </div>
         </div>
       </div>
 
       <!-- Outcomes Chart -->
-      <div class="col-md-4">
-        <div class="card shadow-sm border-0">
+      <div class="col-lg-4">
+        <div class="card shadow-sm border-0 h-100">
           <div class="card-header bg-white py-3">
              <h6 class="mb-0 fw-bold">Rezultate Vizite</h6>
           </div>
           <div class="card-body">
              <div style="height: 300px; position: relative;">
-                <Pie v-if="outcomesChartData" :data="outcomesChartData" :options="pieOptions" />
+                <div v-if="loading" class="d-flex h-100 align-items-center justify-content-center">
+                  <div class="spinner-border text-primary" role="status"></div>
+                </div>
+                <Pie v-else-if="outcomesChartData" :data="outcomesChartData" :options="pieOptions" />
+                <div v-else class="h-100 d-flex align-items-center justify-content-center text-muted">
+                  Fără date pentru perioada selectată
+                </div>
              </div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Agent Performance Table -->
     <div class="card shadow-sm border-0">
       <div class="card-header bg-white py-3">
         <h6 class="mb-0 fw-bold">Performanță Agenți</h6>
       </div>
-      <div class="table-responsive">
-        <table class="table table-hover align-middle mb-0">
-          <thead class="table-light">
-            <tr>
-              <th>Agent</th>
-              <th>Vizite</th>
-              <th>Realizat / Target (Vizite)</th>
-              <th>Valoare Comenzi</th>
-              <th>Realizat / Target (Vânzări)</th>
-              <th>Încasări</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="agent in agentPerformance" :key="agent.id">
-              <td class="fw-bold">{{ agent.name }}</td>
-              <td>{{ agent.visits_count }}</td>
-              <td>
-                  <div v-if="agent.target_visits > 0">
-                      <div class="progress" style="height: 6px;">
-                        <div class="progress-bar" :class="getProgressBarClass(agent.visits_count, agent.target_visits)" role="progressbar" :style="{ width: Math.min((agent.visits_count / agent.target_visits) * 100, 100) + '%' }"></div>
-                      </div>
-                      <small class="text-muted" style="font-size: 0.75rem;">{{ agent.visits_count }} / {{ agent.target_visits }} ({{ Math.round((agent.visits_count / agent.target_visits) * 100) }}%)</small>
-                  </div>
-                  <small v-else class="text-muted">-</small>
-              </td>
-              <td>{{ formatPrice(agent.orders_value) }}</td>
-              <td>
-                  <div v-if="agent.target_sales > 0">
-                      <div class="progress" style="height: 6px;">
-                        <div class="progress-bar" :class="getProgressBarClass(agent.orders_value, agent.target_sales)" role="progressbar" :style="{ width: Math.min((agent.orders_value / agent.target_sales) * 100, 100) + '%' }"></div>
-                      </div>
-                      <small class="text-muted" style="font-size: 0.75rem;">{{ formatPrice(agent.orders_value) }} / {{ formatPrice(agent.target_sales) }} ({{ Math.round((agent.orders_value / agent.target_sales) * 100) }}%)</small>
-                  </div>
-                  <small v-else class="text-muted">-</small>
-              </td>
-              <td>{{ formatPrice(agent.payments_value) }}</td>
-            </tr>
-            <tr v-if="agentPerformance.length === 0">
-                <td colspan="6" class="text-center py-4 text-muted">Nu există date pentru perioada selectată.</td>
-            </tr>
-          </tbody>
-        </table>
+      
+      <div class="card-body p-3">
+        <div v-if="loading" class="text-center text-muted py-4">
+          <div class="spinner-border text-primary mb-2" role="status"></div>
+          Se încarcă datele...
+        </div>
+        <div v-else-if="agentPerformance.length === 0" class="text-center text-muted py-4">
+            Nu există date pentru perioada selectată.
+        </div>
+        
+        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-3">
+            <div v-for="agent in agentPerformance" :key="agent.id" class="col">
+                <div class="card h-100 border shadow-sm">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h6 class="fw-bold text-primary mb-0">{{ agent.name }}</h6>
+                            <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25">
+                                <i class="bi bi-wallet2 me-1"></i> {{ formatPrice(agent.payments_value) }}
+                            </span>
+                        </div>
+                        
+                        <!-- Vizite -->
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between small mb-1">
+                                <span class="text-muted"><i class="bi bi-geo-alt me-1"></i>Vizite</span>
+                                <span class="fw-semibold">{{ agent.visits_count }} <span class="text-muted fw-normal" v-if="agent.target_visits">/ {{ agent.target_visits }}</span></span>
+                            </div>
+                            <div class="progress" style="height: 6px;" v-if="agent.target_visits > 0">
+                                <div class="progress-bar" :class="getProgressBarClass(agent.visits_count, agent.target_visits)" 
+                                     role="progressbar" 
+                                     :style="{ width: Math.min((agent.visits_count / agent.target_visits) * 100, 100) + '%' }">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Vânzări -->
+                        <div>
+                            <div class="d-flex justify-content-between small mb-1">
+                                <span class="text-muted"><i class="bi bi-cart me-1"></i>Vânzări</span>
+                                <span class="fw-semibold">{{ formatPrice(agent.orders_value) }} <span class="text-muted fw-normal" v-if="agent.target_sales">/ {{ formatPrice(agent.target_sales) }}</span></span>
+                            </div>
+                            <div class="progress" style="height: 6px;" v-if="agent.target_sales > 0">
+                                <div class="progress-bar" :class="getProgressBarClass(agent.orders_value, agent.target_sales)" 
+                                     role="progressbar" 
+                                     :style="{ width: Math.min((agent.orders_value / agent.target_sales) * 100, 100) + '%' }">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
       </div>
     </div>
 
@@ -175,6 +265,8 @@ const startDate = ref(new Date().toISOString().slice(0, 8) + '01'); // First day
 const endDate = ref(new Date().toISOString().slice(0, 10)); // Today
 const selectedAgent = ref(null);
 const agents = ref([]);
+const loading = ref(false);
+const error = ref('');
 
 const stats = ref({
     total_visits: 0,
@@ -227,6 +319,8 @@ const getProgressBarClass = (current, target) => {
 };
 
 const fetchData = async () => {
+    loading.value = true;
+    error.value = '';
     try {
         const params = {
             start_date: startDate.value,
@@ -234,23 +328,24 @@ const fetchData = async () => {
             agent_id: selectedAgent.value
         };
 
-        // 1. Stats
-        const statsRes = await adminApi.get('/reports/dashboard-stats', { params });
+        const [statsRes, visitsRes, outcomesRes, perfRes] = await Promise.all([
+          adminApi.get('/reports/dashboard-stats', { params }),
+          adminApi.get('/reports/visits-chart', { params }),
+          adminApi.get('/reports/outcomes-chart', { params }),
+          adminApi.get('/reports/agent-performance', { params }),
+        ]);
+
         stats.value = statsRes.data;
 
-        // 2. Visits Chart
-        const visitsRes = await adminApi.get('/reports/visits-chart', { params });
         visitsChartData.value = {
-            labels: visitsRes.data.map(v => v.date),
+            labels: (visitsRes.data || []).map(v => v.date),
             datasets: [{
                 label: 'Vizite',
                 backgroundColor: '#0d6efd',
-                data: visitsRes.data.map(v => v.count)
+                data: (visitsRes.data || []).map(v => v.count)
             }]
         };
 
-        // 3. Outcomes Chart
-        const outcomesRes = await adminApi.get('/reports/outcomes-chart', { params });
         const labelsMap = {
             'order_placed': 'Comandă',
             'payment_collected': 'Încasare',
@@ -263,30 +358,26 @@ const fetchData = async () => {
         const colors = ['#198754', '#0dcaf0', '#ffc107', '#0d6efd', '#dc3545', '#6c757d', '#212529'];
         
         outcomesChartData.value = {
-            labels: outcomesRes.data.map(o => labelsMap[o.outcome] || o.outcome),
+            labels: (outcomesRes.data || []).map(o => labelsMap[o.outcome] || o.outcome),
             datasets: [{
                 backgroundColor: colors,
-                data: outcomesRes.data.map(o => o.count)
+                data: (outcomesRes.data || []).map(o => o.count)
             }]
         };
 
-        // 4. Performance
-        const perfRes = await adminApi.get('/reports/agent-performance', { params });
-        agentPerformance.value = perfRes.data;
+        agentPerformance.value = perfRes.data || [];
 
     } catch (e) {
         console.error('Failed to load reports', e);
+        error.value = 'Nu s-au putut încărca rapoartele pentru perioada selectată.';
+    } finally {
+        loading.value = false;
     }
 };
 
 const loadAgents = async () => {
     if (!canFilterAgents.value) return;
     try {
-        // We can reuse users endpoint or sales-reps. Let's try users with role filter
-        // Or if we implemented receipt-books-agents endpoint which returns agents, we can use that or similar.
-        // Let's use a simple call to users? No, specific endpoint is better.
-        // I'll use receipt-books-agents as a hack or just users.
-        // Actually, let's use the users resource filtering.
         const res = await adminApi.get('/users?role=sales_agent&per_page=100');
         agents.value = res.data.data;
     } catch (e) {

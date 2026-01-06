@@ -127,8 +127,12 @@
 import { ref, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { adminApi } from '@/services/http';
+import { useTrackingStore } from '@/store/tracking';
+import { useToast } from 'vue-toastification';
 
 const router = useRouter();
+const trackingStore = useTrackingStore();
+const toast = useToast();
 
 const summary = ref({
     today_sales: 0,
@@ -169,7 +173,16 @@ const fetchData = async () => {
     }
 };
 
-onMounted(() => {
+onMounted(async () => {
+    if (!trackingStore.isShiftActive) {
+        await trackingStore.checkStatus();
+        if (!trackingStore.isShiftActive) {
+             toast.error('Trebuie să începeți programul de lucru pentru a accesa dashboard-ul!');
+             router.push({ name: 'agent-dashboard' });
+             return;
+        }
+    }
+
     fetchData();
     // Refresh every 60 seconds
     refreshInterval = setInterval(fetchData, 60000);

@@ -7,8 +7,8 @@ export const fetchAccountOverview = async () => {
   return data;
 };
 
-// /api/account/notifications/unread-count
+// /api/notifications/unread-count
 export const fetchUnreadNotificationsCount = async () => {
-  const { data } = await api.get('/account/notifications/unread-count');
+  const { data } = await api.get('/notifications/unread-count');
   return data;
 };

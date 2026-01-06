@@ -7,65 +7,103 @@
       </button>
     </div>
 
-    <div class="card shadow-sm">
-      <div class="card-body p-0">
-        <div class="table-responsive">
-          <table class="table table-hover align-middle mb-0">
-            <thead class="table-light">
-              <tr>
-                <th>ID</th>
-                <th>Agent / Director</th>
-                <th>Serie</th>
-                <th>Interval</th>
-                <th>Număr Curent</th>
-                <th>Status</th>
-                <th>Acțiuni</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="book in receiptBooks" :key="book.id">
-                <td>#{{ book.id }}</td>
-                <td>
-                  <div v-if="book.user">
-                    <div class="fw-semibold">{{ book.user.first_name }} {{ book.user.last_name }}</div>
-                    <div class="small text-muted">{{ book.user.email }}</div>
-                  </div>
-                  <span v-else class="text-muted fst-italic">Neasignat</span>
-                </td>
-                <td class="fw-bold">{{ book.series }}</td>
-                <td>{{ book.start_number }} - {{ book.end_number }}</td>
-                <td>
-                  <span :class="{'text-danger': book.current_number > book.end_number}">
-                    {{ book.current_number }}
-                  </span>
-                </td>
-                <td>
-                  <span class="badge" :class="book.is_active ? 'bg-success' : 'bg-secondary'">
-                    {{ book.is_active ? 'Activ' : 'Inactiv' }}
-                  </span>
-                </td>
-                <td>
-                  <button class="btn btn-sm btn-outline-primary me-2" @click="editBook(book)" title="Editează">
-                    <i class="bi bi-pencil"></i>
-                  </button>
-                  <button class="btn btn-sm btn-outline-danger" @click="confirmDelete(book)" title="Șterge">
-                    <i class="bi bi-trash"></i>
-                  </button>
-                </td>
-              </tr>
-              <tr v-if="receiptBooks.length === 0">
-                <td colspan="7" class="text-center py-4 text-muted">
-                  Nu există chitanțiere definite.
-                </td>
-              </tr>
-            </tbody>
-          </table>
+    <div v-if="receiptBooks.length === 0" class="text-center py-5">
+      <div class="mb-3">
+        <i class="bi bi-journal-album text-muted opacity-25" style="font-size: 3rem;"></i>
+      </div>
+      <h5 class="text-muted">Nu există chitanțiere</h5>
+      <p class="text-muted small">Adaugă primul chitanțier pentru a începe.</p>
+    </div>
+
+    <div v-else class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-4 mb-4">
+      <div v-for="book in receiptBooks" :key="book.id" class="col">
+        <div class="card h-100 border shadow-sm hover-shadow transition-all">
+           <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+              <div>
+                 <span class="badge bg-light text-dark border me-2">#{{ book.id }}</span>
+                 <span class="fw-bold text-primary">{{ book.series }}</span>
+              </div>
+              <span class="badge rounded-pill" :class="book.is_active ? 'bg-success bg-opacity-10 text-success' : 'bg-secondary bg-opacity-10 text-secondary'">
+                 {{ book.is_active ? 'Activ' : 'Inactiv' }}
+              </span>
+           </div>
+           <div class="card-body">
+              <div class="mb-3">
+                 <small class="text-muted text-uppercase fw-bold" style="font-size: 0.65rem;">AGENT / DIRECTOR</small>
+                 <div v-if="book.user" class="d-flex align-items-center mt-1">
+                    <div class="avatar-circle-sm me-2 bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 24px; height: 24px; font-size: 0.7rem;">
+                       {{ book.user.first_name?.[0] }}{{ book.user.last_name?.[0] }}
+                    </div>
+                    <div class="text-truncate">
+                       <div class="fw-semibold text-dark small text-truncate">{{ book.user.first_name }} {{ book.user.last_name }}</div>
+                       <div class="text-muted text-truncate" style="font-size: 0.75rem;">{{ book.user.email }}</div>
+                    </div>
+                 </div>
+                 <div v-else class="mt-1 text-muted small fst-italic">
+                    <i class="bi bi-person-x me-1"></i> Neasignat
+                 </div>
+              </div>
+
+              <div class="row g-2">
+                 <div class="col-6">
+                    <small class="text-muted text-uppercase fw-bold" style="font-size: 0.65rem;">INTERVAL</small>
+                    <div class="fw-semibold text-dark">{{ book.start_number }} - {{ book.end_number }}</div>
+                 </div>
+                 <div class="col-6">
+                    <small class="text-muted text-uppercase fw-bold" style="font-size: 0.65rem;">NUMĂR CURENT</small>
+                    <div class="fw-bold" :class="book.current_number > book.end_number ? 'text-danger' : 'text-success'">
+                       {{ book.current_number }}
+                       <i v-if="book.current_number > book.end_number" class="bi bi-exclamation-circle-fill ms-1 small"></i>
+                    </div>
+                 </div>
+              </div>
+              
+              <div class="mt-3">
+                 <div class="progress" style="height: 6px;">
+                    <div class="progress-bar" role="progressbar" 
+                       :style="{ width: Math.min(((book.current_number - book.start_number) / (book.end_number - book.start_number)) * 100, 100) + '%' }"
+                       :class="book.current_number > book.end_number ? 'bg-danger' : 'bg-primary'"
+                    ></div>
+                 </div>
+                 <div class="d-flex justify-content-between mt-1">
+                    <small class="text-muted" style="font-size: 0.7rem;">Progres</small>
+                    <small class="text-muted" style="font-size: 0.7rem;">{{ Math.min(Math.round(((book.current_number - book.start_number) / (book.end_number - book.start_number)) * 100), 100) }}%</small>
+                 </div>
+              </div>
+           </div>
+           <div class="card-footer bg-white py-2 d-flex justify-content-end gap-2">
+              <button class="btn btn-sm btn-outline-primary" @click="editBook(book)">
+                 <i class="bi bi-pencil me-1"></i> Editează
+              </button>
+              <button class="btn btn-sm btn-outline-danger" @click="confirmDelete(book)">
+                 <i class="bi bi-trash me-1"></i> Șterge
+              </button>
+           </div>
         </div>
       </div>
-      <div class="card-footer d-flex justify-content-end" v-if="pagination.total > pagination.per_page">
-         <button class="btn btn-sm btn-outline-secondary me-2" :disabled="pagination.current_page === 1" @click="changePage(pagination.current_page - 1)">Previous</button>
-         <button class="btn btn-sm btn-outline-secondary" :disabled="pagination.current_page === pagination.last_page" @click="changePage(pagination.current_page + 1)">Next</button>
-      </div>
+    </div>
+
+    <!-- Pagination -->
+    <div class="d-flex justify-content-center" v-if="pagination.total > pagination.per_page">
+         <nav aria-label="Page navigation">
+            <ul class="pagination pagination-sm shadow-sm">
+                <li class="page-item" :class="{ disabled: pagination.current_page === 1 }">
+                   <button class="page-link border-0" @click="changePage(pagination.current_page - 1)">
+                      <i class="bi bi-chevron-left"></i>
+                   </button>
+                </li>
+                <li class="page-item disabled">
+                   <span class="page-link border-0 text-muted bg-transparent">
+                      Pagina {{ pagination.current_page }} din {{ pagination.last_page }}
+                   </span>
+                </li>
+                <li class="page-item" :class="{ disabled: pagination.current_page === pagination.last_page }">
+                   <button class="page-link border-0" @click="changePage(pagination.current_page + 1)">
+                      <i class="bi bi-chevron-right"></i>
+                   </button>
+                </li>
+            </ul>
+         </nav>
     </div>
 
     <!-- Modal Form -->

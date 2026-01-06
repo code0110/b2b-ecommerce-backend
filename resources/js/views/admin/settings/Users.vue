@@ -79,120 +79,115 @@
       </div>
     </div>
 
-    <!-- Users Table -->
-    <div class="card border-0 shadow-sm overflow-hidden">
-      <div class="card-body p-0">
-        <div v-if="loading" class="text-center py-5">
-          <div class="spinner-border text-primary" role="status">
-            <span class="visually-hidden">Se încarcă...</span>
-          </div>
-        </div>
+    <!-- Users List (Grid) -->
+    <div v-if="loading" class="text-center py-5">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Se încarcă...</span>
+      </div>
+    </div>
 
-        <div v-else-if="users.length === 0" class="text-center py-5">
-          <div class="mb-3">
-            <i class="bi bi-people text-muted opacity-25" style="font-size: 3rem;"></i>
-          </div>
-          <h5 class="text-muted">Nu au fost găsiți utilizatori</h5>
-          <p class="text-muted small">Încearcă să modifici filtrele de căutare.</p>
-        </div>
+    <div v-else-if="users.length === 0" class="text-center py-5">
+      <div class="mb-3">
+        <i class="bi bi-people text-muted opacity-25" style="font-size: 3rem;"></i>
+      </div>
+      <h5 class="text-muted">Nu au fost găsiți utilizatori</h5>
+      <p class="text-muted small">Încearcă să modifici filtrele de căutare.</p>
+    </div>
 
-        <div v-else class="table-responsive">
-          <table class="table table-hover align-middle mb-0">
-            <thead class="bg-light">
-              <tr>
-                <th class="ps-4 py-3 text-muted small text-uppercase fw-bold border-0">Utilizator</th>
-                <th class="py-3 text-muted small text-uppercase fw-bold border-0">Roluri</th>
-                <th class="py-3 text-muted small text-uppercase fw-bold border-0">Telefon</th>
-                <th class="py-3 text-muted small text-uppercase fw-bold border-0">Status</th>
-                <th class="pe-4 py-3 text-muted small text-uppercase fw-bold border-0 text-end">Acțiuni</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="u in users" :key="u.id" class="cursor-pointer-row">
-                <td class="ps-4">
-                  <div class="d-flex align-items-center">
-                    <div class="avatar-circle me-3 bg-gradient-primary text-white fw-bold d-flex align-items-center justify-content-center rounded-circle shadow-sm" style="width: 40px; height: 40px;">
-                      {{ getInitials(u.name) }}
-                    </div>
-                    <div>
-                      <div class="fw-semibold text-dark">{{ u.name }}</div>
-                      <div class="small text-muted">{{ u.email }}</div>
-                    </div>
-                  </div>
-                </td>
-                <td>
-                  <div class="d-flex flex-wrap gap-1">
-                    <span v-for="r in u.roles" :key="r.id" class="badge bg-light text-dark border">
-                      {{ r.name }}
-                    </span>
-                  </div>
-                </td>
-                <td class="text-muted small">
-                  {{ u.director_name || '-' }}
-                </td>
-                <td class="text-muted small">
-                  <div v-if="u.phone"><i class="bi bi-telephone me-1"></i>{{ u.phone }}</div>
-                  <div v-else>-</div>
-                </td>
-                <td>
-                  <span class="badge rounded-pill" :class="u.is_active ? 'bg-success bg-opacity-10 text-success' : 'bg-secondary bg-opacity-10 text-secondary'">
-                    {{ u.is_active ? 'Activ' : 'Inactiv' }}
+    <div v-else class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-3">
+      <div v-for="u in users" :key="u.id" class="col">
+        <div class="card h-100 border shadow-sm user-card hover-shadow transition-all">
+          <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+             <div class="d-flex align-items-center">
+                <div class="avatar-circle me-3 bg-gradient-primary text-white fw-bold d-flex align-items-center justify-content-center rounded-circle shadow-sm" style="width: 40px; height: 40px; font-size: 0.9rem;">
+                  {{ getInitials(u.name) }}
+                </div>
+                <div style="min-width: 0;">
+                  <h6 class="fw-bold mb-0 text-dark text-truncate">{{ u.name }}</h6>
+                  <div class="small text-muted text-truncate">{{ u.email }}</div>
+                </div>
+             </div>
+             <span class="badge rounded-pill flex-shrink-0 ms-2" :class="u.is_active ? 'bg-success bg-opacity-10 text-success' : 'bg-secondary bg-opacity-10 text-secondary'">
+                {{ u.is_active ? 'Activ' : 'Inactiv' }}
+              </span>
+          </div>
+          
+          <div class="card-body">
+             <div class="mb-3">
+               <small class="text-muted text-uppercase fw-bold" style="font-size: 0.7rem;">ROLURI</small>
+               <div class="d-flex flex-wrap gap-1 mt-1">
+                  <span v-for="r in u.roles" :key="r.id" class="badge bg-light text-dark border">
+                    {{ r.name }}
                   </span>
-                </td>
-                <td class="pe-4 text-end">
-                  <div class="btn-group">
-                    <button class="btn btn-sm btn-light border" @click="editUser(u)" title="Editează">
-                      <i class="bi bi-pencil"></i>
-                    </button>
-                    <button 
-                      v-if="u.is_active && u.id !== currentUserId" 
-                      class="btn btn-sm btn-light border text-danger" 
-                      @click="deactivateUser(u)" 
-                      title="Dezactivează"
-                    >
-                      <i class="bi bi-person-x"></i>
-                    </button>
-                    <button 
-                      v-if="!u.is_active && u.id !== currentUserId" 
-                      class="btn btn-sm btn-light border text-success" 
-                      @click="activateUser(u)" 
-                      title="Activează"
-                    >
-                      <i class="bi bi-person-check"></i>
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-      
-      <!-- Pagination -->
-      <div v-if="pagination.last_page > 1" class="card-footer bg-white border-top py-3">
-        <div class="d-flex justify-content-between align-items-center">
-          <div class="small text-muted">
-            Afișare {{ pagination.from }} - {{ pagination.to }} din {{ pagination.total }} utilizatori
+                  <span v-if="!u.roles || !u.roles.length" class="text-muted small">-</span>
+               </div>
+             </div>
+
+             <div class="mb-3" v-if="u.director_name">
+               <small class="text-muted text-uppercase fw-bold" style="font-size: 0.7rem;">DIRECTOR ASIGNAT</small>
+               <div class="d-flex align-items-center mt-1">
+                  <i class="bi bi-person-badge me-2 text-primary"></i>
+                  <span class="fw-semibold text-dark">{{ u.director_name }}</span>
+               </div>
+             </div>
+
+             <div>
+                <small class="text-muted text-uppercase fw-bold" style="font-size: 0.7rem;">CONTACT</small>
+                <div class="mt-1">
+                   <div v-if="u.phone" class="d-flex align-items-center text-dark small">
+                      <i class="bi bi-telephone me-2 text-muted"></i>{{ u.phone }}
+                   </div>
+                   <div v-else class="text-muted small">-</div>
+                </div>
+             </div>
           </div>
-          <nav>
-            <ul class="pagination pagination-sm mb-0">
-              <li class="page-item" :class="{ disabled: pagination.current_page === 1 }">
-                <button class="page-link border-0" @click="changePage(pagination.current_page - 1)">
-                  <i class="bi bi-chevron-left"></i>
-                </button>
-              </li>
-              <li class="page-item active">
-                <span class="page-link border-0 bg-primary">{{ pagination.current_page }}</span>
-              </li>
-              <li class="page-item" :class="{ disabled: pagination.current_page === pagination.last_page }">
-                <button class="page-link border-0" @click="changePage(pagination.current_page + 1)">
-                  <i class="bi bi-chevron-right"></i>
-                </button>
-              </li>
-            </ul>
-          </nav>
+
+          <div class="card-footer bg-white py-2 d-flex justify-content-end gap-2">
+            <button class="btn btn-sm btn-outline-primary" @click="editUser(u)" title="Editează">
+              <i class="bi bi-pencil me-1"></i> Editează
+            </button>
+            <button 
+              v-if="u.is_active && u.id !== currentUserId" 
+              class="btn btn-sm btn-outline-danger" 
+              @click="deactivateUser(u)" 
+              title="Dezactivează"
+            >
+              <i class="bi bi-person-x"></i>
+            </button>
+            <button 
+              v-if="!u.is_active && u.id !== currentUserId" 
+              class="btn btn-sm btn-outline-success" 
+              @click="activateUser(u)" 
+              title="Activează"
+            >
+              <i class="bi bi-person-check"></i>
+            </button>
+          </div>
         </div>
       </div>
+    </div>
+      
+    <!-- Pagination -->
+    <div v-if="pagination.last_page > 1" class="d-flex justify-content-center mt-4">
+        <nav aria-label="Page navigation">
+            <ul class="pagination pagination-sm shadow-sm">
+                <li class="page-item" :class="{ disabled: pagination.current_page === 1 }">
+                <button class="page-link border-0" @click="changePage(pagination.current_page - 1)">
+                    <i class="bi bi-chevron-left"></i>
+                </button>
+                </li>
+                <li class="page-item disabled">
+                  <span class="page-link border-0 text-muted bg-transparent">
+                     Pagina {{ pagination.current_page }} din {{ pagination.last_page }}
+                  </span>
+               </li>
+                <li class="page-item" :class="{ disabled: pagination.current_page === pagination.last_page }">
+                <button class="page-link border-0" @click="changePage(pagination.current_page + 1)">
+                    <i class="bi bi-chevron-right"></i>
+                </button>
+                </li>
+            </ul>
+        </nav>
     </div>
     </div>
 

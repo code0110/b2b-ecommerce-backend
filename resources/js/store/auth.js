@@ -16,6 +16,14 @@ export const useAuthStore = defineStore('auth', {
 
   getters: {
     isAuthenticated: (state) => !!state.token && !!state.user,
+    impersonatedCustomer: () => {
+      const id = localStorage.getItem('impersonated_client_id');
+      if (!id) return null;
+      return {
+        id: parseInt(id, 10),
+        name: localStorage.getItem('impersonated_client_name') || 'Client',
+      };
+    },
   },
 
   actions: {

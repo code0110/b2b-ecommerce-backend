@@ -60,6 +60,8 @@ import RolesPermissions from '@/views/admin/settings/RolesPermissions.vue'
 import AuditLog from '@/views/admin/settings/AuditLog.vue'
 import OfferList from '@/views/admin/offers/OfferList.vue'
 import PartnerRequests from '@/views/admin/partners/PartnerRequests.vue'
+import PageListAdmin from '@/views/admin/PageList.vue'
+import PageFormAdmin from '@/views/admin/PageForm.vue'
 
 import { useAuthStore } from '@/store/auth'
 
@@ -364,6 +366,21 @@ const router = createRouter({
           path: 'settings/audit-log',
           name: 'admin-audit-log',
           component: AuditLog
+        },
+        {
+          path: 'pages',
+          name: 'admin-pages',
+          component: PageListAdmin
+        },
+        {
+          path: 'pages/new',
+          name: 'admin-pages-new',
+          component: PageFormAdmin
+        },
+        {
+          path: 'pages/:id',
+          name: 'admin-pages-edit',
+          component: PageFormAdmin
         }
       ]
     }

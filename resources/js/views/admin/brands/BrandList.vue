@@ -15,57 +15,46 @@
       {{ error }}
     </div>
 
-    <!-- Brands Table -->
-    <div class="card border-0 shadow-sm">
-      <div class="card-body p-0">
-        <div v-if="loading" class="text-center py-5">
-          <div class="spinner-border text-primary" role="status">
-            <span class="visually-hidden">Se încarcă...</span>
-          </div>
-        </div>
+    <!-- Brands Grid -->
+    <div v-if="!loading && !brands.length" class="text-center py-5">
+      <div class="mb-3">
+        <i class="bi bi-tags text-muted" style="font-size: 3rem;"></i>
+      </div>
+      <h5 class="text-muted">Nu există branduri definite</h5>
+      <p class="text-muted small">Adaugă primul brand folosind butonul de mai sus.</p>
+    </div>
 
-        <div v-else-if="!brands.length" class="text-center py-5">
-          <div class="mb-3">
-            <i class="bi bi-tags text-muted" style="font-size: 3rem;"></i>
+    <div v-else class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-3">
+      <div v-for="brand in brands" :key="brand.id" class="col">
+        <div class="card h-100 border shadow-sm brand-card">
+          <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+            <h6 class="fw-bold mb-0 text-dark">{{ brand.name }}</h6>
+            <span class="badge rounded-pill" :class="brand.is_active ? 'bg-success bg-opacity-10 text-success' : 'bg-secondary bg-opacity-10 text-secondary'">
+              {{ brand.is_active ? 'Activ' : 'Inactiv' }}
+            </span>
           </div>
-          <h5 class="text-muted">Nu există branduri definite</h5>
-          <p class="text-muted small">Adaugă primul brand folosind butonul de mai sus.</p>
-        </div>
-
-        <div v-else class="table-responsive">
-          <table class="table table-hover align-middle mb-0">
-            <thead class="bg-light">
-              <tr>
-                <th class="ps-4 py-3 text-muted small text-uppercase fw-bold border-0">Denumire</th>
-                <th class="py-3 text-muted small text-uppercase fw-bold border-0">Slug</th>
-                <th class="py-3 text-muted small text-uppercase fw-bold border-0">Ordine</th>
-                <th class="py-3 text-muted small text-uppercase fw-bold border-0">Status</th>
-                <th class="pe-4 py-3 text-muted small text-uppercase fw-bold border-0 text-end">Acțiuni</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="brand in brands" :key="brand.id">
-                <td class="ps-4 fw-semibold text-dark">{{ brand.name }}</td>
-                <td><code class="text-muted bg-light px-2 py-1 rounded small">{{ brand.slug }}</code></td>
-                <td class="text-muted">{{ brand.sort_order ?? '-' }}</td>
-                <td>
-                  <span class="badge rounded-pill" :class="brand.is_active ? 'bg-success bg-opacity-10 text-success' : 'bg-secondary bg-opacity-10 text-secondary'">
-                    {{ brand.is_active ? 'Activ' : 'Inactiv' }}
-                  </span>
-                </td>
-                <td class="pe-4 text-end">
-                  <div class="btn-group">
-                    <button class="btn btn-sm btn-light border" @click="editBrand(brand)" title="Editează">
-                      <i class="bi bi-pencil"></i>
-                    </button>
-                    <button class="btn btn-sm btn-light border text-danger" @click="removeBrand(brand)" title="Șterge">
-                      <i class="bi bi-trash"></i>
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+          <div class="card-body">
+            <div class="mb-2">
+              <small class="text-muted text-uppercase fw-bold" style="font-size: 0.7rem;">SLUG</small>
+              <div class="font-monospace bg-light rounded px-2 py-1 small text-truncate">{{ brand.slug }}</div>
+            </div>
+            <div class="mb-2" v-if="brand.description">
+               <small class="text-muted text-uppercase fw-bold" style="font-size: 0.7rem;">DESCRIERE</small>
+               <div class="text-muted small text-truncate">{{ brand.description }}</div>
+            </div>
+            <div>
+               <small class="text-muted text-uppercase fw-bold" style="font-size: 0.7rem;">ORDINE</small>
+               <div class="fw-bold text-dark">{{ brand.sort_order ?? '-' }}</div>
+            </div>
+          </div>
+          <div class="card-footer bg-white py-2 d-flex justify-content-end gap-2">
+            <button class="btn btn-sm btn-outline-primary" @click="editBrand(brand)" title="Editează">
+              <i class="bi bi-pencil me-1"></i> Editează
+            </button>
+            <button class="btn btn-sm btn-outline-danger" @click="removeBrand(brand)" title="Șterge">
+              <i class="bi bi-trash"></i>
+            </button>
+          </div>
         </div>
       </div>
     </div>

@@ -256,10 +256,16 @@
 <script setup>
 import { onMounted, reactive, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import { useAuthStore } from '@/store/auth';
+import { useTrackingStore } from '@/store/tracking';
+import { useToast } from 'vue-toastification';
 import { fetchOrders } from '@/services/admin/orders';
 
 const route = useRoute();
 const router = useRouter();
+const authStore = useAuthStore();
+const trackingStore = useTrackingStore();
+const toast = useToast();
 
 const loading = ref(false);
 const error = ref('');
@@ -425,7 +431,18 @@ const formatMoney = (value) => {
   return num.toLocaleString('ro-RO', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 };
 
-onMounted(() => {
+onMounted(async () => {
+  if (['sales_agent', 'sales_director'].includes(authStore.role)) {
+      if (!trackingStore.isShiftActive) {
+          await trackingStore.checkStatus();
+          if (!trackingStore.isShiftActive) {
+               toast.error('Trebuie să începeți programul de lucru pentru a vedea comenzile!');
+               router.push({ name: 'agent-dashboard' });
+               return;
+          }
+      }
+  }
+
   pagination.current_page = Number(route.query.page || 1);
   loadOrders();
 });

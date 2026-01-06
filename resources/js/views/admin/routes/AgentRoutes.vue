@@ -455,9 +455,18 @@ watch(selectedAgentId, (newVal) => {
 
 <style scoped>
 .action-hover:hover {
-  background-color: #f8f9fa;
-}
-.list-group-item {
+  background-color: #fff;
+  transform: translateY(-2px);
   transition: all 0.2s;
+}
+
+.list-enter-active,
+.list-leave-active {
+  transition: all 0.3s ease;
+}
+.list-enter-from,
+.list-leave-to {
+  opacity: 0;
+  transform: translateX(30px);
 }
 </style>

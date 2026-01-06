@@ -16,6 +16,38 @@
       {{ error }}
     </div>
 
+    <!-- Filters -->
+    <div class="card shadow-sm border-0 mb-3">
+      <div class="card-body p-3">
+        <div class="row g-2">
+          <div class="col-12 col-md-4">
+            <input 
+              v-model="filters.search" 
+              type="text" 
+              class="form-control form-control-sm" 
+              placeholder="Caută după număr..." 
+              @keyup.enter="loadOffers"
+            >
+          </div>
+          <div class="col-6 col-md-4">
+            <select v-model="filters.status" class="form-select form-select-sm" @change="loadOffers">
+              <option value="">Toate statusurile</option>
+              <option value="draft">Draft</option>
+              <option value="sent">Trimisă</option>
+              <option value="accepted">Acceptată</option>
+              <option value="rejected">Respinsă</option>
+              <option value="completed">Finalizată</option>
+            </select>
+          </div>
+          <div class="col-6 col-md-4">
+             <button class="btn btn-sm btn-outline-primary w-100" @click="loadOffers">
+               <i class="bi bi-filter me-1"></i> Filtrează
+             </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div v-if="loading" class="text-center py-4">
       <div class="spinner-border spinner-border-sm" role="status" />
       <div class="small text-muted mt-2">
@@ -27,53 +59,43 @@
       <div v-if="offers.length === 0" class="alert alert-info small">
         Nu există oferte înregistrate.
       </div>
-      <div v-else class="card shadow-sm">
-        <div class="table-responsive">
-          <table class="table table-sm align-middle mb-0">
-            <thead>
-              <tr class="small text-muted">
-                <th>Nr. ofertă</th>
-                <th>Data</th>
-                <th>Status</th>
-                <th>Comandă asociată</th>
-                <th class="text-end">Valoare</th>
-                <th class="text-end">Acțiuni</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="offer in offers" :key="offer.id">
-                <td>{{ offer.number }}</td>
-                <td>{{ formatDate(offer.created_at) }}</td>
-                <td>
-                  <span class="badge bg-light text-dark border">
-                    {{ offer.status_label || offer.status }}
-                  </span>
-                </td>
-                <td>
-                  <RouterLink
-                    v-if="offer.order_id"
-                    :to="`/cont/comenzi/${offer.order_id}`"
-                    class="text-decoration-none"
-                  >
-                    #{{ offer.order_number || offer.order_id }}
-                  </RouterLink>
-                  <span v-else class="text-muted small">–</span>
-                </td>
-                <td class="text-end">
-                  {{ formatMoney(offer.total) }}
-                </td>
-                <td class="text-end">
-                  <button
-                    type="button"
-                    class="btn btn-outline-secondary btn-sm"
-                    @click="viewOffer(offer)"
-                  >
-                    Detalii
-                  </button>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+      <div v-else class="card shadow-sm border-0">
+        <div class="card-body">
+          <div class="row row-cols-1 g-3">
+            <div class="col" v-for="offer in offers" :key="offer.id">
+              <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                  <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                      <div class="fw-semibold">#{{ offer.number }}</div>
+                      <div class="small text-muted">{{ formatDate(offer.created_at) }}</div>
+                      <div class="mt-1">
+                        <span class="badge bg-light text-dark border">
+                          {{ offer.status_label || offer.status }}
+                        </span>
+                        <span v-if="offer.order_id" class="badge bg-light text-dark ms-1">
+                          Comandă #{{ offer.order_number || offer.order_id }}
+                        </span>
+                      </div>
+                    </div>
+                    <div class="text-end">
+                      <div class="fw-bold">{{ formatMoney(offer.total) }}</div>
+                      <button
+                        type="button"
+                        class="btn btn-outline-secondary btn-sm mt-2"
+                        @click="viewOffer(offer)"
+                      >
+                        Detalii
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div v-if="offers.length === 0" class="col">
+              <div class="text-center py-4 text-muted">Nu există oferte înregistrate.</div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -107,34 +129,22 @@
                 {{ formatDate(selectedOffer.created_at) }}
               </p>
               <div v-if="selectedOffer.lines && selectedOffer.lines.length">
-                <div class="table-responsive">
-                  <table class="table table-sm align-middle mb-0">
-                    <thead>
-                      <tr class="text-muted">
-                        <th>Produs</th>
-                        <th>Cod</th>
-                        <th class="text-end">Cantitate</th>
-                        <th class="text-end">Preț</th>
-                        <th class="text-end">Total</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr
-                        v-for="line in selectedOffer.lines"
-                        :key="line.id"
-                      >
-                        <td>{{ line.product_name }}</td>
-                        <td>{{ line.product_code }}</td>
-                        <td class="text-end">{{ line.quantity }}</td>
-                        <td class="text-end">
-                          {{ formatMoney(line.unit_price) }}
-                        </td>
-                        <td class="text-end">
-                          {{ formatMoney(line.line_total) }}
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
+                <div class="list-group">
+                  <div
+                    class="list-group-item d-flex justify-content-between align-items-start"
+                    v-for="line in selectedOffer.lines"
+                    :key="line.id"
+                  >
+                    <div>
+                      <div class="fw-semibold small">{{ line.product_name }}</div>
+                      <div class="small text-muted">{{ line.product_code }}</div>
+                    </div>
+                    <div class="text-end">
+                      <div class="small">Cant: <strong>{{ line.quantity }}</strong></div>
+                      <div class="small">Preț: <strong>{{ formatMoney(line.unit_price) }}</strong></div>
+                      <div class="small">Total: <strong>{{ formatMoney(line.line_total) }}</strong></div>
+                    </div>
+                  </div>
                 </div>
                 <div class="text-end mt-2">
                   <div>
@@ -185,6 +195,10 @@ const loading = ref(false);
 const error = ref('');
 const offers = ref([]);
 const selectedOffer = ref(null);
+const filters = ref({
+  search: '',
+  status: ''
+});
 
 const formatMoney = (value) => {
   if (!value) value = 0;
@@ -204,7 +218,7 @@ const loadOffers = async () => {
   error.value = '';
 
   try {
-    const data = await fetchOffers();
+    const data = await fetchOffers(filters.value);
     offers.value = data.data ?? data;
   } catch (e) {
     console.error(e);

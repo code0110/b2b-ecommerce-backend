@@ -34,6 +34,7 @@ use App\Http\Controllers\Front\SalesRepresentativeController as FrontSalesRepCon
 use App\Http\Controllers\Front\PartnerController;
 use App\Http\Controllers\Front\PaymentController as FrontPaymentController;
 use App\Http\Controllers\Front\BlogController as FrontBlogController;
+use App\Http\Controllers\Admin\PageController as AdminPageController;
 
 use App\Http\Controllers\Front\SearchController;
 use App\Http\Controllers\Front\ProductToolsController;
@@ -65,6 +66,7 @@ use App\Http\Controllers\Front\OrderApprovalController;
 use App\Http\Controllers\Front\ShipmentController as FrontShipmentController;
 use App\Http\Controllers\Front\InvoiceController as FrontInvoiceController;
 use App\Http\Controllers\Front\NotificationController;
+use App\Http\Controllers\Front\ProductStockAlertController;
 use App\Http\Controllers\Front\QuoteController;
 
 
@@ -188,11 +190,11 @@ Route::middleware(['auth:sanctum', 'impersonate'])->group(function () {
         Route::get('invoices', [FrontInvoiceController::class, 'index']);
         Route::get('invoices/{invoice}', [FrontInvoiceController::class, 'show']);
 
-        // Notificări
-        Route::get('notifications', [NotificationController::class, 'index']);
-        Route::get('notifications/unread-count', [NotificationController::class, 'unreadCount']);
-        Route::post('notifications/{notification}/read', [NotificationController::class, 'markAsRead']);
-        Route::post('notifications/read-all', [NotificationController::class, 'markAllAsRead']);
+        // Notificări - moved to general auth group
+        // Route::get('notifications', [NotificationController::class, 'index']);
+        // Route::get('notifications/unread-count', [NotificationController::class, 'unreadCount']);
+        // Route::post('notifications/{notification}/read', [NotificationController::class, 'markAsRead']);
+        // Route::post('notifications/read-all', [NotificationController::class, 'markAllAsRead']);
 
         // Offers (Agent/Director System - Client Access)
         Route::get('client-offers', [\App\Http\Controllers\Front\OfferController::class, 'index']); 
@@ -247,9 +249,15 @@ Route::middleware(['auth:sanctum', 'impersonate'])->group(function () {
     Route::get('notifications', [NotificationController::class, 'index']);
 Route::get('notifications/unread-count', [NotificationController::class, 'unreadCount']);
 Route::post('notifications/{id}/read', [NotificationController::class, 'markAsRead']);
-Route::post('notifications/read-all', [NotificationController::class, 'markAllAsRead']);
+    Route::post('notifications/read-all', [NotificationController::class, 'markAllAsRead']);
+    Route::get('notifications/preferences', [NotificationController::class, 'getPreferences']);
+    Route::post('notifications/preferences', [NotificationController::class, 'updatePreferences']);
 
-// Oferte (front) - pentru client
+    // Stock Alerts
+    Route::post('products/stock-alert', [ProductStockAlertController::class, 'subscribe']);
+    Route::get('products/stock-alert/status', [ProductStockAlertController::class, 'checkStatus']);
+
+    // Oferte (front) - pentru client
     Route::get('client-offers', [\App\Http\Controllers\Front\OfferController::class, 'index']);
     Route::get('client-offers/{id}', [\App\Http\Controllers\Front\OfferController::class, 'show']);
     Route::post('client-offers/{id}/status', [\App\Http\Controllers\Front\OfferController::class, 'changeStatus']);
@@ -304,6 +312,9 @@ Route::prefix('admin')
 
         // Brands
         Route::apiResource('brands', \App\Http\Controllers\Admin\BrandController::class);
+
+        // Pages (CMS)
+        Route::apiResource('pages', AdminPageController::class);
 
         // Customers
         Route::apiResource('customers', \App\Http\Controllers\Admin\CustomerController::class);
@@ -379,6 +390,11 @@ Route::apiResource('partner-requests', AdminPartnerRequestController::class)->on
         Route::post('offers/{id}/status', [\App\Http\Controllers\Admin\OfferController::class, 'changeStatus']);
         Route::post('offers/{id}/messages', [\App\Http\Controllers\Admin\OfferController::class, 'addMessage']);
         Route::post('offers/{id}/convert-to-order', [\App\Http\Controllers\Admin\OfferController::class, 'convertToOrder']);
+
+        // Notifications (Send)
+        Route::post('notifications/send', [\App\Http\Controllers\Admin\NotificationController::class, 'send']);
+        Route::get('notifications/users-search', [\App\Http\Controllers\Admin\NotificationController::class, 'searchUsers']);
+        Route::get('notifications/history', [\App\Http\Controllers\Admin\NotificationController::class, 'history']);
 
         // Quick Orders
         Route::post('quick-order/calculate', [\App\Http\Controllers\Admin\QuickOrderController::class, 'calculate']);

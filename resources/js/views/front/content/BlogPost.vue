@@ -70,6 +70,7 @@
 import { ref, onMounted, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { fetchBlogPost } from '@/services/content';
+import { setTitle, setMeta, setMetaProperty, setCanonical, setJsonLd } from '@/utils/seo';
 
 const route = useRoute();
 
@@ -93,6 +94,7 @@ const load = async () => {
     const data = await fetchBlogPost(route.params.slug);
     post.value = data.post ?? data;
     related.value = data.related ?? [];
+    applySeo();
   } catch (e) {
     console.error(e);
     error.value = 'Nu am putut încărca articolul.';
@@ -106,6 +108,45 @@ watch(
   () => route.params.slug,
   () => load()
 );
+
+const applySeo = () => {
+  if (!post.value) return;
+  const title = (post.value.meta_title || post.value.title || 'Articol') + ' | ' + (document?.querySelector('meta[name=\"application-name\"]')?.getAttribute('content') || '');
+  const desc = post.value.meta_description || post.value.excerpt || '';
+  const url = window.location.origin + (location.pathname || '');
+  const image = post.value.image_url || '';
+  const author = post.value.author?.name || '';
+  const published = post.value.published_at || '';
+  const modified = post.value.updated_at || '';
+  setTitle(title);
+  setMeta('description', desc);
+  setMetaProperty('og:type', 'article');
+  setMetaProperty('og:title', title);
+  setMetaProperty('og:description', desc);
+  setMetaProperty('og:url', url);
+  if (image) setMetaProperty('og:image', image);
+  setCanonical(url);
+  const breadcrumb = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    'itemListElement': [
+      { '@type': 'ListItem', position: 1, name: 'Acasă', item: window.location.origin + '/' },
+      { '@type': 'ListItem', position: 2, name: 'Blog / Noutăți', item: window.location.origin + '/blog' },
+      { '@type': 'ListItem', position: 3, name: post.value.title, item: url }
+    ]
+  };
+  const article = {
+    '@context': 'https://schema.org',
+    '@type': 'Article',
+    'headline': post.value.title,
+    'image': image ? [image] : undefined,
+    'author': author ? { '@type': 'Person', 'name': author } : undefined,
+    'datePublished': published || undefined,
+    'dateModified': modified || undefined,
+    'mainEntityOfPage': url
+  };
+  setJsonLd({ '@graph': [breadcrumb, article] });
+}
 </script>
 
 <style scoped>

@@ -177,21 +177,7 @@
       <!-- Page Content -->
       <main class="flex-grow-1 overflow-auto p-4 custom-scrollbar">
         <div class="container-fluid p-0">
-             <router-view v-slot="{ Component }">
-                <Suspense>
-                  <template #default>
-                    <transition name="fade" mode="out-in">
-                      <component :is="Component" :key="route.fullPath" />
-                    </transition>
-                  </template>
-                  <template #fallback>
-                    <div class="d-flex align-items-center gap-2 text-muted p-3">
-                      <span class="spinner-border text-primary spinner-border-sm" role="status"></span>
-                      <span>Se încarcă conținutul...</span>
-                    </div>
-                  </template>
-                </Suspense>
-             </router-view>
+             <RouterView />
         </div>
       </main>
     </div>

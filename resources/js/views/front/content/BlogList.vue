@@ -167,6 +167,7 @@
 import { reactive, ref, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { fetchBlogList } from '@/services/content';
+import { setTitle, setMeta, setMetaProperty, setCanonical, setJsonLd } from '@/utils/seo';
 
 const route = useRoute();
 const router = useRouter();
@@ -224,6 +225,31 @@ const load = async () => {
     posts.data = source.data ?? [];
     posts.meta = source.meta ?? null;
     categories.value = data.categories ?? [];
+    const title = 'Blog / Noutăți';
+    const desc = 'Articole educaționale, noutăți și studii de caz.';
+    const url = window.location.origin + (router.resolve({ name: 'blog-list' }).href || '/blog');
+    setTitle(title);
+    setMeta('description', desc);
+    setMetaProperty('og:type', 'website');
+    setMetaProperty('og:title', title);
+    setMetaProperty('og:description', desc);
+    setMetaProperty('og:url', url);
+    setCanonical(url);
+    const breadcrumb = {
+      '@context': 'https://schema.org',
+      '@type': 'BreadcrumbList',
+      'itemListElement': [
+        { '@type': 'ListItem', position: 1, name: 'Acasă', item: window.location.origin + '/' },
+        { '@type': 'ListItem', position: 2, name: 'Blog / Noutăți', item: url }
+      ]
+    };
+    const blog = {
+      '@context': 'https://schema.org',
+      '@type': 'Blog',
+      'name': 'Blog / Noutăți',
+      'url': url
+    };
+    setJsonLd({ '@graph': [breadcrumb, blog] });
   } catch (e) {
     console.error(e);
     error.value = 'Nu am putut încărca articolele.';

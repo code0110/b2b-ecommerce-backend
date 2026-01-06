@@ -423,6 +423,10 @@ Route::apiResource('partner-requests', AdminPartnerRequestController::class)->on
         Route::get('audit-logs', [\App\Http\Controllers\Admin\AuditLogController::class, 'index']);
         Route::get('audit-logs/{id}', [\App\Http\Controllers\Admin\AuditLogController::class, 'show']);
 
+        // Settings (Offers configuration)
+        Route::get('settings', [\App\Http\Controllers\Admin\SettingController::class, 'index']);
+        Route::put('settings', [\App\Http\Controllers\Admin\SettingController::class, 'update']);
+
         // Notifications
         Route::get('notifications', [\App\Http\Controllers\Front\NotificationController::class, 'index']);
         Route::get('notifications/unread-count', [\App\Http\Controllers\Front\NotificationController::class, 'unreadCount']);

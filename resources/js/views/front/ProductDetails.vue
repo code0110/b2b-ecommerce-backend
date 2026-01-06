@@ -361,6 +361,7 @@ import { fetchProductBySlug } from '@/services/catalog'
 import { addCartItem } from '@/services/cart'
 import axios from '@/services/http'
 import { useToast } from 'vue-toastification'
+import { setTitle, setMeta, setMetaProperty, setCanonical, setJsonLd } from '@/utils/seo'
 
 const route = useRoute()
 const router = useRouter()
@@ -450,6 +451,7 @@ const loadProduct = async () => {
         selectedVariant.value = product.value.variants[0].code
     }
     checkSubscriptionStatus()
+    applySeo()
   } catch (err) {
     console.error(err)
     if (err.response && err.response.status === 404) {
@@ -458,7 +460,7 @@ const loadProduct = async () => {
        error.value = "A apărut o eroare la încărcarea produsului."
     }
   } finally {
-    loading.value = false
+  loading.value = false
   }
 }
 
@@ -466,9 +468,78 @@ onMounted(() => {
   loadProduct()
 })
 
+const checkSubscriptionStatus = async () => {
+  try {
+    if (!authStore.user || !product.value) {
+      isSubscribed.value = false
+      return
+    }
+    let variantId = null
+    if (selectedVariant.value && product.value.variants) {
+      const v = product.value.variants.find(v => v.code === selectedVariant.value)
+      if (v) variantId = v.id
+    }
+    const { data } = await axios.get('/api/products/stock-alert/status', {
+      params: {
+        product_id: product.value.id,
+        product_variant_id: variantId
+      }
+    })
+    isSubscribed.value = !!data?.subscribed
+  } catch (e) {
+    isSubscribed.value = false
+  }
+}
+
 watch(slug, () => {
   loadProduct()
 })
+
+const applySeo = () => {
+  if (!product.value) return
+  const title = (product.value.meta_title || product.value.name || '') + ' | ' + (document?.querySelector('meta[name=\"application-name\"]')?.getAttribute('content') || '')
+  const desc = product.value.meta_description || product.value.short_description || ''
+  const url = window.location.origin + (router.resolve({ name: 'product-details', params: { slug: product.value.slug } }).href || window.location.pathname)
+  const image = product.value.image_url || product.value.main_image_url || ''
+  const brand = product.value.brand?.name || product.value.brand || ''
+  const sku = product.value.sku || product.value.internal_code || ''
+  const price = parseFloat(product.value.price_override || product.value.promo_price || product.value.price || 0)
+  const availability = (product.value.stock_status === 'in_stock' || (product.value.stock_qty && product.value.stock_qty > 0)) ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock'
+  setTitle(title)
+  setMeta('description', desc)
+  setMetaProperty('og:type', 'product')
+  setMetaProperty('og:title', title)
+  setMetaProperty('og:description', desc)
+  setMetaProperty('og:url', url)
+  if (image) setMetaProperty('og:image', image)
+  setCanonical(url)
+  const breadcrumb = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    'itemListElement': [
+      { '@type': 'ListItem', position: 1, name: 'Acasă', item: window.location.origin + '/' },
+      { '@type': 'ListItem', position: 2, name: product.value.category?.name || product.value.category_name || 'Categorie produse', item: window.location.origin + (router.resolve({ name: 'category', params: { slug: product.value.categorySlug || product.value.category?.slug || '' } }).href || '/produse') },
+      { '@type': 'ListItem', position: 3, name: product.value.name, item: url }
+    ]
+  }
+  const productJson = {
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+    'name': product.value.name,
+    'image': image ? [image] : undefined,
+    'description': desc,
+    'sku': sku || undefined,
+    'brand': brand ? { '@type': 'Brand', 'name': brand } : undefined,
+    'offers': {
+      '@type': 'Offer',
+      'priceCurrency': 'RON',
+      'price': price,
+      'availability': availability,
+      'url': url
+    }
+  }
+  setJsonLd({ '@graph': [breadcrumb, productJson] })
+}
 
 const categoryTitle = computed(() => {
   if (!product.value) return 'Categorie produse'

@@ -271,6 +271,7 @@ import { ref, computed, onMounted, watch } from 'vue';
 import { useRoute, RouterLink } from 'vue-router';
 import { fetchProductBySlug } from '@/services/catalog';
 import { addCartItem } from '@/services/cart';
+import { setTitle, setMeta, setMetaProperty, setCanonical, setJsonLd } from '@/utils/seo';
 
 const route = useRoute();
 
@@ -349,6 +350,7 @@ const loadProduct = async () => {
       data.complementary_products ??
       data.cross_sell_products ??
       [];
+    applySeo();
   } catch (e) {
     console.error('Product load error', e);
     if (e.response?.status === 404) {
@@ -400,4 +402,50 @@ watch(
 onMounted(() => {
   loadProduct();
 });
+
+const applySeo = () => {
+  if (!product.value) return;
+  const title = (product.value.meta_title || product.value.name || '') + ' | ' + (document?.querySelector('meta[name=\"application-name\"]')?.getAttribute('content') || '');
+  const desc = product.value.meta_description || product.value.short_description || '';
+  const url = window.location.origin + (location.pathname || '');
+  const image = product.value.image_url || product.value.main_image_url || '';
+  const brand = product.value.brand?.name || product.value.brand || '';
+  const sku = product.value.sku || product.value.internal_code || '';
+  const price = parseFloat(product.value.price_override || product.value.promo_price || product.value.price || 0);
+  const availability = (product.value.stock_status === 'in_stock' || (product.value.stock_qty && product.value.stock_qty > 0)) ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock';
+  setTitle(title);
+  setMeta('description', desc);
+  setMetaProperty('og:type', 'product');
+  setMetaProperty('og:title', title);
+  setMetaProperty('og:description', desc);
+  setMetaProperty('og:url', url);
+  if (image) setMetaProperty('og:image', image);
+  setCanonical(url);
+  const breadcrumb = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    'itemListElement': [
+      { '@type': 'ListItem', position: 1, name: 'Acasă', item: window.location.origin + '/' },
+      { '@type': 'ListItem', position: 2, name: product.value.main_category?.name || 'Categorie produse', item: window.location.origin + (product.value.main_category ? '/categorie/' + product.value.main_category.slug : '/produse') },
+      { '@type': 'ListItem', position: 3, name: product.value.name, item: url }
+    ]
+  };
+  const productJson = {
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+    'name': product.value.name,
+    'image': image ? [image] : undefined,
+    'description': desc,
+    'sku': sku || undefined,
+    'brand': brand ? { '@type': 'Brand', 'name': brand } : undefined,
+    'offers': {
+      '@type': 'Offer',
+      'priceCurrency': 'RON',
+      'price': price,
+      'availability': availability,
+      'url': url
+    }
+  };
+  setJsonLd({ '@graph': [breadcrumb, productJson] })
+}
 </script>

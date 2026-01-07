@@ -11,6 +11,41 @@ use Illuminate\Support\Facades\DB;
 
 class NotificationController extends Controller
 {
+    public function index(Request $request)
+    {
+        $user = $request->user();
+        $limit = $request->input('limit', 20);
+
+        $notifications = $user->notifications()->limit($limit)->get();
+
+        return response()->json($notifications);
+    }
+
+    public function unreadCount(Request $request)
+    {
+        return response()->json([
+            'count' => $request->user()->unreadNotifications()->count()
+        ]);
+    }
+
+    public function markAsRead(Request $request, $id)
+    {
+        $user = $request->user();
+        $notification = $user->notifications()->where('id', $id)->first();
+
+        if ($notification) {
+            $notification->markAsRead();
+        }
+
+        return response()->json(['message' => 'Marked as read']);
+    }
+
+    public function markAllAsRead(Request $request)
+    {
+        $request->user()->unreadNotifications->markAsRead();
+        return response()->json(['message' => 'All marked as read']);
+    }
+
     public function history()
     {
         // Fetch last 50 sent notifications of type GeneralNotification

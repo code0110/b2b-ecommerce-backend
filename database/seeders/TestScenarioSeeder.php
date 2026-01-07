@@ -250,8 +250,9 @@ class TestScenarioSeeder extends Seeder
             'end_at' => now()->addDays(30),
             'priority' => 10,
             'applies_to' => 'products',
-            'bonus_type' => 'discount_percent',
-            'discount_percent' => 10.00, // 12000 -> 10800
+            'type' => 'standard',
+            'value_type' => 'percent',
+            'value' => 10.00,
             'customer_type' => 'both',
         ])->products()->attach($prodMacbook->id);
 
@@ -264,8 +265,9 @@ class TestScenarioSeeder extends Seeder
             'end_at' => now()->addDays(30),
             'priority' => 20,
             'applies_to' => 'products',
-            'bonus_type' => 'discount_value',
-            'discount_value' => 200.00, // 4000 -> 3800
+            'type' => 'standard',
+            'value_type' => 'fixed_amount',
+            'value' => 200.00,
             'customer_type' => 'both',
         ])->products()->attach($prodGalaxy->id);
 
@@ -278,8 +280,9 @@ class TestScenarioSeeder extends Seeder
             'end_at' => now()->addDays(30),
             'priority' => 5, // Lower priority than specific product promos
             'applies_to' => 'categories',
-            'bonus_type' => 'discount_percent',
-            'discount_percent' => 15.00,
+            'type' => 'standard',
+            'value_type' => 'percent',
+            'value' => 15.00,
             'customer_type' => 'both',
         ])->categories()->attach($catAccessories->id);
 
@@ -292,8 +295,9 @@ class TestScenarioSeeder extends Seeder
             'end_at' => now()->addDays(30),
             'priority' => 1, // Lowest priority
             'applies_to' => 'brands',
-            'bonus_type' => 'discount_percent',
-            'discount_percent' => 5.00,
+            'type' => 'standard',
+            'value_type' => 'percent',
+            'value' => 5.00,
             'customer_type' => 'both',
         ])->brands()->attach($brandApple->id);
 
@@ -307,8 +311,9 @@ class TestScenarioSeeder extends Seeder
             'priority' => 50,
             'applies_to' => 'all', // Cart level usually implies applies to all or checked via logic
             'min_cart_total' => 5000.00,
-            'bonus_type' => 'discount_value', // Could be implemented as cart adjustment or distributed
-            'discount_value' => 100.00,
+            'type' => 'standard',
+            'value_type' => 'fixed_amount',
+            'value' => 100.00,
             'customer_type' => 'both',
         ]);
 
@@ -322,8 +327,9 @@ class TestScenarioSeeder extends Seeder
             'priority' => 30,
             'applies_to' => 'products',
             'min_qty_per_product' => 5,
-            'bonus_type' => 'discount_percent',
-            'discount_percent' => 20.00,
+            'type' => 'volume',
+            'value_type' => 'percent',
+            'value' => 20.00,
             'customer_type' => 'both',
         ])->products()->attach($prodCable->id);
 
@@ -338,10 +344,10 @@ class TestScenarioSeeder extends Seeder
             'priority' => 40,
             'applies_to' => 'products',
             'min_qty_per_product' => 1, // Buy 1 Laptop
-            'bonus_type' => 'free_item', // Logic: Add free item to cart
-            // We need to store WHICH item is free. Assuming 'benefit_payload' or specific field
-            // For now, if schema doesn't have benefit_payload fully migrated for this, we might use JSON
-            'benefit_payload' => json_encode(['free_product_id' => $prodMouse->id, 'qty' => 1]),
+            'type' => 'gift',
+            'value_type' => 'fixed_amount',
+            'value' => 0,
+            'settings' => json_encode(['gift_product_id' => $prodMouse->id, 'gift_qty' => 1]),
             'customer_type' => 'both',
         ])->products()->attach($prodMacbook->id);
 

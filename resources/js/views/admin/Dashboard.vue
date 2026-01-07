@@ -280,7 +280,7 @@ const loadData = async () => {
     topCustomers.value = data.top_customers || data.topCustomers || []
     recentOrders.value = data.recent_orders || data.recentOrders || []
   } catch (e) {
-    console.error(e)
+    // console.error(e)
     error.value = 'Nu s-au putut încărca datele pentru dashboard.'
   } finally {
     loading.value = false

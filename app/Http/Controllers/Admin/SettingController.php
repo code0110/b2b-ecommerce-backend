@@ -41,6 +41,15 @@ class SettingController extends Controller
             return [$s->key => $s->castValue($s->value, $s->type)];
         });
 
+        // Dynamic overrides for authenticated users
+        if (auth('sanctum')->check()) {
+            $user = auth('sanctum')->user();
+            $discountService = app(\App\Services\DiscountRuleService::class);
+            
+            $settings['offer_discount_threshold_approval'] = $discountService->getApprovalThreshold($user);
+            $settings['offer_discount_max'] = $discountService->getMaxDiscount($user);
+        }
+
         return response()->json($settings);
     }
 }

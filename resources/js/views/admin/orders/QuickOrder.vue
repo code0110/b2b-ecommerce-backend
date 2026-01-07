@@ -1073,7 +1073,7 @@ const setItemDiscountPercent = (product, percent) => {
     if (!item) return;
     
     if (isNaN(percent) || percent < 0) percent = 0;
-    const max = 20;
+    const max = config.maxDiscount;
     if (percent > max) percent = max;
     
     item.discount_percent = percent;

@@ -79,11 +79,20 @@ function attachInterceptors(instance, { attachCartSession = false } = {}) {
   instance.interceptors.response.use(
     (response) => response,
     async (error) => {
-      if (error.response?.status === 401) {
+      const isLogoutRequest = error.config?.url?.includes('/auth/logout');
+      
+      if (axios.isCancel(error) || error.code === 'ERR_CANCELED') {
+        return new Promise(() => {});
+      }
+
+      if (error.response?.status === 401 && !isLogoutRequest) {
         const authStore = useAuthStore?.();
         if (authStore) {
-          await authStore.logout();
+          // Putem curăța starea locală direct fără să mai apelăm API-ul dacă suntem deja 401
+          // Sau apelăm logout care face try/catch pe request
+          await authStore.logout(); 
           window.location.href = '/login';
+          return new Promise(() => {});
         }
       }
       return Promise.reject(error);

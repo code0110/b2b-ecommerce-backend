@@ -30,6 +30,13 @@ class CartController extends Controller
      */
     protected function resolveCart(Request $request): Cart
     {
+        // Debugging
+        // \Illuminate\Support\Facades\Log::info('ResolveCart', [
+        //     'headers' => $request->headers->all(),
+        //     'user_sanctum' => $request->user('sanctum'),
+        //     'user_default' => $request->user(),
+        // ]);
+
         // User logat: încercăm întâi via sanctum, apoi via sesiunea web
         $user = $request->user('sanctum') ?? $request->user();
 

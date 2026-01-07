@@ -307,6 +307,11 @@ Route::middleware(['auth:sanctum', 'role:admin'])->prefix('admin')->group(functi
     Route::apiResource('content-blocks', \App\Http\Controllers\Admin\ContentBlockController::class);
     Route::apiResource('pages', \App\Http\Controllers\Admin\PageController::class);
     Route::apiResource('settings', \App\Http\Controllers\Admin\SettingController::class);
+    
+    // Discount Rules
+    Route::get('discount-rules/options', [\App\Http\Controllers\Admin\DiscountRuleController::class, 'options']);
+    Route::apiResource('discount-rules', \App\Http\Controllers\Admin\DiscountRuleController::class);
+
     Route::apiResource('promotions', AdminPromotionController::class);
     Route::apiResource('products', \App\Http\Controllers\Admin\ProductController::class)->except(['index', 'show']);
     Route::apiResource('brands', \App\Http\Controllers\Admin\BrandController::class)->except(['show']);
@@ -324,6 +329,15 @@ Route::middleware(['auth:sanctum', 'role:admin'])->prefix('admin')->group(functi
     Route::get('dashboard/overview', [\App\Http\Controllers\Admin\DashboardController::class, 'overview']);
     Route::apiResource('audit-logs', AuditLogController::class)->only(['index', 'show']);
     
+    // Notifications Management
+    Route::get('notifications', [\App\Http\Controllers\Admin\NotificationController::class, 'index']);
+    Route::get('notifications/history', [\App\Http\Controllers\Admin\NotificationController::class, 'history']);
+    Route::post('notifications/send', [\App\Http\Controllers\Admin\NotificationController::class, 'send']);
+    Route::get('notifications/users-search', [\App\Http\Controllers\Admin\NotificationController::class, 'searchUsers']);
+    Route::post('notifications/{id}/read', [\App\Http\Controllers\Admin\NotificationController::class, 'markAsRead']);
+    Route::post('notifications/read-all', [\App\Http\Controllers\Admin\NotificationController::class, 'markAllAsRead']);
+    Route::get('notifications/unread-count', [\App\Http\Controllers\Admin\NotificationController::class, 'unreadCount']);
+
     Route::get('erp/logs', [ErpController::class, 'logs']);
     Route::post('erp/orders/{id}/sync', [ErpController::class, 'syncOrder']);
 });

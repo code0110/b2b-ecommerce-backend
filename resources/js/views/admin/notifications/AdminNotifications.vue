@@ -366,7 +366,7 @@ const loadNotifications = async () => {
         // Update store count if needed
         notificationsStore.fetchAdminUnreadCount()
     } catch (e) {
-        console.error(e)
+        // console.error(e)
         error.value = 'Nu s-au putut încărca notificările.'
     } finally {
         loading.value = false
@@ -379,7 +379,7 @@ const loadHistory = async () => {
         const data = await fetchNotificationHistory();
         history.value = data;
     } catch (e) {
-        console.error(e);
+        // console.error(e);
         toast.error('Nu s-a putut încărca istoricul.');
     } finally {
         loadingHistory.value = false;
@@ -392,7 +392,7 @@ const markRead = async (n) => {
         n.read_at = new Date().toISOString()
         notificationsStore.fetchAdminUnreadCount()
     } catch (e) {
-        console.error(e)
+        // console.error(e)
     }
 }
 
@@ -413,7 +413,7 @@ const handleUserSearch = () => {
             });
             searchResults.value = data;
         } catch (e) {
-            console.error(e);
+            // console.error(e);
         }
     }, 300);
 }
@@ -464,7 +464,7 @@ const sendNotification = async () => {
         if (activeTab.value === 'history') loadHistory();
         
     } catch (e) {
-        console.error(e);
+        // console.error(e);
         toast.error('Eroare la trimiterea notificării.');
     } finally {
         sending.value = false;

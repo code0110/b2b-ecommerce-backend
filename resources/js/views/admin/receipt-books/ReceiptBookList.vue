@@ -188,7 +188,7 @@ const loadData = async (page = 1) => {
             per_page: data.per_page
         }
     } catch (e) {
-        console.error(e)
+        // console.error(e)
     }
 }
 
@@ -196,7 +196,7 @@ const loadAgents = async () => {
     try {
         agents.value = await fetchAgents()
     } catch (e) {
-        console.error(e)
+        // console.error(e)
     }
 }
 

@@ -340,33 +340,6 @@
             <div class="card-body p-4">
                 <h6 class="fw-bold mb-3 text-dark">Reguli Avansate</h6>
                 
-                <div class="mb-3">
-                    <label class="form-label small fw-bold text-muted">Prioritate Aplicare</label>
-                    <select v-model="form.priority" class="form-select">
-                        <option :value="0">Normală (0)</option>
-                        <option :value="10">Medie (10)</option>
-                        <option :value="100">Ridicată (100)</option>
-                        <option :value="999">Critică (999)</option>
-                    </select>
-                    <div class="form-text small">Determină ordinea de aplicare.</div>
-                </div>
-
-                <div class="form-check mb-2">
-                    <input class="form-check-input" type="checkbox" v-model="form.is_exclusive" id="isExclusive">
-                    <label class="form-check-label small" for="isExclusive">
-                        Promoție Exclusivă (Nu se cumulează)
-                    </label>
-                </div>
-                
-                <div class="form-check mb-3">
-                    <input class="form-check-input" type="checkbox" v-model="form.is_iterative" id="isIterative">
-                    <label class="form-check-label small" for="isIterative">
-                        Se aplică la fiecare unitate (Iterativ)
-                    </label>
-                </div>
-
-                <hr class="border-light">
-
                 <div class="mb-2">
                     <label class="form-label small fw-bold text-muted">Minim Coș (RON)</label>
                     <input type="number" class="form-control form-control-sm" v-model="form.min_cart_total">
@@ -439,10 +412,6 @@ const form = ref({
   
   min_cart_total: 0,
   min_qty_per_product: 0,
-  
-  is_exclusive: false,
-  is_iterative: false,
-  priority: 0,
 });
 
 const promoTypes = [

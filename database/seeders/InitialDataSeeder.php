@@ -23,10 +23,7 @@ class InitialDataSeeder extends Seeder
         foreach ($roles as $roleData) {
             Role::firstOrCreate(
                 ['slug' => $roleData['slug']],
-                [
-                    'name' => $roleData['name'],
-                    'code' => $roleData['slug']
-                ]
+                ['name' => $roleData['name'], 'code' => $roleData['slug']]
             );
         }
 

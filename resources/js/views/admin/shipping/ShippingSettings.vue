@@ -172,7 +172,7 @@ const loadConfig = async () => {
     const resp = await fetchShippingConfig()
     rules.value = resp.data || resp || []
   } catch (e) {
-    console.error(e)
+    // console.error(e)
     error.value = 'Nu s-au putut încărca regulile de transport.'
   } finally {
     loading.value = false
@@ -209,7 +209,7 @@ const saveRule = async (rule) => {
       return
     }
   } catch (e) {
-    console.error(e)
+    // console.error(e)
     saveError.value =
       e?.response?.data?.message ||
       'Nu s-a putut salva regula de transport.'
@@ -228,7 +228,7 @@ const removeRule = async (rule) => {
     await deleteShippingConfig(rule.id)
     await loadConfig()
   } catch (e) {
-    console.error(e)
+    // console.error(e)
     alert('Nu s-a putut șterge regula.')
   }
 }

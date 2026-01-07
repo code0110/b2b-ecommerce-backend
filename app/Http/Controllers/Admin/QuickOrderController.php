@@ -12,6 +12,7 @@ use App\Models\Cart;
 use App\Models\ShippingMethod;
 use App\Services\Pricing\PromotionPricingService;
 use App\Services\Pricing\PromotionEngine;
+use App\Services\DiscountRuleService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -20,11 +21,16 @@ class QuickOrderController extends Controller
 {
     protected $pricingService;
     protected $promotionEngine;
+    protected $discountRuleService;
 
-    public function __construct(PromotionPricingService $pricingService, PromotionEngine $promotionEngine)
-    {
+    public function __construct(
+        PromotionPricingService $pricingService,
+        PromotionEngine $promotionEngine,
+        DiscountRuleService $discountRuleService
+    ) {
         $this->pricingService = $pricingService;
         $this->promotionEngine = $promotionEngine;
+        $this->discountRuleService = $discountRuleService;
     }
 
     public function getCheckoutData(Request $request)
@@ -113,8 +119,8 @@ class QuickOrderController extends Controller
         $grandTotal = 0;
         $requiresApproval = false;
         
-        $derogationThreshold = Setting::get('offer_discount_threshold_approval', 15);
-        $maxDiscount = Setting::get('offer_discount_max', 20);
+        $derogationThreshold = $this->discountRuleService->getApprovalThreshold($user);
+        $maxDiscount = $this->discountRuleService->getMaxDiscount($user);
         
         $globalDiscountPercent = $request->input('global_discount_percent', 0);
         

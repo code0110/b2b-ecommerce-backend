@@ -63,7 +63,6 @@
                         <th class="py-3 text-uppercase text-muted small fw-bold">Nume Promoție</th>
                         <th class="py-3 text-uppercase text-muted small fw-bold">Tip & Valoare</th>
                         <th class="py-3 text-uppercase text-muted small fw-bold">Perioadă</th>
-                        <th class="py-3 text-uppercase text-muted small fw-bold text-center">Prioritate</th>
                         <th class="py-3 text-uppercase text-muted small fw-bold text-center">Status</th>
                         <th class="pe-4 py-3 text-uppercase text-muted small fw-bold text-end">Acțiuni</th>
                     </tr>
@@ -97,11 +96,6 @@
                                     Expirată
                                 </span>
                             </div>
-                        </td>
-                        <td class="text-center">
-                            <span class="badge bg-light text-secondary border rounded-pill px-3">
-                                {{ promo.priority }}
-                            </span>
                         </td>
                         <td class="text-center">
                             <span class="badge rounded-pill px-3 py-2" :class="statusBadgeClass(promo.status)">

@@ -209,8 +209,10 @@ class OfferController extends Controller
             $totalAmount = 0;
             $totalDiscount = 0;
             $requiresApproval = false;
-            $derogationThreshold = Setting::get('offer_discount_threshold_approval', 15);
-            $maxDiscount = Setting::get('offer_discount_max', 20);
+            $discountService = app(\App\Services\DiscountRuleService::class);
+            $currentUser = Auth::user();
+            $derogationThreshold = $discountService->getApprovalThreshold($currentUser);
+            $maxDiscount = $discountService->getMaxDiscount($currentUser);
 
             foreach ($request->items as $item) {
                 if ($item['discount_percent'] > $maxDiscount) {
@@ -315,8 +317,10 @@ class OfferController extends Controller
             $totalAmount = 0;
             $totalDiscount = 0;
             $requiresApproval = false;
-            $derogationThreshold = Setting::get('offer_discount_threshold_approval', 15);
-            $maxDiscount = Setting::get('offer_discount_max', 20);
+            $discountService = app(\App\Services\DiscountRuleService::class);
+            $updater = Auth::user();
+            $derogationThreshold = $discountService->getApprovalThreshold($updater);
+            $maxDiscount = $discountService->getMaxDiscount($updater);
 
             foreach ($request->items as $item) {
                 if ($item['discount_percent'] > $maxDiscount) {

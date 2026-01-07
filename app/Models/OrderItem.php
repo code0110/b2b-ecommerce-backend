@@ -18,6 +18,7 @@ class OrderItem extends Model
         'discount_amount',
         'tax_amount',
         'total',
+        'applied_promotions',
     ];
 
     protected $casts = [
@@ -26,6 +27,7 @@ class OrderItem extends Model
         'discount_amount' => 'float',
         'tax_amount' => 'float',
         'total' => 'float',
+        'applied_promotions' => 'array',
     ];
 
     public function order(): BelongsTo

@@ -49,9 +49,25 @@ class QuickOrderController extends Controller
         $addresses = $customer->addresses;
         $shippingMethods = ShippingMethod::where('is_active', true)->get();
 
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+        
+        $maxDiscountRule = $this->discountRuleService->getBestApplicableRule($user, null, 'max_discount');
+        $maxDiscount = $maxDiscountRule ? (float) $maxDiscountRule->limit_percent : 20.0;
+        $applyToTotal = $maxDiscountRule ? (bool) $maxDiscountRule->apply_to_total : true; // Default safe
+
+        $derogationThreshold = $this->discountRuleService->getApprovalThreshold($user);
+        $canOverride = $user->hasRole(['admin', 'sales_director', 'sales_agent']);
+
         return response()->json([
             'addresses' => $addresses,
-            'shipping_methods' => $shippingMethods
+            'shipping_methods' => $shippingMethods,
+            'can_override' => $canOverride,
+            'discount_rules' => [
+                'max_discount' => $maxDiscount,
+                'approval_threshold' => $derogationThreshold,
+                'apply_to_total' => $applyToTotal,
+            ]
         ]);
     }
 
@@ -478,6 +494,7 @@ class QuickOrderController extends Controller
                     'unit_price' => $item->unit_price,
                     'discount_amount' => $item->line_discount, // Total discount for line
                     'total' => $item->line_total,
+                    'applied_promotions' => isset($item->applied_promotions) ? json_encode($item->applied_promotions) : null,
                 ]);
             }
 

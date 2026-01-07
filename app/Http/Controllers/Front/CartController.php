@@ -31,11 +31,13 @@ class CartController extends Controller
     protected function resolveCart(Request $request): Cart
     {
         // Debugging
-        // \Illuminate\Support\Facades\Log::info('ResolveCart', [
-        //     'headers' => $request->headers->all(),
-        //     'user_sanctum' => $request->user('sanctum'),
-        //     'user_default' => $request->user(),
-        // ]);
+        \Illuminate\Support\Facades\Log::info('ResolveCart Start', [
+            'url' => $request->fullUrl(),
+            'method' => $request->method(),
+            'headers_x_customer' => $request->header('X-Customer-ID'),
+            'user_sanctum_id' => $request->user('sanctum')?->id,
+            'user_default_id' => $request->user()?->id,
+        ]);
 
         // User logat: încercăm întâi via sanctum, apoi via sesiunea web
         $user = $request->user('sanctum') ?? $request->user();
@@ -54,11 +56,14 @@ class CartController extends Controller
                             ->first();
 
                 if (!$cart) {
+                    \Illuminate\Support\Facades\Log::info('ResolveCart: Creating new cart for customer', ['customer_id' => $customerId]);
                     $cart = Cart::create([
                         'user_id'     => $user->id,
                         'customer_id' => $customerId,
                         'status'      => 'active',
                     ]);
+                } else {
+                     \Illuminate\Support\Facades\Log::info('ResolveCart: Found existing cart', ['cart_id' => $cart->id]);
                 }
 
                 return $cart;
@@ -117,6 +122,8 @@ class CartController extends Controller
 
     protected function respondWithEnrichedCart(Cart $cart, Request $request)
     {
+        \Illuminate\Support\Facades\Log::info('respondWithEnrichedCart: Start', ['cart_id' => $cart->id]);
+
         $user     = $request->user();
         // If cart has a specific customer_id, use it. Otherwise fall back to user's customer.
         $customer = null;
@@ -126,7 +133,9 @@ class CartController extends Controller
             $customer = $user->customer;
         }
 
+        \Illuminate\Support\Facades\Log::info('respondWithEnrichedCart: Pricing cart', ['customer_id' => $customer?->id]);
         $pricing = $this->promotionPricingService->priceCart($cart, $customer);
+        \Illuminate\Support\Facades\Log::info('respondWithEnrichedCart: Pricing done');
 
         return response()->json([
             'id'             => $cart->id,

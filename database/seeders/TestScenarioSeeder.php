@@ -15,6 +15,7 @@ use App\Models\User;
 use App\Models\Role;
 use App\Models\ReceiptBook;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 
 class TestScenarioSeeder extends Seeder
@@ -37,8 +38,17 @@ class TestScenarioSeeder extends Seeder
         // Truncate Pivot Tables
         DB::table('category_product')->truncate();
         DB::table('promotion_product')->truncate();
+        if (Schema::hasTable('product_promotion')) {
+            DB::table('product_promotion')->truncate();
+        }
         DB::table('promotion_category')->truncate();
+        if (Schema::hasTable('category_promotion')) {
+            DB::table('category_promotion')->truncate();
+        }
         DB::table('promotion_brand')->truncate();
+        if (Schema::hasTable('brand_promotion')) {
+            DB::table('brand_promotion')->truncate();
+        }
         DB::table('promotion_customer_group')->truncate();
         
         DB::statement('SET FOREIGN_KEY_CHECKS=1;');
@@ -86,9 +96,24 @@ class TestScenarioSeeder extends Seeder
             'allow_line_discount' => true,
         ]);
 
-        // 2.a. Users: Director & Agents
+        // 2.a. Users: Admin, Director & Agents
+        $adminRole    = Role::where('slug', 'admin')->first() ?: Role::where('code', 'admin')->first();
         $directorRole = Role::where('slug', 'sales_director')->first() ?: Role::where('code', 'sales_director')->first();
         $agentRole    = Role::where('slug', 'sales_agent')->first() ?: Role::where('code', 'agent')->first();
+
+        $adminUser = User::firstOrCreate(
+            ['email' => 'cod.binar@gmail.com'],
+            [
+                'first_name' => 'Admin',
+                'last_name'  => 'System',
+                'phone'      => '0700000000',
+                'password'   => bcrypt('password'),
+                'is_active'  => true,
+            ]
+        );
+        if ($adminRole) {
+            $adminUser->roles()->syncWithoutDetaching([$adminRole->id]);
+        }
 
         $director = User::firstOrCreate(
             ['email' => 'director@example.com'],
@@ -248,7 +273,7 @@ class TestScenarioSeeder extends Seeder
             'status' => 'active',
             'start_at' => now()->subDays(1),
             'end_at' => now()->addDays(30),
-            'priority' => 10,
+            // 'priority' => 10,
             'applies_to' => 'products',
             'type' => 'standard',
             'value_type' => 'percent',
@@ -263,7 +288,7 @@ class TestScenarioSeeder extends Seeder
             'status' => 'active',
             'start_at' => now()->subDays(1),
             'end_at' => now()->addDays(30),
-            'priority' => 20,
+            // 'priority' => 20,
             'applies_to' => 'products',
             'type' => 'standard',
             'value_type' => 'fixed_amount',
@@ -278,7 +303,7 @@ class TestScenarioSeeder extends Seeder
             'status' => 'active',
             'start_at' => now()->subDays(1),
             'end_at' => now()->addDays(30),
-            'priority' => 5, // Lower priority than specific product promos
+            // 'priority' => 5, // Lower priority than specific product promos
             'applies_to' => 'categories',
             'type' => 'standard',
             'value_type' => 'percent',
@@ -293,7 +318,7 @@ class TestScenarioSeeder extends Seeder
             'status' => 'active',
             'start_at' => now()->subDays(1),
             'end_at' => now()->addDays(30),
-            'priority' => 1, // Lowest priority
+            // 'priority' => 1, // Lowest priority
             'applies_to' => 'brands',
             'type' => 'standard',
             'value_type' => 'percent',
@@ -308,7 +333,7 @@ class TestScenarioSeeder extends Seeder
             'status' => 'active',
             'start_at' => now()->subDays(1),
             'end_at' => now()->addDays(30),
-            'priority' => 50,
+            // 'priority' => 50,
             'applies_to' => 'all', // Cart level usually implies applies to all or checked via logic
             'min_cart_total' => 5000.00,
             'type' => 'standard',
@@ -324,7 +349,7 @@ class TestScenarioSeeder extends Seeder
             'status' => 'active',
             'start_at' => now()->subDays(1),
             'end_at' => now()->addDays(30),
-            'priority' => 30,
+            // 'priority' => 30,
             'applies_to' => 'products',
             'min_qty_per_product' => 5,
             'type' => 'volume',
@@ -341,13 +366,13 @@ class TestScenarioSeeder extends Seeder
             'status' => 'active',
             'start_at' => now()->subDays(1),
             'end_at' => now()->addDays(30),
-            'priority' => 40,
+            // 'priority' => 40,
             'applies_to' => 'products',
             'min_qty_per_product' => 1, // Buy 1 Laptop
             'type' => 'gift',
             'value_type' => 'fixed_amount',
             'value' => 0,
-            'settings' => json_encode(['gift_product_id' => $prodMouse->id, 'gift_qty' => 1]),
+            'settings' => ['gift_product_id' => $prodMouse->id, 'gift_qty' => 1],
             'customer_type' => 'both',
         ])->products()->attach($prodMacbook->id);
 

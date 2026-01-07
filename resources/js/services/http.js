@@ -71,7 +71,10 @@ function attachInterceptors(instance, { attachCartSession = false } = {}) {
       if (impersonatedClientId) {
         config.headers['X-Impersonated-Client-Id'] = impersonatedClientId;
         // Backend CartController expects X-Customer-ID for resolving the cart
-        config.headers['X-Customer-ID'] = impersonatedClientId;
+        // Only set if not already set (e.g. by QuickOrder)
+        if (!config.headers['X-Customer-ID']) {
+            config.headers['X-Customer-ID'] = impersonatedClientId;
+        }
       }
     }
 

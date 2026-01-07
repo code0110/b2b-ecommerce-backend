@@ -130,13 +130,16 @@
                  </div>
 
                  <!-- Global Discount Input (Only if allowed) -->
-                 <div v-if="selectedCustomer && selectedCustomer.allow_global_discount" class="bg-white p-4 flex items-center gap-4 border-b border-gray-100 animate-fade-in">
+                 <div v-if="selectedCustomer && (selectedCustomer.allow_global_discount || canOverride)" class="bg-white p-4 flex items-center gap-4 border-b border-gray-100 animate-fade-in">
                     <div class="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center text-purple-600">
                          <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 011 12V7a4 4 0 014-4z" /></svg>
                     </div>
                     <div class="flex-1">
-                        <label class="text-xs text-gray-500 block mb-1">Discount Global (%)</label>
-                        <input type="number" v-model.number="orderDetails.globalDiscount" min="0" max="100" class="w-full font-medium text-gray-900 border-b border-gray-200 focus:border-blue-500 outline-none pb-1 bg-transparent">
+                        <label class="text-xs text-gray-500 block mb-1">Discount Financiar (Global) %</label>
+                        <input type="number" v-model.number="orderDetails.globalDiscount" min="0" :max="discountRules.max_discount" class="w-full font-medium text-gray-900 border-b border-gray-200 focus:border-blue-500 outline-none pb-1 bg-transparent">
+                        <div v-if="orderDetails.globalDiscount > discountRules.approval_threshold" class="text-xs text-amber-600 font-bold mt-1">
+                            ⚠️ Necesită aprobare
+                        </div>
                     </div>
                  </div>
 
@@ -254,9 +257,16 @@
                              </button>
                          </div>
                          
-                         <button @click="openProductDetails(product)" class="ml-2 p-2 text-gray-400 hover:text-blue-600">
-                             <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                         </button>
+                         <button @click="openProductDetails(product)" 
+                                class="ml-2 w-10 h-10 flex flex-col items-center justify-center rounded-lg transition-colors border"
+                                :class="getItemDiscountPercent(product) > 0 ? 'bg-orange-50 border-orange-200 text-orange-600' : 'bg-white border-gray-200 text-gray-400 hover:text-blue-600 hover:border-blue-300'"
+                                title="Editează detalii și discount"
+                        >
+                            <span v-if="getItemDiscountPercent(product) > 0" class="text-xs font-bold leading-none">-{{ getItemDiscountPercent(product) }}%</span>
+                            <svg v-else class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                            </svg>
+                        </button>
                      </div>
                      
                      <!-- Load More -->
@@ -281,7 +291,7 @@
                         <span class="font-mono">{{ formatPrice(totals.subtotal) }}</span>
                     </div>
                     <div class="flex justify-between">
-            <span class="text-gray-500">Discount</span>
+            <span class="text-gray-500">Total Reduceri</span>
             <span class="font-mono text-green-600">-{{ formatPrice(cartDiscount) }}</span>
           </div>
                     <div class="flex justify-between">
@@ -465,11 +475,11 @@
         <div class="bg-white w-full rounded-t-2xl shadow-xl">
           <div class="p-4 border-b flex justify-between items-center">
             <div>
-              <div class="text-xs text-gray-500">Detalii produs</div>
-              <div class="font-bold">{{ productSheet.product?.name }}</div>
+              <div class="text-xs text-blue-600 font-bold uppercase tracking-wide">Editare & Discount</div>
+              <div class="font-bold text-gray-900">{{ productSheet.product?.name }}</div>
               <div class="text-xs text-gray-400">Cod: {{ productSheet.product?.internal_code || productSheet.product?.sku }}</div>
             </div>
-            <button @click="productSheet.show = false" class="text-gray-500 hover:text-gray-700">✕</button>
+            <button @click="productSheet.show = false" class="text-gray-500 hover:text-gray-700 p-2 rounded-full hover:bg-gray-100">✕</button>
           </div>
           <div class="px-4 pt-3">
             <div class="flex gap-4 text-xs font-bold text-gray-500">
@@ -489,22 +499,30 @@
                 </div>
               </div>
               <div>
-                <div class="text-xs text-gray-500 mb-2">DISCOUNTURI DE LINIE</div>
+                <div class="text-xs text-gray-500 mb-2">DISCOUNT COMERCIAL (LINIE)</div>
                 
                 <!-- Manual Discount -->
-                        <div v-if="selectedCustomer?.allow_line_discount" class="mb-3 pb-3 border-b border-gray-100">
-                            <label class="block text-xs font-bold text-gray-700 mb-1">Discount Manual (%)</label>
+                        <div v-if="selectedCustomer && (selectedCustomer.allow_line_discount || canOverride)" class="mb-3 pb-3 border-b border-gray-100">
+                            <label class="block text-xs font-bold text-gray-700 mb-1">
+                                Discount Comercial (%)
+                                <span class="text-[10px] font-normal ml-1" :class="discountRules.apply_to_total ? 'text-orange-500' : 'text-blue-500'">
+                                    ({{ discountRules.apply_to_total ? 'Limită la Total' : 'Limită doar Manual' }})
+                                </span>
+                            </label>
                             <div class="flex gap-2">
                                 <input 
                                     type="number" 
                                     min="0" 
-                                    max="20" 
+                                    :max="discountRules.max_discount" 
                                     placeholder="0"
                                     :value="getItemDiscountPercent(productSheet.product)"
                                     @input="(e) => setItemDiscountPercent(productSheet.product, parseFloat(e.target.value))"
                                     class="w-24 p-2 border rounded text-center font-bold"
                                 >
-                                <span class="text-xs text-gray-400 self-center">Max 20% (peste 15% necesită aprobare)</span>
+                                <span class="text-xs text-gray-400 self-center">Max {{ discountRules.max_discount }}% (peste {{ discountRules.approval_threshold }}% necesită aprobare)</span>
+                            </div>
+                            <div v-if="getItemDiscountPercent(productSheet.product) > discountRules.approval_threshold" class="text-xs text-amber-600 font-bold mt-1 text-center">
+                                ⚠️ Necesită derogare
                             </div>
                         </div>
 
@@ -574,11 +592,11 @@
                      <span class="font-medium">{{ formatPrice(cartSubtotal) }}</span>
                  </div>
                  <div class="flex justify-between text-green-600" v-if="cartDiscount > 0">
-                     <span>Discount</span>
+                     <span>Total Reduceri</span>
                      <span>-{{ formatPrice(cartDiscount) }}</span>
                  </div>
                  <div class="flex justify-between text-purple-600" v-if="orderDetails.globalDiscount > 0">
-                     <span>Discount Global ({{ orderDetails.globalDiscount }}%)</span>
+                     <span>Discount Financiar ({{ orderDetails.globalDiscount }}%)</span>
                      <span>-{{ formatPrice(globalDiscountValue) }}</span>
                  </div>
                  <div class="flex justify-between text-lg font-bold text-blue-900 border-t pt-2 mt-2">
@@ -675,6 +693,9 @@ const cartTotal = ref(0);
 // Promotions State
 const availablePromotions = ref([]);
 const loadingPromotions = ref(false);
+
+// Discount Rules (fetched from backend)
+const discountRules = ref({ max_discount: 20, approval_threshold: 15 });
 
 const orderDetails = reactive({
     deliveryDate: new Date().toISOString().slice(0, 10),
@@ -839,6 +860,8 @@ const fetchPromotions = async () => {
     }
 };
 
+const canOverride = ref(false);
+
 const fetchCheckoutData = async () => {
     if (!selectedCustomer.value) return;
     try {
@@ -847,7 +870,12 @@ const fetchCheckoutData = async () => {
         });
         addresses.value = data.addresses || [];
         shippingMethods.value = data.shipping_methods || [];
+        canOverride.value = data.can_override || false;
         
+        if (data.discount_rules) {
+            discountRules.value = data.discount_rules;
+        }
+
         // Defaults
         if (addresses.value.length > 0) {
             const defaultAddr = addresses.value.find(a => a.is_default) || addresses.value[0];
@@ -1073,7 +1101,7 @@ const setItemDiscountPercent = (product, percent) => {
     if (!item) return;
     
     if (isNaN(percent) || percent < 0) percent = 0;
-    const max = config.maxDiscount;
+    const max = discountRules.value.max_discount;
     if (percent > max) percent = max;
     
     item.discount_percent = percent;

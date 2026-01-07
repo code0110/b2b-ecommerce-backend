@@ -77,7 +77,7 @@ class DiscountRuleService
      * @param Customer|null $customer
      * @return boolean
      */
-    protected function isRuleApplicable(DiscountRule $rule, ?User $user, ?Customer $customer): bool
+    protected function isRuleApplicable(DiscountRule $rule, ?User $user, ?Customer $customer, array $userRoleIds = []): bool
     {
         switch ($rule->target_type) {
             case 'global':
@@ -85,6 +85,10 @@ class DiscountRuleService
                 
             case 'role':
                 if (!$user) return false;
+                // Use pre-loaded role IDs if available, otherwise fallback to query (though we should avoid this)
+                if (!empty($userRoleIds)) {
+                    return in_array($rule->target_id, $userRoleIds);
+                }
                 return $user->roles()->where('id', $rule->target_id)->exists();
                 
             case 'user':

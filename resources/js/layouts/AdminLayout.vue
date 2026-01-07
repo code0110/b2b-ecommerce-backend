@@ -180,7 +180,7 @@
       <!-- Page Content -->
       <main class="flex-grow-1 overflow-auto p-4 custom-scrollbar">
         <div class="container-fluid p-0">
-             <RouterView />
+             <RouterView :key="$route.fullPath" />
         </div>
       </main>
     </div>
@@ -192,12 +192,14 @@ import { computed, onMounted, ref } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { useNotificationsStore } from '@/store/notifications'
 import { useAuthStore } from '@/store/auth'
+import { useVisitStore } from '@/store/visit'
 import NotificationBell from '@/components/common/NotificationBell.vue'
 
 const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
 const notificationsStore = useNotificationsStore()
+const visitStore = useVisitStore()
 
 const currentRouteName = computed(() => route.name)
 const adminUnreadCount = computed(() => notificationsStore.adminUnreadCount)
@@ -234,6 +236,7 @@ onMounted(() => {
 
 <style scoped>
 .sidebar {
+    position: relative;
     box-shadow: 2px 0 10px rgba(0,0,0,0.1);
     z-index: 1000;
     width: 260px;
@@ -250,6 +253,8 @@ onMounted(() => {
     font-size: 0.9rem;
     position: relative;
     border-radius: 8px;
+    cursor: pointer;
+    z-index: 10;
 }
 
 .nav-link:hover {

@@ -73,7 +73,7 @@ use App\Http\Controllers\Front\QuoteController;
 
 // Auth
 Route::prefix('auth')->group(function () {
-    Route::post('login', [AuthController::class, 'login']);
+    Route::post('login', [AuthController::class, 'login'])->name('login');
     Route::post('register-b2c', [AuthController::class, 'registerB2C']);
     Route::post('register-b2b', [AuthController::class, 'registerB2B']);
     Route::post('logout', [AuthController::class, 'logout'])->middleware('auth:sanctum');
@@ -85,7 +85,6 @@ Route::get('config', [\App\Http\Controllers\Admin\SettingController::class, 'pub
 Route::get('content-blocks', [\App\Http\Controllers\Api\ContentController::class, 'index']);
 
 // Front-office public catalog
-// Route::get('home', [CatalogController::class, 'home']);
 Route::get('home', [HomeController::class, 'homepage']);
 Route::get('promotions', [CatalogController::class, 'promotions']);
 Route::get('categories', [CatalogController::class, 'categories']);
@@ -128,9 +127,6 @@ Route::get('pages/{slug}', [PageController::class, 'show']);
 Route::post('partner-requests', [PartnerController::class, 'store']);
 
 
-// Tickets - moved to account group
-
-
 // Payments
 Route::get('payments', [FrontPaymentController::class, 'index']);
 Route::post('orders/{orderId}/pay', [FrontPaymentController::class, 'payOrder']);
@@ -149,6 +145,8 @@ Route::middleware($sessionMiddleware)->prefix('cart')->group(function () {
     Route::put('items/{itemId}', [CartController::class, 'updateItem']);
     Route::delete('items/{itemId}', [CartController::class, 'removeItem']);
     Route::post('promotions/{id}', [CartController::class, 'addPromotion']);
+    Route::post('coupon', [CartController::class, 'applyCoupon']);
+    Route::delete('coupon', [CartController::class, 'removeCoupon']);
     Route::delete('/', [CartController::class, 'clear']);
 });
 // Arbore de categorii pentru front (overlay catalog)
@@ -309,7 +307,9 @@ Route::middleware(['auth:sanctum', 'role:admin'])->prefix('admin')->group(functi
     Route::apiResource('content-blocks', \App\Http\Controllers\Admin\ContentBlockController::class);
     Route::apiResource('pages', \App\Http\Controllers\Admin\PageController::class);
     Route::apiResource('settings', \App\Http\Controllers\Admin\SettingController::class);
-    Route::apiResource('products', \App\Http\Controllers\Admin\ProductController::class);
+    Route::apiResource('promotions', AdminPromotionController::class);
+    Route::apiResource('products', \App\Http\Controllers\Admin\ProductController::class)->except(['index', 'show']);
+    Route::apiResource('brands', \App\Http\Controllers\Admin\BrandController::class)->except(['show']);
     Route::apiResource('invoices', AdminInvoiceController::class)->only(['index', 'show']);
     Route::apiResource('payments', AdminPaymentController::class)->only(['index', 'show']);
     
@@ -335,7 +335,16 @@ Route::middleware(['auth:sanctum', 'role:admin,sales_director'])->prefix('admin'
 
 // Customer Visits (Agent/Admin/Director) - Shared routes with 'admin' prefix
 Route::middleware(['auth:sanctum', 'role:admin,sales_agent,sales_director'])->prefix('admin')->group(function () {
+    // Quick Order Promotions
+    Route::get('customers/{id}/promotions', [\App\Http\Controllers\Admin\QuickOrderController::class, 'getPromotionsForCustomer']);
+    Route::get('quick-order/checkout-data', [\App\Http\Controllers\Admin\QuickOrderController::class, 'getCheckoutData']);
+    Route::post('quick-order/create', [\App\Http\Controllers\Admin\QuickOrderController::class, 'createOrder']);
+
+    Route::apiResource('promotions', AdminPromotionController::class);
+
     Route::apiResource('customers', AdminCustomerController::class);
+    Route::apiResource('customer-groups', AdminCustomerGroupController::class);
+    Route::apiResource('products', \App\Http\Controllers\Admin\ProductController::class)->only(['index', 'show']);
     Route::get('categories', [AdminCategoryController::class, 'index']);
     Route::get('customer-visits', [\App\Http\Controllers\Admin\CustomerVisitController::class, 'index']);
     Route::post('customer-visits/start', [\App\Http\Controllers\Admin\CustomerVisitController::class, 'startVisit']);

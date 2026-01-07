@@ -19,7 +19,7 @@ use App\Notifications\OfferApprovalRequiredNotification;
 
 class OfferController extends Controller
 {
-    public function checkPrice(Request $request)
+    public function checkPrice(Request $request, PromotionPricingService $service)
     {
         $request->validate([
             'customer_id' => 'required|exists:customers,id',
@@ -29,7 +29,6 @@ class OfferController extends Controller
         $customer = \App\Models\Customer::find($request->customer_id);
         $product = \App\Models\Product::find($request->product_id);
 
-        $service = new PromotionPricingService();
         $priceData = $service->calculateProductPrice($product, $customer);
 
         return response()->json($priceData);

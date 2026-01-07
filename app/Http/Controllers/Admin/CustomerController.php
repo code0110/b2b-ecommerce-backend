@@ -40,7 +40,8 @@ class CustomerController extends Controller
             });
         }
 
-        return $query->paginate(25);
+        $perPage = $request->get('per_page', 25);
+        return $query->paginate($perPage);
     }
 
     public function store(Request $request)

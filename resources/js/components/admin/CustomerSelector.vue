@@ -1,37 +1,65 @@
 <template>
-  <div class="customer-selector position-relative">
-    <div class="input-group">
-      <span class="input-group-text bg-light"><i class="bi bi-person"></i></span>
+  <div class="relative font-sans">
+    <div class="relative group">
+      <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+        <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+        </svg>
+      </div>
       <input
         type="text"
-        class="form-control"
+        class="block w-full pl-10 pr-10 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm placeholder-gray-400 focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all disabled:opacity-60 disabled:cursor-not-allowed"
         placeholder="Caută client (nume, cui)..."
         v-model="searchQuery"
         @input="onSearch"
         @focus="showResults = true"
         :disabled="disabled"
       />
-      <button v-if="searchQuery && !disabled" class="btn btn-outline-secondary" @click="clearSearch">
-        <i class="bi bi-x"></i>
+      <button 
+        v-if="searchQuery && !disabled" 
+        @click="clearSearch"
+        class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-red-500 transition-colors"
+      >
+        <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+        </svg>
       </button>
     </div>
 
-    <div v-if="loading" class="position-absolute w-100 bg-white border rounded shadow-sm p-3 mt-1" style="z-index: 1000;">
-        <div class="spinner-border spinner-border-sm text-primary" role="status"></div> Căutare...
+    <!-- Loading State -->
+    <div v-if="loading" class="absolute z-50 w-full mt-1 bg-white border border-gray-100 rounded-xl shadow-lg p-4 flex items-center justify-center text-blue-600 text-sm font-medium">
+        <svg class="animate-spin h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+        Se caută...
     </div>
 
-    <div v-if="showResults && results.length > 0" class="position-absolute w-100 bg-white border rounded shadow-sm mt-1 overflow-auto" style="max-height: 300px; z-index: 1000;">
-      <ul class="list-group list-group-flush">
+    <!-- Results Dropdown -->
+    <div v-if="showResults && results.length > 0" class="absolute z-50 w-full mt-1 bg-white border border-gray-100 rounded-xl shadow-xl overflow-hidden max-h-[300px] overflow-y-auto custom-scrollbar">
+      <ul class="divide-y divide-gray-50">
         <li
           v-for="customer in results"
           :key="customer.id"
-          class="list-group-item list-group-item-action cursor-pointer"
+          class="p-3 hover:bg-blue-50 cursor-pointer transition-colors group"
           @click="selectCustomer(customer)"
         >
-          <div class="fw-bold">{{ customer.name }}</div>
-          <div class="small text-muted">CUI: {{ customer.cif }} | Reg: {{ customer.reg_com }}</div>
+          <div class="flex items-center justify-between">
+            <div class="min-w-0 flex-1 mr-2">
+              <div class="font-bold text-gray-900 text-sm group-hover:text-blue-700 truncate">{{ customer.name }}</div>
+              <div class="text-xs text-gray-500 mt-0.5 flex items-center gap-2 flex-wrap">
+                <span v-if="customer.fiscal_code" class="bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded whitespace-nowrap">CUI: {{ customer.fiscal_code }}</span>
+                <span v-if="customer.reg_com" class="text-gray-400 truncate">{{ customer.reg_com }}</span>
+              </div>
+            </div>
+            <div class="text-gray-300 group-hover:text-blue-400 flex-shrink-0">
+               <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
+            </div>
+          </div>
         </li>
       </ul>
+    </div>
+    
+    <!-- No Results -->
+    <div v-if="showResults && !loading && searchQuery.length >= 2 && results.length === 0" class="absolute z-50 w-full mt-1 bg-white border border-gray-100 rounded-xl shadow-lg p-4 text-center text-gray-500 text-sm">
+        Nu s-au găsit clienți.
     </div>
   </div>
 </template>
@@ -71,7 +99,7 @@ const onSearch = () => {
         try {
             const { data } = await adminApi.get('/customers', {
                 params: { 
-                    search: searchQuery.value,
+                    q: searchQuery.value,
                     per_page: 10 
                 }
             });

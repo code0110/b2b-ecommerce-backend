@@ -5,13 +5,19 @@ import { useAuthStore } from '@/store/auth';
 // Instanța principală pentru front (/api/...)
 const api = axios.create({
   baseURL: '/api',
-  withCredentials: true, // pentru Sanctum / cookie-uri, dacă le folosești
+  withCredentials: true,
+  headers: {
+    'Accept': 'application/json',
+  },
 });
 
 // Instanță separată pentru admin (/api/admin/...)
 const adminApi = axios.create({
   baseURL: '/api/admin',
   withCredentials: true,
+  headers: {
+    'Accept': 'application/json',
+  },
 });
 
 // Helper: ID stabil de "sesiune coș" pentru utilizatori guest
@@ -70,8 +76,19 @@ function attachInterceptors(instance, { attachCartSession = false } = {}) {
     return config;
   });
 
-  // Poți adăuga aici și interceptoare de răspuns, dacă ai nevoie,
-  // ex. pentru 401 / 419 etc.
+  instance.interceptors.response.use(
+    (response) => response,
+    async (error) => {
+      if (error.response?.status === 401) {
+        const authStore = useAuthStore?.();
+        if (authStore) {
+          await authStore.logout();
+          window.location.href = '/login';
+        }
+      }
+      return Promise.reject(error);
+    }
+  );
 }
 
 // atașăm interceptorii

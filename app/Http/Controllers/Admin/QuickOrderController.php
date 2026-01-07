@@ -8,7 +8,10 @@ use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Product;
 use App\Models\Setting;
+use App\Models\Cart;
+use App\Models\ShippingMethod;
 use App\Services\Pricing\PromotionPricingService;
+use App\Services\Pricing\PromotionEngine;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -16,10 +19,34 @@ use Illuminate\Support\Facades\DB;
 class QuickOrderController extends Controller
 {
     protected $pricingService;
+    protected $promotionEngine;
 
-    public function __construct(PromotionPricingService $pricingService)
+    public function __construct(PromotionPricingService $pricingService, PromotionEngine $promotionEngine)
     {
         $this->pricingService = $pricingService;
+        $this->promotionEngine = $promotionEngine;
+    }
+
+    public function getCheckoutData(Request $request)
+    {
+        $customerId = $request->query('customer_id') ?? $request->header('X-Customer-ID');
+
+        if (!$customerId) {
+            return response()->json(['message' => 'Customer ID required'], 400);
+        }
+
+        $customer = Customer::with('addresses')->find($customerId);
+        if (!$customer) {
+            return response()->json(['message' => 'Customer not found'], 404);
+        }
+
+        $addresses = $customer->addresses;
+        $shippingMethods = ShippingMethod::where('is_active', true)->get();
+
+        return response()->json([
+            'addresses' => $addresses,
+            'shipping_methods' => $shippingMethods
+        ]);
     }
 
     /**
@@ -76,8 +103,8 @@ class QuickOrderController extends Controller
             $virtualItems->push($virtualItem);
         }
 
-        // Calculate standard prices using service
-        $calculatedData = $this->pricingService->priceItems($virtualItems, $customer);
+        // Calculate standard prices using PromotionEngine (New System)
+        $calculatedData = $this->promotionEngine->calculateItems($virtualItems, $user, $customer);
 
         // Apply overrides if any (and recalculate totals)
         $finalItems = [];
@@ -87,12 +114,28 @@ class QuickOrderController extends Controller
         $requiresApproval = false;
         
         $derogationThreshold = Setting::get('offer_discount_threshold_approval', 15);
+        $maxDiscount = Setting::get('offer_discount_max', 20);
         
+        $globalDiscountPercent = $request->input('global_discount_percent', 0);
+        
+        // Validate permissions for global discount
+        if ($globalDiscountPercent > 0) {
+            if (!$customer->allow_global_discount && !$canOverride) {
+                 $globalDiscountPercent = 0; // Force to 0 if not allowed
+            }
+            if ($globalDiscountPercent > $maxDiscount) {
+                return response()->json(['message' => "Discount global nu poate depăși {$maxDiscount}%"], 422);
+            }
+        }
+
         foreach ($calculatedData['items'] as $index => $cItem) {
             // Find original input item (assuming order is preserved or we map by product_id)
-            // priceItems preserves order
-            $virtualItem = $virtualItems[$index]; 
+            // calculateItems preserves order of iteration usually, but let's be safe.
+            // We can match by product_id
+            $virtualItem = $virtualItems->firstWhere('product.id', $cItem['product_id']);
             
+            if (!$virtualItem) continue; // Should not happen
+
             // Base values from calculation
             $unitPrice = $cItem['unit_base_price'];
             $discountPercent = 0; // Derived
@@ -110,18 +153,21 @@ class QuickOrderController extends Controller
             }
 
             if (!is_null($virtualItem->discount_override)) {
-                $discountPercent = (float) $virtualItem->discount_override;
-                $finalUnitPrice = $unitPrice * (1 - ($discountPercent / 100));
-                $isOverridden = true;
+                // Check permission for line discount
+                if ($customer->allow_line_discount || $canOverride) {
+                    if ((float) $virtualItem->discount_override > $maxDiscount) {
+                        return response()->json(['message' => "Discountul de linie pentru {$cItem['product_name']} nu poate depăși {$maxDiscount}%"], 422);
+                    }
+                    $discountPercent = (float) $virtualItem->discount_override;
+                    $finalUnitPrice = $unitPrice * (1 - ($discountPercent / 100));
+                    $isOverridden = true;
+                }
             } else {
-                // If no discount override, but price was overridden, we assume 0 discount or keep existing?
-                // Let's assume if price is overridden, promotions might not apply anymore unless we re-run logic.
-                // Simpler: If any override, we use manual values. 
-                // If only price override, discount is 0.
+                // If no discount override, but price was overridden
                 if ($isOverridden) {
                     $finalUnitPrice = $unitPrice;
                 } else {
-                    // Use calculated values
+                    // Use calculated values from PromotionEngine
                     // Calculate implicit percent
                     if ($unitPrice > 0) {
                         $discountPercent = round((($unitPrice - $finalUnitPrice) / $unitPrice) * 100, 2);
@@ -130,8 +176,6 @@ class QuickOrderController extends Controller
             }
 
             // Check approval
-            // Only require approval if the price/discount was manually overridden and exceeds threshold.
-            // Standard system promotions are considered pre-approved.
             if ($isOverridden && !$bypassApproval && $discountPercent > $derogationThreshold) {
                 $requiresApproval = true;
             }
@@ -158,10 +202,34 @@ class QuickOrderController extends Controller
             $grandTotal += $lineTotal;
         }
 
+        // Apply Global Discount to Grand Total (after line discounts)
+        if ($globalDiscountPercent > 0) {
+            $globalDiscountAmount = $grandTotal * ($globalDiscountPercent / 100);
+            $grandTotal -= $globalDiscountAmount;
+            $discountTotal += $globalDiscountAmount;
+            
+            // Check approval for global discount
+            if (!$bypassApproval && $globalDiscountPercent > $derogationThreshold) {
+                $requiresApproval = true;
+            }
+        }
+        
+        // Add Shipping Cost from PromotionEngine if not overridden?
+        // QuickOrder doesn't seem to have shipping selection in calculation input usually, but createOrder has.
+        // If PromotionEngine calculated shipping, we should include it.
+        $shippingCost = $calculatedData['final_shipping'] ?? 0.0;
+        $shippingDiscount = $calculatedData['shipping_discount'] ?? 0.0;
+        
+        // Note: grandTotal calculated above implies NO shipping.
+        // We should add shipping to grandTotal.
+        $grandTotal += $shippingCost;
+
         return response()->json([
             'items' => $finalItems,
             'subtotal' => round($subtotal, 2),
             'discount_total' => round($discountTotal, 2),
+            'shipping_cost' => round($shippingCost, 2),
+            'shipping_discount' => round($shippingDiscount, 2),
             'total' => round($grandTotal, 2),
             'requires_approval' => $requiresApproval,
         ]);
@@ -210,6 +278,60 @@ class QuickOrderController extends Controller
             'base_price' => $basePrice,
             'promotions' => $results
         ]);
+    }
+
+    /**
+     * Get all active promotions for a customer (GET method).
+     */
+    public function getPromotionsForCustomer($customerId)
+    {
+        $customer = Customer::findOrFail($customerId);
+        
+        // Get all active promotions
+        $promotions = $this->pricingService->getActivePromotionsForCustomer($customer);
+        
+        // Enrich with product details if applicable
+        $result = $promotions->map(function ($promotion) use ($customer) {
+            $data = [
+                'id' => $promotion->id,
+                'name' => $promotion->name,
+                'description' => $promotion->description,
+                'bonus_type' => $promotion->bonus_type,
+                'applies_to' => $promotion->applies_to,
+                'min_qty' => $promotion->min_qty_per_product,
+                'discount_percent' => $promotion->discount_percent,
+                'discount_value' => $promotion->discount_value,
+                'products' => [],
+                'benefit' => [
+                    'discountPercent' => $promotion->discount_percent,
+                    'discountValue' => $promotion->discount_value
+                ]
+            ];
+
+            // If promotion applies to specific products, load them
+            if ($promotion->applies_to === 'products') {
+                $productIds = $promotion->products->pluck('id');
+                $products = Product::whereIn('id', $productIds)->take(50)->get();
+                
+                $data['products'] = $products->map(function ($product) use ($promotion, $customer) {
+                    // Calculate price with this promotion
+                    [$promoPrice, $discountPercent] = $this->pricingService->applyPromotionOnPrice($promotion, $this->pricingService->getBasePrice($product, $customer));
+                    
+                    return [
+                        'id' => $product->id,
+                        'name' => $product->name,
+                        'sku' => $product->internal_code ?? $product->sku,
+                        'base_price' => $this->pricingService->getBasePrice($product, $customer),
+                        'promo_price' => $promoPrice,
+                        'discount_percent' => $discountPercent
+                    ];
+                });
+            }
+            
+            return $data;
+        });
+
+        return response()->json(['data' => $result]);
     }
 
     /**
@@ -273,6 +395,14 @@ class QuickOrderController extends Controller
     {
         $request->validate([
             'customer_visit_id' => 'nullable|exists:customer_visits,id',
+            'due_date' => 'nullable|date',
+            'payment_method' => 'nullable|string',
+            'payment_document' => 'nullable|string',
+            'global_discount_percent' => 'nullable|numeric|min:0|max:100',
+            'internal_note' => 'nullable|string',
+            'shipping_method_id' => 'nullable|exists:shipping_methods,id',
+            'billing_address_id' => 'nullable|exists:addresses,id',
+            'shipping_address_id' => 'nullable|exists:addresses,id',
         ]);
 
         // Re-use logic or trust the input?
@@ -302,6 +432,16 @@ class QuickOrderController extends Controller
             $order->placed_by_user_id = Auth::id();
             $order->type = 'b2b';
             $order->currency = 'RON';
+            
+            // New fields
+            $order->due_date = $request->due_date ? \Carbon\Carbon::parse($request->due_date) : null;
+            $order->payment_method = $request->payment_method;
+            $order->payment_document = $request->payment_document;
+            $order->global_discount_percent = $request->global_discount_percent ?? 0;
+            $order->internal_note = $request->internal_note;
+            $order->shipping_method_id = $request->shipping_method_id;
+            $order->billing_address_id = $request->billing_address_id;
+            $order->shipping_address_id = $request->shipping_address_id;
             
             // Status logic
             $requiresApproval = $data->requires_approval;
@@ -333,6 +473,17 @@ class QuickOrderController extends Controller
                     'discount_amount' => $item->line_discount, // Total discount for line
                     'total' => $item->line_total,
                 ]);
+            }
+
+            // Clear Cart Logic
+            $user = Auth::user();
+            if ($user) {
+                 $customerId = $request->header('X-Customer-ID') ?? $request->customer_id ?? $user->customer_id;
+                 
+                 Cart::where('user_id', $user->id)
+                     ->where('customer_id', $customerId)
+                     ->where('status', 'active')
+                     ->delete();
             }
 
             DB::commit();

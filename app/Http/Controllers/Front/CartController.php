@@ -34,9 +34,13 @@ class CartController extends Controller
         $user = $request->user('sanctum') ?? $request->user();
 
         if ($user) {
+            // Check for explicit customer context (e.g. Agent acting on behalf of Customer)
+            // Header takes precedence, then query param, then user's own customer_id
+            $customerId = $request->header('X-Customer-ID') ?? $request->input('customer_id') ?? $user->customer_id;
+
             return Cart::firstOrCreate([
                 'user_id' => $user->id,
-                'customer_id' => $user->customer_id, // Support for impersonation / specific customer carts
+                'customer_id' => $customerId, // Allows agent to have distinct carts per customer context
                 'status'  => 'active',
             ]);
         }
@@ -218,6 +222,19 @@ class CartController extends Controller
     {
         $promotion = \App\Models\Promotion::findOrFail($id);
         
+        // Validate Promotion
+        if ($promotion->status !== 'active') {
+            return response()->json(['message' => 'Această promoție nu este activă.'], 400);
+        }
+
+        $now = now();
+        if ($promotion->start_at && $now->lt($promotion->start_at)) {
+             return response()->json(['message' => 'Această promoție nu a început încă.'], 400);
+        }
+        if ($promotion->end_at && $now->gt($promotion->end_at)) {
+             return response()->json(['message' => 'Această promoție a expirat.'], 400);
+        }
+
         // Get all products associated with this promotion
         // Assuming the promotion has a 'products' relationship
         $products = $promotion->products;
@@ -227,6 +244,9 @@ class CartController extends Controller
         }
 
         $cart = $this->resolveCart($request);
+        
+        // Determine quantity to add (default 1 or min_qty_per_product)
+        $qtyToAdd = $promotion->min_qty_per_product > 0 ? $promotion->min_qty_per_product : 1;
 
         foreach ($products as $product) {
             // Check if item exists
@@ -237,16 +257,13 @@ class CartController extends Controller
             $unitPrice = $product->price_override ?? $product->list_price ?? 0;
 
             if ($item) {
-                $item->quantity += 1; // Increment by 1
-                // We don't update price here usually as it might have been set by something else, 
-                // but for consistency with addItem:
-                // $item->unit_price = $unitPrice; 
+                $item->quantity += $qtyToAdd;
                 $item->save();
             } else {
                 $item = new CartItem([
                     'product_id'         => $product->id,
                     'product_variant_id' => null, // Assuming simple products for now
-                    'quantity'           => 1,
+                    'quantity'           => $qtyToAdd,
                     'unit_price'         => $unitPrice,
                 ]);
                 $cart->items()->save($item);
@@ -269,8 +286,61 @@ class CartController extends Controller
     {
         $cart = $this->resolveCart($request);
         $cart->items()->delete();
+        // Also remove coupon
+        $cart->coupon_id = null;
+        $cart->save();
 
         $cart->refresh();
+        return $this->respondWithEnrichedCart($cart, $request);
+    }
+
+    /**
+     * POST /api/cart/coupon
+     */
+    public function applyCoupon(Request $request)
+    {
+        $data = $request->validate([
+            'code' => ['required', 'string'],
+        ]);
+
+        $code = trim($data['code']);
+        $coupon = \App\Models\Coupon::where('code', $code)->first();
+
+        if (!$coupon) {
+            return response()->json(['message' => 'Codul de reducere nu este valid.'], 404);
+        }
+
+        if (!$coupon->isValid()) {
+             return response()->json(['message' => 'Codul de reducere nu mai este valabil.'], 400);
+        }
+
+        $cart = $this->resolveCart($request);
+        
+        // Basic validation: min cart value
+        // Note: Full validation happens in PromotionPricingService usually, 
+        // but simple checks here save processing.
+        if ($coupon->min_cart_value > 0) {
+             $subtotal = $cart->items->sum(fn($item) => $item->unit_price * $item->quantity);
+             if ($subtotal < $coupon->min_cart_value) {
+                 return response()->json(['message' => "Valoarea minimă a coșului trebuie să fie {$coupon->min_cart_value} RON."], 400);
+             }
+        }
+
+        $cart->coupon_id = $coupon->id;
+        $cart->save();
+
+        return $this->respondWithEnrichedCart($cart, $request);
+    }
+
+    /**
+     * DELETE /api/cart/coupon
+     */
+    public function removeCoupon(Request $request)
+    {
+        $cart = $this->resolveCart($request);
+        $cart->coupon_id = null;
+        $cart->save();
+
         return $this->respondWithEnrichedCart($cart, $request);
     }
 }

@@ -9,9 +9,13 @@ use Illuminate\Validation\Rule;
 
 class BrandController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        return Brand::orderBy('sort_order')->get();
+        $query = Brand::orderBy('sort_order');
+        if ($q = $request->get('q')) {
+             $query->where('name', 'like', "%{$q}%");
+        }
+        return $query->get();
     }
 
     public function store(Request $request)

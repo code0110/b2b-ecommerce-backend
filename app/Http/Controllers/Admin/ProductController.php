@@ -44,10 +44,12 @@ class ProductController extends Controller
 
         // Filtru categorie (via pivot)
         if ($categoryId = $request->query('category_id')) {
-            $query->where(function ($q) use ($categoryId) {
-                $q->where('main_category_id', $categoryId)
-                    ->orWhereHas('categories', function ($sub) use ($categoryId) {
-                        $sub->where('categories.id', $categoryId);
+            $ids = is_array($categoryId) ? $categoryId : [$categoryId];
+            
+            $query->where(function ($q) use ($ids) {
+                $q->whereIn('main_category_id', $ids)
+                    ->orWhereHas('categories', function ($sub) use ($ids) {
+                        $sub->whereIn('id', $ids);
                     });
             });
         }

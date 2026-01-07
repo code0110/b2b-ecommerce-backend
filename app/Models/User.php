@@ -57,10 +57,10 @@ class User extends Authenticatable
 
 
 
-public function hasAnyRole(array $codes): bool
-{
-    return $this->roles()->whereIn('code', $codes)->exists();
-}
+public function hasAnyRole(array $roles): bool
+    {
+        return $this->roles()->whereIn('slug', $roles)->exists();
+    }
 
 public function permissions()
 {

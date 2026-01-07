@@ -81,7 +81,9 @@ class TestScenarioSeeder extends Seeder
             'email' => 'jane@test.com',
             'phone' => '0700000002',
             'group_id' => $groupVIP->id,
-            'is_active' => true
+            'is_active' => true,
+            'allow_global_discount' => true,
+            'allow_line_discount' => true,
         ]);
 
         // 2.a. Users: Director & Agents

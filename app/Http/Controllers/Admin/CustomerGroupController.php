@@ -8,9 +8,15 @@ use Illuminate\Http\Request;
 
 class CustomerGroupController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        return CustomerGroup::all();
+        $query = CustomerGroup::query();
+
+        if ($q = $request->get('q')) {
+            $query->where('name', 'like', "%{$q}%");
+        }
+
+        return $query->get();
     }
 
     public function store(Request $request)

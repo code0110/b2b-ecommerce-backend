@@ -30,6 +30,10 @@ class Order extends Model
         'placed_at',
         'due_date',
         'customer_visit_id',
+        'payment_document',
+        'global_discount_percent',
+        'internal_note',
+        'approval_status',
     ];
 
     protected $casts = [

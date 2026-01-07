@@ -9,8 +9,18 @@ use App\Models\CartItem;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
+use App\Models\Customer;
+use App\Services\Pricing\PromotionPricingService;
+
 class QuickOrderController extends Controller
 {
+    protected PromotionPricingService $promotionPricingService;
+
+    public function __construct(PromotionPricingService $promotionPricingService)
+    {
+        $this->promotionPricingService = $promotionPricingService;
+    }
+
     public function search(Request $request)
     {
         $q = trim((string) $request->get('q', ''));
@@ -29,10 +39,56 @@ class QuickOrderController extends Controller
         return $query->limit(50)->get();
     }
 
+    private function resolveCart(Request $request): Cart
+    {
+        // User logat: încercăm întâi via sanctum, apoi via sesiunea web
+        $user = $request->user('sanctum') ?? $request->user();
+
+        if ($user) {
+            // Check for explicit customer context (e.g. Agent acting on behalf of Customer)
+            // Header takes precedence, then query param, then user's own customer_id
+            $customerId = $request->header('X-Customer-ID') ?? $request->input('customer_id') ?? $user->customer_id;
+
+            return Cart::firstOrCreate([
+                'user_id' => $user->id,
+                'customer_id' => $customerId, // Allows agent to have distinct carts per customer context
+                'status'  => 'active',
+            ]);
+        }
+
+        // Guest: folosim ID-ul de sesiune Laravel (middleware web)
+        $sessionId = $request->session()->getId();
+
+        return Cart::firstOrCreate([
+            'session_id' => $sessionId,
+            'status'     => 'active',
+        ]);
+    }
+
+    protected function respondWithEnrichedCart(Cart $cart, Request $request)
+    {
+        $user     = $request->user();
+        // If cart has a specific customer_id, use it. Otherwise fall back to user's customer.
+        $customer = null;
+        if ($cart->customer_id) {
+            $customer = Customer::find($cart->customer_id);
+        } elseif ($user) {
+            $customer = $user->customer;
+        }
+
+        $pricing = $this->promotionPricingService->priceCart($cart, $customer);
+
+        return response()->json([
+            'id'             => $cart->id,
+            'items'          => $pricing['items'],
+            'subtotal'       => $pricing['subtotal'],
+            'discount_total' => $pricing['discount_total'],
+            'total'          => $pricing['total'],
+        ]);
+    }
+
     public function addToCart(Request $request)
     {
-        $user = $request->user();
-
         $data = $request->validate([
             'items'           => ['required', 'array', 'min:1'],
             'items.*.product_id' => ['required_without:items.*.sku', 'integer', 'exists:products,id'],
@@ -40,19 +96,26 @@ class QuickOrderController extends Controller
             'items.*.quantity'   => ['required', 'numeric', 'min:0.01'],
         ]);
 
-        return DB::transaction(function () use ($user, $data) {
-            $cart = Cart::firstOrCreate(
-                ['user_id' => $user->id, 'status' => 'active'],
-                ['currency' => 'RON']
-            );
+        return DB::transaction(function () use ($request, $data) {
+            $cart = $this->resolveCart($request);
 
             foreach ($data['items'] as $row) {
                 $product = null;
+                $variant = null;
 
                 if (!empty($row['product_id'])) {
                     $product = Product::findOrFail($row['product_id']);
                 } elseif (!empty($row['sku'])) {
-                    $product = Product::where('internal_code', $row['sku'])->firstOrFail();
+                    // Try to find variant first
+                    $variant = \App\Models\ProductVariant::where('sku', $row['sku'])->first();
+                    if ($variant) {
+                        $product = $variant->product;
+                    } else {
+                        // Fallback to main product
+                        $product = Product::where('internal_code', $row['sku'])
+                            ->orWhere('barcode', $row['sku'])
+                            ->firstOrFail();
+                    }
                 }
 
                 $quantity = (float) $row['quantity'];
@@ -60,12 +123,14 @@ class QuickOrderController extends Controller
                     continue;
                 }
 
-                $unitPrice = $product->list_price ?? 0;
+                // Determine price and variant ID
+                $variantId = $variant ? $variant->id : null;
+                $unitPrice = $variant ? ($variant->price_override ?? $variant->list_price) : ($product->list_price ?? 0);
 
                 $item = CartItem::firstOrNew([
                     'cart_id'          => $cart->id,
                     'product_id'       => $product->id,
-                    'product_variant_id' => null,
+                    'product_variant_id' => $variantId,
                 ]);
 
                 $item->quantity = $item->exists ? $item->quantity + $quantity : $quantity;
@@ -73,8 +138,10 @@ class QuickOrderController extends Controller
                 $item->total = $item->quantity * $unitPrice;
                 $item->save();
             }
+            
+            $cart->refresh();
 
-            return response()->json($cart->load('items.product'), 200);
+            return $this->respondWithEnrichedCart($cart, $request);
         });
     }
 }

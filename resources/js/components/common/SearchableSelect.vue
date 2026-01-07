@@ -85,12 +85,16 @@ import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue';
 
 const props = defineProps({
   modelValue: {
-    type: Array,
+    type: [Array, String, Number, Object],
     default: () => []
   },
   options: {
     type: Array,
     default: () => []
+  },
+  multiple: {
+    type: Boolean,
+    default: true
   },
   label: {
     type: String,
@@ -164,7 +168,14 @@ const selectedItems = computed(() => {
   // No, standard HTML forms use IDs. 
   // Let's stick to: Parent passes `options` which should include the selected items initially.
   
-  return props.modelValue.map(id => {
+  let ids = [];
+  if (props.multiple) {
+      ids = Array.isArray(props.modelValue) ? props.modelValue : [];
+  } else {
+      ids = (props.modelValue !== null && props.modelValue !== undefined) ? [props.modelValue] : [];
+  }
+
+  return ids.map(id => {
     const opts = props.options || [];
     const internal = internalOptions.value || [];
     const found = opts.find(opt => opt && getItemValue(opt) === id) || internal.find(opt => opt && getItemValue(opt) === id);
@@ -212,16 +223,24 @@ const onInput = () => {
 
 const selectItem = (item) => {
   const value = getItemValue(item);
-  if (props.modelValue.includes(value)) return; // Already selected
   
-  const newValue = [...props.modelValue, value];
-  emit('update:modelValue', newValue);
+  if (props.multiple) {
+      const current = Array.isArray(props.modelValue) ? props.modelValue : [];
+      if (current.includes(value)) return; // Already selected
+      
+      const newValue = [...current, value];
+      emit('update:modelValue', newValue);
+  } else {
+      emit('update:modelValue', value);
+  }
   
   searchQuery.value = '';
   if (!props.remote) {
-      // Keep dropdown open for multi-select convenience? 
-      // User experience: usually yes for tags.
-      inputRef.value?.focus();
+      if (props.multiple) {
+         inputRef.value?.focus();
+      } else {
+         closeDropdown();
+      }
   } else {
       // For remote, maybe clear search results?
       // Let's keep it open but clear search query so user can type again.
@@ -229,18 +248,33 @@ const selectItem = (item) => {
           props.remoteMethod('');
       }
       emit('search', ''); 
-      inputRef.value?.focus();
+      
+      if (props.multiple) {
+        inputRef.value?.focus();
+      } else {
+        closeDropdown();
+      }
   }
 };
 
 const removeItem = (index) => {
-  const newValue = [...props.modelValue];
-  newValue.splice(index, 1);
-  emit('update:modelValue', newValue);
+  if (props.multiple) {
+      const current = Array.isArray(props.modelValue) ? props.modelValue : [];
+      const newValue = [...current];
+      newValue.splice(index, 1);
+      emit('update:modelValue', newValue);
+  } else {
+      emit('update:modelValue', null);
+  }
 };
 
 const isSelected = (item) => {
-  return props.modelValue.includes(getItemValue(item));
+  const value = getItemValue(item);
+  if (props.multiple) {
+      const current = Array.isArray(props.modelValue) ? props.modelValue : [];
+      return current.includes(value);
+  }
+  return props.modelValue === value;
 };
 
 const selectHighlighted = () => {
@@ -267,9 +301,9 @@ const navigate = (direction) => {
 };
 
 const onBackspace = () => {
-  if (searchQuery.value === '' && props.modelValue.length > 0) {
+  if (searchQuery.value === '' && selectedItems.value.length > 0) {
     // Remove last item
-    removeItem(props.modelValue.length - 1);
+    removeItem(selectedItems.value.length - 1);
   }
 };
 

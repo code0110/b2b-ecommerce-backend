@@ -160,13 +160,73 @@
                 </div>
                 <p v-if="!form.tiers.length" class="text-muted small mb-0 fst-italic">Niciun prag definit.</p>
             </div>
+
+            <div class="bg-light p-4 rounded-3 border" v-else-if="form.type === 'gift'">
+                <h6 class="fw-bold mb-3 text-primary"><i class="bi bi-gift me-2"></i>Regula: Cumperi X, Primești Y</h6>
+                <div class="alert alert-info small mb-3">
+                    <i class="bi bi-info-circle me-1"></i>
+                    Definește aici <strong>ce primește clientul</strong>. Produsele care trebuie cumpărate (condiția) se selectează în secțiunea următoare "Produse Eligibile".
+                </div>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label small fw-bold text-muted">La fiecare (buc) cumpărate</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-white"><i class="bi bi-cart-plus"></i></span>
+                            <input type="number" v-model="form.min_qty_per_product" class="form-control" min="1" placeholder="ex: 1">
+                        </div>
+                        <div class="form-text small">Cantitatea din produsul eligibil necesară pentru a activa cadoul.</div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <label class="form-label small fw-bold text-muted">Primești (buc) Cadou</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-white"><i class="bi bi-gift"></i></span>
+                            <input type="number" v-model="form.gift_qty" class="form-control" min="1" placeholder="ex: 1">
+                        </div>
+                        <div class="form-text small">Câte bucăți din produsul cadou se oferă gratuit.</div>
+                    </div>
+
+                    <div class="col-12">
+                        <label class="form-label small fw-bold text-muted">Produsul oferit Cadou</label>
+                        <SearchableSelect
+                            v-model="form.gift_product_id"
+                            :options="availableProducts"
+                            label="name"
+                            track-by="id"
+                            placeholder="Caută produsul oferit cadou..."
+                            :remote="true"
+                            :remote-method="onSearchProducts"
+                            :loading="loadingProducts"
+                            :min-search-length="0"
+                            :multiple="false"
+                        >
+                             <template #option="{ option }">
+                                <div class="d-flex align-items-center gap-2">
+                                    <div v-if="option.main_image" 
+                                         class="bg-white border rounded" 
+                                         style="width: 30px; height: 30px; background-size: cover; background-position: center;"
+                                         :style="{ backgroundImage: `url(${option.main_image})` }"
+                                    ></div>
+                                    <div>
+                                        <div class="fw-bold text-truncate" style="max-width: 300px;">{{ option.name }}</div>
+                                        <div class="small text-muted">{{ option.internal_code }}</div>
+                                    </div>
+                                </div>
+                            </template>
+                        </SearchableSelect>
+                    </div>
+                </div>
+            </div>
           </div>
         </div>
 
         <!-- 3. Target (Products) Card -->
         <div class="card border-0 shadow-sm rounded-3 mb-4">
           <div class="card-header bg-white py-3 border-bottom">
-            <h6 class="fw-bold mb-0 text-primary"><i class="bi bi-box-seam me-2"></i>Produse Incluse</h6>
+            <h6 class="fw-bold mb-0 text-primary">
+                <i class="bi bi-box-seam me-2"></i>
+                {{ form.type === 'gift' ? 'Produse Eligibile (Condiție de cumpărare)' : 'Produse Incluse' }}
+            </h6>
           </div>
           <div class="card-body p-4">
             <div class="mb-3">
@@ -182,7 +242,9 @@
 
             <div v-if="!allProductsScope" class="animate__animated animate__fadeIn">
                 <div class="mb-3">
-                    <label class="form-label small fw-bold text-muted">Produse Individuale</label>
+                    <label class="form-label small fw-bold text-muted">
+                        {{ form.type === 'gift' ? 'Produse Individuale care declanșează promoția' : 'Produse Individuale' }}
+                    </label>
                     <SearchableSelect
                         v-model="form.product_ids"
                         :options="availableProducts"
@@ -356,7 +418,7 @@
 import { ref, computed, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { fetchPromotion, createPromotion, updatePromotion } from '@/services/admin/promotions';
-import { fetchProducts } from '@/services/admin/products';
+import { fetchProducts, fetchProduct } from '@/services/admin/products';
 import { fetchCustomers } from '@/services/admin/customers';
 import { adminApi } from '@/services/http';
 import SearchableSelect from '@/components/common/SearchableSelect.vue';
@@ -412,6 +474,8 @@ const form = ref({
   
   min_cart_total: 0,
   min_qty_per_product: 0,
+  gift_qty: 1,
+  gift_product_id: null,
 });
 
 const promoTypes = [
@@ -519,8 +583,10 @@ const loadPromotion = async () => {
             tiers: Array.isArray(p.tiers) ? p.tiers : [],
             start_at: p.start_at && typeof p.start_at === 'string' ? p.start_at.substring(0, 10) : '',
             end_at: p.end_at && typeof p.end_at === 'string' ? p.end_at.substring(0, 10) : '',
+            gift_qty: p.settings?.gift_qty || 1,
+            gift_product_id: p.settings?.gift_product_id || null,
         };
-
+        
         // Determine scope toggle state
         if (form.value.product_ids.length > 0 || form.value.category_ids.length > 0 || form.value.brand_ids.length > 0) {
             allProductsScope.value = false;
@@ -540,6 +606,16 @@ const loadPromotion = async () => {
         if (p.customer_groups) availableGroups.value = mergeOptions(availableGroups.value, safeArr(p.customer_groups));
         if (p.categories) availableCategories.value = mergeOptions(availableCategories.value, safeArr(p.categories));
         if (p.brands) availableBrands.value = mergeOptions(availableBrands.value, safeArr(p.brands));
+
+        // Fetch gift product if exists
+        if (form.value.gift_product_id) {
+            try {
+                const giftProd = await fetchProduct(form.value.gift_product_id);
+                if (giftProd) {
+                     availableProducts.value = mergeOptions(availableProducts.value, [giftProd]);
+                }
+            } catch(e) { console.error('Error loading gift product', e); }
+        }
 
     } catch (e) {
         // Log less verbosely for 404
@@ -611,6 +687,16 @@ const submit = async () => {
         form.value.product_ids = [];
         form.value.category_ids = [];
         form.value.brand_ids = [];
+    }
+    
+    // Pack settings for Gift type
+    if (form.value.type === 'gift') {
+        form.value.settings = {
+            gift_qty: form.value.gift_qty,
+            gift_product_id: form.value.gift_product_id
+        };
+    } else {
+        form.value.settings = null;
     }
     
     try {

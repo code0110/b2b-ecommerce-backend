@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Gazdă: localhost
--- Timp de generare: ian. 07, 2026 la 07:56 PM
+-- Timp de generare: ian. 07, 2026 la 08:16 PM
 -- Versiune server: 8.0.44
 -- Versiune PHP: 8.2.30
 
@@ -76,6 +76,13 @@ CREATE TABLE `agent_daily_routes` (
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Eliminarea datelor din tabel `agent_daily_routes`
+--
+
+INSERT INTO `agent_daily_routes` (`id`, `user_id`, `date`, `start_time`, `end_time`, `total_distance`, `status`, `created_at`, `updated_at`) VALUES
+(1, 2, '2026-01-07', '2026-01-07 18:12:21', NULL, 0, 'active', '2026-01-07 18:12:21', '2026-01-07 18:12:21');
 
 -- --------------------------------------------------------
 
@@ -171,7 +178,8 @@ INSERT INTO `audit_logs` (`id`, `user_id`, `action`, `entity_type`, `entity_id`,
 (8, NULL, 'created', 'App\\Models\\Promotion', 4, '{\"id\": 4, \"name\": \"5% Off Apple Brand\", \"slug\": \"promo-apple-5\", \"type\": \"standard\", \"value\": 5, \"end_at\": \"2026-02-06 19:52:11\", \"status\": \"active\", \"start_at\": \"2026-01-06 19:52:11\", \"applies_to\": \"brands\", \"created_at\": \"2026-01-07 19:52:11\", \"updated_at\": \"2026-01-07 19:52:11\", \"value_type\": \"percent\", \"customer_type\": \"both\"}', '{\"ip\": \"127.0.0.1\", \"user_agent\": \"Symfony\"}', '2026-01-07 17:52:11', '2026-01-07 17:52:11'),
 (9, NULL, 'created', 'App\\Models\\Promotion', 5, '{\"id\": 5, \"name\": \"100 RON Off Orders > 5000\", \"slug\": \"promo-cart-5000\", \"type\": \"standard\", \"value\": 100, \"end_at\": \"2026-02-06 19:52:11\", \"status\": \"active\", \"start_at\": \"2026-01-06 19:52:11\", \"applies_to\": \"all\", \"created_at\": \"2026-01-07 19:52:11\", \"updated_at\": \"2026-01-07 19:52:11\", \"value_type\": \"fixed_amount\", \"customer_type\": \"both\", \"min_cart_total\": 5000}', '{\"ip\": \"127.0.0.1\", \"user_agent\": \"Symfony\"}', '2026-01-07 17:52:11', '2026-01-07 17:52:11'),
 (10, NULL, 'created', 'App\\Models\\Promotion', 6, '{\"id\": 6, \"name\": \"Buy 5 Cables Get 20% Off\", \"slug\": \"promo-cables-bulk\", \"type\": \"volume\", \"value\": 20, \"end_at\": \"2026-02-06 19:52:11\", \"status\": \"active\", \"start_at\": \"2026-01-06 19:52:11\", \"applies_to\": \"products\", \"created_at\": \"2026-01-07 19:52:11\", \"updated_at\": \"2026-01-07 19:52:11\", \"value_type\": \"percent\", \"customer_type\": \"both\", \"min_qty_per_product\": 5}', '{\"ip\": \"127.0.0.1\", \"user_agent\": \"Symfony\"}', '2026-01-07 17:52:11', '2026-01-07 17:52:11'),
-(11, NULL, 'created', 'App\\Models\\Promotion', 7, '{\"id\": 7, \"name\": \"Free Mouse with Laptop\", \"slug\": \"promo-free-mouse\", \"type\": \"gift\", \"value\": 0, \"end_at\": \"2026-02-06 19:52:11\", \"status\": \"active\", \"settings\": \"\\\"{\\\\\\\"gift_product_id\\\\\\\":3,\\\\\\\"gift_qty\\\\\\\":1}\\\"\", \"start_at\": \"2026-01-06 19:52:11\", \"applies_to\": \"products\", \"created_at\": \"2026-01-07 19:52:11\", \"updated_at\": \"2026-01-07 19:52:11\", \"value_type\": \"fixed_amount\", \"customer_type\": \"both\", \"min_qty_per_product\": 1}', '{\"ip\": \"127.0.0.1\", \"user_agent\": \"Symfony\"}', '2026-01-07 17:52:11', '2026-01-07 17:52:11');
+(11, NULL, 'created', 'App\\Models\\Promotion', 7, '{\"id\": 7, \"name\": \"Free Mouse with Laptop\", \"slug\": \"promo-free-mouse\", \"type\": \"gift\", \"value\": 0, \"end_at\": \"2026-02-06 19:52:11\", \"status\": \"active\", \"settings\": \"\\\"{\\\\\\\"gift_product_id\\\\\\\":3,\\\\\\\"gift_qty\\\\\\\":1}\\\"\", \"start_at\": \"2026-01-06 19:52:11\", \"applies_to\": \"products\", \"created_at\": \"2026-01-07 19:52:11\", \"updated_at\": \"2026-01-07 19:52:11\", \"value_type\": \"fixed_amount\", \"customer_type\": \"both\", \"min_qty_per_product\": 1}', '{\"ip\": \"127.0.0.1\", \"user_agent\": \"Symfony\"}', '2026-01-07 17:52:11', '2026-01-07 17:52:11'),
+(12, 4, 'updated', 'App\\Models\\Promotion', 7, '{\"end_at\": \"2026-02-06 00:00:00\", \"settings\": \"{\\\"gift_qty\\\":1,\\\"gift_product_id\\\":1}\", \"start_at\": \"2026-01-06 00:00:00\", \"updated_at\": \"2026-01-07 20:12:00\", \"min_qty_per_product\": 3}', '{\"ip\": \"127.0.0.1\", \"user_agent\": \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Trae/1.104.3 Chrome/138.0.7204.251 Electron/37.6.1 Safari/537.36\"}', '2026-01-07 18:12:00', '2026-01-07 18:12:00');
 
 -- --------------------------------------------------------
 
@@ -315,6 +323,14 @@ CREATE TABLE `carts` (
   `coupon_id` bigint UNSIGNED DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+--
+-- Eliminarea datelor din tabel `carts`
+--
+
+INSERT INTO `carts` (`id`, `customer_id`, `user_id`, `session_id`, `status`, `created_at`, `updated_at`, `coupon_id`) VALUES
+(1, NULL, 2, NULL, 'active', '2026-01-07 18:12:07', '2026-01-07 18:12:07', NULL),
+(2, 4, 2, NULL, 'active', '2026-01-07 18:12:52', '2026-01-07 18:12:52', NULL);
+
 -- --------------------------------------------------------
 
 --
@@ -332,6 +348,13 @@ CREATE TABLE `cart_items` (
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Eliminarea datelor din tabel `cart_items`
+--
+
+INSERT INTO `cart_items` (`id`, `cart_id`, `product_id`, `product_variant_id`, `quantity`, `unit_price`, `total`, `created_at`, `updated_at`) VALUES
+(1, 2, 1, NULL, 3, 12000.00, 36000.00, '2026-01-07 18:13:06', '2026-01-07 18:16:20');
 
 -- --------------------------------------------------------
 
@@ -638,6 +661,13 @@ CREATE TABLE `customer_visits` (
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Eliminarea datelor din tabel `customer_visits`
+--
+
+INSERT INTO `customer_visits` (`id`, `agent_id`, `customer_id`, `status`, `outcome`, `start_time`, `end_time`, `latitude`, `longitude`, `end_latitude`, `end_longitude`, `distance_deviation`, `is_off_site`, `notes`, `created_at`, `updated_at`) VALUES
+(1, 2, 4, 'in_progress', NULL, '2026-01-07 18:12:26', NULL, 46.21354400, 27.66465400, NULL, NULL, 5804703, 1, NULL, '2026-01-07 18:12:26', '2026-01-07 18:12:55');
 
 -- --------------------------------------------------------
 
@@ -1257,7 +1287,9 @@ CREATE TABLE `personal_access_tokens` (
 --
 
 INSERT INTO `personal_access_tokens` (`id`, `tokenable_type`, `tokenable_id`, `name`, `token`, `abilities`, `last_used_at`, `expires_at`, `created_at`, `updated_at`) VALUES
-(1, 'App\\Models\\User', 4, 'spa', 'caaffa7b9851fddb856d3d067774bb615f90febf21b27a9107b57270f4f68745', '[\"*\"]', '2026-01-07 17:56:25', NULL, '2026-01-07 17:51:12', '2026-01-07 17:56:25');
+(1, 'App\\Models\\User', 4, 'spa', 'caaffa7b9851fddb856d3d067774bb615f90febf21b27a9107b57270f4f68745', '[\"*\"]', '2026-01-07 18:14:41', NULL, '2026-01-07 17:51:12', '2026-01-07 18:14:41'),
+(2, 'App\\Models\\User', 4, 'spa', '0c4e2ee99248d829384d4f5160a3dec8532475434cdd31bf7bf5efd64d20f5f2', '[\"*\"]', '2026-01-07 18:11:59', NULL, '2026-01-07 18:07:36', '2026-01-07 18:11:59'),
+(3, 'App\\Models\\User', 2, 'spa', '10af44faed36c94c0dc9417797a9cc9a46af5e85fe0416f98a7b892ed37e3129', '[\"*\"]', '2026-01-07 18:16:21', NULL, '2026-01-07 18:12:05', '2026-01-07 18:16:21');
 
 -- --------------------------------------------------------
 
@@ -1521,7 +1553,7 @@ INSERT INTO `promotions` (`id`, `name`, `slug`, `type`, `value_type`, `value`, `
 (4, '5% Off Apple Brand', 'promo-apple-5', 'standard', 'percent', 5.00, NULL, NULL, NULL, NULL, NULL, '2026-01-06 17:52:11', '2026-02-06 17:52:11', NULL, NULL, 'active', 'brands', 0, 0, 'iterative', NULL, NULL, 0.00, 0, 'both', 0, '2026-01-07 17:52:11', '2026-01-07 17:52:11'),
 (5, '100 RON Off Orders > 5000', 'promo-cart-5000', 'standard', 'fixed_amount', 100.00, NULL, NULL, NULL, NULL, NULL, '2026-01-06 17:52:11', '2026-02-06 17:52:11', NULL, NULL, 'active', 'all', 0, 0, 'iterative', NULL, NULL, 5000.00, 0, 'both', 0, '2026-01-07 17:52:11', '2026-01-07 17:52:11'),
 (6, 'Buy 5 Cables Get 20% Off', 'promo-cables-bulk', 'volume', 'percent', 20.00, NULL, NULL, NULL, NULL, NULL, '2026-01-06 17:52:11', '2026-02-06 17:52:11', NULL, NULL, 'active', 'products', 0, 0, 'iterative', NULL, NULL, 0.00, 5, 'both', 0, '2026-01-07 17:52:11', '2026-01-07 17:52:11'),
-(7, 'Free Mouse with Laptop', 'promo-free-mouse', 'gift', 'fixed_amount', 0.00, NULL, NULL, NULL, NULL, NULL, '2026-01-06 17:52:11', '2026-02-06 17:52:11', '\"{\\\"gift_product_id\\\":3,\\\"gift_qty\\\":1}\"', NULL, 'active', 'products', 0, 0, 'iterative', NULL, NULL, 0.00, 1, 'both', 0, '2026-01-07 17:52:11', '2026-01-07 17:52:11');
+(7, 'Free Mouse with Laptop', 'promo-free-mouse', 'gift', 'fixed_amount', 0.00, NULL, NULL, NULL, NULL, NULL, '2026-01-05 22:00:00', '2026-02-05 22:00:00', '{\"gift_qty\": 1, \"gift_product_id\": 1}', NULL, 'active', 'products', 0, 0, 'iterative', NULL, NULL, 0.00, 3, 'both', 0, '2026-01-07 17:52:11', '2026-01-07 18:12:00');
 
 -- --------------------------------------------------------
 
@@ -1777,6 +1809,15 @@ CREATE TABLE `route_points` (
   `updated_at` timestamp NULL DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+--
+-- Eliminarea datelor din tabel `route_points`
+--
+
+INSERT INTO `route_points` (`id`, `agent_daily_route_id`, `latitude`, `longitude`, `accuracy`, `speed`, `heading`, `recorded_at`, `battery_level`, `is_mocked`, `created_at`, `updated_at`) VALUES
+(1, 1, 46.21354400, 27.66465400, 500, NULL, NULL, '2026-01-07 18:12:26', NULL, 0, '2026-01-07 18:12:26', '2026-01-07 18:12:26'),
+(2, 1, 46.21354400, 27.66465400, 500, NULL, NULL, '2026-01-07 18:12:38', NULL, 0, '2026-01-07 18:12:38', '2026-01-07 18:12:38'),
+(3, 1, 46.21354400, 27.66465400, 500, NULL, NULL, '2026-01-07 18:13:54', NULL, 0, '2026-01-07 18:13:54', '2026-01-07 18:13:54');
+
 -- --------------------------------------------------------
 
 --
@@ -2007,6 +2048,16 @@ CREATE TABLE `visit_location_logs` (
   `network_type` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `is_mocked` tinyint(1) NOT NULL DEFAULT '0'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Eliminarea datelor din tabel `visit_location_logs`
+--
+
+INSERT INTO `visit_location_logs` (`id`, `customer_visit_id`, `latitude`, `longitude`, `accuracy`, `battery_level`, `provider`, `recorded_at`, `created_at`, `updated_at`, `speed`, `heading`, `altitude`, `network_type`, `is_mocked`) VALUES
+(1, 1, 46.2135440, 27.6646540, 500, 100, 'browser', '2026-01-07 20:12:55', '2026-01-07 18:12:55', '2026-01-07 18:12:55', NULL, NULL, NULL, '4g', 0),
+(2, 1, 46.2135440, 27.6646540, 500, 100, 'browser', '2026-01-07 20:13:54', '2026-01-07 18:13:54', '2026-01-07 18:13:54', NULL, NULL, NULL, '4g', 0),
+(3, 1, 46.2135440, 27.6646540, 500, 100, 'browser', '2026-01-07 20:16:06', '2026-01-07 18:16:06', '2026-01-07 18:16:06', NULL, NULL, NULL, '4g', 0),
+(4, 1, 46.2135440, 27.6646540, 500, 100, 'browser', '2026-01-07 20:16:21', '2026-01-07 18:16:21', '2026-01-07 18:16:21', NULL, NULL, NULL, '4g', 0);
 
 --
 -- Indexuri pentru tabele eliminate
@@ -2684,7 +2735,7 @@ ALTER TABLE `agent_customer`
 -- AUTO_INCREMENT pentru tabele `agent_daily_routes`
 --
 ALTER TABLE `agent_daily_routes`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT pentru tabele `agent_routes`
@@ -2708,7 +2759,7 @@ ALTER TABLE `attribute_values`
 -- AUTO_INCREMENT pentru tabele `audit_logs`
 --
 ALTER TABLE `audit_logs`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=12;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=13;
 
 --
 -- AUTO_INCREMENT pentru tabele `blog_categories`
@@ -2732,13 +2783,13 @@ ALTER TABLE `brands`
 -- AUTO_INCREMENT pentru tabele `carts`
 --
 ALTER TABLE `carts`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT pentru tabele `cart_items`
 --
 ALTER TABLE `cart_items`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT pentru tabele `cart_promotion`
@@ -2786,7 +2837,7 @@ ALTER TABLE `customer_groups`
 -- AUTO_INCREMENT pentru tabele `customer_visits`
 --
 ALTER TABLE `customer_visits`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT pentru tabele `discount_rules`
@@ -2900,7 +2951,7 @@ ALTER TABLE `permissions`
 -- AUTO_INCREMENT pentru tabele `personal_access_tokens`
 --
 ALTER TABLE `personal_access_tokens`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- AUTO_INCREMENT pentru tabele `products`
@@ -3032,7 +3083,7 @@ ALTER TABLE `roles`
 -- AUTO_INCREMENT pentru tabele `route_points`
 --
 ALTER TABLE `route_points`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- AUTO_INCREMENT pentru tabele `sales_representatives`
@@ -3098,7 +3149,7 @@ ALTER TABLE `users`
 -- AUTO_INCREMENT pentru tabele `visit_location_logs`
 --
 ALTER TABLE `visit_location_logs`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
 -- Constrângeri pentru tabele eliminate

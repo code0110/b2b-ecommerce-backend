@@ -108,6 +108,7 @@ class PromotionEngine
         $shippingCost = 0.0;
         $shippingDiscount = 0.0;
 
+        // 1. Calculate standard line items
         foreach ($items as $item) {
             $product = $item->product;
             $quantity = $item->quantity;
@@ -131,7 +132,19 @@ class PromotionEngine
                 'line_subtotal' => $lineSubtotal,
                 'line_total' => $lineTotal,
                 'applied_promotions' => $priceData['applied_promotions'],
+                'is_gift' => false,
             ];
+        }
+
+        // 2. Process Gift Promotions
+        $giftItems = $this->processGiftPromotions($results, $user, $customer, $cart);
+        
+        foreach ($giftItems as $gift) {
+            $results[] = $gift;
+            // Gifts don't add to subtotal/total usually, but if they have a "value", maybe?
+            // Usually gifts are free (price 0).
+            // If we want to show "Free (Value 100 RON)", we handle visual part.
+            // Mathematically: Price 0.
         }
         
         return [
@@ -142,6 +155,72 @@ class PromotionEngine
             'shipping_discount' => $shippingDiscount,
         ];
     }
+
+    protected function processGiftPromotions(array $currentItems, ?Authenticatable $user = null, ?Customer $customer = null, ?Cart $cart = null): array
+    {
+        $giftItems = [];
+        
+        // Get all active GIFT promotions
+        $promotions = $this->getActivePromotions($user, $customer, $cart)
+            ->where('type', 'gift');
+
+        foreach ($promotions as $promotion) {
+            $settings = $promotion->settings ?? [];
+            $triggerMinQty = $settings['min_qty_per_product'] ?? 1;
+            $giftQtyPerTrigger = $settings['gift_qty'] ?? 1;
+            $giftProductId = $settings['gift_product_id'] ?? null;
+
+            if (!$giftProductId) continue;
+
+            // Calculate total qualifying quantity in cart
+            $qualifyingQty = 0;
+            
+            foreach ($currentItems as $item) {
+                // Skip if it's already a gift (prevent infinite recursion if we were recursive, but we are not)
+                if (($item['is_gift'] ?? false) === true) continue;
+
+                $product = Product::find($item['product_id']); // Ideally optimize this lookup
+                if ($product && $this->promotionAppliesToProduct($promotion, $product)) {
+                    $qualifyingQty += $item['quantity'];
+                }
+            }
+
+            if ($qualifyingQty >= $triggerMinQty) {
+                // Calculate how many sets of gifts
+                // Example: Buy 1 Get 1. Bought 3. Get 3? Or is it sets?
+                // Usually: floor(bought / trigger) * gift_qty
+                $sets = floor($qualifyingQty / $triggerMinQty);
+                $totalGiftQty = $sets * $giftQtyPerTrigger;
+
+                if ($totalGiftQty > 0) {
+                    $giftProduct = Product::find($giftProductId);
+                    if ($giftProduct) {
+                        $giftItems[] = [
+                            'id' => 'gift_' . $promotion->id . '_' . $giftProduct->id, // Virtual ID
+                            'product_id' => $giftProduct->id,
+                            'product_name' => $giftProduct->name,
+                            'quantity' => $totalGiftQty,
+                            'unit_base_price' => 0, // Free
+                            'unit_final_price' => 0, // Free
+                            'line_subtotal' => 0,
+                            'line_total' => 0,
+                            'applied_promotions' => [[
+                                'id' => $promotion->id,
+                                'name' => $promotion->name,
+                                'slug' => $promotion->slug,
+                                'type' => 'gift',
+                                'discount_amount' => 0,
+                            ]],
+                            'is_gift' => true,
+                        ];
+                    }
+                }
+            }
+        }
+
+        return $giftItems;
+    }
+
 
     /**
      * Prețul unui produs cu toate promoțiile aplicate (unitar).

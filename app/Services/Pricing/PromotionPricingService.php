@@ -148,6 +148,47 @@ class PromotionPricingService
         // Map items to legacy structure
         $mappedItems = [];
         foreach ($engineResult['items'] as $itemData) {
+            // Handle Gift Items (Virtual)
+            if (($itemData['is_gift'] ?? false) === true) {
+                 // It's a gift, no original item to match
+                 $product = Product::find($itemData['product_id']);
+                 $mappedItems[] = [
+                    'id'                => $itemData['id'], // Virtual ID
+                    'product_id'        => $itemData['product_id'],
+                    'product_name'      => $itemData['product_name'],
+                    'product_slug'      => $product->slug ?? '',
+                    'quantity'          => $itemData['quantity'],
+                    
+                    'unit_price'        => 0,
+                    'line_subtotal'     => 0,
+                    'line_discount'     => 0,
+                    'line_total'        => 0,
+                    
+                    'unit_base_price'   => 0,
+                    'unit_final_price'  => 0,
+                    'line_base_total'   => 0,
+                    'line_final_total'  => 0,
+                    
+                    'product'           => [
+                        'id'            => $product->id,
+                        'name'          => $product->name,
+                        'slug'          => $product->slug,
+                        'internal_code' => $product->internal_code,
+                        'sku'           => $product->internal_code,
+                        'thumbnail'     => null, // Can add if needed
+                    ],
+
+                    'applied_promotions'=> collect($itemData['applied_promotions']),
+                    'applied_promotion' => [
+                        'id'   => $itemData['applied_promotions'][0]['id'],
+                        'name' => $itemData['applied_promotions'][0]['name'],
+                        'slug' => $itemData['applied_promotions'][0]['slug'],
+                    ],
+                    'is_gift' => true,
+                ];
+                continue;
+            }
+
             // Find original product for details
             // We use product_id to match.
             // Items input might be CartItems or VirtualItems.
@@ -194,6 +235,7 @@ class PromotionPricingService
                     'name' => $appliedPromosList[0]['name'],
                     'slug' => $appliedPromosList[0]['slug'],
                 ] : null,
+                'is_gift' => false,
             ];
         }
 

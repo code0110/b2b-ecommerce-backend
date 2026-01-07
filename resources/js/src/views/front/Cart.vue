@@ -64,6 +64,13 @@
                     </td>
                     <td class="text-center">
                       <span
+                        v-if="item.is_gift"
+                        class="badge bg-info text-white"
+                      >
+                        <i class="bi bi-gift-fill me-1"></i> CADOU
+                      </span>
+                      <span
+                        v-else
                         class="badge"
                         :class="{
                           'bg-success': item.stockStatus === 'in_stock',
@@ -73,12 +80,13 @@
                       >
                         {{ stockStatusLabel(item.stockStatus) }}
                       </span>
-                      <div class="text-muted" v-if="item.deliveryEstimate">
+                      <div class="text-muted" v-if="item.deliveryEstimate && !item.is_gift">
                         {{ item.deliveryEstimate }}
                       </div>
                     </td>
                     <td class="text-end">
-                      {{ formatMoney(item.price) }}
+                      <span v-if="item.is_gift" class="text-success fw-bold">GRATUIT</span>
+                      <span v-else>{{ formatMoney(item.price) }}</span>
                     </td>
                     <td class="text-center" style="max-width: 120px;">
                       <input
@@ -86,16 +94,22 @@
                         min="1"
                         class="form-control form-control-sm text-center"
                         v-model.number="item.quantity"
+                        @change="updateQuantity(item, item.quantity)"
+                        :disabled="item.is_gift"
+                        :readonly="item.is_gift"
                       />
                     </td>
                     <td class="text-end fw-semibold">
-                      {{ formatMoney(lineTotal(item)) }}
+                      <span v-if="item.is_gift" class="text-success">0,00 RON</span>
+                      <span v-else>{{ formatMoney(lineTotal(item)) }}</span>
                     </td>
                     <td class="text-end">
                       <button
                         type="button"
                         class="btn btn-outline-danger btn-sm"
                         @click="removeItem(item.id)"
+                        :disabled="item.is_gift"
+                        :title="item.is_gift ? 'Produsul cadou se elimină automat la ștergerea produselor eligibile' : 'Elimină'"
                       >
                         ×
                       </button>

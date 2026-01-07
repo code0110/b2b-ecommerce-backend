@@ -2,12 +2,9 @@
   <div class="container py-4">
     <div class="row mb-3">
       <div class="col-md-8">
-        <h1 class="h5 mb-1">Coș de cumpărături (demo)</h1>
+        <h1 class="h5 mb-1">Coș de cumpărături</h1>
         <p class="text-muted small mb-0">
-          Aceasta este o pagină de coș de cumpărături orientată B2B/B2C. Datele sunt demo,
-          dar structura acoperă: produse, cantități, stoc, termene de livrare, voucher
-          și sumar de comandă. În implementarea reală, ar fi legată de un store global
-          de coș și de regulile de promoții / discounturi.
+          Revizuiește produsele, cantitățile și aplică vouchere de reducere.
         </p>
       </div>
       <div class="col-md-4 text-md-end small mt-2 mt-md-0" v-if="frontClientLabel">
@@ -107,7 +104,7 @@
                   <tr v-if="items.length === 0">
                     <td colspan="6">
                       <div class="text-center text-muted py-4">
-                        Coșul este gol în acest template demo.
+                        Coșul este gol.
                       </div>
                     </td>
                   </tr>
@@ -128,13 +125,13 @@
           <div class="card-body small">
             <div class="row g-3">
               <div class="col-md-6">
-                <label class="form-label">Cupon discount / voucher (demo)</label>
+                <label class="form-label">Cupon discount / voucher</label>
                 <div class="input-group input-group-sm">
                   <input
                     v-model="voucherCode"
                     type="text"
                     class="form-control"
-                    placeholder="DEMO10, BLACKFRIDAY, CONTRACT-XYZ..."
+                    placeholder="Cod voucher..."
                   />
                   <button
                     type="button"
@@ -145,8 +142,10 @@
                   </button>
                 </div>
                 <div class="form-text" v-if="appliedVoucher">
-                  Cupon aplicat: <strong>{{ appliedVoucher }}</strong> – reducere simulată
-                  de {{ formatMoney(discountAmount) }}.
+                  Cupon aplicat: <strong>{{ appliedVoucher }}</strong>
+                  <button class="btn btn-link btn-sm text-danger p-0 ms-2" @click="removeVoucher">
+                    (Șterge)
+                  </button>
                 </div>
               </div>
               <div class="col-md-6">
@@ -155,7 +154,7 @@
                   v-model="orderNote"
                   class="form-control form-control-sm"
                   rows="3"
-                  placeholder="Instrucțiuni pentru livrare, referință proiect, număr de comandă client... (demo)"
+                  placeholder="Instrucțiuni pentru livrare, referință proiect, număr de comandă client..."
                 ></textarea>
               </div>
             </div>
@@ -167,7 +166,7 @@
       <div class="col-lg-4">
         <div class="card shadow-sm mb-3">
           <div class="card-header py-2">
-            <strong class="small text-uppercase">Rezumat comandă (demo)</strong>
+            <strong class="small text-uppercase">Rezumat comandă</strong>
           </div>
           <div class="card-body small">
             <ul class="list-unstyled mb-2">
@@ -179,7 +178,7 @@
                 class="d-flex justify-content-between mb-1 text-success"
                 v-if="discountAmount > 0"
               >
-                <span>Discount (voucher demo)</span>
+                <span>Discount</span>
                 <span>-{{ formatMoney(discountAmount) }}</span>
               </li>
               <li class="d-flex justify-content-between mb-1">
@@ -239,12 +238,14 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/store/auth'
+import { useCartStore } from '@/store/cart'
 
 const router = useRouter()
 const authStore = useAuthStore()
+const cartStore = useCartStore()
 
 const user = computed(() => authStore.user || null)
 const isImpersonating = computed(() => !!authStore.impersonatedCustomer)
@@ -261,138 +262,74 @@ const frontClientLabel = computed(() => {
   return authStore.user?.name || ''
 })
 
-const items = ref([
-  {
-    id: 1,
-    name: 'Produs demo 1 – exemplu B2B',
-    code: 'PRD-DEMO-001',
-    imageUrl: '',
-    price: 250,
-    quantity: 2,
-    stockStatus: 'in_stock',
-    deliveryEstimate: 'Livrare 24–48h',
-    unitInfo: 'buc / cutie (10 buc)'
-  },
-  {
-    id: 2,
-    name: 'Produs demo 2 – palet',
-    code: 'PRD-DEMO-002',
-    imageUrl: '',
-    price: 150,
-    quantity: 3,
-    stockStatus: 'limited',
-    deliveryEstimate: 'Stoc limitat – confirmare agent',
-    unitInfo: 'palet (50 cutii)'
-  },
-  {
-    id: 3,
-    name: 'Produs demo 3 – la comandă',
-    code: 'PRD-DEMO-003',
-    imageUrl: '',
-    price: 100,
-    quantity: 1,
-    stockStatus: 'supplier',
-    deliveryEstimate: 'La comandă – 7–10 zile',
-    unitInfo: 'buc'
-  }
-])
+// Cart state from store
+const items = computed(() => cartStore.lines)
+const subtotal = computed(() => cartStore.subTotal)
+const grandTotal = computed(() => cartStore.grandTotal)
+const discountAmount = computed(() => cartStore.discountAmount)
+const totalQuantity = computed(() => cartStore.itemCount)
 
+// UI state
 const voucherCode = ref('')
-const appliedVoucher = ref('')
+const appliedVoucher = computed(() => cartStore.couponCode)
 const orderNote = ref('')
-const discountPercent = ref(0)
+const shippingCost = ref(0) // TODO: Get from backend
 
-const totalQuantity = computed(() =>
-  items.value.reduce((sum, item) => sum + (item.quantity || 0), 0)
-)
+onMounted(() => {
+  cartStore.fetchCart()
+})
+
+const formatMoney = (val) => {
+  return new Intl.NumberFormat('ro-RO', {
+    style: 'currency',
+    currency: 'RON'
+  }).format(val)
+}
 
 const lineTotal = (item) => {
-  const qty = item.quantity || 0
-  return item.price * qty
+  return (item.price * item.quantity)
 }
-
-const subtotal = computed(() =>
-  items.value.reduce((sum, item) => sum + lineTotal(item), 0)
-)
-
-const discountAmount = computed(() => {
-  if (discountPercent.value <= 0) return 0
-  return Math.round(subtotal.value * discountPercent.value) / 100
-})
-
-const shippingCost = computed(() => {
-  if (subtotal.value === 0) return 0
-  if (subtotal.value >= 500) {
-    return 0
-  }
-  return frontClientType.value === 'B2B' ? 20 : 25
-})
-
-const grandTotal = computed(() => {
-  return subtotal.value - discountAmount.value + shippingCost.value
-})
 
 const stockStatusLabel = (status) => {
-  switch (status) {
-    case 'in_stock':
-      return 'În stoc'
-    case 'limited':
-      return 'Stoc limitat'
-    case 'supplier':
-      return 'În stoc furnizor / la comandă'
-    default:
-      return status
+  const map = {
+    'in_stock': 'În stoc',
+    'limited': 'Stoc limitat',
+    'supplier': 'Stoc furnizor',
+    'out_of_stock': 'Indisponibil'
+  }
+  return map[status] || status
+}
+
+const removeItem = async (id) => {
+  if (!confirm('Eliminați acest produs din coș?')) return
+  await cartStore.removeLine(id)
+}
+
+const updateQuantity = async (item, newQty) => {
+  if (newQty < 1) return
+  await cartStore.updateQty(item.id, newQty)
+}
+
+const applyVoucher = async () => {
+  if (!voucherCode.value) return
+  try {
+    await cartStore.applyCoupon(voucherCode.value)
+    voucherCode.value = '' // Clear input on success
+  } catch (e) {
+    alert(e.response?.data?.message || 'Eroare la aplicarea cuponului')
   }
 }
 
-const formatMoney = (value) => {
-  const number = Number(value || 0)
-  return number.toLocaleString('ro-RO', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2
-  }) + ' RON'
-}
-
-const removeItem = (id) => {
-  items.value = items.value.filter((item) => item.id !== id)
-}
-
-const applyVoucher = () => {
-  const code = voucherCode.value.trim().toUpperCase()
-  if (!code) {
-    window.alert('Introdu un cod de voucher (demo).')
-    return
-  }
-
-  if (code === 'DEMO10') {
-    discountPercent.value = 10
-    appliedVoucher.value = 'DEMO10 – reducere 10% demo'
-  } else if (code === 'DEMO20') {
-    discountPercent.value = 20
-    appliedVoucher.value = 'DEMO20 – reducere 20% demo'
-  } else {
-    discountPercent.value = 0
-    appliedVoucher.value = ''
-    window.alert(
-      'Codul de voucher introdus nu este recunoscut în acest template demo. În producție, validarea s-ar face în backend.'
-    )
-    return
-  }
-
-  window.alert(
-    'Voucher aplicat în mod demonstrativ. Într-un sistem real, reducerea ar fi validată și salvată în coșul din backend.'
-  )
+const removeVoucher = async () => {
+  if (!confirm('Ștergeți cuponul?')) return
+  await cartStore.removeCoupon()
 }
 
 const goToCheckout = () => {
-  if (items.value.length === 0) {
-    window.alert('Coșul este gol în acest template demo.')
-    return
-  }
   router.push({ name: 'checkout' })
 }
 
 const goBackToCatalog = () => {
-  router.push({ name: 'home' })
+  router.push({ name: 'catalog' })
 }
 </script>

@@ -49,9 +49,27 @@ class QuickOrderController extends Controller
             // Header takes precedence, then query param, then user's own customer_id
             $customerId = $request->header('X-Customer-ID') ?? $request->input('customer_id') ?? $user->customer_id;
 
+            if ($customerId) {
+                // Shared Cart Logic: Find any active cart for this customer
+                $cart = Cart::where('customer_id', $customerId)
+                            ->where('status', 'active')
+                            ->latest()
+                            ->first();
+
+                if (!$cart) {
+                    $cart = Cart::create([
+                        'user_id'     => $user->id,
+                        'customer_id' => $customerId,
+                        'status'      => 'active',
+                    ]);
+                }
+
+                return $cart;
+            }
+
             return Cart::firstOrCreate([
                 'user_id' => $user->id,
-                'customer_id' => $customerId, // Allows agent to have distinct carts per customer context
+                'customer_id' => null, // No customer context
                 'status'  => 'active',
             ]);
         }

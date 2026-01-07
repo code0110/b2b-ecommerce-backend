@@ -23,9 +23,9 @@ class PromotionEngine
     }
 
     /**
-     * Returnează promoțiile active pentru contextul dat (user + customer).
+     * Returnează promoțiile active pentru contextul dat (user + customer + cart).
      */
-    public function getActivePromotions(?Authenticatable $user = null, ?Customer $customer = null): Collection
+    public function getActivePromotions(?Authenticatable $user = null, ?Customer $customer = null, ?Cart $cart = null): Collection
     {
         $now = Carbon::now();
 
@@ -74,9 +74,21 @@ class PromotionEngine
             }
         }
 
-        return $query
+        $promotions = $query
             ->with(['categories', 'brands', 'products', 'tiers'])
             ->get();
+
+        // Merge manually attached promotions from Cart
+        if ($cart) {
+            $attached = $cart->promotions()
+                ->where('status', 'active') // Ensure they are still active
+                ->with(['categories', 'brands', 'products', 'tiers'])
+                ->get();
+            
+            $promotions = $promotions->merge($attached)->unique('id');
+        }
+
+        return $promotions;
     }
 
     /**
@@ -85,11 +97,14 @@ class PromotionEngine
      * @param Collection $items
      * @param Authenticatable|null $user
      * @param Customer|null $customer
+     * @param Cart|null $cart
      * @return array
      */
-    public function calculateItems(Collection $items, ?Authenticatable $user = null, ?Customer $customer = null): array
+    public function calculateItems(Collection $items, ?Authenticatable $user = null, ?Customer $customer = null, ?Cart $cart = null): array
     {
         $results = [];
+        $subtotal = 0.0;
+        $discountTotal = 0.0;
         $shippingCost = 0.0;
         $shippingDiscount = 0.0;
 
@@ -97,19 +112,32 @@ class PromotionEngine
             $product = $item->product;
             $quantity = $item->quantity;
 
-            $priceData = $this->getProductPriceWithPromotions($product, $user, $customer, $quantity);
+            $priceData = $this->getProductPriceWithPromotions($product, $user, $customer, $quantity, $cart);
+
+            $lineSubtotal = $priceData['base_price'] * $quantity;
+            $lineTotal = $priceData['final_price'] * $quantity;
+            $lineDiscount = $lineSubtotal - $lineTotal;
+
+            $subtotal += $lineSubtotal;
+            $discountTotal += $lineDiscount;
 
             $results[] = [
+                'id' => $item->id ?? null,
                 'product_id' => $product->id,
                 'product_name' => $product->name,
+                'quantity' => $quantity,
                 'unit_base_price' => $priceData['base_price'],
                 'unit_final_price' => $priceData['final_price'],
+                'line_subtotal' => $lineSubtotal,
+                'line_total' => $lineTotal,
                 'applied_promotions' => $priceData['applied_promotions'],
             ];
         }
         
         return [
             'items' => $results,
+            'subtotal' => $subtotal,
+            'discount_total' => $discountTotal,
             'final_shipping' => $shippingCost,
             'shipping_discount' => $shippingDiscount,
         ];
@@ -124,10 +152,11 @@ class PromotionEngine
         Product $product,
         ?Authenticatable $user = null,
         ?Customer $customer = null,
-        int $quantity = 1
+        int $quantity = 1,
+        ?Cart $cart = null
     ): array {
         $basePrice = $this->getBasePrice($product, $customer);
-        $promotions = $this->getActivePromotions($user, $customer);
+        $promotions = $this->getActivePromotions($user, $customer, $cart);
 
         // Filter out cart-level promotions (shipping) from unit price calculation
         $itemPromotions = $promotions->reject(function ($promo) {
@@ -210,7 +239,7 @@ class PromotionEngine
         ];
     }
 
-    protected function getBasePrice(Product $product, ?Customer $customer = null): float
+    public function getBasePrice(Product $product, ?Customer $customer = null): float
     {
         // 1. Check for Contract Price (B2B)
         if ($customer) {
@@ -227,7 +256,7 @@ class PromotionEngine
         return (float) $product->list_price;
     }
 
-    protected function promotionAppliesToProduct(Promotion $promotion, Product $product): bool
+    public function promotionAppliesToProduct(Promotion $promotion, Product $product): bool
     {
         // 1. Check Product ID List (whitelist)
         if ($promotion->products()->exists()) {
@@ -266,7 +295,7 @@ class PromotionEngine
         return false;
     }
 
-    protected function applyPromotionToUnit(Promotion $promotion, float $price, int $quantity = 1): array
+    public function applyPromotionToUnit(Promotion $promotion, float $price, int $quantity = 1): array
     {
         $discountAmount = 0;
         $finalPrice = $price;

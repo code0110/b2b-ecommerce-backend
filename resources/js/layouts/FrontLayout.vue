@@ -115,6 +115,9 @@
           >
             <span>🛒</span>
             <span>Coș</span>
+            <span v-if="cartStore.itemCount > 0" class="badge bg-danger rounded-pill ms-1">
+              {{ cartStore.itemCount }}
+            </span>
           </RouterLink>
         </div>
       </div>
@@ -171,6 +174,7 @@ import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '@/store/auth';
 import { useVisitStore } from '@/store/visit';
+import { useCartStore } from '@/store/cart';
 import CategoryMegaModal from '@/components/catalog/CategoryMegaModal.vue';
 import NotificationsDropdown from '@/components/common/NotificationsDropdown.vue';
 import Footer from '@/components/common/Footer.vue';
@@ -178,6 +182,7 @@ import Footer from '@/components/common/Footer.vue';
 const router = useRouter();
 const authStore = useAuthStore();
 const visitStore = useVisitStore();
+const cartStore = useCartStore();
 
 const showCatalog = ref(false);
 const searchQuery = ref('');
@@ -239,6 +244,7 @@ const handleOpenCatalogEvent = () => {
 
 onMounted(() => {
   visitStore.checkActiveVisit();
+  cartStore.fetchCart();
   window.addEventListener('mb2b:open-catalog', handleOpenCatalogEvent);
 });
 

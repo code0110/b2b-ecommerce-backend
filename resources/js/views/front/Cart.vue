@@ -134,7 +134,7 @@
 import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { getCart, removeCartItem, updateCartItem } from '@/services/cart';
-import axios from 'axios';
+import api from '@/services/http';
 import { useToast } from 'vue-toastification';
 
 const router = useRouter();
@@ -216,7 +216,7 @@ const requestQuote = async () => {
   
   quoting.value = true;
   try {
-    await axios.post('/api/quotes/from-cart', { notes: 'Solicitare din coșul de cumpărături' });
+    await api.post('/quotes/from-cart', { notes: 'Solicitare din coșul de cumpărături' });
     toast.success('Cererea de ofertă a fost trimisă cu succes!');
     router.push({ name: 'account-offers' });
   } catch (e) {

@@ -1,111 +1,108 @@
 import { defineStore } from 'pinia'
-import { useProductsStore } from '@/store/products'
-
-/**
- * Store demo pentru coșul de cumpărături.
- * Într-un proiect real, coșul poate fi sincronizat cu backend / ERP.
- */
-
-const initialItems = [
-  {
-    id: 1,
-    productId: 1,
-    name: 'Placă gips-carton 12.5mm',
-    code: 'PGC-12.5',
-    qty: 20,
-    unit: 'buc',
-    unitPrice: 25.5,
-    currency: 'RON',
-    stockStatus: 'in_stock',
-    deliveryEstimate: '24-48h',
-    weightKgPerUnit: 9.5
-  },
-  {
-    id: 2,
-    productId: 2,
-    name: 'Profil metalic UW 50',
-    code: 'UW-50',
-    qty: 30,
-    unit: 'buc',
-    unitPrice: 17.5,
-    currency: 'RON',
-    stockStatus: 'low_stock',
-    deliveryEstimate: '2-4 zile',
-    weightKgPerUnit: 2.1
-  }
-]
+import api from '@/services/http'
 
 export const useCartStore = defineStore('cart', {
   state: () => ({
-    items: [...initialItems],
-    lastId: initialItems.length,
+    items: [],
+    cartId: null,
+    subtotal: 0,
+    total: 0,
+    discountTotal: 0,
     couponCode: '',
-    couponInfo: ''
+    couponInfo: '',
+    loading: false
   }),
+
   getters: {
     lines: (state) => state.items,
-    itemCount: (state) => state.items.reduce((sum, line) => sum + Number(line.qty || 0), 0),
-    subTotal: (state) =>
-      state.items.reduce(
-        (sum, line) => sum + Number(line.qty || 0) * Number(line.unitPrice || 0),
-        0
-      ),
-    totalWeightKg: (state) =>
-      state.items.reduce(
-        (sum, line) => sum + Number(line.qty || 0) * Number(line.weightKgPerUnit || 0),
-        0
-      )
+    itemCount: (state) => state.items.reduce((sum, line) => sum + Number(line.quantity || 0), 0),
+    subTotal: (state) => state.subtotal,
+    grandTotal: (state) => state.total,
+    discountAmount: (state) => state.discountTotal
   },
+
   actions: {
-    addItem(productId, qty = 1) {
-      const productsStore = useProductsStore()
-      const product = productsStore.getById(productId)
-      if (!product) return
-
-      const existing = this.items.find((l) => l.productId === productId)
-      if (existing) {
-        existing.qty += qty
-        return
+    async fetchCart() {
+      this.loading = true
+      try {
+        const { data } = await api.get('/cart')
+        this.setCartData(data)
+      } catch (e) {
+        console.error('Fetch cart error', e)
+        this.items = []
+        this.subtotal = 0
+        this.total = 0
+      } finally {
+        this.loading = false
       }
+    },
 
-      this.lastId += 1
-      this.items.push({
-        id: this.lastId,
-        productId: product.id,
-        name: product.name,
-        code: product.internalCode,
-        qty,
-        unit: 'buc',
-        unitPrice: product.overridePrice ?? product.listPrice,
-        currency: 'RON',
-        stockStatus: product.stockStatus,
-        deliveryEstimate: '24-72h',
-        weightKgPerUnit: product.attributes?.greutateKg ?? 1
-      })
-    },
-    updateQty(lineId, qty) {
-      const line = this.items.find((l) => l.id === lineId)
-      if (!line) return
-      const val = Number(qty) || 0
-      line.qty = val < 0 ? 0 : val
-    },
-    removeLine(lineId) {
-      this.items = this.items.filter((l) => l.id !== lineId)
-    },
-    clear() {
-      this.items = []
-    },
-    applyCoupon(code) {
-      this.couponCode = code
-      if (!code) {
+    setCartData(data) {
+      this.cartId = data.id
+      this.items = (data.items || []).map(item => ({
+        ...item,
+        name: item.product_name || item.product?.name,
+        code: item.product_code || item.product?.internal_code,
+        price: parseFloat(item.unit_price || 0),
+        total: parseFloat(item.line_total || 0),
+        // Keep other fields
+        id: item.id,
+        quantity: item.quantity
+      }))
+      this.subtotal = parseFloat(data.subtotal || 0)
+      this.total = parseFloat(data.total || 0)
+      this.discountTotal = parseFloat(data.discount_total || 0)
+      
+      // Update coupon info if available in response
+      if (data.applied_coupon) {
+        this.couponCode = data.applied_coupon.code
+        this.couponInfo = `Reducere: ${data.applied_coupon.discount_amount} RON`
+      } else {
+        this.couponCode = ''
         this.couponInfo = ''
-        return
       }
-      // Doar mesaj template – în realitate se validează cu backend.
-      this.couponInfo =
-        'Template: cuponul "' +
-        code +
-        '" a fost trimis spre validare. În implementarea reală se va verifica eligibilitatea promoției.'
+    },
+
+    async addItem(productId, qty = 1) {
+      try {
+        const { data } = await api.post('/cart/items', {
+          product_id: productId,
+          quantity: qty
+        })
+        this.setCartData(data)
+        return true
+      } catch (e) {
+        console.error('Add item error', e)
+        return false
+      }
+    },
+
+    async updateQty(lineId, qty) {
+      if (qty <= 0) return this.removeLine(lineId)
+      
+      try {
+        const { data } = await api.put(`/cart/items/${lineId}`, {
+          quantity: qty
+        })
+        this.setCartData(data)
+      } catch (e) {
+        console.error('Update qty error', e)
+      }
+    },
+
+    async removeLine(lineId) {
+      try {
+        const { data } = await api.delete(`/cart/items/${lineId}`)
+        this.setCartData(data)
+      } catch (e) {
+        console.error('Remove line error', e)
+      }
+    },
+
+    async applyCoupon(code) {
+      this.couponCode = code
+      // TODO: Implement backend coupon application if available
+      console.log('Coupon application to be implemented', code)
     }
   }
 })

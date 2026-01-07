@@ -486,10 +486,18 @@ class QuickOrderController extends Controller
             if ($user) {
                  $customerId = $request->header('X-Customer-ID') ?? $request->customer_id ?? $user->customer_id;
                  
-                 Cart::where('user_id', $user->id)
-                     ->where('customer_id', $customerId)
-                     ->where('status', 'active')
-                     ->delete();
+                 if ($customerId) {
+                     // Clear shared cart
+                     Cart::where('customer_id', $customerId)
+                         ->where('status', 'active')
+                         ->delete();
+                 } else {
+                     // Fallback for non-customer context
+                     Cart::where('user_id', $user->id)
+                         ->whereNull('customer_id')
+                         ->where('status', 'active')
+                         ->delete();
+                 }
             }
 
             DB::commit();

@@ -70,6 +70,8 @@ function attachInterceptors(instance, { attachCartSession = false } = {}) {
       const impersonatedClientId = localStorage.getItem('impersonated_client_id');
       if (impersonatedClientId) {
         config.headers['X-Impersonated-Client-Id'] = impersonatedClientId;
+        // Backend CartController expects X-Customer-ID for resolving the cart
+        config.headers['X-Customer-ID'] = impersonatedClientId;
       }
     }
 

@@ -45,9 +45,28 @@ class CartController extends Controller
             // Header takes precedence, then query param, then user's own customer_id
             $customerId = $request->header('X-Customer-ID') ?? $request->input('customer_id') ?? $user->customer_id;
 
+            if ($customerId) {
+                // Shared Cart Logic: Find any active cart for this customer
+                // This ensures Admin (QuickOrder) and Customer (Front) see the same cart
+                $cart = Cart::where('customer_id', $customerId)
+                            ->where('status', 'active')
+                            ->latest()
+                            ->first();
+
+                if (!$cart) {
+                    $cart = Cart::create([
+                        'user_id'     => $user->id,
+                        'customer_id' => $customerId,
+                        'status'      => 'active',
+                    ]);
+                }
+
+                return $cart;
+            }
+
             return Cart::firstOrCreate([
                 'user_id' => $user->id,
-                'customer_id' => $customerId, // Allows agent to have distinct carts per customer context
+                'customer_id' => null, // No customer context
                 'status'  => 'active',
             ]);
         }
@@ -243,11 +262,26 @@ class CartController extends Controller
         }
 
         // Get all products associated with this promotion
-        // Assuming the promotion has a 'products' relationship
         $products = $promotion->products;
 
         if ($products->isEmpty()) {
-            return response()->json(['message' => 'Această promoție nu are produse asociate direct.'], 400);
+            // Check if it's a coupon-based promotion
+            if ($promotion->code) {
+                // Delegate to applyCoupon logic (manually since request might not match)
+                $request->merge(['code' => $promotion->code]);
+                return $this->applyCoupon($request);
+            }
+            
+            // If it's a global rule without products (e.g. "10% Off Everything"), 
+            // checking it here implies the user wants to "activate" it.
+            // We attach it to the cart so it persists and the engine knows it's manually selected.
+            
+            $cart = $this->resolveCart($request);
+            $cart->promotions()->syncWithoutDetaching([$promotion->id]);
+
+            $cart->refresh(); // Refresh to ensure totals are up to date
+            
+            return $this->respondWithEnrichedCart($cart, $request);
         }
 
         $cart = $this->resolveCart($request);

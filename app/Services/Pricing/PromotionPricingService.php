@@ -137,13 +137,13 @@ class PromotionPricingService
      * Calculates prices for a collection of items.
      * Compatible with legacy return structure.
      */
-    public function priceItems(Collection $items, ?Customer $customer = null, ?Coupon $coupon = null): array
+    public function priceItems(Collection $items, ?Customer $customer = null, ?Coupon $coupon = null, ?Cart $cart = null): array
     {
         $user = Auth::user();
         
         // PromotionEngine expects items with 'product' relation and 'quantity'.
         // It returns a calculated structure.
-        $engineResult = $this->promotionEngine->calculateItems($items, $user, $customer);
+        $engineResult = $this->promotionEngine->calculateItems($items, $user, $customer, $cart);
 
         // Map items to legacy structure
         $mappedItems = [];
@@ -169,15 +169,15 @@ class PromotionPricingService
                 
                 // Legacy keys
                 'unit_price'        => $itemData['unit_base_price'],
-                'line_subtotal'     => $itemData['line_base_total'],
-                'line_discount'     => $itemData['line_base_total'] - $itemData['line_final_total'],
-                'line_total'        => $itemData['line_final_total'],
+                'line_subtotal'     => $itemData['line_subtotal'],
+                'line_discount'     => $itemData['line_subtotal'] - $itemData['line_total'],
+                'line_total'        => $itemData['line_total'],
                 
                 // Extra keys often used
                 'unit_base_price'   => $itemData['unit_base_price'],
                 'unit_final_price'  => $itemData['unit_final_price'],
-                'line_base_total'   => $itemData['line_base_total'],
-                'line_final_total'  => $itemData['line_final_total'],
+                'line_base_total'   => $itemData['line_subtotal'],
+                'line_final_total'  => $itemData['line_total'],
                 
                 'product'           => [
                     'id'            => $product->id,
@@ -241,6 +241,6 @@ class PromotionPricingService
 
     public function priceCart(Cart $cart, ?Customer $customer = null): array
     {
-        return $this->priceItems($cart->items, $customer, $cart->coupon);
+        return $this->priceItems($cart->items, $customer, $cart->coupon, $cart);
     }
 }

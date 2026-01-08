@@ -253,7 +253,11 @@
                             <button class="btn btn-close" @click="showProductModal = false"></button>
                         </div>
                         <div class="flex-grow-1 overflow-hidden position-relative bg-light">
-                             <ProductSelector @select="onProductSelect" @check-promotions="onCheckPromotions" />
+                             <ProductSelector 
+                                :customer-id="form.customer_id"
+                                @select="onProductSelect" 
+                                @check-promotions="onCheckPromotions" 
+                             />
                         </div>
                         <div class="p-3 border-top bg-white d-flex justify-content-end">
                             <button class="btn btn-secondary px-4" @click="showProductModal = false">Închide</button>

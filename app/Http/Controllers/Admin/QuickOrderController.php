@@ -335,7 +335,7 @@ class QuickOrderController extends Controller
             // If promotion applies to specific products, load them
             if ($promotion->applies_to === 'products') {
                 $productIds = $promotion->products->pluck('id');
-                $products = Product::whereIn('id', $productIds)->take(50)->get();
+                $products = Product::whereIn('id', $productIds)->with('images')->take(50)->get();
                 
                 $data['products'] = $products->map(function ($product) use ($promotion, $customer) {
                     // Calculate price with this promotion
@@ -347,7 +347,8 @@ class QuickOrderController extends Controller
                         'sku' => $product->internal_code ?? $product->sku,
                         'base_price' => $this->pricingService->getBasePrice($product, $customer),
                         'promo_price' => $promoPrice,
-                        'discount_percent' => $discountPercent
+                        'discount_percent' => $discountPercent,
+                        'image_path' => $product->images->first()?->path,
                     ];
                 });
             }

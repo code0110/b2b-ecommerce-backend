@@ -22,7 +22,7 @@
                 v-model="searchQuery"
                 @input="onSearchInput"
                 type="text" 
-                placeholder="Caută produse (Nume, SKU)..." 
+                :placeholder="activeTab === 'promotions' ? 'Caută promoții...' : 'Caută produse (Nume, SKU)...'" 
                 class="w-full pl-10 pr-8 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none text-sm font-medium"
               >
               <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -36,13 +36,32 @@
 
           <!-- Right Controls (Sort & View) -->
           <div class="flex items-center gap-3 w-full sm:w-auto justify-end">
+               
+               <!-- Mode Toggle -->
+               <div class="flex bg-gray-100 p-1 rounded-lg border border-gray-200">
+                  <button 
+                      @click="activeTab = 'products'" 
+                      class="px-3 py-1.5 rounded-md text-sm font-bold transition-all"
+                      :class="activeTab === 'products' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'"
+                  >
+                      Produse
+                  </button>
+                  <button 
+                      @click="activeTab = 'promotions'"
+                      class="px-3 py-1.5 rounded-md text-sm font-bold transition-all"
+                      :class="activeTab === 'promotions' ? 'bg-white text-purple-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'"
+                  >
+                      Promoții
+                  </button>
+               </div>
+
                <!-- Total Count -->
-               <div class="hidden sm:block text-xs font-bold text-gray-400 bg-gray-50 px-2 py-1 rounded-md border border-gray-100">
+               <div v-if="activeTab === 'products'" class="hidden sm:block text-xs font-bold text-gray-400 bg-gray-50 px-2 py-1 rounded-md border border-gray-100">
                    {{ totalProducts }} Produse
                </div>
 
                <!-- Sort -->
-               <select v-model="sortBy" @change="refresh" class="pl-3 pr-8 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm font-medium focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none cursor-pointer hover:border-gray-300 transition-colors">
+               <select v-if="activeTab === 'products'" v-model="sortBy" @change="refresh" class="pl-3 pr-8 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm font-medium focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none cursor-pointer hover:border-gray-300 transition-colors">
                  <option value="created_at">Cele mai noi</option>
                  <option value="name">Nume (A-Z)</option>
                  <option value="price_asc">Preț (Cresc)</option>
@@ -50,7 +69,7 @@
                </select>
 
                <!-- View Toggle -->
-               <div class="flex bg-gray-100 p-1 rounded-lg border border-gray-200">
+               <div v-if="activeTab === 'products'" class="flex bg-gray-100 p-1 rounded-lg border border-gray-200">
                   <button @click="viewMode = 'grid'" class="p-1.5 rounded-md transition-all" :class="viewMode === 'grid' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-400 hover:text-gray-600'" title="Grid View">
                     <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>
                   </button>
@@ -70,7 +89,7 @@
       <div v-if="showMobileSidebar" class="fixed inset-0 z-30 bg-black/50 lg:hidden" @click="showMobileSidebar = false"></div>
 
       <div 
-        v-if="!hideCategories && enableFilters" 
+        v-if="!hideCategories && enableFilters && activeTab === 'products'" 
         class="bg-white border-r border-gray-200 flex flex-col flex-shrink-0 overflow-hidden transition-transform duration-300 fixed inset-y-0 left-0 z-40 w-72 lg:relative lg:translate-x-0 lg:z-0 shadow-2xl lg:shadow-none"
         :class="showMobileSidebar ? 'translate-x-0' : '-translate-x-full'"
       >
@@ -165,7 +184,7 @@
       </div>
 
       <!-- Main Content (Product Grid) -->
-      <div class="flex-1 overflow-y-auto p-4 scrollbar-thin relative bg-gray-50/50" ref="gridContainer">
+      <div v-if="activeTab === 'products'" class="flex-1 overflow-y-auto p-4 scrollbar-thin relative bg-gray-50/50" ref="gridContainer">
            
            <!-- Loading State -->
            <div v-if="loading && products.length === 0" class="flex flex-col items-center justify-center h-full py-20 text-blue-600">
@@ -375,6 +394,107 @@
            </div>
 
       </div>
+
+      <!-- PROMOTIONS PANEL -->
+      <div v-else-if="activeTab === 'promotions'" class="flex-1 overflow-y-auto p-4 scrollbar-thin relative bg-gray-50/50">
+           <!-- Loading State -->
+           <div v-if="promotionsLoading && promotions.length === 0" class="flex flex-col items-center justify-center h-full py-20 text-purple-600">
+              <svg class="animate-spin w-10 h-10 mb-3" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+              <span class="font-medium animate-pulse">Se încarcă promoțiile...</span>
+           </div>
+
+           <!-- Empty State -->
+           <div v-else-if="!promotionsLoading && filteredPromotions.length === 0" class="flex flex-col items-center justify-center h-full py-20 text-gray-400">
+              <div class="bg-white p-6 rounded-full mb-4 shadow-sm border border-gray-100">
+                <svg class="w-12 h-12 text-purple-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                </svg>
+              </div>
+              <p class="text-lg font-bold text-gray-900">Nu s-au găsit promoții</p>
+              <p class="text-sm text-gray-500 mt-1">{{ searchQuery ? 'Nu există promoții care să corespundă căutării.' : 'Clientul nu are promoții active în acest moment.' }}</p>
+           </div>
+
+           <!-- Promotions List -->
+           <div v-else class="space-y-6 pb-24">
+              <div v-for="promo in filteredPromotions" :key="promo.id" class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                  <!-- Promo Header -->
+                  <div class="bg-purple-50/50 p-4 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                      <div>
+                          <div class="flex items-center gap-2 mb-1">
+                              <span class="bg-purple-600 text-white text-xs font-bold px-2 py-0.5 rounded uppercase tracking-wider">Promoție</span>
+                              <h3 class="text-lg font-bold text-gray-900">{{ promo.name }}</h3>
+                          </div>
+                          <p class="text-sm text-gray-600">{{ promo.description }}</p>
+                      </div>
+                      <div class="text-right flex flex-col items-end gap-2">
+                          <div>
+                              <div class="text-2xl font-bold text-purple-700">
+                                  {{ promo.discount_percent ? '-' + promo.discount_percent + '%' : (promo.discount_value ? '-' + formatPrice(promo.discount_value) : '') }}
+                              </div>
+                              <div class="text-xs text-gray-500 font-medium">Discount Aplicat</div>
+                          </div>
+                          
+                          <!-- Add All Button -->
+                          <button 
+                            @click="() => {
+                                if (promo.products) {
+                                    promo.products.forEach(prod => {
+                                        const p = { ...prod, price: prod.base_price, list_price: prod.base_price };
+                                        p.temp_qty = 1;
+                                        selectProduct(p);
+                                    });
+                                }
+                            }"
+                            class="flex items-center gap-1 text-xs font-bold text-purple-700 hover:text-purple-900 bg-purple-100 hover:bg-purple-200 px-3 py-1.5 rounded-lg transition-colors"
+                          >
+                              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
+                              Adaugă tot
+                          </button>
+                      </div>
+                  </div>
+
+                  <!-- Promo Products -->
+                  <div class="p-4">
+                      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                          <div v-for="prod in promo.products" :key="prod.id" class="flex items-center gap-3 p-3 rounded-lg border border-gray-100 hover:border-purple-200 hover:bg-purple-50/30 transition-all group relative">
+                              <!-- Product Image -->
+                              <div class="w-12 h-12 bg-white rounded border border-gray-200 flex-shrink-0 flex items-center justify-center p-1">
+                                  <img 
+                                    v-if="prod.image_url || prod.image_path" 
+                                    :src="prod.image_url || prod.image_path" 
+                                    class="max-w-full max-h-full object-contain mix-blend-multiply"
+                                  />
+                                  <svg v-else class="w-6 h-6 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2-2v12a2 2 0 002 2z" /></svg>
+                              </div>
+
+                              <!-- Product Info -->
+                              <div class="flex-1 min-w-0">
+                                  <div class="text-xs text-gray-500 truncate mb-0.5">{{ prod.sku }}</div>
+                                  <div class="text-sm font-bold text-gray-900 truncate mb-1" :title="prod.name">{{ prod.name }}</div>
+                                  <div class="flex items-baseline gap-2">
+                                      <span class="text-sm font-bold text-purple-700">{{ formatPrice(prod.promo_price) }}</span>
+                                      <span class="text-xs text-gray-400 line-through">{{ formatPrice(prod.base_price) }}</span>
+                                  </div>
+                              </div>
+
+                              <!-- Add Action (Hover) -->
+                              <button 
+                                @click="() => {
+                                    const p = { ...prod, price: prod.base_price, list_price: prod.base_price };
+                                    p.temp_qty = 1;
+                                    selectProduct(p);
+                                }"
+                                class="absolute right-2 bottom-2 p-1.5 bg-purple-600 text-white rounded-lg shadow-sm opacity-0 group-hover:opacity-100 transition-opacity hover:bg-purple-700 hover:shadow-md active:scale-95"
+                                title="Adaugă în ofertă"
+                              >
+                                  <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
+                              </button>
+                          </div>
+                      </div>
+                  </div>
+              </div>
+           </div>
+      </div>
     </div>
 
   </div>
@@ -400,12 +520,19 @@ const props = defineProps({
   defaultViewMode: {
     type: String,
     default: 'grid'
+  },
+  customerId: {
+    type: [Number, String],
+    default: null
   }
 });
 
 const emit = defineEmits(['select', 'check-promotions']);
 
 // State
+const activeTab = ref('products'); // 'products' | 'promotions'
+const promotions = ref([]);
+const promotionsLoading = ref(false);
 const showMobileSidebar = ref(false);
 const categories = ref([]);
 const categoriesLoading = ref(false);
@@ -549,6 +676,35 @@ const onSearchInput = () => {
     }, 400);
 };
 
+const loadPromotions = async () => {
+    if (!props.customerId) return;
+    promotionsLoading.value = true;
+    try {
+        const { data } = await api.post('/account/quick-order/customer-promotions', {
+            customer_id: props.customerId
+        });
+        promotions.value = Array.isArray(data) ? data : (data?.data || []);
+    } catch (e) {
+        console.error('Error loading promotions:', e);
+    } finally {
+        promotionsLoading.value = false;
+    }
+};
+
+const filteredPromotions = computed(() => {
+    if (!searchQuery.value) return promotions.value;
+    const lower = searchQuery.value.toLowerCase();
+    return promotions.value.filter(p => {
+        const matchName = p.name.toLowerCase().includes(lower);
+        const matchDesc = p.description && p.description.toLowerCase().includes(lower);
+        const matchProducts = p.products && p.products.some(prod => 
+            prod.name.toLowerCase().includes(lower) || 
+            (prod.sku && prod.sku.toLowerCase().includes(lower))
+        );
+        return matchName || matchDesc || matchProducts;
+    });
+});
+
 const fetchProducts = async (page = 1) => {
     loading.value = true;
     try {
@@ -604,12 +760,14 @@ const fetchProducts = async (page = 1) => {
 };
 
 const refresh = () => {
-    currentPage.value = 1;
-    fetchProducts(1);
+    if (activeTab.value === 'products') {
+        currentPage.value = 1;
+        fetchProducts(1);
+    }
 };
 
 const loadMore = () => {
-    if (hasMorePages.value) {
+    if (activeTab.value === 'products' && hasMorePages.value) {
         fetchProducts(currentPage.value + 1);
     }
 };
@@ -632,6 +790,19 @@ onMounted(() => {
         loadCategories();
     }
     refresh();
+});
+
+watch(activeTab, (val) => {
+    if (val === 'promotions' && promotions.value.length === 0) {
+        loadPromotions();
+    }
+});
+
+watch(() => props.customerId, (newId) => {
+    promotions.value = [];
+    if (activeTab.value === 'promotions' && newId) {
+        loadPromotions();
+    }
 });
 </script>
 

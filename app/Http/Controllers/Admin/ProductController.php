@@ -10,6 +10,7 @@ use App\Models\ProductImage;
 use App\Models\ProductVariant;
 use App\Models\RelatedProduct;
 use App\Models\ProductDocument;
+use App\Services\SeoGeneratorService;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\DB;
@@ -116,6 +117,32 @@ class ProductController extends Controller
     }
 
     /**
+     * Generate SEO content (Title, Meta, Descriptions) based on product data.
+     */
+    public function generateSeo(Request $request, SeoGeneratorService $seoService)
+    {
+        // Validate minimal required data
+        $data = $request->validate([
+            'name' => 'required|string',
+            'brand' => 'nullable|array',
+            'main_category' => 'nullable|array',
+            'attribute_values' => 'nullable|array',
+            'list_price' => 'nullable|numeric',
+            // Allow other fields to pass through if needed by the service
+            'short_description' => 'nullable|string',
+            'long_description' => 'nullable|string',
+        ]);
+
+        // We pass the raw request data (after validation) or just $request->all() 
+        // if we want to be more flexible, but validation is safer.
+        // However, the service expects array structure matching the frontend form.
+        
+        $result = $seoService->generate($request->all());
+
+        return response()->json($result);
+    }
+
+    /**
      * Creare produs – cu categorii secundare, imagini, variante etc.
      */
     public function store(Request $request)
@@ -130,6 +157,9 @@ class ProductController extends Controller
 
             // Categorii secundare
             $this->syncCategories($product, $data);
+
+            // Atribute (valori)
+            $this->syncAttributeValues($product, $data);
 
             // Imagini
             $this->syncImages($product, $data);
@@ -147,6 +177,7 @@ class ProductController extends Controller
                 'mainCategory:id,name,slug',
                 'brand:id,name,slug',
                 'categories:id,name,slug',
+                'attributeValues.attribute', // Load attribute values with attribute definition
                 'images',
                 'variants',
                 'related.related',
@@ -166,6 +197,7 @@ class ProductController extends Controller
             'mainCategory:id,name,slug',
             'brand:id,name,slug',
             'categories:id,name,slug',
+            'attributeValues.attribute', // Load attribute values with attribute definition
             'images'   => function ($q) {
                 $q->orderBy('sort_order');
             },
@@ -191,6 +223,7 @@ class ProductController extends Controller
             $product->save();
 
             $this->syncCategories($product, $data);
+            $this->syncAttributeValues($product, $data);
             $this->syncImages($product, $data);
             $this->syncVariants($product, $data);
             $this->syncRelatedProducts($product, $data);
@@ -200,6 +233,7 @@ class ProductController extends Controller
                 'mainCategory:id,name,slug',
                 'brand:id,name,slug',
                 'categories:id,name,slug',
+                'attributeValues.attribute', // Load attribute values with attribute definition
                 'images',
                 'variants',
                 'related.related',
@@ -223,6 +257,7 @@ class ProductController extends Controller
         }
 
         $product->categories()->detach();
+        $product->attributeValues()->delete();
         $product->images()->delete();
         $product->variants()->delete();
         $product->related()->delete();
@@ -278,6 +313,11 @@ class ProductController extends Controller
             // Categorii secundare
             'category_ids'   => ['nullable', 'array'],
             'category_ids.*' => ['integer', 'exists:categories,id'],
+
+            // Atribute
+            'attribute_values' => ['nullable', 'array'],
+            'attribute_values.*.attribute_id' => ['required', 'integer', 'exists:attributes,id'],
+            'attribute_values.*.value' => ['nullable', 'string', 'max:191'],
 
             // Imagini
             'images'                  => ['nullable', 'array'],
@@ -344,6 +384,22 @@ class ProductController extends Controller
     {
         $categoryIds = $data['category_ids'] ?? [];
         $product->categories()->sync($categoryIds);
+    }
+
+    protected function syncAttributeValues(Product $product, array $data): void
+    {
+        if (!array_key_exists('attribute_values', $data)) {
+            return;
+        }
+
+        $product->attributeValues()->delete();
+
+        foreach ($data['attribute_values'] as $attr) {
+            $product->attributeValues()->create([
+                'attribute_id' => $attr['attribute_id'],
+                'value'        => $attr['value'],
+            ]);
+        }
     }
 
     protected function syncImages(Product $product, array $data): void
@@ -489,6 +545,20 @@ class ProductController extends Controller
             ] : null,
 
             'category_ids'     => $product->categories->pluck('id')->values(),
+
+            'attribute_values' => $product->attributeValues->map(function ($attrVal) {
+                return [
+                    'id'           => $attrVal->id,
+                    'attribute_id' => $attrVal->attribute_id,
+                    'value'        => $attrVal->value,
+                    'attribute'    => $attrVal->attribute ? [
+                        'id'   => $attrVal->attribute->id,
+                        'name' => $attrVal->attribute->name,
+                        'type' => $attrVal->attribute->type,
+                        'slug' => $attrVal->attribute->slug,
+                    ] : null,
+                ];
+            })->values(),
 
             'images'           => $product->images->map(function (ProductImage $img) {
                 return [

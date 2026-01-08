@@ -307,13 +307,16 @@ Route::middleware(['auth:sanctum', 'role:admin'])->prefix('admin')->group(functi
     Route::apiResource('content-blocks', \App\Http\Controllers\Admin\ContentBlockController::class);
     Route::apiResource('pages', \App\Http\Controllers\Admin\PageController::class);
     Route::apiResource('settings', \App\Http\Controllers\Admin\SettingController::class);
+    Route::apiResource('attributes', \App\Http\Controllers\Admin\AttributeController::class);
+    Route::apiResource('categories', AdminCategoryController::class)->except(['index']);
     
     // Discount Rules
     Route::get('discount-rules/options', [\App\Http\Controllers\Admin\DiscountRuleController::class, 'options']);
     Route::apiResource('discount-rules', \App\Http\Controllers\Admin\DiscountRuleController::class);
 
     Route::apiResource('promotions', AdminPromotionController::class);
-    Route::apiResource('products', \App\Http\Controllers\Admin\ProductController::class)->except(['index', 'show']);
+    Route::post('products/generate-seo', [\App\Http\Controllers\Admin\ProductController::class, 'generateSeo']);
+    Route::apiResource('products', \App\Http\Controllers\Admin\ProductController::class);
     Route::apiResource('brands', \App\Http\Controllers\Admin\BrandController::class)->except(['show']);
     Route::apiResource('invoices', AdminInvoiceController::class)->only(['index', 'show']);
     Route::apiResource('payments', AdminPaymentController::class)->only(['index', 'show']);
@@ -338,6 +341,9 @@ Route::middleware(['auth:sanctum', 'role:admin'])->prefix('admin')->group(functi
     Route::get('dashboard/stats', [\App\Http\Controllers\Admin\DashboardController::class, 'index']);
     Route::get('dashboard/overview', [\App\Http\Controllers\Admin\DashboardController::class, 'overview']);
     Route::apiResource('audit-logs', AuditLogController::class)->only(['index', 'show']);
+    
+    // Uploads
+    Route::post('upload', [\App\Http\Controllers\Admin\UploadController::class, 'store']);
     
     // Notifications Management
     Route::get('notifications', [\App\Http\Controllers\Admin\NotificationController::class, 'index']);

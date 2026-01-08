@@ -50,6 +50,8 @@ import ProductForm from '@/views/admin/products/ProductForm.vue'
 import CategoryListAdmin from '@/views/admin/categories/CategoryList.vue'
 import CategoryFormAdmin from '@/views/admin/categories/CategoryForm.vue'
 import BrandList from '@/views/admin/brands/BrandList.vue'
+import AttributeListAdmin from '@/views/admin/attributes/AttributeList.vue'
+import AttributeFormAdmin from '@/views/admin/attributes/AttributeForm.vue'
 import CustomerList from '@/views/admin/customers/CustomerList.vue'
 import CustomerDetails from '@/views/admin/customers/CustomerDetails.vue'
 import CustomerGroupList from '@/views/admin/customer-groups/CustomerGroupList.vue'
@@ -476,6 +478,21 @@ const router = createRouter({
           path: 'brands',
           name: 'admin-brands',
           component: BrandList
+        },
+        {
+          path: 'attributes',
+          name: 'admin-attributes',
+          component: AttributeListAdmin
+        },
+        {
+          path: 'attributes/new',
+          name: 'admin-attributes-new',
+          component: AttributeFormAdmin
+        },
+        {
+          path: 'attributes/:id',
+          name: 'admin-attributes-edit',
+          component: AttributeFormAdmin
         },
         {
           path: 'pages',

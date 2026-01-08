@@ -26,16 +26,22 @@ class CategoryController extends Controller
             'parent_id'   => ['nullable', 'integer', 'exists:categories,id'],
             'sort_order'  => ['nullable', 'integer'],
             'is_published'=> ['boolean'],
+            'attributes'  => ['nullable', 'array'],
+            'attributes.*'=> ['integer', 'exists:attributes,id'],
         ]);
 
         $category = Category::create($data);
 
-        return response()->json($category, 201);
+        if (isset($data['attributes'])) {
+            $category->attributes()->sync($data['attributes']);
+        }
+
+        return response()->json($category->load('attributes'), 201);
     }
 
     public function show(Category $category)
     {
-        return $category->load('children');
+        return $category->load(['children', 'attributes']);
     }
 
     public function update(Request $request, Category $category)
@@ -46,11 +52,17 @@ class CategoryController extends Controller
             'parent_id'   => ['nullable', 'integer', 'exists:categories,id'],
             'sort_order'  => ['nullable', 'integer'],
             'is_published'=> ['boolean'],
+            'attributes'  => ['nullable', 'array'],
+            'attributes.*'=> ['integer', 'exists:attributes,id'],
         ]);
 
         $category->update($data);
 
-        return response()->json($category);
+        if (isset($data['attributes'])) {
+            $category->attributes()->sync($data['attributes']);
+        }
+
+        return response()->json($category->load('attributes'));
     }
 
     public function destroy(Category $category)

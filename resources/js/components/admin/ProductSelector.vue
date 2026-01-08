@@ -254,7 +254,7 @@
                    </span>
                  </div>
                  
-                 <h4 class="text-xs font-bold text-gray-900 leading-snug line-clamp-2 mb-2 min-h-[2.5em] group-hover:text-blue-600 transition-colors" :title="product.name">
+                 <h4 class="text-xs md:text-base font-bold text-gray-900 leading-snug line-clamp-2 mb-2 min-h-[2.5em] group-hover:text-blue-600 transition-colors" :title="product.name">
                    {{ product.name }}
                  </h4>
                  

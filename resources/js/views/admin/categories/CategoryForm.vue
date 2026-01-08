@@ -81,13 +81,13 @@
                   <label class="form-label small fw-bold text-muted">Status</label>
                   <div class="form-check form-switch mt-2">
                     <input
-                      v-model="form.is_active"
+                      v-model="form.is_published"
                       class="form-check-input"
                       type="checkbox"
                       id="cat-active"
                     >
                     <label class="form-check-label small fw-semibold" for="cat-active">
-                      Activă
+                      Publicată
                     </label>
                   </div>
                 </div>
@@ -99,14 +99,33 @@
 
                 <div class="col-md-12">
                   <label class="form-label small fw-bold text-muted">Atribute Asociate</label>
-                  <textarea
-                    v-model="form.attributes_raw"
-                    rows="3"
-                    class="form-control"
-                    placeholder="Ex: material, culoare, dimensiune (separate prin virgulă)"
-                  />
-                  <div class="form-text small">
-                    Specifică ce atribute sunt relevante pentru produsele din această categorie.
+                  
+                  <div class="card p-3 bg-light border-0">
+                    <div v-if="loadingAttributes" class="text-center py-2">
+                       <span class="spinner-border spinner-border-sm text-muted"></span>
+                    </div>
+                    <div v-else class="row g-2">
+                       <div v-for="attr in availableAttributes" :key="attr.id" class="col-md-4">
+                          <div class="form-check">
+                             <input 
+                                class="form-check-input" 
+                                type="checkbox" 
+                                :value="attr.id" 
+                                v-model="form.attributes"
+                                :id="'attr-' + attr.id"
+                             >
+                             <label class="form-check-label small" :for="'attr-' + attr.id">
+                                {{ attr.name }} <span class="text-muted" style="font-size: 0.75rem">({{ attr.slug }})</span>
+                             </label>
+                          </div>
+                       </div>
+                       <div v-if="availableAttributes.length === 0" class="col-12 text-muted small">
+                          Nu există atribute definite. <RouterLink :to="{ name: 'admin-attributes' }" class="text-decoration-none">Creează atribute</RouterLink>
+                       </div>
+                    </div>
+                  </div>
+                  <div class="form-text small mt-2">
+                    Selectează atributele disponibile pentru filtrare în această categorie.
                   </div>
                 </div>
                 <div class="col-md-12">
@@ -160,6 +179,7 @@ import {
   createCategory,
   updateCategory
 } from '@/services/admin/categories'
+import { fetchAllAttributes } from '@/services/admin/attributes'
 
 const route = useRoute()
 const router = useRouter()
@@ -168,10 +188,12 @@ const isEdit = computed(() => !!route.params.id)
 
 const loading = ref(false)
 const saving = ref(false)
+const loadingAttributes = ref(false)
 const error = ref('')
 const formError = ref('')
 
 const allCategories = ref([])
+const availableAttributes = ref([])
 
 const form = ref({
   name: '',
@@ -179,7 +201,7 @@ const form = ref({
   parent_id: null,
   sort_order: 0,
   is_active: true,
-  attributes_raw: '',
+  attributes: [],
   image_url: ''
 })
 
@@ -217,6 +239,18 @@ const loadCategories = async () => {
   }
 }
 
+const loadAttributes = async () => {
+  loadingAttributes.value = true
+  try {
+    const resp = await fetchAllAttributes()
+    availableAttributes.value = resp.data || resp
+  } catch (e) {
+    console.error(e)
+  } finally {
+    loadingAttributes.value = false
+  }
+}
+
 const loadCategory = async () => {
   if (!isEdit.value) return
   loading.value = true
@@ -230,7 +264,7 @@ const loadCategory = async () => {
       parent_id: cat.parent_id,
       sort_order: cat.sort_order ?? 0,
       is_active: cat.is_active ?? true,
-      attributes_raw: cat.attributes_raw || '',
+      attributes: (cat.attributes || []).map(a => a.id),
       image_url: cat.image_url || ''
     }
   } catch (e) {
@@ -251,8 +285,8 @@ const saveCategory = async () => {
       slug: form.value.slug,
       parent_id: form.value.parent_id,
       sort_order: form.value.sort_order,
-      is_active: form.value.is_active,
-      attributes_raw: form.value.attributes_raw,
+      is_published: form.value.is_published,
+      attributes: form.value.attributes,
       image_url: form.value.image_url
     }
 
@@ -273,7 +307,10 @@ const saveCategory = async () => {
 }
 
 onMounted(async () => {
-  await loadCategories()
-  await loadCategory()
+  await Promise.all([
+    loadCategories(),
+    loadAttributes(),
+    loadCategory()
+  ])
 })
 </script>

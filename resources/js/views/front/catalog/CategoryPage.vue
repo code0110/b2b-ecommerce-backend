@@ -7,20 +7,18 @@
           <RouterLink to="/">Acasă</RouterLink>
         </li>
         <li class="breadcrumb-item active" aria-current="page">
-          {{ categoryTitle }}
+          {{ category.name || 'Categorie' }}
         </li>
       </ol>
     </nav>
 
     <div class="d-flex justify-content-between align-items-center mb-3">
       <div>
-        <h1 class="h4 mb-1">{{ categoryTitle }}</h1>
-        <p class="text-muted small mb-0">
-          Pagină demo de categorie, cu filtre și listare de produse.
-        </p>
+        <h1 class="h4 mb-1">{{ category.name || 'Încărcare...' }}</h1>
+        <div v-if="category.description" class="text-muted small mb-0" v-html="category.description"></div>
       </div>
       <div class="small text-muted">
-        {{ filteredProducts.length }} produse demo
+        {{ pagination.total || 0 }} produse
       </div>
     </div>
 
@@ -32,41 +30,36 @@
             <strong class="small text-uppercase">Filtre</strong>
           </div>
           <div class="card-body small">
-            <div class="mb-3">
-              <label class="form-label">Căutare</label>
-              <input
-                type="text"
-                class="form-control form-control-sm"
-                placeholder="denumire, cod..."
-                v-model="filters.search"
-              />
-            </div>
-
-            <div class="mb-3">
-              <label class="form-label">Brand</label>
+            
+            <!-- Brand Filter -->
+            <div class="mb-3" v-if="availableFilters.brands.length">
+              <label class="form-label fw-bold">Brand</label>
               <select
                 class="form-select form-select-sm"
-                v-model="filters.brand"
+                v-model="filters.brand_id"
+                @change="applyFilters"
               >
                 <option value="">Toate brandurile</option>
                 <option
-                  v-for="brand in availableBrands"
-                  :key="brand"
-                  :value="brand"
+                  v-for="brand in availableFilters.brands"
+                  :key="brand.id"
+                  :value="brand.id"
                 >
-                  {{ brand }}
+                  {{ brand.name }}
                 </option>
               </select>
             </div>
 
+            <!-- Stock Filter -->
             <div class="mb-3">
-              <label class="form-label">Disponibilitate</label>
+              <label class="form-label fw-bold">Disponibilitate</label>
               <div class="form-check">
                 <input
                   class="form-check-input"
                   type="checkbox"
                   id="filterInStock"
-                  v-model="filters.inStockOnly"
+                  v-model="filters.in_stock"
+                  @change="applyFilters"
                 />
                 <label class="form-check-label" for="filterInStock">
                   Doar produse în stoc
@@ -74,123 +67,172 @@
               </div>
             </div>
 
-            <div class="mb-3">
-              <label class="form-label">Preț (max)</label>
+            <!-- Price Filter -->
+            <div class="mb-3" v-if="availableFilters.price.max > 0">
+              <label class="form-label fw-bold">Preț (max)</label>
               <input
                 type="range"
                 class="form-range"
-                min="0"
-                max="5000"
-                step="50"
-                v-model.number="filters.maxPrice"
-              />
-              <div class="small text-muted">
-                Până la
-                <strong>
-                  {{ filters.maxPrice.toLocaleString('ro-RO') }} RON
-                </strong>
+                :min="availableFilters.price.min"
+                :max="availableFilters.price.max"
+                step="1"
+                v-model.number="filters.max_price"
+                @change="applyFilters"
+              >
+              <div class="small text-muted d-flex justify-content-between">
+                <span>{{ filters.max_price }} RON</span>
+                <span>(Max: {{ availableFilters.price.max }})</span>
               </div>
             </div>
 
-            <div class="mb-3">
-              <label class="form-label">Atribute</label>
-              <div class="form-check" v-for="attr in attributeOptions" :key="attr.value">
+            <!-- Dynamic Attribute Filters -->
+            <div class="mb-3 border-top pt-3" v-for="attr in availableFilters.attributes" :key="attr.id">
+              <label class="form-label fw-bold">{{ attr.name }}</label>
+              
+              <!-- Checkboxes for options -->
+              <div class="form-check" v-for="(opt, idx) in attr.options" :key="idx">
                 <input
                   class="form-check-input"
                   type="checkbox"
-                  :id="`attr-${attr.value}`"
-                  :value="attr.value"
-                  v-model="filters.attributes"
+                  :id="`attr-${attr.slug}-${idx}`"
+                  :value="opt"
+                  v-model="filters.attributes[attr.slug]"
+                  @change="applyFilters"
                 />
-                <label class="form-check-label" :for="`attr-${attr.value}`">
-                  {{ attr.label }}
+                <label class="form-check-label" :for="`attr-${attr.slug}-${idx}`">
+                  {{ opt }}
                 </label>
               </div>
             </div>
+
           </div>
         </div>
       </div>
 
       <!-- Listare produse -->
       <div class="col-lg-9">
-        <div class="d-flex justify-content-between align-items-center mb-2 small">
-          <div>
-            <strong>Sortare:</strong>
-            <button
-              type="button"
-              class="btn btn-link btn-sm text-decoration-none"
-              :class="sort.key === 'relevance' ? 'fw-semibold' : ''"
-              @click="setSort('relevance')"
-            >
-              Relevanță
-            </button>
-            <button
-              type="button"
-              class="btn btn-link btn-sm text-decoration-none"
-              :class="sort.key === 'price-asc' ? 'fw-semibold' : ''"
-              @click="setSort('price-asc')"
-            >
-              Preț crescător
-            </button>
-            <button
-              type="button"
-              class="btn btn-link btn-sm text-decoration-none"
-              :class="sort.key === 'price-desc' ? 'fw-semibold' : ''"
-              @click="setSort('price-desc')"
-            >
-              Preț descrescător
-            </button>
-          </div>
-          <div>
-            <span class="badge bg-light text-dark">
-              {{ filteredProducts.length }} rezultate
-            </span>
+        
+        <!-- Loading State -->
+        <div v-if="loading" class="text-center py-5">
+          <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
           </div>
         </div>
 
-        <div class="row g-3">
-          <div
-            v-for="product in sortedProducts"
-            :key="product.slug"
-            class="col-md-4 col-sm-6"
-          >
-            <div class="card h-100">
-              <div class="card-body d-flex flex-column">
-                <div class="small text-muted mb-1">
-                  Brand: {{ product.brand }}
+        <div v-else>
+          <!-- Toolbar -->
+          <div class="d-flex justify-content-between align-items-center mb-2 small">
+            <div>
+              <strong>Sortare:</strong>
+              <button
+                type="button"
+                class="btn btn-link btn-sm text-decoration-none"
+                :class="filters.sort === 'relevance' ? 'fw-semibold' : ''"
+                @click="setSort('relevance')"
+              >
+                Relevanță
+              </button>
+              <button
+                type="button"
+                class="btn btn-link btn-sm text-decoration-none"
+                :class="filters.sort === 'price_asc' ? 'fw-semibold' : ''"
+                @click="setSort('price_asc')"
+              >
+                Preț crescător
+              </button>
+              <button
+                type="button"
+                class="btn btn-link btn-sm text-decoration-none"
+                :class="filters.sort === 'price_desc' ? 'fw-semibold' : ''"
+                @click="setSort('price_desc')"
+              >
+                Preț descrescător
+              </button>
+            </div>
+            <div>
+              <span class="badge bg-light text-dark">
+                {{ pagination.total }} rezultate
+              </span>
+            </div>
+          </div>
+
+          <!-- Products Grid -->
+          <div class="row g-3">
+            <div
+              v-for="product in products"
+              :key="product.id"
+              class="col-md-4 col-sm-6"
+            >
+              <div class="card h-100">
+                <!-- Image placeholder if no image -->
+                <div class="ratio ratio-4x3 bg-light text-center d-flex align-items-center justify-content-center text-muted" v-if="!product.main_image">
+                   <i class="bi bi-image" style="font-size: 2rem;"></i>
                 </div>
-                <h3 class="h6 mb-1">{{ product.name }}</h3>
-                <div class="small text-muted mb-2">
-                  {{ product.code }}
-                </div>
-                <div class="mb-2 small">
-                  <span
-                    class="badge"
-                    :class="product.inStock ? 'bg-success' : 'bg-secondary'"
-                  >
-                    {{ product.inStock ? 'În stoc' : 'La comandă' }}
-                  </span>
-                </div>
-                <div class="mt-auto">
-                  <div class="fw-semibold mb-1">
-                    {{ product.price.toLocaleString('ro-RO', { minimumFractionDigits: 2 }) }}
-                    RON
+                <!-- Real image would go here -->
+                
+                <div class="card-body d-flex flex-column">
+                  <div class="small text-muted mb-1" v-if="product.brand">
+                    Brand: {{ product.brand.name }}
                   </div>
-                  <RouterLink
-                    :to="`/produs/${product.slug}`"
-                    class="btn btn-outline-primary btn-sm w-100"
-                  >
-                    Detalii produs
-                  </RouterLink>
+                  <h3 class="h6 mb-1">
+                    <RouterLink :to="`/produse/${product.slug}`" class="text-decoration-none text-dark">
+                      {{ product.name }}
+                    </RouterLink>
+                  </h3>
+                  <div class="small text-muted mb-2">
+                    {{ product.internal_code }}
+                  </div>
+                  
+                  <div class="mb-2 small">
+                    <span
+                      class="badge"
+                      :class="product.stock_qty > 0 ? 'bg-success' : 'bg-secondary'"
+                    >
+                      {{ product.stock_qty > 0 ? 'În stoc' : 'Indisponibil' }}
+                    </span>
+                  </div>
+                  
+                  <div class="mt-auto">
+                    <div class="fw-semibold mb-1">
+                      {{ (product.price_override || product.list_price).toLocaleString('ro-RO', { minimumFractionDigits: 2 }) }}
+                      RON
+                    </div>
+                    <RouterLink
+                      :to="`/produse/${product.slug}`"
+                      class="btn btn-outline-primary btn-sm w-100"
+                    >
+                      Detalii produs
+                    </RouterLink>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-          <div v-if="sortedProducts.length === 0" class="col-12">
-            <div class="alert alert-info small mb-0">
-              Nu au fost găsite produse care să corespundă filtrării curente.
+
+            <!-- Empty State -->
+            <div v-if="products.length === 0" class="col-12">
+              <div class="alert alert-info small mb-0">
+                Nu au fost găsite produse care să corespundă criteriilor selectate.
+              </div>
             </div>
           </div>
+          
+          <!-- Pagination (Simplified) -->
+          <div class="d-flex justify-content-center mt-4" v-if="pagination.last_page > 1">
+             <nav>
+                <ul class="pagination pagination-sm">
+                   <li class="page-item" :class="{ disabled: pagination.current_page === 1 }">
+                      <button class="page-link" @click="changePage(pagination.current_page - 1)">Anterior</button>
+                   </li>
+                   <li class="page-item active">
+                      <span class="page-link">{{ pagination.current_page }} / {{ pagination.last_page }}</span>
+                   </li>
+                   <li class="page-item" :class="{ disabled: pagination.current_page === pagination.last_page }">
+                      <button class="page-link" @click="changePage(pagination.current_page + 1)">Următor</button>
+                   </li>
+                </ul>
+             </nav>
+          </div>
+
         </div>
       </div>
     </div>
@@ -198,132 +240,112 @@
 </template>
 
 <script setup>
-import { computed, reactive } from 'vue'
-import { useRoute } from 'vue-router'
+import { ref, reactive, computed, watch, onMounted } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { fetchCategoryPage } from '@/services/catalog'
 
 const route = useRoute()
-const categorySlug = computed(() => route.params.slug || 'materiale-constructii')
+const router = useRouter()
 
-const demoCategories = {
-  'materiale-constructii': 'Materiale de construcții',
-  finisaje: 'Finisaje',
-  'echipamente-santier': 'Echipamente șantier'
-}
-
-const categoryTitle = computed(() => demoCategories[categorySlug.value] || 'Categorie produse')
-
-const allProducts = [
-  {
-    slug: 'ciment-portland-40kg',
-    name: 'Ciment Portland 40kg',
-    code: 'PRD-001',
-    brand: 'BrandX',
-    categorySlug: 'materiale-constructii',
-    inStock: true,
-    price: 45.0,
-    attributes: ['greu', 'bulk']
-  },
-  {
-    slug: 'ciment-premium-42-5',
-    name: 'Ciment Premium 42.5',
-    code: 'PRD-002',
-    brand: 'BrandX',
-    categorySlug: 'materiale-constructii',
-    inStock: true,
-    price: 48.5,
-    attributes: ['premium', 'bulk']
-  },
-  {
-    slug: 'adeziv-gresie-faianta',
-    name: 'Adeziv gresie / faianță',
-    code: 'PRD-005',
-    brand: 'BrandY',
-    categorySlug: 'finisaje',
-    inStock: false,
-    price: 35.0,
-    attributes: ['finisaj']
-  },
-  {
-    slug: 'vopsea-lavabila-interior',
-    name: 'Vopsea lavabilă interior 15L',
-    code: 'PRD-006',
-    brand: 'BrandZ',
-    categorySlug: 'finisaje',
-    inStock: true,
-    price: 210.0,
-    attributes: ['finisaj', 'premium']
-  },
-  {
-    slug: 'sistem-scaffolding-aluminiu',
-    name: 'Sistem schelă aluminiu',
-    code: 'PRD-010',
-    brand: 'BrandPro',
-    categorySlug: 'echipamente-santier',
-    inStock: true,
-    price: 2850.0,
-    attributes: ['echipament', 'premium']
-  }
-]
-
-const filters = reactive({
-  search: '',
-  brand: '',
-  inStockOnly: false,
-  maxPrice: 5000,
+const loading = ref(false)
+const category = ref({})
+const products = ref([])
+const pagination = ref({})
+const availableFilters = ref({
+  brands: [],
+  price: { min: 0, max: 0 },
   attributes: []
 })
 
-const attributeOptions = [
-  { value: 'premium', label: 'Premium' },
-  { value: 'bulk', label: 'Livrare palet / vrac' },
-  { value: 'finisaj', label: 'Produse de finisaj' },
-  { value: 'echipament', label: 'Echipament' }
-]
-
-const availableProducts = computed(() =>
-  allProducts.filter((p) => p.categorySlug === categorySlug.value)
-)
-
-const availableBrands = computed(() => {
-  const set = new Set(availableProducts.value.map((p) => p.brand))
-  return Array.from(set).sort()
+// Filters state
+const filters = reactive({
+  brand_id: '',
+  in_stock: false,
+  min_price: null,
+  max_price: null,
+  attributes: {}, // { slug: [val1, val2] }
+  sort: 'relevance',
+  page: 1
 })
 
-const filteredProducts = computed(() => {
-  return availableProducts.value.filter((p) => {
-    const matchesSearch =
-      !filters.search ||
-      p.name.toLowerCase().includes(filters.search.toLowerCase()) ||
-      p.code.toLowerCase().includes(filters.search.toLowerCase())
-
-    const matchesBrand = !filters.brand || p.brand === filters.brand
-    const matchesStock = !filters.inStockOnly || p.inStock
-    const matchesPrice = !filters.maxPrice || p.price <= filters.maxPrice
-
-    let matchesAttrs = true
-    if (filters.attributes.length > 0) {
-      matchesAttrs = filters.attributes.every((attr) => p.attributes.includes(attr))
+const fetchData = async () => {
+  loading.value = true
+  try {
+    const slug = route.params.slug
+    const params = {
+       ...filters,
+       attributes: filters.attributes // Pass attributes object directly, axios handles it usually or we might need to stringify
+    }
+    
+    // Clean params
+    if (!params.brand_id) delete params.brand_id
+    if (!params.in_stock) delete params.in_stock
+    
+    const resp = await fetchCategoryPage(slug, params)
+    
+    category.value = resp.category
+    products.value = resp.products.data
+    pagination.value = {
+       current_page: resp.products.current_page,
+       last_page: resp.products.last_page,
+       total: resp.products.total
+    }
+    
+    // Update available filters only if it's the first load or if we want to update facets based on selection
+    // Usually facets update on selection to narrow down.
+    availableFilters.value = resp.filters
+    
+    // Initialize attributes in filters object if not present
+    resp.filters.attributes.forEach(attr => {
+       if (!filters.attributes[attr.slug]) {
+          filters.attributes[attr.slug] = []
+       }
+    })
+    
+    // Set max price initial if not set
+    if (filters.max_price === null && resp.filters.price.max) {
+       filters.max_price = resp.filters.price.max
     }
 
-    return matchesSearch && matchesBrand && matchesStock && matchesPrice && matchesAttrs
-  })
-})
-
-const sort = reactive({
-  key: 'relevance'
-})
-
-const setSort = (key) => {
-  sort.key = key
+  } catch (e) {
+    console.error('Error fetching category:', e)
+  } finally {
+    loading.value = false
+  }
 }
 
-const sortedProducts = computed(() => {
-  const arr = [...filteredProducts.value]
-  if (sort.key === 'price-asc') {
-    arr.sort((a, b) => a.price - b.price)
-  } else if (sort.key === 'price-desc') {
-    arr.sort((a, b) => b.price - a.price)
+const applyFilters = () => {
+  filters.page = 1
+  fetchData()
+}
+
+const setSort = (sortKey) => {
+  filters.sort = sortKey
+  applyFilters()
+}
+
+const changePage = (page) => {
+   if (page < 1 || page > pagination.value.last_page) return
+   filters.page = page
+   fetchData()
+   window.scrollTo({ top: 0, behavior: 'smooth' })
+}
+
+watch(
+  () => route.params.slug,
+  (newSlug) => {
+    if (newSlug) {
+      // Reset filters on category change
+      filters.brand_id = ''
+      filters.in_stock = false
+      filters.attributes = {}
+      filters.page = 1
+      fetchData()
+    }
   }
-  return arr
+)
+
+onMounted(() => {
+  fetchData()
 })
 </script>

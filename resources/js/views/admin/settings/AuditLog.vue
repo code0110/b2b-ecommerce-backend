@@ -133,7 +133,27 @@
 
             <div class="bg-light p-2 rounded-2 border position-relative">
               <h6 class="text-xs text-uppercase text-muted fw-bold mb-1">Detalii</h6>
-              <pre class="mb-0 small text-muted custom-scrollbar" style="max-height: 100px; overflow-y: auto; font-size: 0.7rem;">{{ shortDetails(row) }}</pre>
+              <div class="small text-muted" style="font-size: 0.75rem;">
+                <div v-if="row.action === 'updated' && getPayload(row).before">
+                  <div v-for="(val, key) in getPayload(row).after" :key="key" class="text-truncate">
+                    <span class="fw-bold">{{ formatFieldName(key) }}:</span>
+                    <span class="text-danger text-decoration-line-through me-1">{{ formatValue(getPayload(row).before[key]) }}</span>
+                    <i class="bi bi-arrow-right small text-muted mx-1"></i>
+                    <span class="text-success">{{ formatValue(val) }}</span>
+                  </div>
+                </div>
+                <div v-else-if="row.action === 'created'">
+                  <div v-for="(val, key) in getPayload(row).after" :key="key" class="text-truncate">
+                     <span class="fw-bold">{{ formatFieldName(key) }}:</span> {{ formatValue(val) }}
+                  </div>
+                </div>
+                <div v-else-if="row.action === 'deleted'">
+                  <span class="text-danger">Element șters</span>
+                </div>
+                <div v-else>
+                   {{ getSummary(row) }}
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -165,6 +185,110 @@
         >
           Următor <i class="bi bi-chevron-right ms-1"></i>
         </button>
+      </div>
+    </div>
+
+    <!-- Details Modal -->
+    <div class="modal fade" id="auditDetailsModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content border-0 shadow-lg">
+          <div class="modal-header bg-light">
+            <h5 class="modal-title fw-bold text-primary">
+              <i class="bi bi-info-circle me-2"></i>Detalii Audit #{{ selectedLog?.id }}
+            </h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body p-4" v-if="selectedLog">
+            <div class="row g-4">
+              <!-- Info Utilizator -->
+              <div class="col-md-6">
+                <h6 class="text-uppercase text-muted small fw-bold mb-3 border-bottom pb-2">Utilizator</h6>
+                <div class="d-flex align-items-center mb-3">
+                   <div class="avatar-circle bg-primary text-white me-3" style="width: 48px; height: 48px; font-size: 1.2rem;">
+                    {{ (selectedLog.user_name || selectedLog.user?.name || '?').charAt(0).toUpperCase() }}
+                  </div>
+                  <div>
+                    <div class="fw-bold fs-5">{{ selectedLog.user_name || selectedLog.user?.name || 'Sistem' }}</div>
+                    <div class="text-muted small">{{ selectedLog.user_email || selectedLog.user?.email || '-' }}</div>
+                  </div>
+                </div>
+                <div class="small">
+                  <div class="mb-1"><span class="text-muted">IP:</span> <span class="font-monospace">{{ selectedLog.meta?.ip || '-' }}</span></div>
+                  <div class="mb-1"><span class="text-muted">Browser:</span> <span class="text-truncate d-inline-block align-bottom" style="max-width: 200px;">{{ selectedLog.meta?.user_agent || '-' }}</span></div>
+                  <div><span class="text-muted">Data:</span> {{ formatDate(selectedLog.created_at) }}</div>
+                </div>
+              </div>
+
+              <!-- Info Actiune -->
+              <div class="col-md-6">
+                <h6 class="text-uppercase text-muted small fw-bold mb-3 border-bottom pb-2">Acțiune</h6>
+                <div class="mb-3">
+                  <span class="badge rounded-pill fs-6 px-3 py-2" :class="getActionBadgeClass(selectedLog.action)">
+                    {{ selectedLog.action.toUpperCase() }}
+                  </span>
+                </div>
+                <div class="card bg-light border-0 p-3">
+                  <div class="d-flex justify-content-between mb-2">
+                    <span class="text-muted">Entitate:</span>
+                    <span class="fw-bold">{{ selectedLog.entity_type }}</span>
+                  </div>
+                  <div class="d-flex justify-content-between">
+                    <span class="text-muted">ID:</span>
+                    <span class="font-monospace">{{ selectedLog.entity_id }}</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Modificari -->
+              <div class="col-12">
+                <h6 class="text-uppercase text-muted small fw-bold mb-3 border-bottom pb-2">Modificări</h6>
+                
+                <div v-if="selectedLog.action === 'updated' && getPayload(selectedLog).before" class="table-responsive border rounded">
+                  <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                      <tr>
+                        <th style="width: 30%">Câmp</th>
+                        <th style="width: 35%">Valoare Veche</th>
+                        <th style="width: 35%">Valoare Nouă</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr v-for="(val, key) in getPayload(selectedLog).after" :key="key">
+                        <td class="fw-medium">{{ formatFieldName(key) }}</td>
+                        <td class="text-danger text-decoration-line-through bg-light">{{ formatValue(getPayload(selectedLog).before[key]) }}</td>
+                        <td class="text-success fw-bold bg-light">{{ formatValue(val) }}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+
+                <div v-else-if="selectedLog.action === 'created'" class="table-responsive border rounded">
+                   <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                      <tr>
+                        <th style="width: 40%">Câmp</th>
+                        <th style="width: 60%">Valoare</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr v-for="(val, key) in getPayload(selectedLog).after" :key="key">
+                        <td class="fw-medium">{{ formatFieldName(key) }}</td>
+                        <td>{{ formatValue(val) }}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+
+                <div v-else class="bg-light p-3 rounded font-monospace small">
+                  {{ getPayload(selectedLog) }}
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer bg-light border-top-0">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Închide</button>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -209,27 +333,62 @@ const getActionBadgeClass = (action) => {
   return 'bg-primary'
 }
 
-const shortDetails = (row) => {
-  const payload =
-    row.details ||
-    row.metadata ||
-    row.changes ||
-    row.payload ||
-    {}
+const selectedLog = ref(null)
+let modalInstance = null
 
+const viewDetails = (row) => {
+  selectedLog.value = row
+  if (!modalInstance) {
+    const el = document.getElementById('auditDetailsModal')
+    if (el) modalInstance = new window.bootstrap.Modal(el)
+  }
+  modalInstance?.show()
+}
+
+const getPayload = (row) => {
+  return row.changes || row.payload || row.details || row.metadata || {}
+}
+
+const getSummary = (row) => {
+  const payload = getPayload(row)
+  // Logic simplu de sumarizare
+  if (row.action === 'updated' && payload.before && payload.after) {
+    const keys = Object.keys(payload.after)
+    return `S-au modificat câmpurile: ${keys.map(formatFieldName).join(', ')}`
+  }
+  if (row.action === 'login') return 'Autentificare în sistem'
+  if (row.action === 'logout') return 'Deconectare din sistem'
+  
   try {
-    if (typeof payload === 'string') {
-      return payload.length > 400
-        ? payload.slice(0, 400) + '...'
-        : payload
-    }
-
-    const json = JSON.stringify(payload, null, 2)
-    return json.length > 400 ? json.slice(0, 400) + '...' : json
+    const str = JSON.stringify(payload)
+    return str.length > 50 ? str.slice(0, 50) + '...' : str
   } catch (e) {
-    return ''
+    return '...'
   }
 }
+
+const formatFieldName = (key) => {
+  if (!key) return ''
+  // Convert snake_case to Title Case
+  return key
+    .replace(/_/g, ' ')
+    .replace(/\b\w/g, l => l.toUpperCase())
+}
+
+const formatValue = (val) => {
+  if (val === null || val === undefined) return 'null'
+  if (val === true) return 'Da'
+  if (val === false) return 'Nu'
+  if (typeof val === 'object') {
+    try {
+      return JSON.stringify(val)
+    } catch (e) {
+      return '[Object]'
+    }
+  }
+  return val
+}
+
 
 const loadLogs = async () => {
   loading.value = true

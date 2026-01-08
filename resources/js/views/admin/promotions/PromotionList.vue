@@ -113,6 +113,7 @@
                                     <i class="bi bi-pencil"></i>
                                 </RouterLink>
                                 <button
+                                    type="button"
                                     class="btn btn-sm btn-white border text-danger shadow-sm"
                                     @click="confirmDelete(promo)"
                                     title="Șterge"
@@ -153,12 +154,44 @@
         </div>
       </div>
     </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div class="modal fade" id="deleteConfirmationModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg">
+          <div class="modal-header bg-danger text-white">
+            <h5 class="modal-title fw-bold">
+              <i class="bi bi-exclamation-triangle-fill me-2"></i>Confirmare Ștergere
+            </h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body p-4 text-center">
+            <div class="mb-3">
+              <i class="bi bi-trash text-danger display-1"></i>
+            </div>
+            <p class="lead mb-2">Ești sigur că vrei să ștergi această promoție?</p>
+            <p class="text-muted" v-if="promotionToDelete">
+              Promoția <strong>{{ promotionToDelete.name }}</strong> va fi ștearsă definitiv.
+              Această acțiune nu poate fi anulată.
+            </p>
+          </div>
+          <div class="modal-footer bg-light border-top-0 justify-content-center">
+            <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal">Anulează</button>
+            <button type="button" class="btn btn-danger px-4" @click="executeDelete" :disabled="isDeleting">
+              <span v-if="isDeleting" class="spinner-border spinner-border-sm me-2"></span>
+              Șterge Promoția
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, onBeforeUnmount } from 'vue';
 import { fetchPromotions, deletePromotion } from '@/services/admin/promotions';
+import { Modal } from 'bootstrap';
 
 const loading = ref(false);
 const error = ref('');
@@ -168,6 +201,20 @@ const pagination = ref({
   current_page: 1,
   last_page: 1,
   total: 0
+});
+
+// Delete modal state
+const promotionToDelete = ref(null);
+const isDeleting = ref(false);
+let deleteModalInstance = null;
+
+// Clean up modal on component unmount
+onBeforeUnmount(() => {
+    if (deleteModalInstance) {
+        deleteModalInstance.hide();
+        deleteModalInstance.dispose();
+        deleteModalInstance = null;
+    }
 });
 
 // Simple debounce for search
@@ -209,20 +256,38 @@ const changePage = page => {
   loadPromotions(page);
 };
 
-const confirmDelete = async promotion => {
-  if (!confirm(`Sigur vrei să ștergi promoția "${promotion.name}"?`)) {
-    return;
+const confirmDelete = promotion => {
+  promotionToDelete.value = promotion;
+  if (!deleteModalInstance) {
+    const el = document.getElementById('deleteConfirmationModal');
+    if (el) deleteModalInstance = new Modal(el);
   }
+  deleteModalInstance?.show();
+};
 
+const executeDelete = async () => {
+  if (!promotionToDelete.value) return;
+  
+  isDeleting.value = true;
   try {
-    await deletePromotion(promotion.id);
-    promotions.value = promotions.value.filter(p => p.id !== promotion.id);
+    await deletePromotion(promotionToDelete.value.id);
+    deleteModalInstance?.hide();
+    
+    // Reîncărcăm lista pentru a fi siguri că starea este sincronizată cu serverul
+    // și pentru a gestiona corect paginarea (ex: dacă ștergem ultimul element de pe pagină)
+    await loadPromotions(pagination.value.current_page);
+    
+    // Dacă pagina curentă a devenit goală după ștergere și nu suntem pe prima pagină, mergem înapoi
     if (promotions.value.length === 0 && pagination.value.current_page > 1) {
         changePage(pagination.value.current_page - 1);
     }
+    
+    promotionToDelete.value = null;
   } catch (e) {
     console.error('Promotion delete error', e);
     alert('Nu s-a putut șterge promoția.');
+  } finally {
+    isDeleting.value = false;
   }
 };
 

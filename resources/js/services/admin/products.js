@@ -20,3 +20,7 @@ export function updateProduct(id, payload) {
 export function deleteProduct(id) {
   return adminApi.delete(`/products/${id}`);
 }
+
+export function generateSeo(payload) {
+  return adminApi.post('/products/generate-seo', payload).then(r => r.data);
+}

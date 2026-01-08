@@ -116,7 +116,7 @@ class Product extends Model
         return $this->hasMany(ProductVariant::class);
     }
 
-    public function attributes(): HasMany
+    public function attributeValues(): HasMany
     {
         return $this->hasMany(AttributeValue::class);
     }

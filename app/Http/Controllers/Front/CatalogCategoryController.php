@@ -5,8 +5,10 @@ namespace App\Http\Controllers\Front;
 use App\Http\Controllers\Controller;
 use App\Models\Category;
 use App\Models\Product;
+use App\Models\Attribute;
 use App\Services\Pricing\PromotionPricingService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class CatalogCategoryController extends Controller
 {
@@ -18,7 +20,7 @@ class CatalogCategoryController extends Controller
      * Returnează:
      *  - category: info categorie
      *  - products: paginator cu produse + prețuri promo
-     *  - available_filters (simplu – branduri și interval preț)
+     *  - available_filters (branduri, interval preț, atribute)
      */
     public function show(string $slug, Request $request, PromotionPricingService $pricing)
     {
@@ -41,7 +43,7 @@ class CatalogCategoryController extends Controller
                 }
             });
 
-        // Filtre simple din query string (adaptabile)
+        // Filtre simple din query string
         if ($brandId = $request->query('brand_id')) {
             $query->where('brand_id', $brandId);
         }
@@ -63,9 +65,32 @@ class CatalogCategoryController extends Controller
         }
 
         if ($request->filled('in_stock')) {
-            $inStock = (bool) $request->query('in_stock');
+            $inStock = filter_var($request->query('in_stock'), FILTER_VALIDATE_BOOLEAN);
             if ($inStock) {
                 $query->where('stock_qty', '>', 0);
+            }
+        }
+
+        // Filtrare după atribute
+        // Format așteptat: attributes[slug] = value (string sau array)
+        if ($request->filled('attributes') && is_array($request->input('attributes'))) {
+            foreach ($request->input('attributes') as $attrSlug => $values) {
+                if (empty($values)) continue;
+                
+                // Normalizăm valorile la array
+                $valuesArray = is_array($values) ? $values : explode(',', $values);
+                $valuesArray = array_filter($valuesArray, fn($v) => !is_null($v) && $v !== '');
+                
+                if (empty($valuesArray)) continue;
+
+                // Găsim atributul după slug pentru a fi siguri de ID
+                $attr = Attribute::where('slug', $attrSlug)->first();
+                if (!$attr) continue;
+
+                $query->whereHas('attributeValues', function ($q) use ($attr, $valuesArray) {
+                    $q->where('attribute_id', $attr->id)
+                      ->whereIn('value', $valuesArray);
+                });
             }
         }
 
@@ -81,7 +106,7 @@ class CatalogCategoryController extends Controller
                 $query->orderByDesc('created_at');
                 break;
             default:
-                // sortare implicită (după relevanță / ordine din categorie)
+                // sortare implicită
                 $query->orderBy('sort_order')->orderBy('name');
         }
 
@@ -92,7 +117,11 @@ class CatalogCategoryController extends Controller
             return $pricing->formatProductForFrontend($product, $customer);
         });
 
-        // Filtre disponibile (simplu: branduri + range preț)
+        // ---------------------------------------------------------
+        // Construim filtrele disponibile (Faceted Search)
+        // ---------------------------------------------------------
+        
+        // 1. Branduri disponibile în categorie
         $availableBrands = Product::where('status', 'published')
             ->where('main_category_id', $category->id)
             ->whereNotNull('brand_id')
@@ -108,11 +137,42 @@ class CatalogCategoryController extends Controller
                 'slug' => $brand->slug ?? null,
             ]);
 
+        // 2. Statistici preț (min/max)
         $priceStats = Product::where('status', 'published')
             ->where('main_category_id', $category->id)
             ->selectRaw('MIN(COALESCE(price_override, list_price)) as min_price')
             ->selectRaw('MAX(COALESCE(price_override, list_price)) as max_price')
             ->first();
+
+        // 3. Atribute filtrabile și valorile lor existente
+        $filterableAttributes = $category->attributes()
+            ->where('is_filterable', true)
+            ->get();
+            
+        $attributeFilters = [];
+
+        foreach ($filterableAttributes as $attr) {
+            // Obținem valorile distincte pentru acest atribut din produsele categoriei
+            $values = DB::table('attribute_values')
+                ->join('products', 'attribute_values.product_id', '=', 'products.id')
+                ->where('attribute_values.attribute_id', $attr->id)
+                ->where('products.status', 'published')
+                ->where('products.main_category_id', $category->id) // TODO: recursive categories?
+                ->select('attribute_values.value')
+                ->distinct()
+                ->orderBy('attribute_values.value')
+                ->pluck('value');
+            
+            if ($values->isNotEmpty()) {
+                $attributeFilters[] = [
+                    'id'      => $attr->id,
+                    'name'    => $attr->name,
+                    'slug'    => $attr->slug,
+                    'type'    => $attr->type,
+                    'options' => $values
+                ];
+            }
+        }
 
         return response()->json([
             'category' => [
@@ -123,11 +183,12 @@ class CatalogCategoryController extends Controller
             ],
             'products'  => $products,
             'filters'   => [
-                'brands' => $availableBrands,
-                'price'  => [
+                'brands'     => $availableBrands,
+                'price'      => [
                     'min' => $priceStats?->min_price ? (float) $priceStats->min_price : null,
                     'max' => $priceStats?->max_price ? (float) $priceStats->max_price : null,
                 ],
+                'attributes' => $attributeFilters,
             ],
         ]);
     }

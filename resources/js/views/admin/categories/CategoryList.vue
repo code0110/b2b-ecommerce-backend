@@ -36,8 +36,8 @@
             >
               {{ cat.name }}
             </RouterLink>
-            <span class="badge rounded-pill" :class="cat.is_active ? 'bg-success bg-opacity-10 text-success' : 'bg-secondary bg-opacity-10 text-secondary'">
-              {{ cat.is_active ? 'Publicată' : 'Ascunsă' }}
+            <span class="badge rounded-pill" :class="cat.is_published ? 'bg-success bg-opacity-10 text-success' : 'bg-secondary bg-opacity-10 text-secondary'">
+              {{ cat.is_published ? 'Publicată' : 'Ascunsă' }}
             </span>
           </div>
           <div class="card-body">

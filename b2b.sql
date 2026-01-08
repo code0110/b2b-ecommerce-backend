@@ -3,9 +3,9 @@
 -- https://www.phpmyadmin.net/
 --
 -- Gazdă: localhost
--- Timp de generare: ian. 08, 2026 la 02:56 PM
+-- Timp de generare: ian. 08, 2026 la 07:16 PM
 -- Versiune server: 8.0.44
--- Versiune PHP: 8.2.28
+-- Versiune PHP: 8.2.30
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
@@ -128,6 +128,14 @@ CREATE TABLE `attributes` (
   `is_comparable` tinyint(1) NOT NULL DEFAULT '0'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+--
+-- Eliminarea datelor din tabel `attributes`
+--
+
+INSERT INTO `attributes` (`id`, `name`, `slug`, `type`, `is_filterable`, `created_at`, `updated_at`, `is_comparable`) VALUES
+(1, 'Culoare', 'c', 'string', 1, '2026-01-08 15:05:21', '2026-01-08 15:05:21', 0),
+(2, 'Lungime', 'l', 'string', 1, '2026-01-08 15:05:34', '2026-01-08 15:05:34', 0);
+
 -- --------------------------------------------------------
 
 --
@@ -138,6 +146,14 @@ CREATE TABLE `attribute_category` (
   `attribute_id` bigint UNSIGNED NOT NULL,
   `category_id` bigint UNSIGNED NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Eliminarea datelor din tabel `attribute_category`
+--
+
+INSERT INTO `attribute_category` (`attribute_id`, `category_id`) VALUES
+(1, 1),
+(2, 1);
 
 -- --------------------------------------------------------
 
@@ -202,7 +218,21 @@ INSERT INTO `audit_logs` (`id`, `user_id`, `action`, `entity_type`, `entity_id`,
 (22, NULL, 'created', 'App\\Models\\Promotion', 3, '{\"id\": 3, \"name\": \"5% Reducere SteelPro\", \"slug\": \"promo-steelpro-5\", \"type\": \"standard\", \"value\": 5, \"end_at\": \"2026-02-07 09:22:39\", \"status\": \"active\", \"start_at\": \"2026-01-07 09:22:39\", \"applies_to\": \"brands\", \"created_at\": \"2026-01-08 09:22:39\", \"updated_at\": \"2026-01-08 09:22:39\", \"value_type\": \"percent\", \"customer_type\": \"both\"}', '{\"ip\": \"127.0.0.1\", \"user_agent\": \"Symfony\"}', '2026-01-08 07:22:39', '2026-01-08 07:22:39'),
 (23, NULL, 'created', 'App\\Models\\Promotion', 4, '{\"id\": 4, \"name\": \"100 RON Off Orders > 5000\", \"slug\": \"promo-cart-5000\", \"type\": \"standard\", \"value\": 100, \"end_at\": \"2026-02-07 09:22:39\", \"status\": \"active\", \"start_at\": \"2026-01-07 09:22:39\", \"applies_to\": \"all\", \"created_at\": \"2026-01-08 09:22:39\", \"updated_at\": \"2026-01-08 09:22:39\", \"value_type\": \"fixed_amount\", \"customer_type\": \"both\", \"min_cart_total\": 5000}', '{\"ip\": \"127.0.0.1\", \"user_agent\": \"Symfony\"}', '2026-01-08 07:22:39', '2026-01-08 07:22:39'),
 (24, NULL, 'created', 'App\\Models\\Promotion', 5, '{\"id\": 5, \"name\": \"Volum: Plasă sudată -15% la cantitate\", \"slug\": \"promo-plasa-volum-15\", \"type\": \"volume\", \"value\": 15, \"end_at\": \"2026-02-07 09:22:39\", \"status\": \"active\", \"start_at\": \"2026-01-07 09:22:39\", \"applies_to\": \"products\", \"created_at\": \"2026-01-08 09:22:39\", \"updated_at\": \"2026-01-08 09:22:39\", \"value_type\": \"percent\", \"customer_type\": \"both\", \"min_qty_per_product\": 20}', '{\"ip\": \"127.0.0.1\", \"user_agent\": \"Symfony\"}', '2026-01-08 07:22:39', '2026-01-08 07:22:39'),
-(25, NULL, 'created', 'App\\Models\\Promotion', 6, '{\"id\": 6, \"name\": \"Cadou: Șuruburi la Profile UW\", \"slug\": \"promo-cadou-suruburi\", \"type\": \"gift\", \"value\": 100, \"end_at\": \"2026-02-07 09:22:39\", \"status\": \"active\", \"settings\": \"{\\\"gift_product_id\\\":5,\\\"gift_qty\\\":1}\", \"start_at\": \"2026-01-07 09:22:39\", \"applies_to\": \"products\", \"created_at\": \"2026-01-08 09:22:39\", \"updated_at\": \"2026-01-08 09:22:39\", \"value_type\": \"percent\", \"customer_type\": \"both\", \"min_qty_per_product\": 20}', '{\"ip\": \"127.0.0.1\", \"user_agent\": \"Symfony\"}', '2026-01-08 07:22:39', '2026-01-08 07:22:39');
+(25, NULL, 'created', 'App\\Models\\Promotion', 6, '{\"id\": 6, \"name\": \"Cadou: Șuruburi la Profile UW\", \"slug\": \"promo-cadou-suruburi\", \"type\": \"gift\", \"value\": 100, \"end_at\": \"2026-02-07 09:22:39\", \"status\": \"active\", \"settings\": \"{\\\"gift_product_id\\\":5,\\\"gift_qty\\\":1}\", \"start_at\": \"2026-01-07 09:22:39\", \"applies_to\": \"products\", \"created_at\": \"2026-01-08 09:22:39\", \"updated_at\": \"2026-01-08 09:22:39\", \"value_type\": \"percent\", \"customer_type\": \"both\", \"min_qty_per_product\": 20}', '{\"ip\": \"127.0.0.1\", \"user_agent\": \"Symfony\"}', '2026-01-08 07:22:39', '2026-01-08 07:22:39'),
+(26, 4, 'deleted', 'App\\Models\\Promotion', 6, '{\"id\": 6, \"name\": \"Cadou: Șuruburi la Profile UW\", \"slug\": \"promo-cadou-suruburi\", \"type\": \"gift\", \"value\": \"100.00\", \"end_at\": \"2026-02-07 09:22:39\", \"status\": \"active\", \"settings\": \"{\\\"gift_qty\\\": 1, \\\"gift_product_id\\\": 5}\", \"start_at\": \"2026-01-07 09:22:39\", \"applies_to\": \"products\", \"conditions\": null, \"created_at\": \"2026-01-08 09:22:39\", \"hero_image\": null, \"updated_at\": \"2026-01-08 09:22:39\", \"value_type\": \"percent\", \"description\": null, \"banner_image\": null, \"is_exclusive\": 0, \"is_iterative\": 0, \"mobile_image\": null, \"customer_type\": \"both\", \"stacking_type\": \"iterative\", \"discount_value\": null, \"logged_in_only\": 0, \"min_cart_total\": \"0.00\", \"discount_percent\": null, \"short_description\": null, \"min_qty_per_product\": 20}', '{\"ip\": \"127.0.0.1\", \"user_agent\": \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36\"}', '2026-01-08 14:21:40', '2026-01-08 14:21:40'),
+(27, 4, 'deleted', 'App\\Models\\Promotion', 4, '{\"id\": 4, \"name\": \"100 RON Off Orders > 5000\", \"slug\": \"promo-cart-5000\", \"type\": \"standard\", \"value\": \"100.00\", \"end_at\": \"2026-02-07 09:22:39\", \"status\": \"active\", \"settings\": null, \"start_at\": \"2026-01-07 09:22:39\", \"applies_to\": \"all\", \"conditions\": null, \"created_at\": \"2026-01-08 09:22:39\", \"hero_image\": null, \"updated_at\": \"2026-01-08 09:22:39\", \"value_type\": \"fixed_amount\", \"description\": null, \"banner_image\": null, \"is_exclusive\": 0, \"is_iterative\": 0, \"mobile_image\": null, \"customer_type\": \"both\", \"stacking_type\": \"iterative\", \"discount_value\": null, \"logged_in_only\": 0, \"min_cart_total\": \"5000.00\", \"discount_percent\": null, \"short_description\": null, \"min_qty_per_product\": 0}', '{\"ip\": \"127.0.0.1\", \"user_agent\": \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36\"}', '2026-01-08 14:21:42', '2026-01-08 14:21:42'),
+(28, 4, 'deleted', 'App\\Models\\Promotion', 1, '{\"id\": 1, \"name\": \"10% Reducere Gips Carton\", \"slug\": \"promo-gips-carton-10\", \"type\": \"standard\", \"value\": \"10.00\", \"end_at\": \"2026-02-07 09:22:39\", \"status\": \"active\", \"settings\": null, \"start_at\": \"2026-01-07 09:22:39\", \"applies_to\": \"categories\", \"conditions\": null, \"created_at\": \"2026-01-08 09:22:39\", \"hero_image\": null, \"updated_at\": \"2026-01-08 09:22:39\", \"value_type\": \"percent\", \"description\": null, \"banner_image\": null, \"is_exclusive\": 0, \"is_iterative\": 0, \"mobile_image\": null, \"customer_type\": \"both\", \"stacking_type\": \"iterative\", \"discount_value\": null, \"logged_in_only\": 0, \"min_cart_total\": \"0.00\", \"discount_percent\": null, \"short_description\": null, \"min_qty_per_product\": 0}', '{\"ip\": \"127.0.0.1\", \"user_agent\": \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Trae/1.104.3 Chrome/138.0.7204.251 Electron/37.6.1 Safari/537.36\"}', '2026-01-08 14:41:36', '2026-01-08 14:41:36'),
+(29, 4, 'deleted', 'Promotion', 1, '{\"before\": {\"id\": 1, \"name\": \"10% Reducere Gips Carton\", \"slug\": \"promo-gips-carton-10\", \"type\": \"standard\", \"value\": \"10.00\", \"end_at\": \"2026-02-07 09:22:39\", \"status\": \"active\", \"settings\": null, \"start_at\": \"2026-01-07 09:22:39\", \"applies_to\": \"categories\", \"conditions\": null, \"created_at\": \"2026-01-08 09:22:39\", \"hero_image\": null, \"updated_at\": \"2026-01-08 09:22:39\", \"value_type\": \"percent\", \"description\": null, \"banner_image\": null, \"is_exclusive\": 0, \"is_iterative\": 0, \"mobile_image\": null, \"customer_type\": \"both\", \"stacking_type\": \"iterative\", \"discount_value\": null, \"logged_in_only\": 0, \"min_cart_total\": \"0.00\", \"discount_percent\": null, \"short_description\": null, \"min_qty_per_product\": 0}}', '{\"ip\": \"127.0.0.1\", \"url\": \"http://localhost:8000/api/admin/promotions/1\", \"user_agent\": \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Trae/1.104.3 Chrome/138.0.7204.251 Electron/37.6.1 Safari/537.36\"}', '2026-01-08 14:41:36', '2026-01-08 14:41:36'),
+(30, 4, 'deleted', 'App\\Models\\Promotion', 2, '{\"id\": 2, \"name\": \"150 RON Discount Țeavă 40x20\", \"slug\": \"promo-teava-150\", \"type\": \"standard\", \"value\": \"150.00\", \"end_at\": \"2026-02-07 09:22:39\", \"status\": \"active\", \"settings\": null, \"start_at\": \"2026-01-07 09:22:39\", \"applies_to\": \"products\", \"conditions\": null, \"created_at\": \"2026-01-08 09:22:39\", \"hero_image\": null, \"updated_at\": \"2026-01-08 09:22:39\", \"value_type\": \"fixed_amount\", \"description\": null, \"banner_image\": null, \"is_exclusive\": 0, \"is_iterative\": 0, \"mobile_image\": null, \"customer_type\": \"both\", \"stacking_type\": \"iterative\", \"discount_value\": null, \"logged_in_only\": 0, \"min_cart_total\": \"0.00\", \"discount_percent\": null, \"short_description\": null, \"min_qty_per_product\": 0}', '{\"ip\": \"127.0.0.1\", \"user_agent\": \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Trae/1.104.3 Chrome/138.0.7204.251 Electron/37.6.1 Safari/537.36\"}', '2026-01-08 14:43:15', '2026-01-08 14:43:15'),
+(31, 4, 'deleted', 'Promotion', 2, '{\"before\": {\"id\": 2, \"name\": \"150 RON Discount Țeavă 40x20\", \"slug\": \"promo-teava-150\", \"type\": \"standard\", \"value\": \"150.00\", \"end_at\": \"2026-02-07 09:22:39\", \"status\": \"active\", \"settings\": null, \"start_at\": \"2026-01-07 09:22:39\", \"applies_to\": \"products\", \"conditions\": null, \"created_at\": \"2026-01-08 09:22:39\", \"hero_image\": null, \"updated_at\": \"2026-01-08 09:22:39\", \"value_type\": \"fixed_amount\", \"description\": null, \"banner_image\": null, \"is_exclusive\": 0, \"is_iterative\": 0, \"mobile_image\": null, \"customer_type\": \"both\", \"stacking_type\": \"iterative\", \"discount_value\": null, \"logged_in_only\": 0, \"min_cart_total\": \"0.00\", \"discount_percent\": null, \"short_description\": null, \"min_qty_per_product\": 0}}', '{\"ip\": \"127.0.0.1\", \"url\": \"http://localhost:8000/api/admin/promotions/2\", \"user_agent\": \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Trae/1.104.3 Chrome/138.0.7204.251 Electron/37.6.1 Safari/537.36\"}', '2026-01-08 14:43:15', '2026-01-08 14:43:15'),
+(32, 4, 'deleted', 'App\\Models\\Promotion', 3, '{\"id\": 3, \"name\": \"5% Reducere SteelPro\", \"slug\": \"promo-steelpro-5\", \"type\": \"standard\", \"value\": \"5.00\", \"end_at\": \"2026-02-07 09:22:39\", \"status\": \"active\", \"settings\": null, \"start_at\": \"2026-01-07 09:22:39\", \"applies_to\": \"brands\", \"conditions\": null, \"created_at\": \"2026-01-08 09:22:39\", \"hero_image\": null, \"updated_at\": \"2026-01-08 09:22:39\", \"value_type\": \"percent\", \"description\": null, \"banner_image\": null, \"is_exclusive\": 0, \"is_iterative\": 0, \"mobile_image\": null, \"customer_type\": \"both\", \"stacking_type\": \"iterative\", \"discount_value\": null, \"logged_in_only\": 0, \"min_cart_total\": \"0.00\", \"discount_percent\": null, \"short_description\": null, \"min_qty_per_product\": 0}', '{\"ip\": \"127.0.0.1\", \"user_agent\": \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Trae/1.104.3 Chrome/138.0.7204.251 Electron/37.6.1 Safari/537.36\"}', '2026-01-08 14:43:19', '2026-01-08 14:43:19'),
+(33, 4, 'deleted', 'Promotion', 3, '{\"before\": {\"id\": 3, \"name\": \"5% Reducere SteelPro\", \"slug\": \"promo-steelpro-5\", \"type\": \"standard\", \"value\": \"5.00\", \"end_at\": \"2026-02-07 09:22:39\", \"status\": \"active\", \"settings\": null, \"start_at\": \"2026-01-07 09:22:39\", \"applies_to\": \"brands\", \"conditions\": null, \"created_at\": \"2026-01-08 09:22:39\", \"hero_image\": null, \"updated_at\": \"2026-01-08 09:22:39\", \"value_type\": \"percent\", \"description\": null, \"banner_image\": null, \"is_exclusive\": 0, \"is_iterative\": 0, \"mobile_image\": null, \"customer_type\": \"both\", \"stacking_type\": \"iterative\", \"discount_value\": null, \"logged_in_only\": 0, \"min_cart_total\": \"0.00\", \"discount_percent\": null, \"short_description\": null, \"min_qty_per_product\": 0}}', '{\"ip\": \"127.0.0.1\", \"url\": \"http://localhost:8000/api/admin/promotions/3\", \"user_agent\": \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Trae/1.104.3 Chrome/138.0.7204.251 Electron/37.6.1 Safari/537.36\"}', '2026-01-08 14:43:19', '2026-01-08 14:43:19'),
+(34, 4, 'deleted', 'App\\Models\\Promotion', 5, '{\"id\": 5, \"name\": \"Volum: Plasă sudată -15% la cantitate\", \"slug\": \"promo-plasa-volum-15\", \"type\": \"volume\", \"value\": \"15.00\", \"end_at\": \"2026-02-07 09:22:39\", \"status\": \"active\", \"settings\": null, \"start_at\": \"2026-01-07 09:22:39\", \"applies_to\": \"products\", \"conditions\": null, \"created_at\": \"2026-01-08 09:22:39\", \"hero_image\": null, \"updated_at\": \"2026-01-08 09:22:39\", \"value_type\": \"percent\", \"description\": null, \"banner_image\": null, \"is_exclusive\": 0, \"is_iterative\": 0, \"mobile_image\": null, \"customer_type\": \"both\", \"stacking_type\": \"iterative\", \"discount_value\": null, \"logged_in_only\": 0, \"min_cart_total\": \"0.00\", \"discount_percent\": null, \"short_description\": null, \"min_qty_per_product\": 20}', '{\"ip\": \"127.0.0.1\", \"user_agent\": \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Trae/1.104.3 Chrome/138.0.7204.251 Electron/37.6.1 Safari/537.36\"}', '2026-01-08 14:57:25', '2026-01-08 14:57:25'),
+(35, 4, 'deleted', 'Promotion', 5, '{\"before\": {\"id\": 5, \"name\": \"Volum: Plasă sudată -15% la cantitate\", \"slug\": \"promo-plasa-volum-15\", \"type\": \"volume\", \"value\": \"15.00\", \"end_at\": \"2026-02-07 09:22:39\", \"status\": \"active\", \"settings\": null, \"start_at\": \"2026-01-07 09:22:39\", \"applies_to\": \"products\", \"conditions\": null, \"created_at\": \"2026-01-08 09:22:39\", \"hero_image\": null, \"updated_at\": \"2026-01-08 09:22:39\", \"value_type\": \"percent\", \"description\": null, \"banner_image\": null, \"is_exclusive\": 0, \"is_iterative\": 0, \"mobile_image\": null, \"customer_type\": \"both\", \"stacking_type\": \"iterative\", \"discount_value\": null, \"logged_in_only\": 0, \"min_cart_total\": \"0.00\", \"discount_percent\": null, \"short_description\": null, \"min_qty_per_product\": 20}}', '{\"ip\": \"127.0.0.1\", \"url\": \"http://localhost:8000/api/admin/promotions/5\", \"user_agent\": \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Trae/1.104.3 Chrome/138.0.7204.251 Electron/37.6.1 Safari/537.36\"}', '2026-01-08 14:57:25', '2026-01-08 14:57:25'),
+(36, 4, 'updated', 'Product', 2, '{\"after\": {\"vat_rate\": 21, \"updated_at\": \"2026-01-08 17:06:32\"}, \"before\": {\"vat_rate\": 19, \"updated_at\": \"2026-01-08T09:22:39.000000Z\"}}', '{\"ip\": \"127.0.0.1\", \"url\": \"http://localhost:8000/api/admin/products/2\", \"user_agent\": \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Trae/1.104.3 Chrome/138.0.7204.251 Electron/37.6.1 Safari/537.36\"}', '2026-01-08 15:06:32', '2026-01-08 15:06:32'),
+(37, 4, 'updated', 'Product', 2, '{\"after\": {\"name\": \"Plasa fibra sticla 160g/mp STANDARD– 50mp – Galben\", \"brand_id\": 1, \"updated_at\": \"2026-01-08 18:15:37\", \"long_description\": \"<div class=\'product-description\'>\\n<h2>Descriere Detaliată: Plasa fibra sticla 160g/mp STANDARD– 50mp – Galben</h2>\\n<p>???? Plasa fibra sticla 160g/mp STANDARD – 50mp – Galben ???? Descriere produs Plasa din fibra de sticla 160 STANDARD Galben este destinata consolidarii stratului suport in sistemele de termoizolare (ETICS), oferind o rezistenta mecanica excelenta si stabilitate dimensionala in timp. Este fabricata din fibra de sticla tratata anti-alcalin si este ideala pentru utilizari in zone cu expunere la vibratii, contractii sau trafic moderat. Culoarea galbena permite o aplicare vizibila si un control facil pe santier. Structura de ochiuri 5x5 mm si greutatea constanta de 160 +/- 5% g/mp o recomanda pentru aplicatii profesionale in constructii. ⚙️ Caracteristici tehnice: Cod produs: 1030002.004 Culoare: Galben – cod 004 Greutate specifica: 160 +/- 5% g/mp Lungime rola: 50 m ±2% Latime rola: 1 m ±2% Suprafata acoperita: 50 mp/rola Structura ochiuri: 5 × 5 mm Material: Fibra de sticla E tratata anti-alcalin Utilizare: Armare tencuieli, sisteme ETICS, aplicatii generale Ambalare: Rola individuala Destinatie: Exterior Conditii depozitare: -10°C pana la +40°C, ferit de razele solare si umiditate Recomandare: Se depoziteaza doar pe paleti si in pozitie orizontala Durata de valabilitate: 2 ani, daca este depozitata in spatiu uscat si ventilat</p>\\n<h3>De ce să alegi acest produs?</h3>\\n<ul>\\n<li><strong>Raport Calitate-Preț Excelent:</strong> Investiție inteligentă pe termen lung.</li>\\n<li><strong>Garanție și Suport:</strong> Produs susținut de servicii post-vânzare de încredere.</li>\\n</ul>\\n<p style=\'margin-top: 20px; font-style: italic; color: #6c757d;\'><strong>Notă:</strong> Imaginile sunt cu titlu de prezentare. Pentru detalii suplimentare, consultați fișa tehnică sau contactați echipa noastră de suport.</p>\\n</div>\", \"short_description\": \"<p>???? Plasa fibra sticla 160g/mp STANDARD – 50mp – Galben ???? Descriere produs Plasa din fibra de sticla 160 STANDARD Galben este destinata consolidarii stratului suport in sistemele de termoizolare (ETICS), oferind o rezistenta mecanica excelenta si stabilitate dimensionala in timp.</p>\"}, \"before\": {\"name\": \"Profil metalic UW 50\", \"brand_id\": 2, \"updated_at\": \"2026-01-08T17:06:32.000000Z\", \"long_description\": null, \"short_description\": null}}', '{\"ip\": \"127.0.0.1\", \"url\": \"http://127.0.0.1:8000/api/admin/products/2\", \"user_agent\": \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36\"}', '2026-01-08 16:15:37', '2026-01-08 16:15:37'),
+(38, 4, 'updated', 'Product', 2, '{\"after\": {\"updated_at\": \"2026-01-08 18:25:51\", \"long_description\": \"<p><span style=\\\"color: rgb(34, 34, 34);\\\">???? Plasa fibra sticla 160g/mp STANDARD – 50mp – Galben ???? Descriere produs Plasa din fibra de sticla 160 STANDARD Galben este destinata consolidarii stratului suport in sistemele de termoizolare (ETICS), oferind o rezistenta mecanica excelenta si stabilitate dimensionala in timp. Este fabricata din fibra de sticla tratata anti-alcalin si este ideala pentru utilizari in zone cu expunere la vibratii, contractii sau trafic moderat. Culoarea galbena permite o aplicare vizibila si un control facil pe santier. Structura de ochiuri 5x5 mm si greutatea constanta de 160 +/- 5% g/mp o recomanda pentru aplicatii profesionale in constructii. ⚙️ Caracteristici tehnice: Cod produs: 1030002.004 Culoare: Galben – cod 004 Greutate specifica: 160 +/- 5% g/mp Lungime rola: 50 m ±2% Latime rola: 1 m ±2% Suprafata acoperita: 50 mp/rola Structura ochiuri: 5 × 5 mm Material: Fibra de sticla E tratata anti-alcalin Utilizare: Armare tencuieli, sisteme ETICS, aplicatii generale Ambalare: Rola individuala Destinatie: Exterior Conditii depozitare: -10°C pana la +40°C, ferit de razele solare si umiditate Recomandare: Se depoziteaza doar pe paleti si in pozitie orizontala Durata de valabilitate: 2 ani, daca este depozitata in spatiu uscat si ventilat</span></p>\"}, \"before\": {\"updated_at\": \"2026-01-08T18:15:37.000000Z\", \"long_description\": \"<div class=\'product-description\'>\\n<h2>Descriere Detaliată: Plasa fibra sticla 160g/mp STANDARD– 50mp – Galben</h2>\\n<p>???? Plasa fibra sticla 160g/mp STANDARD – 50mp – Galben ???? Descriere produs Plasa din fibra de sticla 160 STANDARD Galben este destinata consolidarii stratului suport in sistemele de termoizolare (ETICS), oferind o rezistenta mecanica excelenta si stabilitate dimensionala in timp. Este fabricata din fibra de sticla tratata anti-alcalin si este ideala pentru utilizari in zone cu expunere la vibratii, contractii sau trafic moderat. Culoarea galbena permite o aplicare vizibila si un control facil pe santier. Structura de ochiuri 5x5 mm si greutatea constanta de 160 +/- 5% g/mp o recomanda pentru aplicatii profesionale in constructii. ⚙️ Caracteristici tehnice: Cod produs: 1030002.004 Culoare: Galben – cod 004 Greutate specifica: 160 +/- 5% g/mp Lungime rola: 50 m ±2% Latime rola: 1 m ±2% Suprafata acoperita: 50 mp/rola Structura ochiuri: 5 × 5 mm Material: Fibra de sticla E tratata anti-alcalin Utilizare: Armare tencuieli, sisteme ETICS, aplicatii generale Ambalare: Rola individuala Destinatie: Exterior Conditii depozitare: -10°C pana la +40°C, ferit de razele solare si umiditate Recomandare: Se depoziteaza doar pe paleti si in pozitie orizontala Durata de valabilitate: 2 ani, daca este depozitata in spatiu uscat si ventilat</p>\\n<h3>De ce să alegi acest produs?</h3>\\n<ul>\\n<li><strong>Raport Calitate-Preț Excelent:</strong> Investiție inteligentă pe termen lung.</li>\\n<li><strong>Garanție și Suport:</strong> Produs susținut de servicii post-vânzare de încredere.</li>\\n</ul>\\n<p style=\'margin-top: 20px; font-style: italic; color: #6c757d;\'><strong>Notă:</strong> Imaginile sunt cu titlu de prezentare. Pentru detalii suplimentare, consultați fișa tehnică sau contactați echipa noastră de suport.</p>\\n</div>\"}}', '{\"ip\": \"127.0.0.1\", \"url\": \"http://localhost:8000/api/admin/products/2\", \"user_agent\": \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Trae/1.104.3 Chrome/138.0.7204.251 Electron/37.6.1 Safari/537.36\"}', '2026-01-08 16:25:51', '2026-01-08 16:25:51'),
+(39, 4, 'updated', 'Product', 2, '{\"after\": {\"updated_at\": \"2026-01-08 18:43:16\", \"main_category_id\": 1}, \"before\": {\"updated_at\": \"2026-01-08T18:25:51.000000Z\", \"main_category_id\": 3}}', '{\"ip\": \"127.0.0.1\", \"url\": \"http://localhost:8000/api/admin/products/2\", \"user_agent\": \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Trae/1.104.3 Chrome/138.0.7204.251 Electron/37.6.1 Safari/537.36\"}', '2026-01-08 16:43:16', '2026-01-08 16:43:16');
 
 -- --------------------------------------------------------
 
@@ -364,7 +394,8 @@ INSERT INTO `carts` (`id`, `customer_id`, `user_id`, `session_id`, `status`, `cr
 (14, NULL, NULL, 'jvA30FRUQBkQliaZmJyFO6WV1wxLaTRpnqlGxrwe', 'active', '2026-01-08 11:21:55', '2026-01-08 11:21:55', NULL),
 (15, NULL, NULL, 'un6HqFlJpCQoImYuaf3cJsLbgebhP4BztntHBvJq', 'active', '2026-01-08 11:27:36', '2026-01-08 11:27:36', NULL),
 (16, NULL, NULL, 'Sfbv1hfiPn3eZSPXnDaKxnKmc2Q6G8pTqGWKqRRM', 'active', '2026-01-08 11:52:38', '2026-01-08 11:52:38', NULL),
-(17, NULL, NULL, 'Wnae9FBVts7c1ZwEiafgdBxkm6d3BmRKngunDhMB', 'active', '2026-01-08 12:17:15', '2026-01-08 12:17:15', NULL);
+(17, NULL, NULL, 'Wnae9FBVts7c1ZwEiafgdBxkm6d3BmRKngunDhMB', 'active', '2026-01-08 12:17:15', '2026-01-08 12:17:15', NULL),
+(18, NULL, NULL, '9buOKf3uyKFCOL6nL6rTsD4PgiD9IleCAQdeDzwB', 'active', '2026-01-08 14:11:46', '2026-01-08 14:11:46', NULL);
 
 -- --------------------------------------------------------
 
@@ -389,7 +420,7 @@ CREATE TABLE `cart_items` (
 --
 
 INSERT INTO `cart_items` (`id`, `cart_id`, `product_id`, `product_variant_id`, `quantity`, `unit_price`, `total`, `created_at`, `updated_at`) VALUES
-(4, 6, 1, NULL, 3, 12000.00, 36000.00, '2026-01-08 05:58:36', '2026-01-08 05:58:36'),
+(4, 6, 1, NULL, 5, 12000.00, 60000.00, '2026-01-08 05:58:36', '2026-01-08 14:20:40'),
 (10, 13, 1, NULL, 1, 25.50, 25.50, '2026-01-08 07:46:00', '2026-01-08 07:46:00'),
 (11, 13, 2, NULL, 20, 18.00, 360.00, '2026-01-08 07:46:41', '2026-01-08 07:46:41'),
 (12, 13, 3, NULL, 20, 120.00, 2400.00, '2026-01-08 07:46:58', '2026-01-08 07:46:58');
@@ -407,15 +438,6 @@ CREATE TABLE `cart_promotion` (
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
---
--- Eliminarea datelor din tabel `cart_promotion`
---
-
-INSERT INTO `cart_promotion` (`id`, `cart_id`, `promotion_id`, `created_at`, `updated_at`) VALUES
-(2, 13, 1, NULL, NULL),
-(3, 13, 4, NULL, NULL),
-(4, 13, 3, NULL, NULL);
 
 -- --------------------------------------------------------
 
@@ -475,7 +497,6 @@ INSERT INTO `category_product` (`category_id`, `product_id`) VALUES
 (1, 4),
 (1, 5),
 (2, 1),
-(3, 2),
 (4, 4),
 (5, 3),
 (7, 5);
@@ -1427,8 +1448,6 @@ CREATE TABLE `personal_access_tokens` (
 --
 
 INSERT INTO `personal_access_tokens` (`id`, `tokenable_type`, `tokenable_id`, `name`, `token`, `abilities`, `last_used_at`, `expires_at`, `created_at`, `updated_at`) VALUES
-(1, 'App\\Models\\User', 4, 'spa', 'caaffa7b9851fddb856d3d067774bb615f90febf21b27a9107b57270f4f68745', '[\"*\"]', '2026-01-07 18:14:41', NULL, '2026-01-07 17:51:12', '2026-01-07 18:14:41'),
-(2, 'App\\Models\\User', 4, 'spa', '0c4e2ee99248d829384d4f5160a3dec8532475434cdd31bf7bf5efd64d20f5f2', '[\"*\"]', '2026-01-07 18:11:59', NULL, '2026-01-07 18:07:36', '2026-01-07 18:11:59'),
 (3, 'App\\Models\\User', 2, 'spa', '10af44faed36c94c0dc9417797a9cc9a46af5e85fe0416f98a7b892ed37e3129', '[\"*\"]', '2026-01-07 18:16:21', NULL, '2026-01-07 18:12:05', '2026-01-07 18:16:21'),
 (4, 'App\\Models\\User', 4, 'spa', '92b35c5a9231c231098ed3f25c4962a2045d4f159442b694ff8984d7ad2c7a18', '[\"*\"]', '2026-01-08 06:24:25', NULL, '2026-01-08 05:33:04', '2026-01-08 06:24:25'),
 (6, 'App\\Models\\User', 2, 'spa', 'ce697e38609cb5b43f112e428a90d025963040eb2d6bffd5b3ae1603e2c3a6d6', '[\"*\"]', '2026-01-08 06:01:36', NULL, '2026-01-08 05:54:19', '2026-01-08 06:01:36'),
@@ -1436,7 +1455,9 @@ INSERT INTO `personal_access_tokens` (`id`, `tokenable_type`, `tokenable_id`, `n
 (11, 'App\\Models\\User', 2, 'spa', '829bcf578590cf355b120f983fd31f829f40dcf61e4c941aec57bcb30d2e8134', '[\"*\"]', '2026-01-08 11:49:42', NULL, '2026-01-08 08:39:35', '2026-01-08 11:49:42'),
 (12, 'App\\Models\\User', 4, 'spa', '28c119cccd11caff12acbd2a8e13bd40c4448b6867c4faa7d3c9dbe571da4135', '[\"*\"]', '2026-01-08 11:31:41', NULL, '2026-01-08 11:27:43', '2026-01-08 11:31:41'),
 (13, 'App\\Models\\User', 4, 'spa', 'a157a20e87485903cc1b05781520a67a11dedee50d0c51604cbd49d2174dd447', '[\"*\"]', '2026-01-08 12:28:30', NULL, '2026-01-08 11:32:04', '2026-01-08 12:28:30'),
-(14, 'App\\Models\\User', 2, 'spa', '4b50ac921dbcdd5e93ece1a92e7c05a9e713a168837e472db9a58f9410096104', '[\"*\"]', '2026-01-08 12:56:36', NULL, '2026-01-08 11:53:00', '2026-01-08 12:56:36');
+(14, 'App\\Models\\User', 2, 'spa', '4b50ac921dbcdd5e93ece1a92e7c05a9e713a168837e472db9a58f9410096104', '[\"*\"]', '2026-01-08 12:56:36', NULL, '2026-01-08 11:53:00', '2026-01-08 12:56:36'),
+(17, 'App\\Models\\User', 4, 'spa', '8ce928dfc4fc5c6000f9d4735de7864bfb0bb80729cbc662dfb7eef7d5ac569d', '[\"*\"]', '2026-01-08 17:16:20', NULL, '2026-01-08 14:21:27', '2026-01-08 17:16:20'),
+(18, 'App\\Models\\User', 4, 'spa', '254c5420ed6413d0ca33ddf54595efccd53704f8d5725d4919e0c39d30643ce6', '[\"*\"]', '2026-01-08 17:16:07', NULL, '2026-01-08 14:21:56', '2026-01-08 17:16:07');
 
 -- --------------------------------------------------------
 
@@ -1502,7 +1523,7 @@ CREATE TABLE `products` (
 
 INSERT INTO `products` (`id`, `name`, `price`, `slug`, `type`, `internal_code`, `barcode`, `erp_id`, `short_description`, `long_description`, `key_benefits`, `technical_specs`, `main_category_id`, `brand_id`, `tags`, `status`, `visibility`, `sort_order`, `list_price`, `rrp_price`, `vat_rate`, `vat_included`, `price_override`, `currency`, `stock_status`, `stock_qty`, `min_stock_limit`, `supplier_stock_qty`, `lead_time_days`, `is_new`, `is_recommended`, `is_on_sale`, `is_promo`, `is_best_seller`, `created_at`, `updated_at`, `meta_title`, `meta_description`, `meta_keywords`, `video_url`, `allow_backorder`, `overstock_policy`, `estimated_delivery_text`, `unit_of_measure`, `min_order_quantity`, `order_quantity_step`, `requires_quote`, `erp_sync_status`, `erp_last_sync_at`) VALUES
 (1, 'Placă gips-carton 12.5mm', 0.00, 'placa-gips-carton-12-5', 'simple', 'PGC-12.5', NULL, NULL, NULL, NULL, NULL, NULL, 2, 3, '[\"gips-carton\", \"interior\"]', 'published', 'public', 0, 25.50, 0.00, 19.00, 0, NULL, 'RON', 'in_stock', 240, 0, 0, 0, 0, 0, 0, 1, 0, '2026-01-08 07:22:39', '2026-01-08 07:22:39', NULL, NULL, NULL, NULL, 0, 'block', NULL, 'buc', 1, 1, 0, 'pending', NULL),
-(2, 'Profil metalic UW 50', 0.00, 'profil-metalic-uw-50', 'simple', 'UW-50', NULL, NULL, NULL, NULL, NULL, NULL, 3, 2, '[\"structuri\", \"pereți\"]', 'published', 'public', 0, 18.00, 0.00, 19.00, 0, NULL, 'RON', 'in_stock', 150, 0, 0, 0, 0, 0, 0, 0, 0, '2026-01-08 07:22:39', '2026-01-08 07:22:39', NULL, NULL, NULL, NULL, 0, 'block', NULL, 'ml', 1, 1, 0, 'pending', NULL),
+(2, 'Plasa fibra sticla 160g/mp STANDARD– 50mp – Galben', 0.00, 'profil-metalic-uw-50', 'simple', 'UW-50', NULL, NULL, '<p>???? Plasa fibra sticla 160g/mp STANDARD – 50mp – Galben ???? Descriere produs Plasa din fibra de sticla 160 STANDARD Galben este destinata consolidarii stratului suport in sistemele de termoizolare (ETICS), oferind o rezistenta mecanica excelenta si stabilitate dimensionala in timp.</p>', '<p><span style=\"color: rgb(34, 34, 34);\">???? Plasa fibra sticla 160g/mp STANDARD – 50mp – Galben ???? Descriere produs Plasa din fibra de sticla 160 STANDARD Galben este destinata consolidarii stratului suport in sistemele de termoizolare (ETICS), oferind o rezistenta mecanica excelenta si stabilitate dimensionala in timp. Este fabricata din fibra de sticla tratata anti-alcalin si este ideala pentru utilizari in zone cu expunere la vibratii, contractii sau trafic moderat. Culoarea galbena permite o aplicare vizibila si un control facil pe santier. Structura de ochiuri 5x5 mm si greutatea constanta de 160 +/- 5% g/mp o recomanda pentru aplicatii profesionale in constructii. ⚙️ Caracteristici tehnice: Cod produs: 1030002.004 Culoare: Galben – cod 004 Greutate specifica: 160 +/- 5% g/mp Lungime rola: 50 m ±2% Latime rola: 1 m ±2% Suprafata acoperita: 50 mp/rola Structura ochiuri: 5 × 5 mm Material: Fibra de sticla E tratata anti-alcalin Utilizare: Armare tencuieli, sisteme ETICS, aplicatii generale Ambalare: Rola individuala Destinatie: Exterior Conditii depozitare: -10°C pana la +40°C, ferit de razele solare si umiditate Recomandare: Se depoziteaza doar pe paleti si in pozitie orizontala Durata de valabilitate: 2 ani, daca este depozitata in spatiu uscat si ventilat</span></p>', NULL, NULL, 1, 1, '[\"structuri\", \"pereți\"]', 'published', 'public', 0, 18.00, 0.00, 21.00, 0, NULL, 'RON', 'in_stock', 150, 0, 0, 0, 0, 0, 0, 0, 0, '2026-01-08 07:22:39', '2026-01-08 16:43:16', NULL, NULL, NULL, NULL, 0, 'block', NULL, 'ml', 1, 1, 0, 'pending', NULL),
 (3, 'Plasă sudată 4mm', 0.00, 'plasa-sudata-4mm', 'simple', 'PLS-4', NULL, NULL, NULL, NULL, NULL, NULL, 5, 1, '[\"armare\", \"beton\"]', 'published', 'public', 0, 120.00, 0.00, 19.00, 0, NULL, 'RON', 'in_stock', 500, 0, 0, 0, 0, 0, 0, 0, 0, '2026-01-08 07:22:39', '2026-01-08 07:22:39', NULL, NULL, NULL, NULL, 0, 'block', NULL, 'mp', 1, 1, 0, 'pending', NULL),
 (4, 'Țeavă rectangulară 40x20', 0.00, 'teava-rectangulara-40x20', 'simple', 'TR-40x20', NULL, NULL, NULL, NULL, NULL, NULL, 4, 2, '[\"structural\", \"metal\"]', 'published', 'public', 0, 35.00, 0.00, 19.00, 0, NULL, 'RON', 'in_stock', 800, 0, 0, 0, 0, 0, 0, 0, 0, '2026-01-08 07:22:39', '2026-01-08 07:22:39', NULL, NULL, NULL, NULL, 0, 'block', NULL, 'ml', 1, 1, 0, 'pending', NULL),
 (5, 'Șuruburi gips-carton 25mm (cutie)', 0.00, 'suruburi-gips-carton-25mm', 'simple', 'SUR-25', NULL, NULL, NULL, NULL, NULL, NULL, 7, 4, '[\"feronerie\", \"gips-carton\"]', 'published', 'public', 0, 55.50, 0.00, 19.00, 0, NULL, 'RON', 'in_stock', 1200, 0, 0, 0, 0, 0, 0, 0, 0, '2026-01-08 07:22:39', '2026-01-08 07:22:39', NULL, NULL, NULL, NULL, 0, 'block', NULL, 'cutie', 1, 1, 0, 'pending', NULL);
@@ -1556,6 +1577,13 @@ CREATE TABLE `product_images` (
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Eliminarea datelor din tabel `product_images`
+--
+
+INSERT INTO `product_images` (`id`, `product_id`, `path`, `is_main`, `sort_order`, `created_at`, `updated_at`) VALUES
+(5, 2, '/storage/products/ec802e52-49f4-485b-af56-3e01469c28bd.jpg', 1, 0, '2026-01-08 16:43:16', '2026-01-08 16:43:16');
 
 -- --------------------------------------------------------
 
@@ -1688,18 +1716,6 @@ CREATE TABLE `promotions` (
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
---
--- Eliminarea datelor din tabel `promotions`
---
-
-INSERT INTO `promotions` (`id`, `name`, `slug`, `type`, `value_type`, `value`, `short_description`, `description`, `hero_image`, `banner_image`, `mobile_image`, `start_at`, `end_at`, `settings`, `conditions`, `status`, `applies_to`, `is_exclusive`, `is_iterative`, `stacking_type`, `discount_percent`, `discount_value`, `min_cart_total`, `min_qty_per_product`, `customer_type`, `logged_in_only`, `created_at`, `updated_at`) VALUES
-(1, '10% Reducere Gips Carton', 'promo-gips-carton-10', 'standard', 'percent', 10.00, NULL, NULL, NULL, NULL, NULL, '2026-01-07 07:22:39', '2026-02-07 07:22:39', NULL, NULL, 'active', 'categories', 0, 0, 'iterative', NULL, NULL, 0.00, 0, 'both', 0, '2026-01-08 07:22:39', '2026-01-08 07:22:39'),
-(2, '150 RON Discount Țeavă 40x20', 'promo-teava-150', 'standard', 'fixed_amount', 150.00, NULL, NULL, NULL, NULL, NULL, '2026-01-07 07:22:39', '2026-02-07 07:22:39', NULL, NULL, 'active', 'products', 0, 0, 'iterative', NULL, NULL, 0.00, 0, 'both', 0, '2026-01-08 07:22:39', '2026-01-08 07:22:39'),
-(3, '5% Reducere SteelPro', 'promo-steelpro-5', 'standard', 'percent', 5.00, NULL, NULL, NULL, NULL, NULL, '2026-01-07 07:22:39', '2026-02-07 07:22:39', NULL, NULL, 'active', 'brands', 0, 0, 'iterative', NULL, NULL, 0.00, 0, 'both', 0, '2026-01-08 07:22:39', '2026-01-08 07:22:39'),
-(4, '100 RON Off Orders > 5000', 'promo-cart-5000', 'standard', 'fixed_amount', 100.00, NULL, NULL, NULL, NULL, NULL, '2026-01-07 07:22:39', '2026-02-07 07:22:39', NULL, NULL, 'active', 'all', 0, 0, 'iterative', NULL, NULL, 5000.00, 0, 'both', 0, '2026-01-08 07:22:39', '2026-01-08 07:22:39'),
-(5, 'Volum: Plasă sudată -15% la cantitate', 'promo-plasa-volum-15', 'volume', 'percent', 15.00, NULL, NULL, NULL, NULL, NULL, '2026-01-07 07:22:39', '2026-02-07 07:22:39', NULL, NULL, 'active', 'products', 0, 0, 'iterative', NULL, NULL, 0.00, 20, 'both', 0, '2026-01-08 07:22:39', '2026-01-08 07:22:39'),
-(6, 'Cadou: Șuruburi la Profile UW', 'promo-cadou-suruburi', 'gift', 'percent', 100.00, NULL, NULL, NULL, NULL, NULL, '2026-01-07 07:22:39', '2026-02-07 07:22:39', '{\"gift_qty\": 1, \"gift_product_id\": 5}', NULL, 'active', 'products', 0, 0, 'iterative', NULL, NULL, 0.00, 20, 'both', 0, '2026-01-08 07:22:39', '2026-01-08 07:22:39');
 
 -- --------------------------------------------------------
 
@@ -2152,11 +2168,11 @@ CREATE TABLE `sales_target_items` (
 --
 
 CREATE TABLE `sessions` (
-  `id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `id` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `user_id` bigint UNSIGNED DEFAULT NULL,
-  `ip_address` varchar(45) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `user_agent` text COLLATE utf8mb4_unicode_ci,
-  `payload` longtext COLLATE utf8mb4_unicode_ci NOT NULL,
+  `ip_address` varchar(45) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `user_agent` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
+  `payload` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `last_activity` int NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -3064,7 +3080,7 @@ ALTER TABLE `agent_routes`
 -- AUTO_INCREMENT pentru tabele `attributes`
 --
 ALTER TABLE `attributes`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT pentru tabele `attribute_values`
@@ -3076,7 +3092,7 @@ ALTER TABLE `attribute_values`
 -- AUTO_INCREMENT pentru tabele `audit_logs`
 --
 ALTER TABLE `audit_logs`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=26;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=40;
 
 --
 -- AUTO_INCREMENT pentru tabele `blog_categories`
@@ -3100,7 +3116,7 @@ ALTER TABLE `brands`
 -- AUTO_INCREMENT pentru tabele `carts`
 --
 ALTER TABLE `carts`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=18;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=19;
 
 --
 -- AUTO_INCREMENT pentru tabele `cart_items`
@@ -3268,7 +3284,7 @@ ALTER TABLE `permissions`
 -- AUTO_INCREMENT pentru tabele `personal_access_tokens`
 --
 ALTER TABLE `personal_access_tokens`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=15;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=19;
 
 --
 -- AUTO_INCREMENT pentru tabele `products`
@@ -3292,7 +3308,7 @@ ALTER TABLE `product_documents`
 -- AUTO_INCREMENT pentru tabele `product_images`
 --
 ALTER TABLE `product_images`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
 
 --
 -- AUTO_INCREMENT pentru tabele `product_reviews`

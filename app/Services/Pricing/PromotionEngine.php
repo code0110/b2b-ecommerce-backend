@@ -166,7 +166,7 @@ class PromotionEngine
 
         foreach ($promotions as $promotion) {
             $settings = $promotion->settings ?? [];
-            $triggerMinQty = $settings['min_qty_per_product'] ?? 1;
+            $triggerMinQty = $settings['min_qty_per_product'] ?? ($promotion->min_qty_per_product ?? 1);
             $giftQtyPerTrigger = $settings['gift_qty'] ?? 1;
             $giftProductId = $settings['gift_product_id'] ?? null;
 

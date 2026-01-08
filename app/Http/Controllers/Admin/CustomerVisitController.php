@@ -92,7 +92,7 @@ class CustomerVisitController extends Controller
             'is_off_site' => $isOffSite
         ]);
 
-        return response()->json($visit, 201);
+        return response()->json($visit->load('customer'), 201);
     }
 
     public function endVisit(Request $request, $id)
@@ -143,6 +143,33 @@ class CustomerVisitController extends Controller
         $visit->update($updateData);
 
         return response()->json($visit);
+    }
+
+    public function getLocation($id)
+    {
+        $visit = CustomerVisit::with('locationLogs')->findOrFail($id);
+        
+        /** @var User $user */
+        $user = Auth::user();
+        
+        // Check if user is the agent OR an admin OR a director of the agent
+        $isAuthorized = false;
+        if ($user->id === $visit->agent_id) {
+            $isAuthorized = true;
+        } elseif ($user->hasRole('admin')) {
+            $isAuthorized = true;
+        } elseif ($user->hasRole('sales_director')) {
+             $agent = User::find($visit->agent_id);
+             if ($agent && $agent->director_id === $user->id) {
+                 $isAuthorized = true;
+             }
+        }
+        
+        if (!$isAuthorized) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        return response()->json($visit->locationLogs);
     }
 
     public function recordLocation(Request $request, $id)

@@ -115,11 +115,12 @@
                             <option value="BO">BO - Bilet la Ordin</option>
                             <option value="CEC">CEC</option>
                             <option value="OP">OP - Ordin de Plată</option>
+                            <option value="La termen">La termen</option>
                         </select>
                     </div>
                  </div>
 
-                 <div v-if="orderDetails.paymentMethod !== 'CHS'" class="bg-white p-4 flex items-center gap-4 border-b border-gray-100 animate-fade-in">
+                 <div v-if="['BO','CEC','OP'].includes(orderDetails.paymentMethod)" class="bg-white p-4 flex items-center gap-4 border-b border-gray-100 animate-fade-in">
                     <div class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center text-green-600">
                          <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
                     </div>
@@ -699,7 +700,7 @@ const discountRules = ref({ max_discount: 20, approval_threshold: 15 });
 
 const orderDetails = reactive({
     deliveryDate: new Date().toISOString().slice(0, 10),
-    paymentMethod: 'CHS',
+    paymentMethod: 'La termen',
     paymentDocument: '',
     globalDiscount: 0,
     internalNote: '',

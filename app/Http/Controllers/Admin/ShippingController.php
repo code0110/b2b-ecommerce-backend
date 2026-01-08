@@ -14,6 +14,17 @@ class ShippingController extends Controller
         return ShippingMethod::with('rules')->get();
     }
 
+    public function config()
+    {
+        return response()->json([
+            'types' => [
+                ['value' => 'courier', 'label' => 'Curier'],
+                ['value' => 'own_fleet', 'label' => 'Flotă Proprie'],
+                ['value' => 'pickup', 'label' => 'Ridicare din sediu'],
+            ]
+        ]);
+    }
+
     public function store(Request $request)
     {
         $data = $request->validate([

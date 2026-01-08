@@ -318,6 +318,15 @@ Route::middleware(['auth:sanctum', 'role:admin'])->prefix('admin')->group(functi
     Route::apiResource('invoices', AdminInvoiceController::class)->only(['index', 'show']);
     Route::apiResource('payments', AdminPaymentController::class)->only(['index', 'show']);
     
+    // Shipping
+    Route::get('shipping/config', [AdminShippingController::class, 'config']);
+    Route::apiResource('shipping', AdminShippingController::class);
+
+    // Shipments (AWB-uri efective)
+    Route::get('shipments', [\App\Http\Controllers\Admin\ShipmentController::class, 'index']);
+    Route::post('shipments', [\App\Http\Controllers\Admin\ShipmentController::class, 'store']);
+    Route::post('shipments/{id}/status', [\App\Http\Controllers\Admin\ShipmentController::class, 'updateStatus']);
+
     Route::apiResource('blog', AdminBlogController::class);
     Route::apiResource('sales-representatives', AdminSalesRepController::class);
     Route::apiResource('partner-requests', AdminPartnerRequestController::class);
@@ -325,6 +334,7 @@ Route::middleware(['auth:sanctum', 'role:admin'])->prefix('admin')->group(functi
     Route::apiResource('tickets', AdminTicketController::class)->only(['index', 'show', 'update']);
     Route::apiResource('roles', AdminRoleController::class);
     Route::apiResource('permissions', AdminPermissionController::class);
+    Route::get('dashboard', [\App\Http\Controllers\Admin\DashboardController::class, 'index']);
     Route::get('dashboard/stats', [\App\Http\Controllers\Admin\DashboardController::class, 'index']);
     Route::get('dashboard/overview', [\App\Http\Controllers\Admin\DashboardController::class, 'overview']);
     Route::apiResource('audit-logs', AuditLogController::class)->only(['index', 'show']);
@@ -363,6 +373,7 @@ Route::middleware(['auth:sanctum', 'role:admin,sales_agent,sales_director'])->pr
     Route::get('customer-visits', [\App\Http\Controllers\Admin\CustomerVisitController::class, 'index']);
     Route::post('customer-visits/start', [\App\Http\Controllers\Admin\CustomerVisitController::class, 'startVisit']);
     Route::post('customer-visits/{id}/end', [\App\Http\Controllers\Admin\CustomerVisitController::class, 'endVisit']);
+    Route::get('customer-visits/{id}/location', [\App\Http\Controllers\Admin\CustomerVisitController::class, 'getLocation']);
     Route::post('customer-visits/{id}/location', [\App\Http\Controllers\Admin\CustomerVisitController::class, 'recordLocation']);
 
     // Orders (Agent/Admin/Director)

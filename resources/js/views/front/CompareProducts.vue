@@ -81,13 +81,23 @@
                 </td>
               </tr>
               <tr>
-                <th>Preț listă</th>
+                <th>Preț</th>
                 <td
                   v-for="p in products"
                   :key="'price-' + p.id"
                   class="small"
                 >
-                  {{ formatMoney(p.overridePrice || p.listPrice) }}
+                  <div v-if="p.promoPrice || p.promo_price || p.price">
+                    <span v-if="p.list_price && p.list_price > (p.promoPrice || p.promo_price || p.price)" class="text-decoration-line-through text-muted small d-block">
+                      {{ formatMoney(p.list_price) }}
+                    </span>
+                    <span :class="(p.discountPercent || p.discount_percent || (p.list_price > (p.promoPrice || p.promo_price || p.price))) ? 'fw-bold text-danger' : 'fw-bold'">
+                      {{ formatMoney(p.promoPrice || p.promo_price || p.price) }}
+                    </span>
+                  </div>
+                  <div v-else>
+                    {{ formatMoney(p.price || p.list_price || p.listPrice || 0) }}
+                  </div>
                 </td>
               </tr>
               <tr>

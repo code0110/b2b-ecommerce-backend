@@ -11,6 +11,7 @@ use App\Models\Customer;
 use App\Models\CustomerGroup;
 use App\Models\Promotion;
 use App\Models\Coupon;
+use App\Models\DiscountRule;
 use App\Models\User;
 use App\Models\Role;
 use App\Models\ReceiptBook;
@@ -186,154 +187,156 @@ class TestScenarioSeeder extends Seeder
             Customer::create($c);
         }
 
-        // 3. Brands
-        $brandApple = Brand::create(['name' => 'Apple', 'slug' => 'apple', 'is_published' => true]);
-        $brandSamsung = Brand::create(['name' => 'Samsung', 'slug' => 'samsung', 'is_published' => true]);
-        $brandLogitech = Brand::create(['name' => 'Logitech', 'slug' => 'logitech', 'is_published' => true]);
+        // 3. Brands (construcții)
+        $brandMetalRom = Brand::create(['name' => 'MetalRom', 'slug' => 'metalrom', 'is_published' => true]);
+        $brandSteelPro  = Brand::create(['name' => 'SteelPro', 'slug' => 'steelpro', 'is_published' => true]);
+        $brandKnauf    = Brand::create(['name' => 'Knauf', 'slug' => 'knauf', 'is_published' => true]);
+        $brandHQS      = Brand::create(['name' => 'HQS', 'slug' => 'hqs', 'is_published' => true]);
 
-        // 4. Categories
-        $catElectronics = Category::create(['name' => 'Electronics', 'slug' => 'electronics', 'is_published' => true]);
-        $catLaptops = Category::create(['name' => 'Laptops', 'slug' => 'laptops', 'parent_id' => $catElectronics->id, 'is_published' => true]);
-        $catAccessories = Category::create(['name' => 'Accessories', 'slug' => 'accessories', 'parent_id' => $catElectronics->id, 'is_published' => true]);
+        // 4. Categorii (aliniate cu tematica construcțiilor Metal-ROM)
+        $catConstructii      = Category::create(['name' => 'Construcții', 'slug' => 'constructii', 'is_published' => true]);
+        $catGipsCarton       = Category::create(['name' => 'Gips Carton', 'slug' => 'gips-carton', 'parent_id' => $catConstructii->id, 'is_published' => true]);
+        $catProfileMetalice  = Category::create(['name' => 'Profile Metalice', 'slug' => 'profile-metalice', 'parent_id' => $catConstructii->id, 'is_published' => true]);
+        $catArmaturi         = Category::create(['name' => 'Armături & Oțel', 'slug' => 'armaturi-otel', 'parent_id' => $catConstructii->id, 'is_published' => true]);
+        $catPlaseSudate      = Category::create(['name' => 'Plase Sudate', 'slug' => 'plase-sudate', 'parent_id' => $catConstructii->id, 'is_published' => true]);
+        $catSudura           = Category::create(['name' => 'Sudură', 'slug' => 'sudura', 'parent_id' => $catConstructii->id, 'is_published' => true]);
+        $catFeronerie        = Category::create(['name' => 'Feronerie', 'slug' => 'feronerie', 'parent_id' => $catConstructii->id, 'is_published' => true]);
 
-        // 5. Products
-        
-        // Product A: Expensive Laptop (Apple)
-        $prodMacbook = Product::create([
-            'name' => 'MacBook Pro 16',
-            'slug' => 'macbook-pro-16',
-            'internal_code' => 'MBP16',
-            // 'sku' => 'MBP16-2024', // removed
-            'brand_id' => $brandApple->id,
-            'main_category_id' => $catLaptops->id,
-            'list_price' => 12000.00, // Base Price
-            'stock_qty' => 50,
-            'status' => 'published',
-            'visibility' => 'public',
-            'is_promo' => false,
-            'is_new' => true,
-            'tags' => ['premium', 'new'],
-            'unit_of_measure' => 'buc',
-            'vat_rate' => 19.00
-        ]);
-        $prodMacbook->categories()->attach([$catElectronics->id, $catLaptops->id]);
-
-        // Product B: Mid-range Phone (Samsung)
-        $prodGalaxy = Product::create([
-            'name' => 'Samsung Galaxy S24',
-            'slug' => 'samsung-galaxy-s24',
-            'internal_code' => 'SGS24',
-            // 'sku' => 'SGS24-BLK', // removed
-            'brand_id' => $brandSamsung->id,
-            'main_category_id' => $catElectronics->id,
-            'list_price' => 4000.00,
-            'stock_qty' => 100,
+        // 5. Produse (construcții)
+        $prodGipsCarton = Product::create([
+            'name' => 'Placă gips-carton 12.5mm',
+            'slug' => 'placa-gips-carton-12-5',
+            'internal_code' => 'PGC-12.5',
+            'brand_id' => $brandKnauf->id,
+            'main_category_id' => $catGipsCarton->id,
+            'list_price' => 25.50,
+            'stock_qty' => 240,
             'status' => 'published',
             'visibility' => 'public',
             'is_promo' => true,
-            'tags' => ['promo', 'bestseller'],
+            'is_new' => false,
+            'tags' => ['gips-carton', 'interior'],
+            'unit_of_measure' => 'buc',
             'vat_rate' => 19.00
         ]);
-        
-        // Product C: Accessory (Logitech Mouse) - Good for Free Item promo
-        $prodMouse = Product::create([
-            'name' => 'Logitech MX Master 3S',
-            'slug' => 'logitech-mx-master-3s',
-            'internal_code' => 'MXM3S',
-            // 'sku' => 'MXM3S-GRY', // removed
-            'brand_id' => $brandLogitech->id,
-            'main_category_id' => $catAccessories->id,
-            'list_price' => 500.00,
-            'stock_qty' => 200,
+        $prodGipsCarton->categories()->attach([$catConstructii->id, $catGipsCarton->id]);
+
+        $prodProfilUW50 = Product::create([
+            'name' => 'Profil metalic UW 50',
+            'slug' => 'profil-metalic-uw-50',
+            'internal_code' => 'UW-50',
+            'brand_id' => $brandSteelPro->id,
+            'main_category_id' => $catProfileMetalice->id,
+            'list_price' => 18.00,
+            'stock_qty' => 150,
             'status' => 'published',
             'visibility' => 'public',
+            'is_promo' => false,
+            'tags' => ['structuri', 'pereți'],
+            'unit_of_measure' => 'ml',
             'vat_rate' => 19.00
         ]);
-        
-        // Product D: Bulk Item (Cable)
-        $prodCable = Product::create([
-            'name' => 'USB-C Cable',
-            'slug' => 'usb-c-cable',
-            'internal_code' => 'CABLE1',
-            'brand_id' => $brandSamsung->id,
-            'main_category_id' => $catAccessories->id,
-            'list_price' => 50.00,
-            'stock_qty' => 1000,
+        $prodProfilUW50->categories()->attach([$catConstructii->id, $catProfileMetalice->id]);
+
+        $prodPlasaSudata4mm = Product::create([
+            'name' => 'Plasă sudată 4mm',
+            'slug' => 'plasa-sudata-4mm',
+            'internal_code' => 'PLS-4',
+            'brand_id' => $brandMetalRom->id,
+            'main_category_id' => $catPlaseSudate->id,
+            'list_price' => 120.00,
+            'stock_qty' => 500,
             'status' => 'published',
             'visibility' => 'public',
+            'tags' => ['armare', 'beton'],
+            'unit_of_measure' => 'mp',
             'vat_rate' => 19.00
         ]);
+        $prodPlasaSudata4mm->categories()->attach([$catConstructii->id, $catPlaseSudate->id]);
 
-        // 6. Promotions - COVERING ALL TYPES
+        $prodTeavaRect = Product::create([
+            'name' => 'Țeavă rectangulară 40x20',
+            'slug' => 'teava-rectangulara-40x20',
+            'internal_code' => 'TR-40x20',
+            'brand_id' => $brandSteelPro->id,
+            'main_category_id' => $catArmaturi->id,
+            'list_price' => 35.00,
+            'stock_qty' => 800,
+            'status' => 'published',
+            'visibility' => 'public',
+            'tags' => ['structural', 'metal'],
+            'unit_of_measure' => 'ml',
+            'vat_rate' => 19.00
+        ]);
+        $prodTeavaRect->categories()->attach([$catConstructii->id, $catArmaturi->id]);
 
-        // Type 1: Simple Discount Percent on Product (10% off MacBook)
+        $prodSuruburi25 = Product::create([
+            'name' => 'Șuruburi gips-carton 25mm (cutie)',
+            'slug' => 'suruburi-gips-carton-25mm',
+            'internal_code' => 'SUR-25',
+            'brand_id' => $brandHQS->id,
+            'main_category_id' => $catFeronerie->id,
+            'list_price' => 55.50,
+            'stock_qty' => 1200,
+            'status' => 'published',
+            'visibility' => 'public',
+            'tags' => ['feronerie', 'gips-carton'],
+            'unit_of_measure' => 'cutie',
+            'vat_rate' => 19.00
+        ]);
+        $prodSuruburi25->categories()->attach([$catConstructii->id, $catFeronerie->id]);
+
+        // 6. Promoții - ACOPERĂ TOATE TIPURILE (tematică construcții)
+
+        // Tip 1: Discount procentual pe categorie (10% Gips Carton)
         Promotion::create([
-            'name' => '10% Discount MacBook',
-            'slug' => 'promo-macbook-10',
+            'name' => '10% Reducere Gips Carton',
+            'slug' => 'promo-gips-carton-10',
             'status' => 'active',
             'start_at' => now()->subDays(1),
             'end_at' => now()->addDays(30),
-            // 'priority' => 10,
-            'applies_to' => 'products',
+            'applies_to' => 'categories',
             'type' => 'standard',
             'value_type' => 'percent',
             'value' => 10.00,
             'customer_type' => 'both',
-        ])->products()->attach($prodMacbook->id);
+        ])->categories()->attach($catGipsCarton->id);
 
-        // Type 2: Fixed Discount Value on Product (200 RON off Galaxy)
+        // Tip 2: Discount valoric fix pe produs (150 RON Țeavă rectangulară)
         Promotion::create([
-            'name' => '200 RON Discount Galaxy',
-            'slug' => 'promo-galaxy-200',
+            'name' => '150 RON Discount Țeavă 40x20',
+            'slug' => 'promo-teava-150',
             'status' => 'active',
             'start_at' => now()->subDays(1),
             'end_at' => now()->addDays(30),
-            // 'priority' => 20,
             'applies_to' => 'products',
             'type' => 'standard',
             'value_type' => 'fixed_amount',
-            'value' => 200.00,
+            'value' => 150.00,
             'customer_type' => 'both',
-        ])->products()->attach($prodGalaxy->id);
+        ])->products()->attach($prodTeavaRect->id);
 
-        // Type 3: Category Discount (15% off Accessories)
+        // Tip 3: Discount pe brand (5% SteelPro)
         Promotion::create([
-            'name' => '15% Off Accessories',
-            'slug' => 'promo-acc-15',
+            'name' => '5% Reducere SteelPro',
+            'slug' => 'promo-steelpro-5',
             'status' => 'active',
             'start_at' => now()->subDays(1),
             'end_at' => now()->addDays(30),
-            // 'priority' => 5, // Lower priority than specific product promos
-            'applies_to' => 'categories',
-            'type' => 'standard',
-            'value_type' => 'percent',
-            'value' => 15.00,
-            'customer_type' => 'both',
-        ])->categories()->attach($catAccessories->id);
-
-        // Type 4: Brand Discount (5% off Apple - overlaps with MacBook promo, priority matters)
-        Promotion::create([
-            'name' => '5% Off Apple Brand',
-            'slug' => 'promo-apple-5',
-            'status' => 'active',
-            'start_at' => now()->subDays(1),
-            'end_at' => now()->addDays(30),
-            // 'priority' => 1, // Lowest priority
             'applies_to' => 'brands',
             'type' => 'standard',
             'value_type' => 'percent',
             'value' => 5.00,
             'customer_type' => 'both',
-        ])->brands()->attach($brandApple->id);
+        ])->brands()->attach($brandSteelPro->id);
 
-        // Type 5: Cart Threshold (Min Cart Total) -> 100 RON Discount
+        // Tip 4: Prag coș (100 RON reducere > 5000 RON)
         Promotion::create([
             'name' => '100 RON Off Orders > 5000',
             'slug' => 'promo-cart-5000',
             'status' => 'active',
             'start_at' => now()->subDays(1),
             'end_at' => now()->addDays(30),
-            // 'priority' => 50,
             'applies_to' => 'all', // Cart level usually implies applies to all or checked via logic
             'min_cart_total' => 5000.00,
             'type' => 'standard',
@@ -342,39 +345,36 @@ class TestScenarioSeeder extends Seeder
             'customer_type' => 'both',
         ]);
 
-        // Type 6: Quantity Trigger (Buy 5 Cables, get 20% off)
+        // Tip 5: Discount volum (cumpără minim 20 mp plasă, 15% reducere)
         Promotion::create([
-            'name' => 'Buy 5 Cables Get 20% Off',
-            'slug' => 'promo-cables-bulk',
+            'name' => 'Volum: Plasă sudată -15% la cantitate',
+            'slug' => 'promo-plasa-volum-15',
             'status' => 'active',
             'start_at' => now()->subDays(1),
             'end_at' => now()->addDays(30),
-            // 'priority' => 30,
             'applies_to' => 'products',
-            'min_qty_per_product' => 5,
+            'min_qty_per_product' => 20,
             'type' => 'volume',
             'value_type' => 'percent',
-            'value' => 20.00,
+            'value' => 15.00,
             'customer_type' => 'both',
-        ])->products()->attach($prodCable->id);
+        ])->products()->attach($prodPlasaSudata4mm->id);
 
-        // Type 7: Free Item (Buy Laptop, Get Mouse Free) - Implementation depends on service logic
-        // Assuming 'free_item' bonus type logic exists or we simulate it
+        // Tip 6: Produs cadou (cumperi Profile UW, primești șuruburi cadou)
         Promotion::create([
-            'name' => 'Free Mouse with Laptop',
-            'slug' => 'promo-free-mouse',
+            'name' => 'Cadou: Șuruburi la Profile UW',
+            'slug' => 'promo-cadou-suruburi',
             'status' => 'active',
             'start_at' => now()->subDays(1),
             'end_at' => now()->addDays(30),
-            // 'priority' => 40,
             'applies_to' => 'products',
-            'min_qty_per_product' => 1, // Buy 1 Laptop
+            'min_qty_per_product' => 20,
             'type' => 'gift',
-            'value_type' => 'fixed_amount',
-            'value' => 0,
-            'settings' => ['gift_product_id' => $prodMouse->id, 'gift_qty' => 1],
+            'value_type' => 'percent',
+            'value' => 100,
+            'settings' => ['gift_product_id' => $prodSuruburi25->id, 'gift_qty' => 1],
             'customer_type' => 'both',
-        ])->products()->attach($prodMacbook->id);
+        ])->products()->attach($prodProfilUW50->id);
 
         // 7. Coupons
         Coupon::create([
@@ -399,5 +399,62 @@ class TestScenarioSeeder extends Seeder
         ]);
 
         $this->command->info('Test scenario seeded successfully!');
+
+        // 8. Discount Rules (acoperire: global, grup, rol, categorie, produs)
+        DiscountRule::truncate();
+        DiscountRule::create([
+            'name' => 'Limită globală discount',
+            'rule_type' => 'max_percent',
+            'target_type' => 'global',
+            'target_id' => null,
+            'limit_percent' => 20.00,
+            'apply_to_total' => true,
+            'active' => true,
+        ]);
+        DiscountRule::create([
+            'name' => 'Distribuitori B2B până la 25%',
+            'rule_type' => 'max_percent',
+            'target_type' => 'customer_group',
+            'target_id' => $groupB2B->id,
+            'limit_percent' => 25.00,
+            'apply_to_total' => true,
+            'active' => true,
+        ]);
+        DiscountRule::create([
+            'name' => 'Agent max 10%',
+            'rule_type' => 'max_percent',
+            'target_type' => 'role',
+            'target_id' => $agentRole?->id,
+            'limit_percent' => 10.00,
+            'apply_to_total' => false,
+            'active' => true,
+        ]);
+        DiscountRule::create([
+            'name' => 'Director max 30%',
+            'rule_type' => 'max_percent',
+            'target_type' => 'role',
+            'target_id' => $directorRole?->id,
+            'limit_percent' => 30.00,
+            'apply_to_total' => true,
+            'active' => true,
+        ]);
+        DiscountRule::create([
+            'name' => 'Gips Carton max 20%',
+            'rule_type' => 'max_percent',
+            'target_type' => 'category',
+            'target_id' => $catGipsCarton->id,
+            'limit_percent' => 20.00,
+            'apply_to_total' => false,
+            'active' => true,
+        ]);
+        DiscountRule::create([
+            'name' => 'Profil UW max 15%',
+            'rule_type' => 'max_percent',
+            'target_type' => 'product',
+            'target_id' => $prodProfilUW50->id,
+            'limit_percent' => 15.00,
+            'apply_to_total' => false,
+            'active' => true,
+        ]);
     }
 }

@@ -41,8 +41,8 @@
             MB
           </div>
           <div class="d-flex flex-column lh-1">
-            <span class="small text-muted">B2B materiale profesionale</span>
-            <span class="fw-semibold">MB2B</span>
+            <span class="brand-tagline">Metalrom Industry</span>
+            <span class="brand-name">MB2B</span>
           </div>
         </div>
 

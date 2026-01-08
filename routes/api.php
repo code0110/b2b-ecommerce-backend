@@ -382,6 +382,8 @@ Route::middleware(['auth:sanctum', 'role:admin,sales_agent,sales_director'])->pr
     Route::put('orders/{order}', [\App\Http\Controllers\Admin\OrderController::class, 'update']);
     Route::post('orders/{order}/status', [\App\Http\Controllers\Admin\OrderController::class, 'updateStatus']);
     Route::post('orders/{order}/payment-status', [\App\Http\Controllers\Admin\OrderController::class, 'updatePaymentStatus']);
+    Route::post('orders/{order}/approve', [\App\Http\Controllers\Admin\OrderController::class, 'approve']);
+    Route::post('orders/{order}/reject', [\App\Http\Controllers\Admin\OrderController::class, 'reject']);
 
     // Offers (Agent/Admin/Director)
     Route::get('offers', [\App\Http\Controllers\Admin\OfferController::class, 'index']);

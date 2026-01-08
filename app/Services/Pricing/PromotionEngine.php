@@ -6,6 +6,7 @@ use App\Models\Promotion;
 use App\Models\Product;
 use App\Models\Cart;
 use App\Models\Customer;
+use App\Models\CustomerGroup;
 use App\Models\ContractPrice;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Carbon;
@@ -42,12 +43,11 @@ class PromotionEngine
             // REMOVED orderBy('priority') as requested. Logic will handle "Best Deal".
 
         // Segmentare B2B/B2C
-        if ($customer) {
-            if ($customer->type === 'b2b') {
-                $query->whereIn('customer_type', ['b2b', 'both']);
-            } else {
-                $query->whereIn('customer_type', ['b2c', 'both']);
-            }
+        if ($customer && $customer->type === 'b2b') {
+            $query->whereIn('customer_type', ['b2b', 'both']);
+        } else {
+            // Guest or B2C customer
+            $query->whereIn('customer_type', ['b2c', 'both']);
         }
 
         // Logged-in only
@@ -77,6 +77,22 @@ class PromotionEngine
         $promotions = $query
             ->with(['categories', 'brands', 'products', 'tiers'])
             ->get();
+
+        // Check min_cart_total if cart is present
+        if ($cart) {
+            $cartSubtotal = $cart->items->sum(function($item) {
+                 // Ensure product is available
+                 if (!$item->product) return 0;
+                 return ($item->product->price_override ?? $item->product->list_price) * $item->quantity;
+            });
+
+            $promotions = $promotions->filter(function($promo) use ($cartSubtotal) {
+                if (!empty($promo->min_cart_total) && $cartSubtotal < $promo->min_cart_total) {
+                    return false;
+                }
+                return true;
+            });
+        }
 
         // Merge manually attached promotions from Cart
         if ($cart) {
@@ -320,19 +336,41 @@ class PromotionEngine
 
     public function getBasePrice(Product $product, ?Customer $customer = null): float
     {
-        // 1. Check for Contract Price (B2B)
         if ($customer) {
-            $contractPrice = ContractPrice::where('customer_id', $customer->id)
+            $customerContractPrice = ContractPrice::where('customer_id', $customer->id)
                 ->where('product_id', $product->id)
                 ->first();
-            
-            if ($contractPrice) {
-                return (float) $contractPrice->price;
+
+            if ($customerContractPrice) {
+                return (float) $customerContractPrice->price;
+            }
+
+            if ($customer->group_id) {
+                $groupContractPrice = ContractPrice::where('customer_group_id', $customer->group_id)
+                    ->where('product_id', $product->id)
+                    ->first();
+
+                if ($groupContractPrice) {
+                    return (float) $groupContractPrice->price;
+                }
             }
         }
 
-        // 2. Default Product Price
-        return (float) $product->list_price;
+        $basePrice = (float) ($product->price_override ?? 0);
+        if ($basePrice <= 0) {
+            $basePrice = (float) ($product->list_price ?? 0);
+        }
+
+        if ($customer && $customer->group_id) {
+            $group = CustomerGroup::find($customer->group_id);
+            $groupDiscountPercent = (float) ($group?->default_discount_percent ?? 0);
+
+            if ($groupDiscountPercent > 0) {
+                $basePrice = $basePrice * (1 - ($groupDiscountPercent / 100));
+            }
+        }
+
+        return (float) $basePrice;
     }
 
     public function promotionAppliesToProduct(Promotion $promotion, Product $product): bool

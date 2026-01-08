@@ -6,19 +6,26 @@
         class="btn btn-link text-decoration-none ps-0"
         @click="goBack"
       >
-        ← Înapoi la istoricul de comenzi
+        ← Înapoi la listă
       </button>
       <div class="small text-muted" v-if="frontCustomerName">
-        Client activ:
-        <strong>{{ frontCustomerName }}</strong>
-        <span v-if="frontClientType" class="badge bg-primary ms-1">
-          {{ frontClientType }}
-        </span>
+        Client: <strong>{{ frontCustomerName }}</strong>
       </div>
     </div>
 
-    <div v-if="!order" class="alert alert-warning">
-      Comanda nu a fost găsită în setul de date demo.
+    <div v-if="loading" class="text-center py-5">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Se încarcă...</span>
+      </div>
+      <p class="mt-2 text-muted">Se încarcă detaliile comenzii...</p>
+    </div>
+
+    <div v-else-if="error" class="alert alert-danger">
+      {{ error }}
+    </div>
+
+    <div v-else-if="!order" class="alert alert-warning">
+      Comanda nu a fost găsită.
     </div>
 
     <div v-else class="row g-3">
@@ -27,9 +34,9 @@
         <div class="card shadow-sm mb-3">
           <div class="card-header d-flex justify-content-between align-items-center">
             <div>
-              <h4 class="mb-0">Comanda {{ order.code }}</h4>
+              <h4 class="mb-0">Comanda {{ order.order_number }}</h4>
               <div class="text-muted small">
-                Plasată în data de {{ order.date }}
+                Plasată în data de {{ formatDate(order.created_at) }}
               </div>
             </div>
             <div class="text-end small">
@@ -37,21 +44,13 @@
                 <span
                   class="badge"
                   :class="{
-                    'bg-warning text-dark': order.status === 'in_procesare',
-                    'bg-info text-dark': order.status === 'in_livrare',
-                    'bg-success': order.status === 'livrata',
-                    'bg-secondary': order.status === 'anulata'
+                    'bg-warning text-dark': order.status === 'pending' || order.status === 'processing',
+                    'bg-info text-dark': order.status === 'shipping' || order.status === 'in_livrare',
+                    'bg-success': order.status === 'completed' || order.status === 'livrata',
+                    'bg-secondary': order.status === 'cancelled' || order.status === 'anulata'
                   }"
                 >
-                  {{
-                    order.status === 'in_procesare'
-                      ? 'În procesare'
-                      : order.status === 'in_livrare'
-                        ? 'În livrare'
-                        : order.status === 'livrata'
-                          ? 'Livrată'
-                          : 'Anulată'
-                  }}
+                  {{ formatStatus(order.status) }}
                 </span>
               </div>
               <div>
@@ -59,185 +58,159 @@
                 <span
                   class="badge"
                   :class="{
-                    'bg-danger': order.paymentStatus === 'neplatita',
-                    'bg-warning text-dark': order.paymentStatus === 'in_asteptare',
-                    'bg-success': order.paymentStatus === 'platita',
-                    'bg-info text-dark': order.paymentStatus === 'ramburs'
+                    'bg-danger': order.payment_status === 'unpaid' || order.payment_status === 'neplatita',
+                    'bg-warning text-dark': order.payment_status === 'pending' || order.payment_status === 'in_asteptare',
+                    'bg-success': order.payment_status === 'paid' || order.payment_status === 'platita',
+                    'bg-info text-dark': order.payment_status === 'refunded'
                   }"
                 >
-                  {{
-                    order.paymentStatus === 'neplatita'
-                      ? 'Neplătită'
-                      : order.paymentStatus === 'in_asteptare'
-                        ? 'Plată în așteptare'
-                        : order.paymentStatus === 'platita'
-                          ? 'Plătită'
-                          : 'Ramburs'
-                  }}
+                  {{ formatPaymentStatus(order.payment_status) }}
                 </span>
               </div>
             </div>
           </div>
+          
           <div class="card-body small">
-            <h6 class="text-uppercase text-muted mb-2">Produse comandate (demo)</h6>
-            <div class="table-responsive">
-              <table class="table table-sm align-middle mb-0">
-                <thead>
-                  <tr>
-                    <th>Produs</th>
-                    <th style="width: 100px;" class="text-end">Cantitate</th>
-                    <th style="width: 140px;" class="text-end">Preț unit. (RON)</th>
-                    <th style="width: 140px;" class="text-end">Total linie (RON)</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr v-for="(line, idx) in order.lines" :key="idx">
-                    <td>
-                      <div class="fw-semibold">{{ line.productName }}</div>
-                      <div class="text-muted">
-                        Cod: {{ line.internalCode }} • {{ line.brand }} • {{ line.category }}
-                      </div>
-                    </td>
-                    <td class="text-end">{{ line.quantity }}</td>
-                    <td class="text-end">
-                      {{ line.unitPrice.toLocaleString('ro-RO', { minimumFractionDigits: 2 }) }}
-                    </td>
-                    <td class="text-end">
-                      {{ (line.unitPrice * line.quantity).toLocaleString('ro-RO', { minimumFractionDigits: 2 }) }}
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
+            <h6 class="text-uppercase text-muted mb-2">Produse comandate</h6>
+            <div class="vstack gap-2">
+              <div
+                v-for="item in order.items"
+                :key="item.id"
+                class="border rounded p-2"
+              >
+                <div class="d-flex justify-content-between align-items-start">
+                  <div class="me-3">
+                    <div class="fw-semibold">{{ item.product_name || item.product?.name }}</div>
+                    <div class="text-muted small">
+                      Cod: {{ item.sku || item.product?.sku }}
+                    </div>
+                  </div>
+                  <div class="text-end">
+                    <div class="small text-muted">Cantitate</div>
+                    <div class="fw-semibold">{{ item.quantity }}</div>
+                  </div>
+                </div>
+                <div class="d-flex justify-content-between mt-2">
+                  <div class="small text-muted">Preț unit. (RON)</div>
+                  <div class="fw-semibold">{{ formatMoney(item.unit_price) }}</div>
+                </div>
+                <div class="d-flex justify-content-between">
+                  <div class="small text-muted">Total linie (RON)</div>
+                  <div class="fw-bold">{{ formatMoney(item.total) }}</div>
+                </div>
+              </div>
             </div>
-
-            <hr />
-
+          </div>
+          <div class="card-footer bg-white">
             <div class="row">
               <div class="col-md-6">
-                <h6 class="text-uppercase text-muted mb-2">Rezumat valori</h6>
-                <dl class="row mb-0">
-                  <dt class="col-6">Valoare produse</dt>
-                  <dd class="col-6 text-end">
-                    {{ order.subtotal.toLocaleString('ro-RO', { minimumFractionDigits: 2 }) }}
-                    RON
-                  </dd>
-                  <dt class="col-6">Discount promoțional</dt>
-                  <dd class="col-6 text-end text-success">
-                    - {{ order.discount.toLocaleString('ro-RO', { minimumFractionDigits: 2 }) }}
-                    RON
-                  </dd>
-                  <dt class="col-6">Transport</dt>
-                  <dd class="col-6 text-end">
-                    {{ order.shipping.toLocaleString('ro-RO', { minimumFractionDigits: 2 }) }}
-                    RON
-                  </dd>
-                  <dt class="col-6">Total comandă</dt>
-                  <dd class="col-6 text-end fw-semibold">
-                    {{ order.total.toLocaleString('ro-RO', { minimumFractionDigits: 2 }) }}
-                    RON
-                  </dd>
-                </dl>
+                <!-- Notes or other info -->
               </div>
               <div class="col-md-6">
-                <h6 class="text-uppercase text-muted mb-2">Flux retur (RMA) – demo</h6>
-                <p class="mb-2">
-                  Într-o implementare reală, aici ar apărea butoane pentru a iniția
-                  un retur pe produs sau pe întreaga comandă, cu urmărirea statusului
-                  (cerere, aprobat, în curs, finalizat).
-                </p>
-                <button
-                  type="button"
-                  class="btn btn-outline-secondary btn-sm"
-                  @click="startDemoReturn"
-                >
-                  Inițiază retur demo
-                </button>
+                <div class="d-flex justify-content-between mb-1">
+                  <span>Subtotal:</span>
+                  <span>{{ formatMoney(order.subtotal) }} RON</span>
+                </div>
+                <div class="d-flex justify-content-between mb-1 text-danger" v-if="order.discount_total > 0">
+                  <span>Reducere:</span>
+                  <span>-{{ formatMoney(order.discount_total) }} RON</span>
+                </div>
+                <div class="d-flex justify-content-between mb-1">
+                  <span>Transport:</span>
+                  <span>{{ formatMoney(order.shipping_total) }} RON</span>
+                </div>
+                <div class="d-flex justify-content-between fw-bold border-top pt-2 mt-2 fs-6">
+                  <span>Total General:</span>
+                  <span>{{ formatMoney(order.grand_total) }} RON</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Adrese -->
+        <div class="row g-3">
+          <div class="col-md-6">
+            <div class="card shadow-sm h-100">
+              <div class="card-header bg-light py-2">
+                <small class="fw-bold text-uppercase">Adresă de Livrare</small>
+              </div>
+              <div class="card-body small">
+                <div v-if="order.shipping_address">
+                  <strong>{{ order.shipping_address.contact_name }}</strong><br>
+                  {{ order.shipping_address.address_line1 }}<br>
+                  <span v-if="order.shipping_address.address_line2">{{ order.shipping_address.address_line2 }}<br></span>
+                  {{ order.shipping_address.city }}, {{ order.shipping_address.county }}<br>
+                  {{ order.shipping_address.postal_code }}<br>
+                  <div v-if="order.shipping_address.phone" class="mt-2">
+                    <i class="bi bi-telephone me-1"></i> {{ order.shipping_address.phone }}
+                  </div>
+                </div>
+                <div v-else class="text-muted fst-italic">
+                  Nu există adresă de livrare specificată.
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="card shadow-sm h-100">
+              <div class="card-header bg-light py-2">
+                <small class="fw-bold text-uppercase">Adresă de Facturare</small>
+              </div>
+              <div class="card-body small">
+                <div v-if="order.billing_address">
+                   <strong>{{ order.billing_address.contact_name || order.customer?.name }}</strong><br>
+                   {{ order.billing_address.address_line1 }}<br>
+                   <span v-if="order.billing_address.address_line2">{{ order.billing_address.address_line2 }}<br></span>
+                   {{ order.billing_address.city }}, {{ order.billing_address.county }}<br>
+                   {{ order.billing_address.postal_code }}<br>
+                   <div v-if="order.billing_address.cif" class="mt-2">
+                     CIF: {{ order.billing_address.cif }}
+                   </div>
+                   <div v-if="order.billing_address.reg_com">
+                     Reg. Com: {{ order.billing_address.reg_com }}
+                   </div>
+                </div>
+                <div v-else class="text-muted fst-italic">
+                   Aceeași cu adresa de livrare sau nespecificată.
+                </div>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- Col dreapta: adrese, livrare, plată -->
+      <!-- Col dreapta: info extra / actiuni -->
       <div class="col-lg-4">
-        <div class="card shadow-sm mb-3 small">
-          <div class="card-header py-2">
-            <strong class="small text-uppercase">Adresă livrare</strong>
-          </div>
+        <div class="card shadow-sm mb-3">
           <div class="card-body">
-            <div>{{ order.shippingAddress.line1 }}</div>
-            <div>{{ order.shippingAddress.city }}, {{ order.shippingAddress.county }}</div>
+            <h6 class="card-title">Sumar client</h6>
+            <div v-if="order.customer">
+              <div class="mb-2">
+                <strong>{{ order.customer.name }}</strong>
+              </div>
+              <div class="small text-muted mb-2">
+                {{ order.customer.email }}<br>
+                {{ order.customer.phone }}
+              </div>
+              <div class="small" v-if="order.customer.cif">
+                CIF: {{ order.customer.cif }}
+              </div>
+            </div>
           </div>
         </div>
 
-        <div class="card shadow-sm mb-3 small">
-          <div class="card-header py-2">
-            <strong class="small text-uppercase">Adresă facturare</strong>
-          </div>
+        <div class="card shadow-sm">
           <div class="card-body">
-            <div>{{ order.billingAddress.line1 }}</div>
-            <div>{{ order.billingAddress.city }}, {{ order.billingAddress.county }}</div>
-          </div>
-        </div>
-
-        <div class="card shadow-sm mb-3 small">
-          <div class="card-header py-2">
-            <strong class="small text-uppercase">Livrare & plată</strong>
-          </div>
-          <div class="card-body">
-            <dl class="row mb-0">
-              <dt class="col-5">Livrare</dt>
-              <dd class="col-7">
-                {{ order.shippingMethodLabel }}
-              </dd>
-
-              <dt class="col-5">Plată</dt>
-              <dd class="col-7">
-                {{ order.paymentMethodLabel }}
-              </dd>
-
-              <dt class="col-5">Tip client</dt>
-              <dd class="col-7">
-                <span
-                  class="badge"
-                  :class="order.clientType === 'B2B' ? 'bg-primary' : 'bg-secondary'"
-                >
-                  {{ order.clientType }}
-                </span>
-              </dd>
-
-              <dt class="col-5">Mod plasare</dt>
-              <dd class="col-7">
-                <span v-if="order.isImpersonated">
-                  Comandă plasată în numele clientului (impersonare).
-                </span>
-                <span v-else>
-                  Comandă plasată direct din contul clientului.
-                </span>
-              </dd>
-            </dl>
-          </div>
-        </div>
-
-        <div class="card shadow-sm small">
-          <div class="card-header py-2">
-            <strong class="small text-uppercase">Acțiuni rapide</strong>
-          </div>
-          <div class="card-body">
-            <button
-              type="button"
-              class="btn btn-sm btn-outline-primary w-100 mb-2"
-              @click="repeatOrder(order)"
-            >
-              Comandă din nou
-            </button>
-            <button
-              type="button"
-              class="btn btn-sm btn-outline-secondary w-100"
-              @click="downloadInvoice"
-            >
-              Descarcă factura (demo)
-            </button>
+            <h6 class="card-title">Acțiuni rapide</h6>
+            <div class="d-grid gap-2">
+              <button class="btn btn-outline-primary btn-sm" @click="downloadInvoice">
+                <i class="bi bi-file-earmark-pdf me-2"></i> Descarcă Factura
+              </button>
+              <button class="btn btn-outline-secondary btn-sm" @click="repeatOrder">
+                <i class="bi bi-arrow-repeat me-2"></i> Comandă din nou
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -246,134 +219,168 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/store/auth'
+import { fetchOrder } from '@/services/account/orders'
+import { adminApi } from '@/services/http'
+import api from '@/services/http'
+import { fetchInvoices } from '@/services/account/documents'
 
 const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
 
-const frontClientType = computed(() => {
-  if (authStore.impersonatedCustomer?.clientType) {
-    return authStore.impersonatedCustomer.clientType
-  }
-  if (authStore.user?.role === 'b2b') return 'B2B'
-  if (authStore.user?.role === 'b2c') return 'B2C'
-  return null
-})
+const order = ref(null)
+const loading = ref(true)
+const error = ref('')
+const processing = ref(false)
 
 const frontCustomerName = computed(() => {
-  if (authStore.impersonatedCustomer?.name) {
-    return authStore.impersonatedCustomer.name
-  }
-  if (authStore.user && (authStore.user.role === 'b2b' || authStore.user.role === 'b2c')) {
-    return authStore.user.name
-  }
-  return null
+  if (order.value?.customer?.name) return order.value.customer.name
+  if (authStore.user?.name) return authStore.user.name
+  return 'Client'
 })
 
-const demoOrders = [
-  {
-    id: 1,
-    code: 'CMD-1001',
-    date: '2025-02-18',
-    clientType: 'B2B',
-    status: 'in_procesare',
-    paymentStatus: 'in_asteptare',
-    subtotal: 26000.5,
-    discount: 1500.0,
-    shipping: 0,
-    total: 24500.5,
-    isImpersonated: true,
-    shippingMethodLabel: 'Livrare cu flotă proprie',
-    paymentMethodLabel: 'Condiții contractuale B2B',
-    shippingAddress: {
-      line1: 'Str. Fabricii nr. 10',
-      city: 'București',
-      county: 'Ilfov'
-    },
-    billingAddress: {
-      line1: 'Str. Depozitelor nr. 5',
-      city: 'București',
-      county: 'Ilfov'
-    },
-    lines: [
-      {
-        productName: 'Ciment Portland 40kg',
-        internalCode: 'PRD-001',
-        brand: 'BrandX',
-        category: 'Materiale de construcții',
-        quantity: 200,
-        unitPrice: 45.0
-      },
-      {
-        productName: 'Aditiv beton',
-        internalCode: 'PRD-002',
-        brand: 'BrandY',
-        category: 'Materiale de construcții',
-        quantity: 50,
-        unitPrice: 30.5
-      }
-    ]
-  },
-  {
-    id: 3,
-    code: 'CMD-0999',
-    date: '2025-02-10',
-    clientType: 'B2C',
-    status: 'livrata',
-    paymentStatus: 'ramburs',
-    subtotal: 520.99,
-    discount: 0,
-    shipping: 0,
-    total: 520.99,
-    isImpersonated: false,
-    shippingMethodLabel: 'Curier rapid',
-    paymentMethodLabel: 'Ramburs la livrare',
-    shippingAddress: {
-      line1: 'Str. Exemplu nr. 3',
-      city: 'Cluj-Napoca',
-      county: 'Cluj'
-    },
-    billingAddress: {
-      line1: 'Str. Exemplu nr. 3',
-      city: 'Cluj-Napoca',
-      county: 'Cluj'
-    },
-    lines: [
-      {
-        productName: 'Set scule mână',
-        internalCode: 'PRD-020',
-        brand: 'BrandTool',
-        category: 'Unelte',
-        quantity: 1,
-        unitPrice: 520.99
-      }
-    ]
-  }
-]
+const isDirector = computed(() => {
+  return authStore.user?.role === 'sales_director'
+})
 
-const orderId = computed(() => Number(route.params.id))
-const order = computed(() => demoOrders.find((o) => o.id === orderId.value) || null)
+const loadOrder = async () => {
+  loading.value = true
+  error.value = ''
+  try {
+    const data = await fetchOrder(route.params.id)
+    order.value = data
+  } catch (e) {
+    console.error('Failed to load order:', e)
+    error.value = 'Nu s-a putut încărca comanda. ' + (e.response?.data?.message || '')
+  } finally {
+    loading.value = false
+  }
+}
+
+const formatMoney = (val) => {
+  return Number(val || 0).toLocaleString('ro-RO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+}
+
+const formatDate = (dateStr) => {
+  if (!dateStr) return '-'
+  return new Date(dateStr).toLocaleDateString('ro-RO', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric'
+  })
+}
+
+const formatStatus = (status) => {
+  const map = {
+    'pending': 'În așteptare',
+    'processing': 'În procesare',
+    'shipping': 'În livrare',
+    'completed': 'Finalizată',
+    'cancelled': 'Anulată',
+    'on_hold': 'În așteptare',
+    'awaiting_payment': 'Așteaptă plata'
+  }
+  return map[status] || status
+}
+
+const formatPaymentStatus = (status) => {
+  const map = {
+    'paid': 'Plătită',
+    'unpaid': 'Neplătită',
+    'pending': 'În așteptare',
+    'refunded': 'Rambursată',
+    'failed': 'Eșuată'
+  }
+  return map[status] || status
+}
+
+const approveOrder = async () => {
+  if (!confirm('Sunteți sigur că doriți să aprobați această derogare?')) return
+  
+  processing.value = true
+  try {
+    await adminApi.post(`/orders/${order.value.id}/approve`)
+    // Reload order to update status
+    await loadOrder()
+    alert('Comanda a fost aprobată cu succes.')
+  } catch (e) {
+    alert('Eroare la aprobare: ' + (e.response?.data?.message || e.message))
+  } finally {
+    processing.value = false
+  }
+}
+
+const rejectOrder = async () => {
+  if (!confirm('Sunteți sigur că doriți să respingeți această derogare? Comanda va fi anulată.')) return
+  
+  processing.value = true
+  try {
+    await adminApi.post(`/orders/${order.value.id}/reject`)
+    await loadOrder()
+    alert('Comanda a fost respinsă.')
+  } catch (e) {
+    alert('Eroare la respingere: ' + (e.response?.data?.message || e.message))
+  } finally {
+    processing.value = false
+  }
+}
 
 const goBack = () => {
   router.push('/account/orders')
 }
 
-const repeatOrder = (order) => {
-  window.alert(
-    `Demo: comanda ${order.code} ar reumple coșul cu produsele originale în implementarea reală.`
-  )
+const repeatOrder = async () => {
+  if (!order.value) return
+  processing.value = true
+  try {
+    const items = (order.value.items || []).map(i => ({
+      product_id: i.product_id || i.product?.id,
+      quantity: i.quantity
+    })).filter(i => i.product_id && i.quantity > 0)
+
+    if (!items.length) {
+      alert('Nu există articole valide pentru a recrea coșul.')
+      return
+    }
+
+    await api.post('/quick-order/add-to-cart', { items })
+    router.push('/checkout')
+  } catch (e) {
+    alert('Eroare la recrearea coșului: ' + (e.response?.data?.message || e.message))
+  } finally {
+    processing.value = false
+  }
 }
 
-const downloadInvoice = () => {
-  window.alert('Demo: aici s-ar descărca PDF-ul facturii asociate acestei comenzi.')
+const downloadInvoice = async () => {
+  if (!order.value) return
+  processing.value = true
+  try {
+    const resp = await fetchInvoices()
+    const list = Array.isArray(resp) ? resp : (resp?.data || [])
+    const inv = list.find(x => x.order_id === order.value.id)
+
+    if (!inv) {
+      alert('Nu am găsit nicio factură asociată acestei comenzi.')
+      return
+    }
+
+    if (inv.pdf_url) {
+      window.open(inv.pdf_url, '_blank')
+    } else {
+      router.push('/account/invoices')
+    }
+  } catch (e) {
+    alert('Eroare la descărcarea facturii: ' + (e.response?.data?.message || e.message))
+  } finally {
+    processing.value = false
+  }
 }
 
-const startDemoReturn = () => {
-  window.alert(
-    'Demo: aici s-ar porni un flux de retur (RMA) la nivel de produs sau de comandă.'
-  )
-}
+onMounted(() => {
+  loadOrder()
+})
 </script>

@@ -61,10 +61,21 @@ class DirectorDashboardController extends Controller
             ->where('status', 'in_progress')
             ->count();
 
-        // 3. Pending Approvals (Offers)
-        $pendingApprovals = Offer::whereIn('agent_id', $agentIds)
+        // 3. Pending Approvals (Offers + Orders)
+        $pendingOffers = Offer::whereIn('agent_id', $agentIds)
             ->where('status', 'pending_approval')
             ->count();
+
+        $pendingOrders = Order::where('approval_status', 'pending')
+            ->whereHas('customer', function($q) use ($agentIds, $user) {
+                 $q->whereIn('agent_user_id', $agentIds);
+                 if (!$user->hasRole('admin')) {
+                     $q->orWhere('sales_director_user_id', $user->id);
+                 }
+            })
+            ->count();
+            
+        $pendingApprovals = $pendingOffers + $pendingOrders;
 
         return response()->json([
             'today_sales' => $todaySales,
@@ -72,7 +83,9 @@ class DirectorDashboardController extends Controller
             'today_visits' => $todayVisits,
             'active_visits' => $activeVisits,
             'agents_count' => count($agentIds),
-            'pending_approvals' => $pendingApprovals
+            'pending_approvals' => $pendingApprovals,
+            'pending_offers' => $pendingOffers,
+            'pending_orders' => $pendingOrders
         ]);
     }
 

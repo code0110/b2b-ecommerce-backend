@@ -971,11 +971,25 @@ const fetchCart = async () => {
         // but we could try to preserve manual inputs if we had a stable ID.
         
         items.value = backendItems.map(bi => {
-            const unitPrice = parseFloat(bi.unit_base_price || bi.unit_price);
-            const finalUnitPrice = parseFloat(bi.unit_final_price || bi.unit_price);
+            const listPrice = parseFloat(bi.product?.list_price || 0);
+            const unitPrice = listPrice > 0 ? listPrice : parseFloat(bi.unit_base_price || bi.unit_price);
+            
+            const finalLineTotal = parseFloat(bi.line_final_total || bi.line_total || bi.total);
+            const quantity = parseFloat(bi.quantity);
+            
             let discountPercent = 0;
-            if (unitPrice > 0 && finalUnitPrice < unitPrice) {
-                discountPercent = ((unitPrice - finalUnitPrice) / unitPrice) * 100;
+            if (unitPrice > 0 && quantity > 0) {
+                 const theoreticalTotal = unitPrice * quantity;
+                 if (finalLineTotal < theoreticalTotal) {
+                      const discount = ((theoreticalTotal - finalLineTotal) / theoreticalTotal) * 100;
+                      discountPercent = parseFloat(Math.max(0, discount).toFixed(2));
+                 }
+            } else {
+                 // Fallback if quantity is 0 or price invalid
+                 const finalUnitPrice = parseFloat(bi.unit_final_price || bi.unit_price);
+                 if (unitPrice > 0 && finalUnitPrice < unitPrice) {
+                    discountPercent = ((unitPrice - finalUnitPrice) / unitPrice) * 100;
+                 }
             }
 
             return {
@@ -990,7 +1004,7 @@ const fetchCart = async () => {
                 discount_percent: discountPercent, 
                 discount_value: 0,
                 cart_item_id: bi.id,
-                total: parseFloat(bi.line_final_total || bi.line_total || bi.total),
+                total: finalLineTotal,
                 applied_promotions: bi.applied_promotions || []
             };
         });

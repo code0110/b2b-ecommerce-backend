@@ -34,12 +34,12 @@
                 {{ p.code || p.sku }}
               </div>
               <div class="mt-auto">
-                <div v-if="p.promo_price" class="small text-muted mb-1">
-                  <span class="text-decoration-line-through me-1">
-                    {{ formatMoney(p.price || p.list_price || 0) }}
+                <div v-if="p.promo_price || p.price">
+                  <span v-if="p.list_price && p.list_price > (p.promo_price || p.price)" class="text-decoration-line-through text-muted small me-1">
+                    {{ formatMoney(p.list_price) }}
                   </span>
-                  <span class="fw-semibold">
-                    {{ formatMoney(p.promo_price) }} RON
+                  <span class="fw-semibold text-danger">
+                    {{ formatMoney(p.promo_price || p.price) }} RON
                   </span>
                 </div>
                 <div v-else class="fw-semibold mb-1">

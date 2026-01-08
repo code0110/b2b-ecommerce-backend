@@ -130,6 +130,7 @@ class PromotionPricingService
                 'is_promo'       => (bool) $product->is_promo,
             ],
             'appliedPromotion' => $pricing['applied_promotion'],
+            'list_price'       => (float) $product->list_price,
         ];
     }
 

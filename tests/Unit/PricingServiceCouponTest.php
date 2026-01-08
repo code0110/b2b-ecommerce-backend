@@ -22,7 +22,7 @@ class PricingServiceCouponTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->service = new PromotionPricingService();
+        $this->service = app(PromotionPricingService::class);
     }
 
     protected function createProduct($price = 100): Product
@@ -158,9 +158,8 @@ class PricingServiceCouponTest extends TestCase
              'slug' => 'promo-10',
              'status' => 'active',
              'applies_to' => 'all',
-             'bonus_type' => 'discount_percent',
-             'discount_percent' => 10,
-             'priority' => 1,
+             'value_type' => 'percent',
+             'value' => 10,
              'start_at' => now()->subDay(),
              'end_at' => now()->addDay(),
              'customer_type' => 'both',

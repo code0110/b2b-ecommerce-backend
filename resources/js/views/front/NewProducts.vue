@@ -29,7 +29,15 @@
                 {{ p.code || p.sku }}
               </div>
               <div class="mt-auto">
-                <div class="fw-semibold mb-1">
+                <div v-if="p.promoPrice || p.promo_price || p.price">
+                  <span v-if="p.list_price && p.list_price > (p.promoPrice || p.promo_price || p.price)" class="text-decoration-line-through text-muted small d-block">
+                    {{ formatMoney(p.list_price) }}
+                  </span>
+                  <div class="fw-semibold mb-1" :class="{'text-danger': (p.list_price > (p.promoPrice || p.promo_price || p.price))}">
+                    {{ formatMoney(p.promoPrice || p.promo_price || p.price) }} RON
+                  </div>
+                </div>
+                <div v-else class="fw-semibold mb-1">
                   {{ formatMoney(p.price || p.list_price || 0) }} RON
                 </div>
                 <RouterLink

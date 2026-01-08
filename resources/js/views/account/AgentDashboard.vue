@@ -117,6 +117,15 @@
             Agenți
           </button>
         </li>
+        <li class="nav-item" v-if="isDirector">
+          <button 
+            class="nav-link" 
+            :class="{ active: activeTab === 'approvals' }" 
+            @click="activeTab = 'approvals'; loadApprovals()"
+          >
+            Aprobări
+          </button>
+        </li>
       </ul>
 
       <!-- Tab Planificare Rute -->
@@ -549,9 +558,58 @@
           <div v-if="agents.length === 0" class="col">
             <div class="text-center py-4 text-muted">Nu există agenți.</div>
           </div>
+      </div>
+
+      <!-- Tab Aprobări (Director) -->
+      <div v-if="activeTab === 'approvals' && isDirector">
+        <div class="row g-4">
+          <div class="col-12">
+            <div class="card border-0 shadow-sm">
+              <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <h6 class="mb-0 fw-bold">Comenzi ce necesită aprobare</h6>
+                <button class="btn btn-sm btn-outline-secondary" @click="loadApprovals">
+                  <i class="bi bi-arrow-clockwise me-1"></i> Actualizează
+                </button>
+              </div>
+              <div class="card-body p-0">
+                <div v-if="approvalsLoading" class="p-4 text-center">
+                  <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Se încarcă...</span>
+                  </div>
+                </div>
+                <div v-else>
+                  <div v-if="pendingOrders.length === 0" class="p-4 text-center text-muted small">
+                    Nu există comenzi în așteptare.
+                  </div>
+                  <ul class="list-group list-group-flush">
+                    <li v-for="ord in pendingOrders" :key="ord.id" class="list-group-item d-flex justify-content-between align-items-start">
+                      <div class="d-flex gap-3 align-items-center">
+                        <span class="badge bg-warning text-dark">#{{ ord.id }}</span>
+                        <div>
+                          <div class="fw-semibold">{{ ord.customer?.name || 'Client' }}</div>
+                          <div class="text-muted small">
+                            {{ new Date(ord.created_at).toLocaleString('ro-RO') }}
+                          </div>
+                        </div>
+                      </div>
+                      <div class="d-flex gap-2">
+                        <button class="btn btn-sm btn-outline-success" @click="approveOrder(ord)">
+                          <i class="bi bi-check-circle me-1"></i> Aprobă
+                        </button>
+                        <button class="btn btn-sm btn-outline-danger" @click="rejectOrder(ord)">
+                          <i class="bi bi-x-circle me-1"></i> Respinge
+                        </button>
+                      </div>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
-    </template>
+    </div>
+  </template>
 
     <!-- Modal Incasare -->
     <div v-if="showPaymentModal" class="modal-backdrop fade show"></div>
@@ -851,6 +909,10 @@ const showAgentClientsOnly = ref(false);
 const offersStats = ref({ active: 0 });
 const recentRequests = ref([]);
 
+// Approvals (Director)
+const approvalsLoading = ref(false);
+const pendingOrders = ref([]);
+
 const loadOffersData = async () => {
     try {
         const { data } = await adminApi.get('/quotes?per_page=5');
@@ -862,6 +924,43 @@ const loadOffersData = async () => {
     } catch (e) {
         console.error('Offers data load error', e);
     }
+};
+
+const loadApprovals = async () => {
+  approvalsLoading.value = true;
+  try {
+    const resp = await adminApi.get('/orders', { params: { approval_status: 'pending', per_page: 20 }});
+    pendingOrders.value = resp.data.data || [];
+  } catch (e) {
+    console.error('Failed to load approvals', e);
+    pendingOrders.value = [];
+  } finally {
+    approvalsLoading.value = false;
+  }
+};
+
+const approveOrder = async (order) => {
+  if (!confirm('Sigur dorești să aprobi această comandă?')) return;
+  try {
+    await adminApi.post(`/orders/${order.id}/approve`);
+    toast.success('Comanda aprobată');
+    loadApprovals();
+  } catch (e) {
+    console.error(e);
+    toast.error(e.response?.data?.message || 'Eroare la aprobare');
+  }
+};
+
+const rejectOrder = async (order) => {
+  if (!confirm('Sigur dorești să respingi această comandă?')) return;
+  try {
+    await adminApi.post(`/orders/${order.id}/reject`);
+    toast.success('Comanda respinsă');
+    loadApprovals();
+  } catch (e) {
+    console.error(e);
+    toast.error(e.response?.data?.message || 'Eroare la respingere');
+  }
 };
 
 watch(activeTab, (newTab) => {

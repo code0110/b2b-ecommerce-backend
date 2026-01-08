@@ -4,12 +4,12 @@
       <div class="container">
         <div class="row align-items-center g-4">
           <div class="col-lg-7">
-            <h1 class="display-6 fw-semibold mb-2">
+            <h1 class="hero-title mb-2">
               {{ heroTitle }}
             </h1>
-            <p class="text-muted mb-3">
+            <span class="hero-subtitle d-block mb-3">
               {{ heroSubtitle }}
-            </p>
+            </span>
             <div class="d-flex flex-wrap gap-2">
               <button type="button" class="btn btn-primary" @click="openCatalog">
                 {{ heroCtaText }}
@@ -179,21 +179,21 @@
                 <h3 class="h6 mb-1">{{ product.name }}</h3>
                 <div class="small text-muted mb-2">{{ product.code || product.sku }}</div>
                 <div class="mt-auto">
-                  <div v-if="product.promoPrice || product.promo_price" class="small text-muted">
-                    <span class="text-decoration-line-through me-1">
-                      {{ formatMoney(product.price || product.list_price || 0) }}
-                    </span>
-                    <span class="fw-semibold">
-                      {{ formatMoney(product.promoPrice || product.promo_price) }} RON
-                    </span>
+                    <div v-if="product.promoPrice || product.promo_price || product.price">
+                      <span v-if="product.list_price && product.list_price > (product.promoPrice || product.promo_price || product.price)" class="text-decoration-line-through text-muted small me-1">
+                        {{ formatMoney(product.list_price) }}
+                      </span>
+                      <span :class="(product.discountPercent || product.discount_percent || (product.list_price > (product.promoPrice || product.promo_price || product.price))) ? 'fw-semibold text-danger' : 'fw-semibold'">
+                        {{ formatMoney(product.promoPrice || product.promo_price || product.price) }} RON
+                      </span>
+                    </div>
+                    <div v-else class="fw-semibold mb-1">
+                      {{ formatMoney(product.price || product.list_price || 0) }} RON
+                    </div>
+                    <RouterLink :to="`/produs/${product.slug}`" class="btn btn-outline-secondary btn-sm mt-2">
+                      Detalii produs
+                    </RouterLink>
                   </div>
-                  <div v-else class="fw-semibold mb-1">
-                    {{ formatMoney(product.price || product.list_price || 0) }} RON
-                  </div>
-                  <RouterLink :to="`/produs/${product.slug}`" class="btn btn-outline-secondary btn-sm">
-                    Detalii produs
-                  </RouterLink>
-                </div>
               </div>
             </div>
           </div>
@@ -260,29 +260,26 @@
                   {{ product.code || product.sku }}
                 </div>
                 <div class="mt-auto">
-                  <div
-                    v-if="product.promoPrice || product.promo_price"
-                    class="small text-muted"
-                  >
-                    <span class="text-decoration-line-through me-1">
+                    <div v-if="product.promoPrice || product.promo_price || product.price">
+                      <span v-if="product.list_price && product.list_price > (product.promoPrice || product.promo_price || product.price)" class="text-decoration-line-through text-muted small me-1">
+                        {{ formatMoney(product.list_price) }}
+                      </span>
+                      <span :class="(product.discountPercent || product.discount_percent || (product.list_price > (product.promoPrice || product.promo_price || product.price))) ? 'fw-semibold text-danger' : 'fw-semibold'">
+                        {{ formatMoney(product.promoPrice || product.promo_price || product.price) }}
+                        RON
+                      </span>
+                    </div>
+                    <div v-else class="fw-semibold mb-1">
                       {{ formatMoney(product.price || product.list_price || 0) }}
-                    </span>
-                    <span class="fw-semibold">
-                      {{ formatMoney(product.promoPrice || product.promo_price) }}
                       RON
-                    </span>
+                    </div>
+                    <RouterLink
+                      :to="`/produs/${product.slug}`"
+                      class="btn btn-outline-primary btn-sm mt-2"
+                    >
+                      Detalii produs
+                    </RouterLink>
                   </div>
-                  <div v-else class="fw-semibold mb-1">
-                    {{ formatMoney(product.price || product.list_price || 0) }}
-                    RON
-                  </div>
-                  <RouterLink
-                    :to="`/produs/${product.slug}`"
-                    class="btn btn-outline-primary btn-sm"
-                  >
-                    Detalii produs
-                  </RouterLink>
-                </div>
               </div>
             </div>
           </div>

@@ -185,8 +185,8 @@
                     <div v-else class="d-flex align-items-center justify-content-center text-muted small w-100 h-100">Fără imagine</div>
                     
                     <!-- Discount Badge -->
-                     <span v-if="product.has_promo_price || product.discount_percent" class="position-absolute top-0 start-0 m-2 badge bg-danger rounded-pill shadow-sm">
-                        <span v-if="product.discount_percent">-{{ product.discount_percent }}%</span>
+                     <span v-if="product.hasDiscount || product.discountPercent" class="position-absolute top-0 start-0 m-2 badge bg-danger rounded-pill shadow-sm">
+                        <span v-if="product.discountPercent">-{{ product.discountPercent }}%</span>
                         <span v-else>Promo</span>
                     </span>
                   </div>
@@ -207,10 +207,9 @@
                     <div class="mt-auto pt-2 border-top">
                          <div class="d-flex justify-content-between align-items-center">
                             <div class="price-container">
-                                <div v-if="product.effective_price">
-                                    <span v-if="product.has_promo_price" class="text-danger fw-bold fs-5 me-2">{{ formatPrice(product.effective_price) }}</span>
-                                    <span v-else class="fw-bold fs-5 text-primary">{{ formatPrice(product.effective_price) }}</span>
-                                    <span v-if="product.has_promo_price" class="text-decoration-line-through text-muted small d-block">{{ formatPrice(product.base_price) }}</span>
+                                <div v-if="product.promoPrice || product.price">
+                                    <span v-if="product.list_price && product.list_price > (product.promoPrice || product.price)" class="text-decoration-line-through text-muted small d-block">{{ formatPrice(product.list_price) }}</span>
+                                    <span :class="(product.hasDiscount || (product.list_price > (product.promoPrice || product.price))) ? 'text-danger fw-bold fs-5' : 'fw-bold fs-5 text-primary'">{{ formatPrice(product.promoPrice || product.price) }}</span>
                                 </div>
                                 <div v-else class="text-muted small">Preț indisponibil</div>
                             </div>
@@ -233,8 +232,8 @@
                                 <img v-if="product.main_image_url" :src="product.main_image_url" :alt="product.name" class="object-fit-cover w-100 h-100" loading="lazy">
                                 <div v-else class="d-flex align-items-center justify-content-center text-muted small w-100 h-100">Fără imagine</div>
                              </div>
-                              <span v-if="product.has_promo_price || product.discount_percent" class="position-absolute top-0 start-0 m-2 badge bg-danger rounded-pill shadow-sm">
-                                <span v-if="product.discount_percent">-{{ product.discount_percent }}%</span>
+                              <span v-if="product.hasDiscount || product.discountPercent" class="position-absolute top-0 start-0 m-2 badge bg-danger rounded-pill shadow-sm">
+                                <span v-if="product.discountPercent">-{{ product.discountPercent }}%</span>
                                 <span v-else>Promo</span>
                             </span>
                         </div>
@@ -260,10 +259,9 @@
                                 
                                 <div class="d-flex justify-content-between align-items-center mt-auto border-top pt-3">
                                      <div class="price-container">
-                                        <div v-if="product.effective_price">
-                                            <span v-if="product.has_promo_price" class="text-danger fw-bold fs-4 me-2">{{ formatPrice(product.effective_price) }}</span>
-                                            <span v-else class="fw-bold fs-4 text-primary">{{ formatPrice(product.effective_price) }}</span>
-                                            <span v-if="product.has_promo_price" class="text-decoration-line-through text-muted small">{{ formatPrice(product.base_price) }}</span>
+                                        <div v-if="product.promoPrice || product.price">
+                                            <span v-if="product.list_price && product.list_price > (product.promoPrice || product.price)" class="text-decoration-line-through text-muted small d-block">{{ formatPrice(product.list_price) }}</span>
+                                            <span :class="(product.hasDiscount || (product.list_price > (product.promoPrice || product.price))) ? 'text-danger fw-bold fs-4' : 'fw-bold fs-4 text-primary'">{{ formatPrice(product.promoPrice || product.price) }}</span>
                                         </div>
                                          <div v-else class="text-muted small">Preț indisponibil</div>
                                     </div>
@@ -292,9 +290,9 @@
                                 </RouterLink>
                             </h3>
                              <div class="mt-auto">
-                                <div v-if="product.effective_price">
-                                    <span v-if="product.has_promo_price" class="text-danger fw-bold small">{{ formatPrice(product.effective_price) }}</span>
-                                    <span v-else class="fw-bold text-primary small">{{ formatPrice(product.effective_price) }}</span>
+                                <div v-if="product.promoPrice || product.promo_price || product.price">
+                                     <span v-if="product.list_price && product.list_price > (product.promoPrice || product.promo_price || product.price)" class="text-decoration-line-through text-muted small d-block" style="font-size: 0.75rem;">{{ formatPrice(product.list_price) }}</span>
+                                    <span :class="(product.hasDiscount || (product.list_price > (product.promoPrice || product.promo_price || product.price))) ? 'text-danger fw-bold small' : 'fw-bold text-primary small'">{{ formatPrice(product.promoPrice || product.promo_price || product.price) }}</span>
                                 </div>
                             </div>
                         </div>
@@ -453,6 +451,7 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import { useAuthStore } from '@/store/auth';
 import { fetchCategoryPage } from '@/services/catalog';
 import { addCartItem } from '@/services/cart';
 import { useToast } from 'vue-toastification';
@@ -460,7 +459,10 @@ import { setTitle, setMeta, setMetaProperty, setCanonical, setJsonLd, setLink } 
 
 const route = useRoute();
 const router = useRouter();
+const authStore = useAuthStore();
 const toast = useToast();
+
+const isB2B = computed(() => authStore.user?.role === 'b2b');
 
 const loading = ref(false);
 const error = ref('');

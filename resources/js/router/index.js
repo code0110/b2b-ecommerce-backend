@@ -372,6 +372,12 @@ const router = createRouter({
           name: 'account-routes-management',
           component: () => import('@/views/admin/routes/AgentRoutes.vue'),
           meta: { requiresAuth: true, requiresRole: 'sales_director' }
+        },
+        {
+          path: 'comenzi-aprobate',
+          name: 'account-director-approvals',
+          component: () => import('@/views/account/AccountDirectorApprovals.vue'),
+          meta: { requiresAuth: true, requiresRole: 'sales_director' }
         }
       ]
     }

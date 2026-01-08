@@ -271,11 +271,11 @@
                     </div>
 
                     <div class="mt-auto pt-3 border-top d-flex justify-content-between align-items-end">
-                       <div>
-                          <div class="text-muted small" style="font-size: 0.75rem;">PREȚ LISTĂ</div>
-                          <div class="fw-bold text-dark fs-5">{{ formatPrice(product.list_price) }}</div>
-                       </div>
-                       <div class="text-end">
+                      <div>
+                         <div class="text-muted small" style="font-size: 0.75rem;">PREȚ LISTĂ</div>
+                         <div class="fw-bold text-dark fs-5">{{ formatPrice(product.list_price || product.price) }}</div>
+                      </div>
+                      <div class="text-end">
                           <span class="badge mb-1 d-block" :class="stockBadgeClass(product.stock_status)">
                               {{ stockStatusLabel(product.stock_status) }}
                           </span>

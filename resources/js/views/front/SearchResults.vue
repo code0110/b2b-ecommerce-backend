@@ -64,8 +64,16 @@
               <h2 class="h6 mb-1">{{ product.name }}</h2>
               <div class="small text-muted mb-2">{{ product.code }}</div>
               <div class="mt-auto">
-                <div class="fw-semibold mb-1">
-                  {{ formatPrice(product.price) }} RON
+                <div v-if="product.promoPrice || product.promo_price || product.price">
+                  <span v-if="product.list_price && product.list_price > (product.promoPrice || product.promo_price || product.price)" class="text-decoration-line-through text-muted small d-block">
+                    {{ formatPrice(product.list_price) }}
+                  </span>
+                  <div class="fw-semibold mb-1" :class="{'text-danger': (product.list_price > (product.promoPrice || product.promo_price || product.price))}">
+                    {{ formatPrice(product.promoPrice || product.promo_price || product.price) }} RON
+                  </div>
+                </div>
+                <div v-else class="fw-semibold mb-1">
+                  {{ formatPrice(product.price || 0) }} RON
                 </div>
                 <RouterLink
                   :to="`/produs/${product.slug}`"

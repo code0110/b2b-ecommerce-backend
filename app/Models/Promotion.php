@@ -25,7 +25,6 @@ class Promotion extends Model
         'status',
         'is_exclusive',
         'is_iterative',
-        'priority',
         'stacking_type',
         'type',             // standard, volume, bundle, shipping, special_price, gift
         'value_type',       // percent, fixed_amount, fixed_price
@@ -46,7 +45,6 @@ class Promotion extends Model
         'end_at'            => 'datetime',
         'is_exclusive'      => 'boolean',
         'is_iterative'      => 'boolean',
-        'priority'          => 'integer',
         'logged_in_only'    => 'boolean',
         'min_cart_total'    => 'float',
         'min_qty_per_product' => 'integer',

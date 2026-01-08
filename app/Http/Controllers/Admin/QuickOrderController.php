@@ -10,12 +10,14 @@ use App\Models\Product;
 use App\Models\Setting;
 use App\Models\Cart;
 use App\Models\ShippingMethod;
+use App\Models\User;
 use App\Services\Pricing\PromotionPricingService;
 use App\Services\Pricing\PromotionEngine;
 use App\Services\DiscountRuleService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use App\Notifications\OrderApprovalRequiredNotification;
 
 class QuickOrderController extends Controller
 {
@@ -483,6 +485,22 @@ class QuickOrderController extends Controller
             $order->payment_status = 'pending';
             
             $order->save();
+
+            if ($requiresApproval) {
+                try {
+                    $customer = Customer::find($order->customer_id);
+                    if ($customer && $customer->sales_director_user_id) {
+                        $director = User::find($customer->sales_director_user_id);
+                        $director?->notify(new OrderApprovalRequiredNotification($order));
+                    } else {
+                        $admins = User::role('admin')->get();
+                        foreach ($admins as $admin) {
+                            $admin->notify(new OrderApprovalRequiredNotification($order));
+                        }
+                    }
+                } catch (\Exception $e) {
+                }
+            }
 
             foreach ($data->items as $item) {
                 OrderItem::create([

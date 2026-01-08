@@ -220,7 +220,8 @@ const allProducts = [
     brand: 'BrandX',
     categorySlug: 'materiale-constructii',
     inStock: true,
-    price: 45.0,
+    list_price: 45.0,
+    price: 40.5,
     attributes: ['greu', 'bulk']
   },
   {
@@ -230,6 +231,7 @@ const allProducts = [
     brand: 'BrandX',
     categorySlug: 'materiale-constructii',
     inStock: true,
+    list_price: 48.5,
     price: 48.5,
     attributes: ['premium', 'bulk']
   },
@@ -240,6 +242,7 @@ const allProducts = [
     brand: 'BrandY',
     categorySlug: 'finisaje',
     inStock: false,
+    list_price: 35.0,
     price: 35.0,
     attributes: ['finisaj']
   },
@@ -250,6 +253,7 @@ const allProducts = [
     brand: 'BrandZ',
     categorySlug: 'finisaje',
     inStock: true,
+    list_price: 250.0,
     price: 210.0,
     attributes: ['finisaj', 'premium']
   },
@@ -260,6 +264,7 @@ const allProducts = [
     brand: 'BrandPro',
     categorySlug: 'echipamente-santier',
     inStock: true,
+    list_price: 2850.0,
     price: 2850.0,
     attributes: ['echipament', 'premium']
   }

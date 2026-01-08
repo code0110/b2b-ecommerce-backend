@@ -1,220 +1,449 @@
 <template>
-  <div class="container-fluid py-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-      <div>
-        <h1 class="h3 fw-bold mb-1">{{ isEdit ? 'Editare Ofertă' : 'Ofertă Nouă' }}</h1>
-        <p class="text-muted small mb-0">Completează detaliile ofertei comerciale.</p>
-      </div>
-      <div class="d-flex gap-2">
-        <button class="btn btn-outline-secondary" @click="router.back()">Anulează</button>
-        <button class="btn btn-primary" @click="saveOffer" :disabled="saving || !isValid">
-          <span v-if="saving" class="spinner-border spinner-border-sm me-2"></span>
-          {{ isEdit ? 'Salvează Modificările' : 'Creează Ofertă' }}
-        </button>
-      </div>
+  <div class="container-fluid py-4 bg-gray-50">
+    <!-- Header -->
+    <div class="row mb-4 align-items-center justify-content-between g-3">
+       <!-- Title & Back -->
+       <div class="col-12 col-md-auto d-flex align-items-center gap-3">
+          <button class="btn btn-light rounded-circle shadow-sm" @click="router.back()">
+             <i class="bi bi-arrow-left"></i>
+          </button>
+          <div>
+             <h1 class="h3 fw-bold mb-1">{{ isEdit ? `Editare Ofertă #${route.params.id}` : 'Ofertă Nouă' }}</h1>
+             <div class="d-flex align-items-center gap-2 text-muted small">
+                <i class="bi bi-calendar3"></i>
+                <span>Creat: {{ formatDate(new Date()) }}</span>
+                <span v-if="currentStatus" class="badge rounded-pill ms-2" :class="statusBadge(currentStatus)">
+                    {{ statusLabel(currentStatus) }}
+                </span>
+             </div>
+          </div>
+       </div>
+
+       <!-- Actions -->
+       <div class="col-12 col-md-auto d-flex gap-2 flex-wrap justify-content-end">
+           <!-- Status Actions (if Edit) -->
+           <template v-if="isEdit">
+               <button v-if="currentStatus === 'draft'" class="btn btn-primary" @click="changeStatus('sent')">
+                    <i class="bi bi-send-fill me-2"></i> Trimite la Client
+               </button>
+
+               <div v-if="currentStatus === 'pending_approval' && canApprove" class="btn-group">
+                    <button class="btn btn-success" @click="changeStatus('approved')">
+                        <i class="bi bi-check-lg me-2"></i> Aprobă
+                    </button>
+                    <button class="btn btn-danger" @click="changeStatus('rejected')">
+                        <i class="bi bi-x-lg me-2"></i> Respinge
+                    </button>
+               </div>
+
+               <button v-if="['sent', 'approved', 'accepted'].includes(currentStatus)" class="btn btn-success" @click="convertToOrder">
+                    <i class="bi bi-cart-check me-2"></i> Comandă
+               </button>
+
+               <div v-if="['sent', 'negotiation', 'approved'].includes(currentStatus)" class="btn-group">
+                    <button class="btn btn-outline-primary bg-white" @click="changeStatus('completed')">
+                        <i class="bi bi-check-circle me-2"></i> Finalizează
+                    </button>
+                    <button class="btn btn-outline-danger bg-white" @click="changeStatus('rejected')">
+                        Anulează
+                    </button>
+               </div>
+           </template>
+           
+           <button class="btn btn-primary px-4 shadow-sm" @click="saveOffer" :disabled="saving || !isValid">
+                <span v-if="saving" class="spinner-border spinner-border-sm me-2"></span>
+                <i class="bi bi-save me-2" v-else></i>
+                {{ isEdit ? 'Salvează' : 'Creează Ofertă' }}
+           </button>
+       </div>
     </div>
 
     <div class="row g-4">
-      <!-- Left Column: Customer & Details -->
-      <div class="col-lg-4">
-        <div class="card shadow-sm border-0 mb-4">
-          <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
-            <h6 class="mb-0 fw-bold">Informații Client</h6>
-            <span v-if="currentStatus" class="badge" :class="statusBadge(currentStatus)">{{ statusLabel(currentStatus) }}</span>
-          </div>
-          <div class="card-body">
-            <div class="mb-3">
-              <label class="form-label small fw-bold text-muted">Client</label>
-              <CustomerSelector @select="selectCustomer" ref="customerSelectorRef" :disabled="isCustomerLocked" />
-              <div v-if="form.customer" class="mt-2 p-2 bg-light rounded small">
-                 <div class="fw-bold">{{ form.customer.name }}</div>
-                 <div>{{ form.customer.cif }}</div>
-                 <div>{{ form.customer.address }}</div>
-              </div>
-            </div>
-            
-            <div class="mb-3">
-              <label class="form-label small fw-bold text-muted">Valabilitate până la</label>
-              <input type="date" class="form-control" v-model="form.valid_until">
+        <!-- Main Content (Products & Details) -->
+        <div class="col-lg-8">
+            <!-- Customer Section -->
+            <div class="card shadow-sm border-0 mb-4 overflow-hidden">
+                <div class="card-body p-0">
+                    <div class="row g-0">
+                        <div class="col-md-8 p-4 border-end">
+                             <h6 class="text-uppercase text-muted fw-bold small mb-3">
+                                <i class="bi bi-building me-2"></i>Client & Facturare
+                             </h6>
+                             
+                             <div v-if="!form.customer" class="text-center py-4 bg-light rounded border border-dashed cursor-pointer" @click="$refs.customerSelectorRef?.$el.querySelector('input')?.focus()">
+                                <i class="bi bi-person-plus fs-3 text-muted mb-2"></i>
+                                <p class="mb-0 text-muted">Selectează un client pentru a începe</p>
+                                <div class="mt-3 w-75 mx-auto">
+                                     <CustomerSelector @select="selectCustomer" ref="customerSelectorRef" :disabled="isCustomerLocked" />
+                                </div>
+                             </div>
+
+                             <div v-else class="d-flex align-items-start gap-3 animate__animated animate__fadeIn">
+                                <div class="rounded-circle bg-primary bg-opacity-10 text-primary p-3 d-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
+                                    <span class="fw-bold fs-4">{{ form.customer.name.charAt(0) }}</span>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <h5 class="fw-bold mb-1">{{ form.customer.name }}</h5>
+                                        <button v-if="!isCustomerLocked" class="btn btn-link btn-sm p-0 text-muted" @click="form.customer = null; form.customer_id = null">
+                                            <i class="bi bi-pencil"></i> Modifică
+                                        </button>
+                                    </div>
+                                    <p class="text-muted mb-1"><i class="bi bi-card-text me-2"></i>{{ form.customer.cif }}</p>
+                                    <p class="text-muted mb-1"><i class="bi bi-geo-alt me-2"></i>{{ form.customer.address || form.customer.city || 'Adresă nespecificată' }}</p>
+                                    
+                                    <div class="d-flex gap-2 mt-2">
+                                        <span class="badge bg-light text-dark border"><i class="bi bi-cash-stack me-1"></i> Sold: {{ formatPrice(form.customer.current_balance || 0) }}</span>
+                                        <span class="badge bg-light text-dark border"><i class="bi bi-hourglass-split me-1"></i> Termen: {{ form.customer.payment_terms_days || 0 }} zile</span>
+                                    </div>
+                                </div>
+                             </div>
+                        </div>
+                        <div class="col-md-4 p-4 bg-light">
+                             <h6 class="text-uppercase text-muted fw-bold small mb-3">
+                                <i class="bi bi-info-circle me-2"></i>Detalii Ofertă
+                             </h6>
+                             
+                             <div class="mb-3">
+                                <label class="form-label small text-muted mb-1">Valabilitate</label>
+                                <input type="date" class="form-control bg-white border-0 shadow-sm" v-model="form.valid_until">
+                             </div>
+                             
+                             <div class="mb-0">
+                                <label class="form-label small text-muted mb-1">Referință / Note</label>
+                                <textarea class="form-control bg-white border-0 shadow-sm" rows="3" v-model="form.notes" placeholder="Note interne sau mesaj pentru client..."></textarea>
+                             </div>
+                        </div>
+                    </div>
+                </div>
             </div>
 
-            <div class="mb-3">
-              <label class="form-label small fw-bold text-muted">Note interne / Mesaj</label>
-              <textarea class="form-control" rows="4" v-model="form.notes" placeholder="Detalii suplimentare..."></textarea>
-            </div>
-          </div>
+
         </div>
 
-        <div class="card shadow-sm border-0 mb-4" v-if="isEdit">
-            <div class="card-header bg-white py-3">
-                <h6 class="mb-0 fw-bold">Acțiuni & Status</h6>
-            </div>
-            <div class="card-body">
-                <div class="d-grid gap-2">
-                    <button v-if="currentStatus === 'draft'" class="btn btn-primary" @click="changeStatus('sent')">
-                        <i class="bi bi-send me-2"></i> Trimite la Client
-                    </button>
+        <!-- Sidebar (Summary & Chat) -->
+        <div class="col-lg-4">
+            <!-- Summary Card -->
+            <div class="card shadow-sm border-0 mb-4 bg-primary text-white position-relative overflow-hidden">
+                <div class="position-absolute top-0 end-0 p-3 opacity-10">
+                    <i class="bi bi-receipt fs-1"></i>
+                </div>
+                <div class="card-body p-4 position-relative z-1">
+                    <h5 class="fw-bold mb-4 border-bottom border-white border-opacity-25 pb-3">Total Ofertă</h5>
                     
-                    <div v-if="currentStatus === 'pending_approval' && canApprove" class="d-grid gap-2">
-                        <button class="btn btn-success" @click="changeStatus('approved')">
-                            <i class="bi bi-check-lg me-2"></i> Aprobă Derogare
-                        </button>
-                        <button class="btn btn-danger" @click="changeStatus('rejected')">
-                            <i class="bi bi-x-lg me-2"></i> Respinge
-                        </button>
+                    <div class="d-flex justify-content-between mb-2 opacity-75">
+                        <span>Valoare Brută:</span>
+                        <span>{{ formatPrice(totals.gross) }}</span>
                     </div>
-
-                    <div v-if="['sent', 'approved', 'accepted'].includes(currentStatus)" class="d-grid gap-2 mb-2">
-                        <button class="btn btn-success" @click="convertToOrder">
-                            <i class="bi bi-cart-check me-2"></i> Transformă în Comandă
-                        </button>
+                    <div class="d-flex justify-content-between mb-3 text-warning">
+                        <span><i class="bi bi-stars me-1"></i>Discount Total:</span>
+                        <span>-{{ formatPrice(totals.discount) }}</span>
                     </div>
-
-                    <div v-if="['sent', 'negotiation', 'approved'].includes(currentStatus)" class="d-grid gap-2">
-                        <button class="btn btn-outline-primary" @click="changeStatus('completed')">
-                            <i class="bi bi-check-circle me-2"></i> Marchează Finalizat (Manual)
-                        </button>
-                        <button class="btn btn-outline-danger" @click="changeStatus('rejected')">
-                            Anulează Oferta
-                        </button>
+                    
+                    <div class="d-flex justify-content-between align-items-center pt-3 border-top border-white border-opacity-25">
+                        <span class="h5 mb-0">Total Net:</span>
+                        <span class="h2 mb-0 fw-bold">{{ formatPrice(totals.net) }}</span>
+                    </div>
+                    
+                    <div class="mt-4 pt-3 border-top border-white border-opacity-10 text-center small opacity-75">
+                        Prețurile includ TVA conform legislației în vigoare.
                     </div>
                 </div>
-            </div>
-        </div>
-
-        <div class="card shadow-sm border-0">
-          <div class="card-header bg-white py-3">
-            <h6 class="mb-0 fw-bold">Sumar Ofertă</h6>
-          </div>
-          <div class="card-body">
-            <div class="d-flex justify-content-between mb-2">
-              <span class="text-muted">Total Brut:</span>
-              <span class="fw-bold">{{ formatPrice(totals.gross) }}</span>
-            </div>
-            <div class="d-flex justify-content-between mb-2 text-success">
-              <span class="text-muted">Discount Total:</span>
-              <span>-{{ formatPrice(totals.discount) }}</span>
-            </div>
-            <hr>
-            <div class="d-flex justify-content-between mb-0 h5">
-              <span>Total Net:</span>
-              <span class="fw-bold text-primary">{{ formatPrice(totals.net) }}</span>
             </div>
             
-            <div v-if="requiresDerogation" class="alert alert-warning mt-3 mb-0 small">
-                <i class="bi bi-exclamation-triangle-fill me-2"></i>
-                <strong>Atenție!</strong> Această ofertă conține discount-uri > {{ config.approvalThreshold }}% și va necesita aprobarea Directorului de Vânzări.
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Right Column: Items -->
-      <div class="col-lg-8">
-        <div class="card shadow-sm border-0 h-100 mb-4">
-            <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
-                <h6 class="mb-0 fw-bold">Produse</h6>
-                <div class="d-flex gap-2">
-                     <button class="btn btn-outline-secondary btn-sm" @click="recalculateAllPrices" :disabled="form.items.length === 0 || calculating" title="Recalculează prețurile conform sistemului (resetează modificările manuale)">
-                        <i class="bi bi-arrow-clockwise" :class="{'spinner-border spinner-border-sm': calculating}"></i>
-                        <span class="d-none d-md-inline ms-1">Recalculează Promoții</span>
-                    </button>
-                    <div style="width: 300px;">
-                        <ProductSelector @select="addProduct" />
+            <div v-if="requiresDerogation" class="alert alert-warning border-start border-warning border-4 shadow-sm mb-4">
+                <div class="d-flex">
+                    <i class="bi bi-exclamation-triangle-fill fs-4 me-3"></i>
+                    <div>
+                        <h6 class="fw-bold mb-1">Necesită Aprobare</h6>
+                        <p class="mb-0 small">Această ofertă conține discount-uri peste limita de {{ config.approvalThreshold }}% și va necesita aprobarea Directorului de Vânzări înainte de a putea fi trimisă.</p>
                     </div>
                 </div>
             </div>
-            <div class="card-body p-0">
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle mb-0">
-                        <thead class="bg-light">
-                            <tr>
-                                <th class="ps-4">Produs</th>
-                                <th style="width: 100px;">Cant.</th>
-                                <th style="width: 120px;">Preț Unitar</th>
-                                <th style="width: 100px;">Discount %</th>
-                                <th class="text-end pe-4">Total</th>
-                                <th style="width: 50px;"></th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr v-if="form.items.length === 0">
-                                <td colspan="6" class="text-center py-5 text-muted">
-                                    Adaugă produse folosind căutarea de mai sus.
-                                </td>
-                            </tr>
-                            <tr v-for="(item, index) in form.items" :key="index">
-                                <td class="ps-4">
-                                    <div class="fw-bold">{{ item.product_name }}</div>
-                                    <div class="small text-muted">{{ item.product_code }}</div>
-                                </td>
-                                <td>
-                                    <input type="number" class="form-control form-control-sm" v-model.number="item.quantity" min="1" @input="calculateLine(item)">
-                                </td>
-                                <td>
-                                    <input type="number" class="form-control form-control-sm" v-model.number="item.unit_price" step="0.01" @input="calculateLine(item)">
-                                </td>
-                                <td>
-                                    <div class="input-group input-group-sm">
-                                        <input type="number" class="form-control" v-model.number="item.discount_percent" min="0" :max="config.maxDiscount" @input="calculateLine(item)" :class="{'text-danger fw-bold': item.discount_percent > config.approvalThreshold}">
-                                        <span class="input-group-text">%</span>
-                                    </div>
-                                </td>
-                                <td class="text-end pe-4 fw-bold">
-                                    <div v-if="item.calculating" class="spinner-border spinner-border-sm text-primary" role="status">
-                                        <span class="visually-hidden">Loading...</span>
-                                    </div>
-                                    <span v-else>{{ formatPrice(item.final_total) }}</span>
-                                </td>
-                                <td>
-                                    <button class="btn btn-sm text-danger" @click="removeItem(index)">
-                                        <i class="bi bi-trash"></i>
-                                    </button>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
+
+            <!-- Action History / Chat -->
+            <div class="card shadow-sm border-0" v-if="isEdit" style="height: 500px; display: flex; flex-direction: column;">
+                <div class="card-header bg-white py-3 border-bottom">
+                    <h6 class="mb-0 fw-bold"><i class="bi bi-chat-dots me-2"></i>Istoric & Discuții</h6>
+                </div>
+                <div class="card-body bg-light p-0 d-flex flex-column" style="flex: 1; overflow: hidden;">
+                     <div class="flex-grow-1 p-3 overflow-auto" ref="messagesContainer">
+                        <div v-if="messages.length === 0" class="text-center text-muted py-5">
+                            <i class="bi bi-chat-square-text fs-1 mb-2 opacity-50"></i>
+                            <p class="small">Nu există mesaje sau note.</p>
+                        </div>
+                        <div v-for="msg in sortedMessages" :key="msg.id" class="mb-3 d-flex" :class="isMe(msg.user_id) ? 'justify-content-end' : 'justify-content-start'">
+                            <div class="d-flex flex-column" :class="isMe(msg.user_id) ? 'align-items-end' : 'align-items-start'" style="max-width: 85%;">
+                                <div class="p-3 shadow-sm" 
+                                     :class="[
+                                        isMe(msg.user_id) ? 'bg-primary text-white rounded-top-left rounded-bottom' : 'bg-white text-dark rounded-top-right rounded-bottom border',
+                                        msg.is_internal ? 'border-warning border-2' : ''
+                                     ]"
+                                     style="border-radius: 1rem;">
+                                    <div class="small fw-bold mb-1 opacity-75" v-if="!isMe(msg.user_id)">{{ msg.user?.name }}</div>
+                                    <div class="text-break">{{ msg.message }}</div>
+                                </div>
+                                 <div class="small text-muted mt-1 d-flex align-items-center gap-1">
+                                    <span v-if="msg.is_internal" class="badge bg-warning text-dark" style="font-size: 0.6rem;">INTERN</span>
+                                    <span style="font-size: 0.7rem;">{{ formatDate(msg.created_at, true) }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="p-3 bg-white border-top">
+                        <div class="input-group">
+                            <button class="btn btn-outline-secondary" type="button" @click="isInternalMessage = !isInternalMessage" :class="{'text-warning border-warning bg-warning bg-opacity-10': isInternalMessage}" title="Mesaj Intern (invizibil clientului)">
+                                <i class="bi" :class="isInternalMessage ? 'bi-eye-slash-fill' : 'bi-eye'"></i>
+                            </button>
+                            <input type="text" class="form-control border-secondary border-opacity-25" placeholder="Scrie un mesaj..." v-model="newMessage" @keydown.enter="sendMessage">
+                            <button class="btn btn-primary" type="button" @click="sendMessage" :disabled="!newMessage.trim()">
+                                <i class="bi bi-send-fill"></i>
+                            </button>
+                        </div>
+                        <div class="d-flex justify-content-between mt-2 px-1">
+                            <span class="small" :class="isInternalMessage ? 'text-warning fw-bold' : 'text-muted'">
+                                <i class="bi" :class="isInternalMessage ? 'bi-lock-fill' : 'bi-globe'"></i>
+                                {{ isInternalMessage ? 'Mesaj Intern (Privat)' : 'Mesaj Vizibil Clientului' }}
+                            </span>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
+    </div>
 
-        <!-- Chat Section -->
-        <div class="card shadow-sm border-0" v-if="isEdit">
-            <div class="card-header bg-white py-3">
-                <h6 class="mb-0 fw-bold">Negociere / Discuție</h6>
-            </div>
-            <div class="card-body">
-                 <div class="mb-3 p-3 bg-light rounded border" style="max-height: 400px; overflow-y: auto;" ref="messagesContainer">
-                    <div v-if="messages.length === 0" class="text-center text-muted py-4 small">
-                        Nu există mesaje.
+    <!-- Products Section Full Width -->
+    <div class="row g-4">
+        <div class="col-12">
+            <!-- Products Section -->
+            <div class="card shadow-sm border-0 mb-4 overflow-hidden">
+                <div class="card-header bg-white p-4 border-bottom d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="fw-bold mb-1">Produse & Servicii</h5>
+                        <p class="text-muted small mb-0">Gestionează lista de produse pentru această ofertă</p>
                     </div>
-                    <div v-for="msg in sortedMessages" :key="msg.id" class="mb-3 d-flex flex-column" :class="{'align-items-end': isMe(msg.user_id), 'align-items-start': !isMe(msg.user_id)}">
-                        <div class="p-2 rounded shadow-sm" style="max-width: 80%;" :class="isMe(msg.user_id) ? 'bg-primary text-white' : 'bg-white border text-dark'">
-                            <div class="small fw-bold mb-1" v-if="!isMe(msg.user_id)">{{ msg.user?.name }}</div>
-                            <div class="text-break">{{ msg.message }}</div>
-                        </div>
-                         <div class="small text-muted mt-1" style="font-size: 0.75rem;">
-                            {{ formatDate(msg.created_at, true) }}
-                            <span v-if="msg.is_internal" class="badge bg-secondary ms-1">Intern</span>
-                        </div>
+                    
+                    <div class="d-flex gap-2">
+                         <button class="btn btn-light btn-sm text-primary border" @click="recalculateAllPrices" :disabled="form.items.length === 0 || calculating">
+                            <i class="bi bi-arrow-clockwise" :class="{'spinner-border spinner-border-sm': calculating}"></i>
+                            <span class="d-none d-md-inline ms-1">Actualizează Prețuri</span>
+                        </button>
                     </div>
                 </div>
                 
-                <div class="input-group">
-                    <input type="text" class="form-control" placeholder="Scrie un mesaj..." v-model="newMessage" @keydown.enter="sendMessage">
-                    <button class="btn btn-outline-secondary" type="button" @click="isInternalMessage = !isInternalMessage" :class="{'active': isInternalMessage, 'btn-warning': isInternalMessage}">
-                        <i class="bi bi-eye-slash"></i> Intern
-                    </button>
-                    <button class="btn btn-primary" type="button" @click="sendMessage" :disabled="!newMessage.trim()">
-                        <i class="bi bi-send"></i> Trimite
-                    </button>
+                <div class="p-4 bg-light border-bottom">
+                     <div class="text-center py-3">
+                        <button class="btn btn-outline-primary w-100 py-4 border-dashed shadow-sm hover-shadow-md transition-all" @click="showProductModal = true">
+                            <i class="bi bi-cart-plus display-6 mb-2 d-block text-primary"></i>
+                            <span class="h5 fw-bold d-block mb-1">Adaugă Produse</span>
+                            <span class="text-muted small">Deschide catalogul pentru a selecta produsele dorite</span>
+                        </button>
+                     </div>
                 </div>
-                <div class="form-text small" v-if="isInternalMessage">
-                    Mesajele interne sunt vizibile doar pentru staff.
+
+                <!-- Product Modal Overlay -->
+                <div v-if="showProductModal" class="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center p-0 p-md-4" style="z-index: 2000; background-color: rgba(0,0,0,0.6); backdrop-filter: blur(4px);">
+                    <div class="bg-white rounded-0 rounded-md-3 shadow-lg w-100 h-100 d-flex flex-column overflow-hidden animate__animated animate__zoomIn" style="max-width: 1400px; max-height: 100%;">
+                        <div class="d-flex justify-content-between align-items-center p-3 border-bottom bg-white">
+                            <div>
+                                <h5 class="mb-0 fw-bold"><i class="bi bi-grid-3x3-gap-fill me-2 text-primary"></i>Catalog Produse</h5>
+                                <small class="text-muted">Selectează produsele pentru ofertă</small>
+                            </div>
+                            <button class="btn btn-close" @click="showProductModal = false"></button>
+                        </div>
+                        <div class="flex-grow-1 overflow-hidden position-relative bg-light">
+                             <ProductSelector @select="onProductSelect" @check-promotions="onCheckPromotions" />
+                        </div>
+                        <div class="p-3 border-top bg-white d-flex justify-content-end">
+                            <button class="btn btn-secondary px-4" @click="showProductModal = false">Închide</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Promotions Modal -->
+                <div v-if="showPromotionsModal" class="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center p-0 p-md-4" style="z-index: 2100; background-color: rgba(0,0,0,0.6); backdrop-filter: blur(4px);">
+                    <div class="bg-white rounded-3 shadow-lg w-100 h-auto d-flex flex-column overflow-hidden animate__animated animate__fadeInUp" style="max-width: 600px; max-height: 90%;">
+                        <div class="d-flex justify-content-between align-items-center p-3 border-bottom bg-white">
+                            <div>
+                                <h5 class="mb-0 fw-bold"><i class="bi bi-tags-fill me-2 text-danger"></i>Promoții Disponibile</h5>
+                                <small class="text-muted" v-if="currentPromoProduct">{{ currentPromoProduct.name }}</small>
+                            </div>
+                            <button class="btn btn-close" @click="closePromotionsModal"></button>
+                        </div>
+                        
+                        <div class="flex-grow-1 overflow-y-auto p-4 bg-light">
+                             <div v-if="loadingPromotions" class="text-center py-5">
+                                <div class="spinner-border text-primary mb-2" role="status"></div>
+                                <p class="text-muted small">Căutăm promoții...</p>
+                             </div>
+                             
+                             <div v-else-if="currentProductPromotions.length === 0" class="text-center py-5">
+                                <i class="bi bi-emoji-frown display-4 text-muted mb-3 d-block"></i>
+                                <h6 class="fw-bold text-muted">Nu există promoții active</h6>
+                                <p class="small text-muted mb-0">Acest produs nu beneficiază de promoții speciale momentan.</p>
+                             </div>
+
+                             <div v-else class="d-flex flex-column gap-3">
+                                <div v-for="promo in currentProductPromotions" :key="promo.id" class="card border-0 shadow-sm border-start border-4 border-danger">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between align-items-start mb-2">
+                                            <h6 class="fw-bold mb-0 text-danger">{{ promo.name }}</h6>
+                                            <span class="badge bg-danger">-{{ promo.calculated_discount_percent }}%</span>
+                                        </div>
+                                        <p class="text-muted small mb-3">{{ promo.description || 'Fără descriere' }}</p>
+                                        
+                                        <div class="d-flex align-items-end justify-content-between bg-light p-2 rounded">
+                                            <div>
+                                                <div class="small text-muted">Preț Promoțional:</div>
+                                                <div class="fw-bold fs-5 text-dark">{{ formatPrice(promo.promo_price) }}</div>
+                                                <div class="small text-decoration-line-through text-muted">{{ formatPrice(currentPromoBasePrice) }}</div>
+                                            </div>
+                                            <button class="btn btn-sm btn-danger px-3" @click="applyPromotion(promo)">
+                                                <i class="bi bi-plus-lg me-1"></i> Aplică
+                                            </button>
+                                        </div>
+                                        
+                                        <div v-if="promo.min_qty > 1" class="mt-2 text-xs text-warning">
+                                            <i class="bi bi-info-circle me-1"></i>Minim {{ promo.min_qty }} bucăți
+                                        </div>
+                                    </div>
+                                </div>
+                             </div>
+                        </div>
+                        
+                        <div class="p-3 border-top bg-white d-flex justify-content-end">
+                            <button class="btn btn-secondary px-4" @click="closePromotionsModal">Închide</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Product List (Responsive Grid/Cards) -->
+                <div class="product-list">
+                    <!-- Header (Desktop Only) -->
+                    <div class="d-none d-lg-block bg-light border-bottom">
+                        <div class="row g-0 py-3">
+                            <div class="col-4 px-4 text-muted small text-uppercase font-monospace">Produs</div>
+                            <div class="col-8">
+                                <div class="row g-3">
+                                    <div class="col-3 text-center text-muted small text-uppercase font-monospace">Cantitate</div>
+                                    <div class="col-3 text-end text-muted small text-uppercase font-monospace">Preț (RON)</div>
+                                    <div class="col-3 text-center text-muted small text-uppercase font-monospace">Discount</div>
+                                    <div class="col-3 d-flex justify-content-end align-items-center pe-4 text-muted small text-uppercase font-monospace">
+                                        <span class="me-3">Total</span>
+                                        <div style="width: 40px"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Empty State -->
+                    <div v-if="form.items.length === 0" class="text-center py-5 border-bottom">
+                        <div class="py-4 opacity-50">
+                            <i class="bi bi-cart-x display-1 text-muted mb-3 d-block"></i>
+                            <h6 class="text-muted fw-bold">Niciun produs adăugat</h6>
+                            <p class="small text-muted mb-0">Folosește căutarea de mai sus pentru a adăuga produse în ofertă.</p>
+                        </div>
+                    </div>
+
+                    <!-- Items -->
+                    <div v-for="(item, index) in form.items" :key="index" class="group-item-row border-bottom bg-white hover-bg-light transition-all">
+                        <div class="row g-0 align-items-center p-3 p-lg-0 py-lg-3">
+                            
+                            <!-- Product Info -->
+                            <div class="col-12 col-lg-4 px-lg-4 mb-3 mb-lg-0">
+                                <div class="d-flex align-items-center">
+                                    <div class="me-3 flex-shrink-0">
+                                            <div class="bg-light rounded border d-flex align-items-center justify-content-center text-primary" style="width: 48px; height: 48px;">
+                                            <i class="bi bi-box-seam fs-5"></i>
+                                            </div>
+                                    </div>
+                                    <div class="overflow-hidden">
+                                        <div class="fw-bold text-dark text-truncate" :title="item.product_name">{{ item.product_name }}</div>
+                                        <div class="small text-muted font-monospace"><i class="bi bi-upc-scan me-1"></i>{{ item.product_code }}</div>
+                                    </div>
+                                    <!-- Mobile Remove Button (Top Right) -->
+                                    <button class="btn btn-link text-danger p-0 ms-auto d-lg-none" @click="removeItem(index)">
+                                        <i class="bi bi-x-lg"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Controls Wrapper for Mobile -->
+                            <div class="col-12 col-lg-8 mt-2 mt-lg-0">
+                                <div class="row g-3 align-items-center">
+                                    
+                                    <!-- Quantity -->
+                                    <div class="col-6 col-lg-3 text-center">
+                                        <div class="d-block d-lg-none small text-muted mb-1 font-weight-bold">Cantitate</div>
+                                        <div class="input-group input-group-sm shadow-sm mx-auto w-100">
+                                            <button class="btn btn-light border px-2" type="button" @click="item.quantity > 1 ? (item.quantity-- && calculateLine(item)) : null">
+                                                <i class="bi bi-dash"></i>
+                                            </button>
+                                            <input type="number" class="form-control text-center border-start-0 border-end-0 fw-bold px-1" v-model.number="item.quantity" min="1" @input="calculateLine(item)">
+                                            <button class="btn btn-light border px-2" type="button" @click="item.quantity++ && calculateLine(item)">
+                                                <i class="bi bi-plus"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <!-- Price -->
+                                    <div class="col-6 col-lg-3 text-end">
+                                        <div class="d-block d-lg-none small text-muted mb-1 font-weight-bold">Preț Unitar</div>
+                                        <div class="input-group input-group-sm">
+                                            <input type="number" class="form-control text-end border-0 bg-light" v-model.number="item.unit_price" step="0.01" @input="calculateLine(item)">
+                                        </div>
+                                    </div>
+
+                                    <!-- Discount -->
+                                    <div class="col-6 col-lg-3 text-center position-relative mt-3 mt-lg-0">
+                                        <div class="d-block d-lg-none small text-muted mb-1 font-weight-bold">Discount</div>
+                                        <div class="input-group input-group-sm">
+                                            <input type="number" class="form-control text-end" v-model.number="item.discount_percent" min="0" :max="config.maxDiscount" @input="calculateLine(item)" :class="{'text-danger fw-bold border-danger': item.discount_percent > config.approvalThreshold}">
+                                            <span class="input-group-text px-2">%</span>
+                                        </div>
+                                        <div v-if="item.discount_percent > config.approvalThreshold" class="position-absolute w-100 text-center start-0" style="bottom: -20px; z-index: 5;">
+                                                <span class="badge bg-danger text-white scale-up-center shadow-sm" style="font-size: 0.6rem;">Derogare</span>
+                                        </div>
+                                    </div>
+
+                                    <!-- Total & Desktop Remove -->
+                                    <div class="col-6 col-lg-3 d-flex flex-column flex-lg-row align-items-end align-items-lg-center justify-content-center justify-content-lg-end pe-lg-4 mt-3 mt-lg-0 border-top-0">
+                                        <div class="d-lg-none small text-muted mb-1 font-weight-bold">Total</div>
+                                        <div class="text-end">
+                                            <div v-if="item.calculating" class="spinner-border spinner-border-sm text-primary" role="status"></div>
+                                            <div v-else>
+                                                <div class="fw-bold fs-6 text-dark">{{ formatPrice(item.final_total) }}</div>
+                                                <div v-if="item.discount_percent > 0" class="text-decoration-line-through text-muted small" style="font-size: 0.75rem;">
+                                                    {{ formatPrice(item.quantity * item.unit_price) }}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Desktop Remove -->
+                                        <div class="d-none d-lg-block ms-3" style="width: 40px; text-align: right;">
+                                            <button class="btn btn-link text-danger p-0 opacity-50 hover-opacity-100" @click="removeItem(index)" title="Elimină">
+                                                <i class="bi bi-trash-fill fs-5"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <!-- Footer / Total -->
+                    <div v-if="form.items.length > 0" class="bg-light p-4 border-top">
+                         <div class="d-flex justify-content-between justify-content-lg-end align-items-center gap-3">
+                            <span class="text-muted text-uppercase small fw-bold">Total Linie</span>
+                            <span class="fw-bold fs-5 text-primary">{{ formatPrice(totals.net) }}</span>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
-      </div>
     </div>
   </div>
 </template>
@@ -239,6 +468,7 @@ const toast = useToast();
 
 const isEdit = computed(() => !!route.params.id);
 const saving = ref(false);
+const showProductModal = ref(false);
 const customerSelectorRef = ref(null);
 const currentStatus = ref('draft');
 const messages = ref([]);
@@ -248,10 +478,17 @@ const messagesContainer = ref(null);
 const calculating = ref(false);
 const isCustomerLocked = ref(false);
 
+// Promotions Modal State
+const showPromotionsModal = ref(false);
+const loadingPromotions = ref(false);
+const currentProductPromotions = ref([]);
+const currentPromoProduct = ref(null);
+const currentPromoBasePrice = ref(0);
+
 // Settings
 const config = reactive({
     approvalThreshold: 15,
-    maxDiscount: 20
+    maxDiscount: 30
 });
 
 const loadConfig = async () => {
@@ -372,6 +609,11 @@ const selectCustomer = (customer) => {
     form.customer_id = customer ? customer.id : null;
 };
 
+const onProductSelect = (product) => {
+    addProduct(product);
+    // Optional: Visual feedback or keep modal open (default behavior)
+};
+
 const addProduct = async (product) => {
     // Check if already exists
     const existing = form.items.find(i => i.product_id === product.id);
@@ -389,6 +631,7 @@ const addProduct = async (product) => {
         quantity: 1,
         unit_price: parseFloat(product.list_price || product.price || 0), // Base price
         discount_percent: 0,
+        system_discount_percent: 0,
         final_total: parseFloat(product.list_price || product.price || 0),
         calculating: false
     });
@@ -397,6 +640,27 @@ const addProduct = async (product) => {
     
     // Calculate system price immediately
     await calculateItemSystemPrice(newItem);
+};
+
+const clampItemDiscount = (item) => {
+    let discount = parseFloat(item.discount_percent);
+    if (!Number.isFinite(discount)) discount = 0;
+    if (discount < 0) discount = 0;
+
+    const capped = discount > config.maxDiscount;
+    if (capped) {
+        discount = config.maxDiscount;
+    }
+
+    item.discount_percent = discount;
+    return capped;
+};
+
+const recalculateItemTotal = (item) => {
+    const price = parseFloat(item.unit_price) || 0;
+    const qty = parseInt(item.quantity) || 1;
+    const discount = parseFloat(item.discount_percent) || 0;
+    item.final_total = price * qty * (1 - discount / 100);
 };
 
 const calculateItemSystemPrice = async (item) => {
@@ -416,11 +680,23 @@ const calculateItemSystemPrice = async (item) => {
         
         // Use the account route which maps to Admin\QuickOrderController@calculate
         const { data } = await api.post('/account/quick-order/calculate', payload);
-        if (data && data.items && data.items[0]) {
-            const result = data.items[0];
-            item.unit_price = result.unit_base_price;
-            item.discount_percent = result.discount_percent;
-            item.final_total = result.line_total;
+        if (data && Array.isArray(data.items)) {
+            const result = data.items.find(r => r.product_id === item.product_id);
+            if (!result) return;
+
+            item.unit_price = parseFloat(result.unit_price ?? result.unit_base_price ?? item.unit_price) || 0;
+            item.system_discount_percent = parseFloat(result.discount_percent ?? 0) || 0;
+
+            // Auto-apply system discount if manual is 0
+            if ((parseFloat(item.discount_percent) || 0) === 0 && item.system_discount_percent > 0) {
+                item.discount_percent = item.system_discount_percent;
+            }
+
+            const capped = clampItemDiscount(item);
+            if (capped) {
+                toast.warning(`Discount-ul maxim permis este de ${config.maxDiscount}%`);
+            }
+            recalculateItemTotal(item);
         }
     } catch (e) {
         console.error("Pricing error", e);
@@ -447,15 +723,27 @@ const recalculateAllPrices = async () => {
         };
         
         const { data } = await api.post('/account/quick-order/calculate', payload);
-        
+
+        let cappedCount = 0;
         data.items.forEach(resItem => {
-             const item = form.items.find(i => i.product_id === resItem.product_id);
-             if (item) {
-                 item.unit_price = resItem.unit_base_price;
-                 item.discount_percent = resItem.discount_percent;
-                 item.final_total = resItem.line_total;
-             }
+            const item = form.items.find(i => i.product_id === resItem.product_id);
+            if (!item) return;
+
+            item.unit_price = parseFloat(resItem.unit_price ?? resItem.unit_base_price ?? item.unit_price) || 0;
+            item.system_discount_percent = parseFloat(resItem.discount_percent ?? 0) || 0;
+            if ((parseFloat(item.discount_percent) || 0) === 0 && item.system_discount_percent > 0) {
+                item.discount_percent = item.system_discount_percent;
+            }
+
+            const capped = clampItemDiscount(item);
+            if (capped) cappedCount++;
+
+            recalculateItemTotal(item);
         });
+
+        if (cappedCount > 0) {
+            toast.warning(`Au fost limitate ${cappedCount} discount-uri la ${config.maxDiscount}%.`);
+        }
         
         toast.success('Prețurile au fost actualizate conform promoțiilor active.');
     } catch (e) {
@@ -467,12 +755,11 @@ const recalculateAllPrices = async () => {
 };
 
 const calculateLine = (item) => {
-    const price = parseFloat(item.unit_price) || 0;
-    const qty = parseInt(item.quantity) || 1;
-    const discount = parseFloat(item.discount_percent) || 0;
-    
-    const total = price * qty * (1 - discount / 100);
-    item.final_total = total;
+    const capped = clampItemDiscount(item);
+    if (capped) {
+        toast.warning(`Discount-ul maxim permis este de ${config.maxDiscount}%`);
+    }
+    recalculateItemTotal(item);
 };
 
 const applyPromo = (item) => {
@@ -481,6 +768,86 @@ const applyPromo = (item) => {
         calculateLine(item);
         toast.success('Promoție aplicată!');
     }
+};
+
+const onCheckPromotions = async (product) => {
+    if (!form.customer_id) {
+        toast.warning('Selectează mai întâi un client.');
+        return;
+    }
+
+    currentPromoProduct.value = product;
+    showPromotionsModal.value = true;
+    loadingPromotions.value = true;
+    currentProductPromotions.value = [];
+    currentPromoBasePrice.value = 0;
+
+    try {
+        const { data } = await api.post('/account/quick-order/available-promotions', {
+            customer_id: form.customer_id,
+            product_id: product.id
+        });
+
+        currentProductPromotions.value = data.promotions || [];
+        currentPromoBasePrice.value = parseFloat(data.base_price) || 0;
+    } catch (e) {
+        console.error('Error fetching promotions:', e);
+        toast.error('Nu s-au putut încărca promoțiile.');
+    } finally {
+        loadingPromotions.value = false;
+    }
+};
+
+const closePromotionsModal = () => {
+    showPromotionsModal.value = false;
+    currentPromoProduct.value = null;
+    currentProductPromotions.value = [];
+};
+
+const applyPromotion = (promo) => {
+    if (!currentPromoProduct.value) return;
+
+    // Logic to apply promotion
+    // Basically add product with this discount
+    const product = currentPromoProduct.value;
+    
+    // Check if item exists
+    const existing = form.items.find(i => i.product_id === product.id);
+    
+    if (existing) {
+        // Update existing item
+        existing.discount_percent = parseFloat(promo.calculated_discount_percent) || 0;
+        
+        // Also ensure quantity meets min_qty if set
+        if (promo.min_qty && existing.quantity < promo.min_qty) {
+            existing.quantity = promo.min_qty;
+            toast.info(`Cantitatea a fost actualizată la minimul de ${promo.min_qty} buc.`);
+        }
+        
+        calculateLine(existing);
+        toast.success(`Promoția "${promo.name}" a fost aplicată!`);
+    } else {
+        // Add new item with promo
+        const newItem = reactive({
+            product_id: product.id,
+            product_name: product.name,
+            product_code: product.internal_code || product.sku,
+            quantity: promo.min_qty || 1,
+            unit_price: parseFloat(currentPromoBasePrice.value || product.list_price || product.price || 0), 
+            discount_percent: parseFloat(promo.calculated_discount_percent) || 0,
+            system_discount_percent: parseFloat(promo.calculated_discount_percent) || 0,
+            final_total: 0,
+            calculating: false
+        });
+        
+        recalculateItemTotal(newItem);
+        form.items.push(newItem);
+        toast.success(`Produsul a fost adăugat cu promoția "${promo.name}"!`);
+    }
+    
+    closePromotionsModal();
+    // Also close product modal if open
+    // showProductModal.value = false; // Maybe keep it open to add more?
 };
 
 const removeItem = (index) => {
@@ -710,3 +1077,30 @@ onMounted(async () => {
     }
 });
 </script>
+
+<style scoped>
+.scale-up-center {
+    animation: scale-up-center 0.4s cubic-bezier(0.390, 0.575, 0.565, 1.000) both;
+}
+
+@keyframes scale-up-center {
+    0% { transform: scale(0.5) translateY(2px); }
+    100% { transform: scale(1) translateY(2px); }
+}
+
+.hover-bg-gray:hover {
+    background-color: #f8f9fa;
+}
+
+.hover-opacity-100:hover {
+    opacity: 1 !important;
+}
+
+.group-item-row {
+    transition: background-color 0.2s;
+}
+
+.group-item-row:hover {
+    background-color: rgba(var(--bs-primary-rgb), 0.02);
+}
+</style>

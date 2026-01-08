@@ -137,9 +137,20 @@
             <div class="d-flex justify-content-between align-items-end mb-3">
               <div>
                 <small class="text-muted d-block mb-1 text-uppercase fw-bold" style="font-size: 0.7rem;">Status</small>
-                <span class="badge rounded-pill border" :class="getStatusBadgeClass(order.status)">
-                  {{ getStatusLabel(order.status) }}
-                </span>
+                <div class="d-flex flex-column gap-1">
+                    <span class="badge rounded-pill border" :class="getStatusBadgeClass(order.status)">
+                      {{ getStatusLabel(order.status) }}
+                    </span>
+                    <span v-if="order.approval_status === 'pending'" class="badge bg-warning text-dark border border-warning">
+                        Necesită Aprobare
+                    </span>
+                     <span v-if="order.approval_status === 'approved'" class="badge bg-success text-white border border-success">
+                        Aprobat
+                    </span>
+                     <span v-if="order.approval_status === 'rejected'" class="badge bg-danger text-white border border-danger">
+                        Respins
+                    </span>
+                </div>
               </div>
               <div class="text-end">
                 <small class="text-muted d-block mb-1 text-uppercase fw-bold" style="font-size: 0.7rem;">Total</small>
@@ -158,6 +169,17 @@
                   Acțiuni
                 </button>
                 <ul class="dropdown-menu dropdown-menu-end shadow border-0">
+                  <li v-if="order.approval_status === 'pending'">
+                      <a class="dropdown-item text-success" href="#" @click.prevent="approveOrder(order)">
+                          <i class="bi bi-check-circle me-2"></i> Aprobă
+                      </a>
+                  </li>
+                  <li v-if="order.approval_status === 'pending'">
+                      <a class="dropdown-item text-danger" href="#" @click.prevent="rejectOrder(order)">
+                          <i class="bi bi-x-circle me-2"></i> Respinge
+                      </a>
+                  </li>
+                  <li><hr class="dropdown-divider" v-if="order.approval_status === 'pending'"></li>
                   <li><h6 class="dropdown-header">Schimbă status</h6></li>
                   <li v-for="st in availableStatuses" :key="st.value">
                     <button 
@@ -216,10 +238,12 @@ import { ref, onMounted, reactive, computed } from 'vue'
 import { adminApi } from '@/services/http'
 import OrderDetailsModal from './OrderDetailsModal.vue'
 import { useToast } from 'vue-toastification'
+import { useRoute } from 'vue-router'
 
 const orders = ref([])
 const loading = ref(false)
 const toast = useToast()
+const route = useRoute()
 const pagination = ref({
   current_page: 1,
   last_page: 1,
@@ -235,7 +259,8 @@ const filters = reactive({
   payment_status: '',
   from_date: '',
   to_date: '',
-  credit_blocked: ''
+  credit_blocked: '',
+  approval_status: ''
 })
 
 // Helper functions for UI
@@ -357,7 +382,32 @@ const changePage = (page) => {
   }
 }
 
+const approveOrder = async (order) => {
+    if (!confirm('Sunteți sigur că doriți să aprobați această comandă?')) return;
+    try {
+        await adminApi.post(`/orders/${order.id}/approve`);
+        toast.success('Comanda a fost aprobată');
+        loadOrders(pagination.value.current_page);
+    } catch (e) {
+        toast.error('Eroare la aprobare');
+    }
+}
+
+const rejectOrder = async (order) => {
+    if (!confirm('Sunteți sigur că doriți să respingeți această comandă?')) return;
+    try {
+        await adminApi.post(`/orders/${order.id}/reject`);
+        toast.success('Comanda a fost respinsă');
+        loadOrders(pagination.value.current_page);
+    } catch (e) {
+        toast.error('Eroare la respingere');
+    }
+}
+
 onMounted(() => {
+  if (route.query.approval_status) {
+      filters.approval_status = route.query.approval_status
+  }
   loadOrders()
 })
 

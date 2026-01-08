@@ -29,9 +29,30 @@ class AccountOrderController extends Controller
     public function show(Request $request, Order $order)
     {
         $user = $request->user();
-        $customer = $user->customer;
+        $userCustomer = $user->customer;
 
-        if ($order->customer_id !== $customer?->id) {
+        $hasAccess = false;
+
+        // 1. Clientul propriu-zis
+        if ($userCustomer && $order->customer_id === $userCustomer->id) {
+            $hasAccess = true;
+        }
+
+        // 2. Director de vânzări (are dreptul să vadă comenzile pentru aprobare)
+        if (!$hasAccess && $user->hasRole('sales_director')) {
+            $orderCustomer = $order->customer;
+            if ($orderCustomer) {
+                $subordinateIds = \App\Models\User::where('director_id', $user->id)->pluck('id')->toArray();
+                $isDirectClient = $orderCustomer->sales_director_user_id == $user->id;
+                $isSubordinateClient = in_array($orderCustomer->agent_user_id, $subordinateIds);
+                
+                if ($isDirectClient || $isSubordinateClient) {
+                    $hasAccess = true;
+                }
+            }
+        }
+
+        if (!$hasAccess) {
             abort(403);
         }
 

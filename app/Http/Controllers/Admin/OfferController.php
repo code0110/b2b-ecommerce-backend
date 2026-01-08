@@ -194,6 +194,19 @@ class OfferController extends Controller
             'customer_visit_id' => 'nullable|exists:customer_visits,id',
         ]);
 
+        $discountService = app(\App\Services\DiscountRuleService::class);
+        $currentUser = Auth::user();
+        $derogationThreshold = $discountService->getApprovalThreshold($currentUser);
+        $maxDiscount = $discountService->getMaxDiscount($currentUser);
+
+        foreach ($request->items as $item) {
+            if ((float) $item['discount_percent'] > $maxDiscount) {
+                return response()->json([
+                    'message' => "Discountul nu poate depăși {$maxDiscount}% pentru produsul {$item['product_id']}.",
+                ], 422);
+            }
+        }
+
         DB::beginTransaction();
         try {
             $offer = new Offer();
@@ -209,16 +222,8 @@ class OfferController extends Controller
             $totalAmount = 0;
             $totalDiscount = 0;
             $requiresApproval = false;
-            $discountService = app(\App\Services\DiscountRuleService::class);
-            $currentUser = Auth::user();
-            $derogationThreshold = $discountService->getApprovalThreshold($currentUser);
-            $maxDiscount = $discountService->getMaxDiscount($currentUser);
 
             foreach ($request->items as $item) {
-                if ($item['discount_percent'] > $maxDiscount) {
-                    throw new \Exception("Discount cannot exceed {$maxDiscount}% for product ID {$item['product_id']}.");
-                }
-
                 $finalPrice = $item['unit_price'] * (1 - ($item['discount_percent'] / 100));
                 $lineTotal = $finalPrice * $item['quantity'];
                 
@@ -298,8 +303,26 @@ class OfferController extends Controller
 
         $request->validate([
             'items' => 'required|array|min:1',
-            // ... validation similar to store
+            'items.*.product_id' => 'required|exists:products,id',
+            'items.*.quantity' => 'required|integer|min:1',
+            'items.*.unit_price' => 'required|numeric|min:0',
+            'items.*.discount_percent' => 'required|numeric|min:0|max:100',
+            'valid_until' => 'nullable|date',
+            'notes' => 'nullable|string',
         ]);
+
+        $discountService = app(\App\Services\DiscountRuleService::class);
+        $updater = Auth::user();
+        $derogationThreshold = $discountService->getApprovalThreshold($updater);
+        $maxDiscount = $discountService->getMaxDiscount($updater);
+
+        foreach ($request->items as $item) {
+            if ((float) $item['discount_percent'] > $maxDiscount) {
+                return response()->json([
+                    'message' => "Discountul nu poate depăși {$maxDiscount}% pentru produsul {$item['product_id']}.",
+                ], 422);
+            }
+        }
 
         DB::beginTransaction();
         try {
@@ -317,16 +340,8 @@ class OfferController extends Controller
             $totalAmount = 0;
             $totalDiscount = 0;
             $requiresApproval = false;
-            $discountService = app(\App\Services\DiscountRuleService::class);
-            $updater = Auth::user();
-            $derogationThreshold = $discountService->getApprovalThreshold($updater);
-            $maxDiscount = $discountService->getMaxDiscount($updater);
 
             foreach ($request->items as $item) {
-                if ($item['discount_percent'] > $maxDiscount) {
-                    throw new \Exception("Discount cannot exceed {$maxDiscount}% for product ID {$item['product_id']}.");
-                }
-
                 $finalPrice = $item['unit_price'] * (1 - ($item['discount_percent'] / 100));
                 $lineTotal = $finalPrice * $item['quantity'];
                 
@@ -366,7 +381,7 @@ class OfferController extends Controller
             return response()->json($offer->load('items'));
         } catch (\Exception $e) {
             DB::rollBack();
-            return response()->json(['message' => 'Error updating offer'], 500);
+            return response()->json(['message' => 'Error updating offer: ' . $e->getMessage()], 500);
         }
     }
 

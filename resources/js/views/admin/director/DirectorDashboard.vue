@@ -15,11 +15,18 @@
             <h6 class="text-muted text-uppercase small">Aprobări Necesare</h6>
             <div class="d-flex justify-content-between align-items-center mt-2">
                 <h2 class="fw-bold mb-0" :class="summary.pending_approvals > 0 ? 'text-warning' : 'text-secondary'">{{ summary.pending_approvals }}</h2>
-                <button v-if="summary.pending_approvals > 0" class="btn btn-sm btn-warning text-dark" @click="goToApprovals">
-                    Vezi <i class="bi bi-arrow-right"></i>
+            </div>
+            <div class="mt-2 d-flex flex-column gap-2" v-if="summary.pending_approvals > 0">
+                <button v-if="summary.pending_offers > 0" class="btn btn-sm btn-outline-warning text-dark d-flex justify-content-between align-items-center w-100" @click="goToOffers">
+                    <span>Oferte</span>
+                    <span class="badge bg-warning text-dark rounded-pill">{{ summary.pending_offers }}</span>
+                </button>
+                 <button v-if="summary.pending_orders > 0" class="btn btn-sm btn-outline-warning text-dark d-flex justify-content-between align-items-center w-100" @click="goToOrders">
+                    <span>Comenzi</span>
+                    <span class="badge bg-warning text-dark rounded-pill">{{ summary.pending_orders }}</span>
                 </button>
             </div>
-            <small class="text-muted">Oferte ce necesită derogare</small>
+            <small v-else class="text-muted">Nu există cereri în așteptare</small>
           </div>
         </div>
       </div>
@@ -142,7 +149,9 @@ const summary = ref({
     today_visits: 0,
     active_visits: 0,
     agents_count: 0,
-    pending_approvals: 0
+    pending_approvals: 0,
+    pending_offers: 0,
+    pending_orders: 0
 });
 
 const teamStatus = ref([]);
@@ -157,9 +166,13 @@ const formatTime = (dateString) => {
     return new Date(dateString).toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit' });
 };
 
-const goToApprovals = () => {
+const goToOffers = () => {
     const routeName = authStore.hasRole('admin') ? 'admin-offers' : 'account-offers-list';
     router.push({ name: routeName, query: { status: 'pending_approval' } });
+};
+
+const goToOrders = () => {
+    router.push({ name: 'admin-orders', query: { approval_status: 'pending' } });
 };
 
 const fetchData = async () => {

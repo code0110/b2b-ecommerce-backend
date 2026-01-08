@@ -89,16 +89,21 @@
             </div>
             <div class="d-flex align-items-center justify-content-between mb-3">
               <div class="price-main">
-                <span v-if="product.has_discount" class="text-muted text-decoration-line-through me-2 h6">
-                  {{ formatPrice(product.list_price || product.price) }}
+                <span v-if="product.list_price && product.list_price > displayPrice" class="text-muted text-decoration-line-through me-2 h6">
+                  {{ formatPrice(product.list_price) }}
                 </span>
-                <span class="price-value fw-bold mb-0">
+                <span class="price-value fw-bold mb-0" :class="{'text-danger': (product.list_price && product.list_price > displayPrice)}">
                   {{ formatPrice(displayPrice) }}
                 </span>
               </div>
               <div class="text-end">
-                <span v-if="product.has_discount" class="badge bg-danger rounded-pill me-2">Promoție</span>
+                <span v-if="product.has_discount || (product.list_price && product.list_price > displayPrice)" class="badge bg-danger rounded-pill me-2">
+                    {{ product.has_discount ? 'Promoție' : 'Preț redus' }}
+                </span>
                 <span v-if="product.discountPercent" class="badge bg-success rounded-pill">-{{ product.discountPercent }}%</span>
+                <span v-else-if="product.list_price && product.list_price > displayPrice" class="badge bg-success rounded-pill">
+                    -{{ Math.round(((product.list_price - displayPrice) / product.list_price) * 100) }}%
+                </span>
                 <span v-else class="badge bg-secondary rounded-pill">Preț de listă</span>
               </div>
             </div>
@@ -292,6 +297,14 @@
               <div>
                 <div class="fw-semibold">{{ similar.name }}</div>
                 <div class="text-muted">{{ similar.internal_code || similar.code }}</div>
+                <div class="small mt-1" v-if="similar.price || similar.list_price">
+                    <span v-if="similar.list_price && similar.list_price > (similar.promo_price || similar.price)" class="text-decoration-line-through text-muted me-1">
+                        {{ formatPrice(similar.list_price) }}
+                    </span>
+                    <span :class="(similar.list_price > (similar.promo_price || similar.price)) ? 'text-danger fw-bold' : 'fw-bold'">
+                        {{ formatPrice(similar.promo_price || similar.price) }}
+                    </span>
+                </div>
               </div>
               <RouterLink
                 :to="`/produs/${similar.slug}`"
@@ -315,15 +328,23 @@
             <div
               v-for="comp in complementaryProducts"
               :key="comp.slug"
-              class="d-flex justify-content-between align-items-center py-1 border-bottom"
+              class="d-flex justify-content-between align-items-center py-2 border-bottom"
             >
               <div>
                 <div class="fw-semibold">{{ comp.name }}</div>
-                <div class="text-muted">{{ comp.internal_code || comp.code }}</div>
+                <div class="text-muted small">{{ comp.internal_code || comp.code }}</div>
+                <div class="small mt-1" v-if="comp.price || comp.list_price">
+                    <span v-if="comp.list_price && comp.list_price > (comp.promo_price || comp.price)" class="text-decoration-line-through text-muted me-1">
+                        {{ formatPrice(comp.list_price) }}
+                    </span>
+                    <span :class="(comp.list_price > (comp.promo_price || comp.price)) ? 'text-danger fw-bold' : 'fw-bold'">
+                        {{ formatPrice(comp.promo_price || comp.price) }}
+                    </span>
+                </div>
               </div>
               <RouterLink
                 :to="`/produs/${comp.slug}`"
-                class="btn btn-outline-secondary btn-sm"
+                class="btn btn-outline-secondary btn-sm ms-2"
               >
                 Detalii
               </RouterLink>
@@ -731,10 +752,14 @@ const selectedUnit = ref('buc')
 const displayPrice = computed(() => {
   if (!product.value) return 0
   if (product.value.price_override) return parseFloat(product.value.price_override)
-  if (product.value.has_discount && product.value.promo_price) {
-    return parseFloat(product.value.promo_price)
+  
+  const promo = product.value.promoPrice || product.value.promo_price
+  const hasDisc = product.value.hasDiscount || product.value.has_discount
+  
+  if (hasDisc && promo) {
+    return parseFloat(promo)
   }
-  return parseFloat(product.value.price || 0)
+  return parseFloat(product.value.price || product.value.list_price || 0)
 })
 
 const isStockAvailable = computed(() => {

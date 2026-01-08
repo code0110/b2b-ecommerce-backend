@@ -41,6 +41,10 @@ class OrderController extends Controller
             $query->where('status', $status);
         }
 
+        if ($approvalStatus = $request->query('approval_status')) {
+            $query->where('approval_status', $approvalStatus);
+        }
+
         if ($paymentStatus = $request->query('payment_status')) {
             $query->where('payment_status', $paymentStatus);
         }
@@ -316,5 +320,75 @@ class OrderController extends Controller
         $order->save();
 
         return $this->show($request, $order->fresh());
+    }
+
+    public function approve(Request $request, Order $order)
+    {
+        $this->ensureOrderAccess($request, $order);
+        
+        // Admin sau Director pot aproba (accesul la comandă e verificat în ensureOrderAccess)
+        if (
+            !$request->user()->hasRole('admin') &&
+            !$request->user()->hasRole('sales_director')
+        ) {
+            abort(403, 'Unauthorized');
+        }
+
+        if ($order->approval_status !== 'pending') {
+            return response()->json(['message' => 'Order is not pending approval'], 400);
+        }
+
+        $order->approval_status = 'approved';
+        $order->status = 'pending'; // Approved, now a normal pending order
+        $order->save();
+
+        // Notify agent?
+        try {
+             if ($order->customer && $order->customer->agent_user_id) {
+                $agent = \App\Models\User::find($order->customer->agent_user_id);
+                if ($agent) {
+                    $agent->notify(new OrderStatusChangedNotification($order, 'approved'));
+                }
+             }
+        } catch (\Exception $e) {
+            // Ignore notification error
+        }
+
+        return response()->json(['message' => 'Order approved', 'order' => $order]);
+    }
+
+    public function reject(Request $request, Order $order)
+    {
+        $this->ensureOrderAccess($request, $order);
+        
+        // Admin sau Director pot respinge (accesul la comandă e verificat în ensureOrderAccess)
+        if (
+            !$request->user()->hasRole('admin') &&
+            !$request->user()->hasRole('sales_director')
+        ) {
+            abort(403, 'Unauthorized');
+        }
+
+        if ($order->approval_status !== 'pending') {
+            return response()->json(['message' => 'Order is not pending approval'], 400);
+        }
+
+        $order->approval_status = 'rejected';
+        $order->status = 'cancelled';
+        $order->save();
+
+        // Notify agent?
+        try {
+             if ($order->customer && $order->customer->agent_user_id) {
+                $agent = \App\Models\User::find($order->customer->agent_user_id);
+                if ($agent) {
+                    $agent->notify(new OrderStatusChangedNotification($order, 'rejected'));
+                }
+             }
+        } catch (\Exception $e) {
+            // Ignore notification error
+        }
+
+        return response()->json(['message' => 'Order rejected', 'order' => $order]);
     }
 }

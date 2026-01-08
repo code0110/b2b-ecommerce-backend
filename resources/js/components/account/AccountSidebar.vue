@@ -178,6 +178,16 @@
             Dashboard Director
           </span>
         </RouterLink>
+        <RouterLink
+          :to="{ name: 'account-director-approvals' }"
+          class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
+          :class="{ active: isActive('account-director-approvals') }"
+        >
+          <span>
+            <i class="bi bi-check-circle me-1"></i>
+            Derogări
+          </span>
+        </RouterLink>
 
         <RouterLink
           :to="{ name: 'account-reports' }"

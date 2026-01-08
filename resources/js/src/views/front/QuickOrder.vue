@@ -76,7 +76,7 @@
                   <span class="text-monospace">{{ product.internal_code }}</span>
                 </td>
                 <td class="text-end">
-                  {{ formatMoney(product.list_price) }}
+                  {{ formatMoney(product.list_price || product.price) }}
                 </td>
                 <td class="text-center">
                   <span

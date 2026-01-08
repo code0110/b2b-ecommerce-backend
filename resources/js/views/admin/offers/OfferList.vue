@@ -1,52 +1,137 @@
 <template>
   <div class="container-fluid py-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-      <h1 class="h3 fw-bold mb-1 text-gray-800">
+    <!-- Header Section with Actions -->
+    <div class="row align-items-center justify-content-between mb-4 g-3">
+      <div class="col-12 col-md-auto">
+        <h1 class="h3 fw-bold mb-1 text-gray-800">
           {{ activeTab === 'offers' ? 'Oferte Comerciale' : 'Cereri de Ofertă' }}
-      </h1>
-      <button class="btn btn-primary" @click="openCreateModal" v-if="activeTab === 'offers'">
-        <i class="bi bi-plus-lg me-2"></i>
-        Ofertă Nouă
-      </button>
+        </h1>
+        <p class="text-muted small mb-0">Gestionează ofertele și cererile clienților</p>
+      </div>
+      <div class="col-12 col-md-auto d-flex gap-2">
+        <!-- Desktop Action Button -->
+        <button 
+          v-if="activeTab === 'offers'"
+          class="btn btn-primary d-none d-md-flex align-items-center shadow-sm px-4 py-2" 
+          @click="openCustomerSelectionModal"
+        >
+          <i class="bi bi-plus-circle-fill me-2 fs-5"></i>
+          <span class="fw-semibold">Ofertă Nouă</span>
+        </button>
+      </div>
     </div>
 
+    <!-- Mobile Floating Action Button -->
+    <button 
+        v-if="activeTab === 'offers'"
+        class="btn btn-primary rounded-circle shadow-lg position-fixed bottom-0 end-0 m-4 d-md-none d-flex align-items-center justify-content-center z-3"
+        style="width: 60px; height: 60px;"
+        @click="openCustomerSelectionModal"
+    >
+        <i class="bi bi-plus-lg fs-3"></i>
+    </button>
+
     <!-- Tabs -->
-    <ul class="nav nav-tabs mb-4">
+    <ul class="nav nav-tabs nav-fill mb-4 border-bottom-0">
         <li class="nav-item">
-            <button class="nav-link" :class="{active: activeTab === 'offers'}" @click="switchTab('offers')">
-                Oferte Comerciale
+            <button 
+                class="nav-link border rounded-top" 
+                :class="{active: activeTab === 'offers', 'fw-bold': activeTab === 'offers', 'text-muted': activeTab !== 'offers'}" 
+                @click="switchTab('offers')"
+            >
+                <i class="bi bi-file-earmark-text me-2"></i>Oferte Comerciale
             </button>
         </li>
         <li class="nav-item">
-            <button class="nav-link" :class="{active: activeTab === 'requests'}" @click="switchTab('requests')">
-                Cereri de Ofertă
+            <button 
+                class="nav-link border rounded-top ms-1" 
+                :class="{active: activeTab === 'requests', 'fw-bold': activeTab === 'requests', 'text-muted': activeTab !== 'requests'}" 
+                @click="switchTab('requests')"
+            >
+                <i class="bi bi-inbox me-2"></i>Cereri de Ofertă
             </button>
         </li>
     </ul>
 
     <!-- Filters -->
-    <div class="card shadow-sm border-0 mb-4" v-if="activeTab === 'offers'">
-      <div class="card-body">
-        <div class="row g-3">
+    <div class="card shadow-sm border-0 mb-4 bg-white" v-if="activeTab === 'offers'">
+      <div class="card-body p-3">
+        <div class="row g-3 align-items-end">
             <div class="col-md-3">
-                <label class="form-label small fw-bold">Status</label>
-                <select v-model="filters.status" class="form-select" @change="loadOffers">
-                    <option value="">Toate</option>
+                <label class="form-label small fw-bold text-uppercase text-muted">Status Ofertă</label>
+                <select v-model="filters.status" class="form-select bg-light border-0" @change="loadOffers">
+                    <option value="">Toate Statusurile</option>
                     <option value="draft">Draft</option>
                     <option value="sent">Trimisă la Client</option>
-                    <option value="pending_approval">Necesită Aprobare Director</option>
+                    <option value="pending_approval">Necesită Aprobare</option>
                     <option value="approved">Aprobată</option>
                     <option value="negotiation">În Negociere</option>
                     <option value="accepted">Acceptată</option>
-                    <option value="completed">Finalizată (Comandă)</option>
+                    <option value="completed">Finalizată</option>
                     <option value="rejected">Respinsă</option>
                 </select>
             </div>
-            <div class="col-md-3">
-                 <button class="btn btn-outline-secondary mt-4 w-100" @click="loadOffers">Actualizează</button>
+            <div class="col-md-auto ms-auto">
+                 <button class="btn btn-light text-primary border-0" @click="loadOffers">
+                    <i class="bi bi-arrow-clockwise me-1"></i> Actualizează
+                 </button>
             </div>
         </div>
       </div>
+    </div>
+
+    <!-- Customer Selection Modal -->
+    <div v-if="showCustomerModal" class="modal fade show d-block" style="background: rgba(0,0,0,0.5);" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title fw-bold">Selectează Clientul</h5>
+                    <button type="button" class="btn-close" @click="closeCustomerModal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="input-group mb-4">
+                        <span class="input-group-text bg-light border-end-0"><i class="bi bi-search text-muted"></i></span>
+                        <input 
+                            type="text" 
+                            class="form-control bg-light border-start-0" 
+                            placeholder="Caută client după nume, CIF sau oraș..." 
+                            v-model="customerSearch"
+                            @input="debouncedSearch"
+                        >
+                    </div>
+                    
+                    <div v-if="loadingCustomers" class="text-center py-4">
+                        <div class="spinner-border text-primary" role="status"></div>
+                    </div>
+                    
+                    <div v-else-if="customersList.length === 0" class="text-center py-4 text-muted">
+                        <i class="bi bi-people fs-1 d-block mb-2"></i>
+                        Nu am găsit clienți conform criteriilor.
+                    </div>
+                    
+                    <div v-else class="list-group list-group-flush">
+                        <button 
+                            v-for="customer in customersList" 
+                            :key="customer.id"
+                            class="list-group-item list-group-item-action p-3 border rounded mb-2 d-flex justify-content-between align-items-center"
+                            @click="selectCustomer(customer)"
+                        >
+                            <div>
+                                <h6 class="mb-1 fw-bold text-primary">{{ customer.name }}</h6>
+                                <div class="small text-muted">
+                                    <span class="me-3"><i class="bi bi-building me-1"></i> {{ customer.cif }}</span>
+                                    <span><i class="bi bi-geo-alt me-1"></i> {{ customer.city || 'Nespecificat' }}</span>
+                                </div>
+                            </div>
+                            <i class="bi bi-chevron-right text-muted"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 pt-0">
+                    <button type="button" class="btn btn-light" @click="closeCustomerModal">Anulează</button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Mobile-first Offers List -->
@@ -333,6 +418,60 @@ const approveDerogation = async (offer) => {
 
 const openCreateModal = () => {
     router.push({ name: getRouteName('new') });
+};
+
+// Customer Selection Modal Logic
+const showCustomerModal = ref(false);
+const customerSearch = ref('');
+const customersList = ref([]);
+const loadingCustomers = ref(false);
+let searchTimeout = null;
+
+const openCustomerSelectionModal = async () => {
+    showCustomerModal.value = true;
+    customerSearch.value = '';
+    customersList.value = [];
+    // Load initial list (first 10)
+    await performSearch('');
+};
+
+const closeCustomerModal = () => {
+    showCustomerModal.value = false;
+};
+
+const debouncedSearch = () => {
+    if (searchTimeout) clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(() => {
+        performSearch(customerSearch.value);
+    }, 300);
+};
+
+const performSearch = async (query) => {
+    loadingCustomers.value = true;
+    try {
+        const { data } = await adminApi.get('/customers', {
+            params: {
+                search: query,
+                per_page: 10,
+                sort_by: 'name',
+                sort_dir: 'asc'
+            }
+        });
+        customersList.value = data.data || [];
+    } catch (e) {
+        console.error('Error searching customers', e);
+        toast.error('Eroare la căutarea clienților');
+    } finally {
+        loadingCustomers.value = false;
+    }
+};
+
+const selectCustomer = (customer) => {
+    closeCustomerModal();
+    router.push({ 
+        name: getRouteName('new'), 
+        query: { customer_id: customer.id } 
+    });
 };
 
 onMounted(async () => {

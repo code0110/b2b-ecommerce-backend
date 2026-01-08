@@ -21,7 +21,7 @@ class PricingServiceTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->service = new PromotionPricingService();
+        $this->service = app(PromotionPricingService::class);
     }
 
     private function createProduct(array $attributes = []): Product

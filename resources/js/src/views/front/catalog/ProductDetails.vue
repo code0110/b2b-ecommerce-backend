@@ -337,10 +337,14 @@ const selectedUnit = ref('sac')
 
 const displayPrice = computed(() => {
   if (!product.value) return 0
-  if (product.value.hasDiscount && product.value.promoPrice) {
-    return product.value.promoPrice
-  }
-  return product.value.price
+  return product.value.price || product.value.list_price || 0
+})
+
+const hasDiscount = computed(() => {
+  if (!product.value) return false
+  const list = product.value.list_price || 0
+  const final = product.value.price || list
+  return list > final
 })
 
 const similarProducts = computed(() => {

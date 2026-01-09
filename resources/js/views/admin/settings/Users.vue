@@ -1,37 +1,90 @@
 <template>
   <div class="container-fluid py-4">
-    <!-- Header -->
+    <!-- Header Global -->
     <div class="d-flex justify-content-between align-items-center mb-4">
       <div>
-        <h1 class="h3 fw-bold mb-1 text-gray-800">Utilizatori Back-office</h1>
-        <p class="text-muted small mb-0">Gestionează administratorii, operatorii și agenții.</p>
+        <h1 class="h3 fw-bold mb-1 text-gray-800">Panou Unificat (HR & Clienți)</h1>
+        <p class="text-muted small mb-0">Gestionează într-un singur loc angajații și clienții companiei.</p>
       </div>
-      <div class="d-flex gap-2">
-        <div class="btn-group bg-white shadow-sm rounded p-1">
-          <button 
-            class="btn btn-sm px-3" 
-            :class="viewMode === 'list' ? 'btn-primary' : 'btn-light text-muted border-0'" 
-            @click="viewMode = 'list'"
-          >
-            <i class="bi bi-list-ul me-1"></i> Listă
-          </button>
-          <button 
-            class="btn btn-sm px-3" 
-            :class="viewMode === 'assignment' ? 'btn-primary' : 'btn-light text-muted border-0'" 
-            @click="viewMode = 'assignment'"
-          >
-            <i class="bi bi-people-fill me-1"></i> Asignare Directori
-          </button>
-        </div>
-        <button v-if="viewMode === 'list'" class="btn btn-primary shadow-sm d-flex align-items-center gap-2" @click="openCreateModal">
-          <i class="bi bi-person-plus-fill"></i>
-          <span>Utilizator Nou</span>
-        </button>
-      </div>
+      
+      <!-- Tab Navigation -->
+    <div class="bg-white p-1 rounded shadow-sm d-flex overflow-auto">
+      <button 
+        class="btn btn-sm px-3 fw-bold rounded transition-all whitespace-nowrap"
+        :class="activeTab === 'all_staff' ? 'btn-primary shadow-sm' : 'btn-light text-muted bg-transparent'"
+        @click="activeTab = 'all_staff'"
+      >
+        <i class="bi bi-people me-2"></i>
+        Toți (Interni)
+      </button>
+      <button 
+        class="btn btn-sm px-3 fw-bold rounded transition-all ms-1 whitespace-nowrap"
+        :class="activeTab === 'agents' ? 'btn-primary shadow-sm' : 'btn-light text-muted bg-transparent'"
+        @click="activeTab = 'agents'"
+      >
+        <i class="bi bi-person-workspace me-2"></i>
+        Agenți Vânzări
+      </button>
+      <button 
+        class="btn btn-sm px-3 fw-bold rounded transition-all ms-1 whitespace-nowrap"
+        :class="activeTab === 'directors' ? 'btn-primary shadow-sm' : 'btn-light text-muted bg-transparent'"
+        @click="activeTab = 'directors'"
+      >
+        <i class="bi bi-person-video me-2"></i>
+        Directori Vânzări
+      </button>
+      <button 
+        class="btn btn-sm px-3 fw-bold rounded transition-all ms-1 whitespace-nowrap"
+        :class="activeTab === 'customers' ? 'btn-primary shadow-sm' : 'btn-light text-muted bg-transparent'"
+        @click="activeTab = 'customers'"
+      >
+        <i class="bi bi-people-fill me-2"></i>
+        Clienți (B2B/B2C)
+      </button>
     </div>
+  </div>
 
-    <!-- List View -->
-    <div v-if="viewMode === 'list'">
+  <!-- TAB: STAFF / AGENTS / DIRECTORS -->
+  <div v-show="activeTab !== 'customers'">
+      <!-- Sub-Header -->
+      <div class="d-flex justify-content-between align-items-center mb-3 border-bottom pb-2">
+          <h5 class="text-muted fw-bold mb-0 small text-uppercase">
+              <i class="bi bi-person-workspace me-2"></i>
+              <span v-if="activeTab === 'all_staff'">Toți Utilizatorii Interni</span>
+              <span v-else-if="activeTab === 'agents'">Agenți Vânzări</span>
+              <span v-else-if="activeTab === 'directors'">Directori Vânzări</span>
+          </h5>
+            <div class="d-flex gap-2">
+                <div class="btn-group bg-white shadow-sm rounded p-1">
+                  <button 
+                    class="btn btn-sm px-3" 
+                    :class="viewMode === 'list' ? 'btn-primary' : 'btn-light text-muted border-0'" 
+                    @click="viewMode = 'list'"
+                  >
+                    <i class="bi bi-list-ul me-1"></i> Listă
+                  </button>
+                  <button 
+                    class="btn btn-sm px-3" 
+                    :class="viewMode === 'assignment' ? 'btn-primary' : 'btn-light text-muted border-0'" 
+                    @click="viewMode = 'assignment'"
+                  >
+                    <i class="bi bi-people-fill me-1"></i> Asignare Directori
+                  </button>
+                </div>
+                <button v-if="viewMode === 'list'" class="btn btn-primary shadow-sm d-flex align-items-center gap-2" @click="openCreateModal">
+                  <i class="bi bi-person-plus-fill"></i>
+                  <span>
+                    <span v-if="activeTab === 'agents'">Agent Nou</span>
+                    <span v-else-if="activeTab === 'directors'">Director Nou</span>
+                    <span v-else>Utilizator Intern</span>
+                  </span>
+                </button>
+            </div>
+        </div>
+
+        <!-- List View -->
+        <div v-if="viewMode === 'list'">
+
       <!-- Filters -->
       <div class="card border-0 shadow-sm mb-4">
       <div class="card-body p-3 bg-white rounded">
@@ -50,7 +103,7 @@
               />
             </div>
           </div>
-          <div class="col-md-3">
+          <div class="col-md-3" v-if="activeTab === 'all_staff'">
             <label class="form-label text-muted small fw-bold text-uppercase">Rol</label>
             <select v-model="filters.role" class="form-select bg-light" @change="loadUsers(1)">
               <option value="">Toate rolurile</option>
@@ -279,10 +332,18 @@
       </div>
     </div>
   </div>
+
+  <!-- TAB: CUSTOMERS -->
+  <div v-if="activeTab === 'customers'">
+      <CustomerList :embedded="true" />
+  </div>
+
+  </div>
 </template>
 
 <script setup>
 import { onMounted, reactive, ref, computed, watch } from 'vue';
+import CustomerList from '../customers/CustomerList.vue';
 import { useRoute } from 'vue-router';
 import { fetchUsers, createUser, updateUser, deleteUser } from '@/services/admin/users';
 import { fetchRoles } from '@/services/admin/roles';
@@ -295,6 +356,7 @@ const authStore = useAuthStore();
 const toast = useToast();
 const currentUserId = authStore.user?.id ?? null;
 
+const activeTab = ref('all_staff');
 const viewMode = ref('list'); // 'list' | 'assignment'
 const users = ref([]);
 const roles = ref([]);
@@ -308,6 +370,7 @@ const filters = reactive({
   search: '',
   role: '',
   is_active: '',
+  type: 'internal', // Default to internal users
 });
 
 const form = reactive({
@@ -320,6 +383,27 @@ const form = reactive({
   is_active: true,
   role_ids: [],
   director_id: null,
+});
+
+// Watch for activeTab changes to update filters and load data
+watch(activeTab, (newTab) => {
+  if (newTab === 'customers') return; // Handled by embedded component
+  
+  // Always filter for internal users in these tabs
+  filters.type = 'internal';
+
+  if (newTab === 'agents') {
+    filters.role = 'sales_agent';
+  } else if (newTab === 'directors') {
+    filters.role = 'sales_director';
+  } else {
+    filters.role = ''; // Reset for all staff
+  }
+  
+  // Reset search and page when switching tabs
+  filters.search = '';
+  pagination.current_page = 1;
+  loadUsers(1);
 });
 
 const pagination = reactive({
@@ -351,7 +435,9 @@ const loadDirectors = async () => {
 
 const loadRoles = async () => {
   try {
-    roles.value = await fetchRoles();
+    const allRoles = await fetchRoles();
+    // Filter out customer roles to prevent creating customers from Users panel
+    roles.value = allRoles.filter(r => !['customer_b2b', 'customer_b2c'].includes(r.slug));
   } catch (e) {
     console.error('loadRoles error', e);
   }
@@ -385,8 +471,18 @@ const changePage = (page) => {
 
 const resetFilters = () => {
   filters.search = '';
-  filters.role = '';
   filters.is_active = '';
+  
+  // Reset role based on active tab
+  if (activeTab.value === 'agents') {
+    filters.role = 'sales_agent';
+  } else if (activeTab.value === 'directors') {
+    filters.role = 'sales_director';
+  } else {
+    filters.role = '';
+  }
+  
+  filters.type = 'internal';
   loadUsers(1);
 };
 

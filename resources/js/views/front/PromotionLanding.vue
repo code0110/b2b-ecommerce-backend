@@ -1,45 +1,50 @@
 <template>
-  <div class="container py-4">
-    <div v-if="error" class="alert alert-danger py-2 mb-3">
-      {{ error }}
-    </div>
-
-    <div v-if="loading" class="text-center py-5">
-      <div class="spinner-border spinner-border-sm" role="status" />
-      <div class="small text-muted mt-2">Se încarcă promoția...</div>
-    </div>
-
-    <div v-else-if="promotion">
-      <!-- Hero / header promoție -->
-      <div class="row align-items-center mb-4">
-        <div class="col-md-7">
-          <h1 class="h4 mb-1">{{ promotion.name }}</h1>
-          <p class="text-muted mb-2">
-            {{ promotion.short_description }}
-          </p>
-          <p class="small mb-1" v-if="promotion.period">
-            <strong>Perioadă:</strong> {{ promotion.period }}
-          </p>
-          <p class="small text-muted mb-3">
-            Segment: {{ promotion.segmentLabel }}
-          </p>
-          <RouterLink
-            to="/promotii"
-            class="btn btn-outline-secondary btn-sm"
-          >
-            ← Înapoi la lista de promoții
-          </RouterLink>
-        </div>
-        <div class="col-md-5">
-          <div v-if="promotion.hero_image" class="border rounded overflow-hidden">
-            <img
-              :src="promotion.hero_image"
-              :alt="promotion.name"
-              class="img-fluid w-100"
-            />
+  <div>
+    <div v-if="promotion" class="dd-page-header py-3 mb-3">
+      <div class="container">
+        <div class="row align-items-center g-3">
+          <div class="col-md-7">
+            <h1 class="h4 mb-1">{{ promotion.name }}</h1>
+            <p class="text-muted mb-2">
+              {{ promotion.short_description }}
+            </p>
+            <p class="small mb-1" v-if="promotion.period">
+              <strong>Perioadă:</strong> {{ promotion.period }}
+            </p>
+            <p class="small text-muted mb-3">
+              Segment: {{ promotion.segmentLabel }}
+            </p>
+            <RouterLink
+              to="/promotii"
+              class="btn btn-outline-secondary btn-sm"
+            >
+              ← Înapoi la lista de promoții
+            </RouterLink>
+          </div>
+          <div class="col-md-5">
+            <div v-if="promotion.hero_image" class="ratio ratio-16x9 bg-light rounded overflow-hidden">
+              <img
+                :src="promotion.hero_image"
+                :alt="promotion.name"
+                class="w-100 h-100 object-fit-cover"
+              />
+            </div>
           </div>
         </div>
       </div>
+    </div>
+
+    <div class="container pb-4">
+      <div v-if="error" class="alert alert-danger py-2 mb-3">
+        {{ error }}
+      </div>
+
+      <div v-if="loading" class="text-center py-5">
+        <div class="spinner-border spinner-border-sm text-orange" role="status" />
+        <div class="small text-muted mt-2">Se încarcă promoția...</div>
+      </div>
+
+      <div v-else-if="promotion">
 
       <!-- Descriere detaliată -->
       <div
@@ -79,7 +84,7 @@
             :key="product.id"
             class="col-md-3 col-sm-6"
           >
-            <div class="card h-100 shadow-sm">
+            <div class="card h-100 dd-product-card">
               <div class="card-body d-flex flex-column">
                 <div class="d-flex justify-content-between align-items-start mb-1">
                   <div class="small text-muted">
@@ -92,7 +97,7 @@
                     Nou
                   </span>
                 </div>
-                <h3 class="h6 mb-1">{{ product.name }}</h3>
+                <h3 class="h6 mb-1 fw-bold line-clamp-2">{{ product.name }}</h3>
                 <div class="small text-muted mb-2">{{ product.code }}</div>
                 <div class="mt-auto">
                   <div class="mb-1">
@@ -105,7 +110,7 @@
                   </div>
                   <RouterLink
                     :to="`/produs/${product.slug}`"
-                    class="btn btn-outline-primary btn-sm"
+                    class="btn btn-orange btn-sm w-100"
                   >
                     Detalii produs
                   </RouterLink>
@@ -117,8 +122,9 @@
       </div>
     </div>
 
-    <div v-else-if="!loading" class="alert alert-warning py-2">
-      Promoția nu a fost găsită.
+      <div v-else-if="!loading" class="alert alert-warning py-2">
+        Promoția nu a fost găsită.
+      </div>
     </div>
   </div>
 </template>

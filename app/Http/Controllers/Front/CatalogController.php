@@ -41,9 +41,18 @@ class CatalogController extends Controller
         return Promotion::where('status', 'active')->paginate(20);
     }
 
-    public function categories()
+    public function categories(Request $request)
     {
-        return Category::whereNull('parent_id')->with('children')->where('is_published', true)->get();
+        $query = Category::whereNull('parent_id')
+            ->with('children')
+            ->where('is_published', true)
+            ->orderBy('sort_order');
+
+        if ($request->has('limit')) {
+            $query->limit($request->input('limit'));
+        }
+
+        return $query->get();
     }
 
     public function category($slug, Request $request)
@@ -101,7 +110,7 @@ class CatalogController extends Controller
         'categories',
         'images',
         'variants',
-        'attributes',
+        'attributeValues.attribute',
         'documents',
         'relatedProducts',
         'complementaryProducts',
@@ -149,6 +158,13 @@ class CatalogController extends Controller
                 'type'     => $doc->type,
                 'url'      => $doc->url ?? null,
                 'is_locked'=> (bool) ($doc->is_locked ?? false),
+            ];
+        })->values() ?? [];
+
+        $productArray['attributes'] = $product->attributeValues?->map(function ($av) {
+            return [
+                'name'  => $av->attribute->name ?? '',
+                'value' => $av->value,
             ];
         })->values() ?? [];
 

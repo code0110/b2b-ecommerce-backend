@@ -112,7 +112,7 @@
       <div class="card-footer d-flex justify-content-between align-items-center small">
         <div class="text-muted">
           Cantitate totală selectată: <strong>{{ totalQuantity }}</strong> buc.
-          <span v-if="addingToCart" class="ms-2 text-primary">Se adaugă în coș...</span>
+          <span v-if="addingToCart" class="ms-2 text-orange">Se adaugă în coș...</span>
         </div>
         <div class="d-flex gap-2">
           <button
@@ -124,7 +124,7 @@
           </button>
           <button
             type="button"
-            class="btn btn-primary btn-sm"
+            class="btn btn-orange btn-sm"
             :disabled="totalQuantity === 0 || addingToCart"
             @click="addAllToCart"
           >

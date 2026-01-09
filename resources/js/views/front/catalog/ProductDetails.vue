@@ -1,6 +1,6 @@
 <template>
   <div v-if="loading" class="text-center py-5">
-    <div class="spinner-border text-primary" role="status">
+    <div class="spinner-border text-orange" role="status">
       <span class="visually-hidden">Se încarcă...</span>
     </div>
     <div class="mt-2 text-muted">Se încarcă detaliile produsului...</div>
@@ -92,7 +92,7 @@
             </span>
           </div>
           <div class="small mt-1" v-if="isB2B">
-            <span class="badge bg-primary me-1">B2B</span>
+            <span class="badge bg-dd-blue me-1">B2B</span>
             Prețuri și condiții comerciale B2B (termen plată, limită credit) se aplică în cont sau la impersonare.
           </div>
         </div>
@@ -136,7 +136,7 @@
             />
           </div>
           <button
-            class="btn btn-primary"
+            class="btn btn-orange"
             @click="addToCartDemo"
             :disabled="!isStockAvailable && !product.can_backorder"
           >
@@ -245,7 +245,7 @@
                   </div>
                 </div>
                 <button
-                  class="btn btn-sm btn-outline-primary"
+                  class="btn btn-sm btn-outline-secondary"
                   @click="openDocumentDemo(doc)"
                 >
                   Descarcă
@@ -324,7 +324,7 @@
         {{ error }}
      </div>
       <div class="mt-3">
-        <RouterLink to="/" class="btn btn-outline-primary">
+        <RouterLink to="/" class="btn btn-outline-secondary">
           Înapoi la prima pagină
         </RouterLink>
       </div>
@@ -335,7 +335,7 @@
       Produsul nu a fost găsit.
     </div>
     <div class="mt-3">
-        <RouterLink to="/" class="btn btn-outline-primary">
+        <RouterLink to="/" class="btn btn-outline-secondary">
           Înapoi la prima pagină
         </RouterLink>
       </div>

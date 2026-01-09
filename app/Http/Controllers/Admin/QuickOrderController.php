@@ -310,6 +310,14 @@ class QuickOrderController extends Controller
     public function getPromotionsForCustomer($customerId)
     {
         $customer = Customer::findOrFail($customerId);
+
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+        if ($user->hasRole(['customer_b2b', 'customer_b2c'])) {
+             if ($user->customer_id != $customerId) {
+                 abort(403, 'Unauthorized access to promotions.');
+             }
+        }
         
         // Get all active promotions
         $promotions = $this->pricingService->getActivePromotionsForCustomer($customer);

@@ -201,7 +201,7 @@
                   </tr>
                   <tr v-if="order.discount_total > 0">
                     <th colspan="6" class="text-end">Discount total</th>
-                    <th class="text-end text-success">
+                    <th class="text-end text-danger">
                       -{{ formatMoney(order.discount_total) }}
                     </th>
                   </tr>
@@ -338,15 +338,15 @@ const paymentStatusLabel = (status) => {
 const paymentStatusBadgeClass = (status) => {
   switch (status) {
     case 'pending':
-      return 'bg-warning text-dark';
+      return 'bg-orange text-white';
     case 'paid':
-      return 'bg-success';
+      return 'bg-success text-white';
     case 'failed':
-      return 'bg-danger';
+      return 'bg-danger text-white';
     case 'refunded':
-      return 'bg-info text-dark';
+      return 'bg-dd-blue text-white';
     case 'partially_paid':
-      return 'bg-primary';
+      return 'bg-dd-blue text-white';
     default:
       return 'bg-light text-dark';
   }

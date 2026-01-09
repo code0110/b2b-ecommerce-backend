@@ -1,9 +1,21 @@
 <template>
-  <div class="container py-4">
-    <div class="row">
+  <div>
+    <div class="dd-page-header py-3 mb-3">
+      <div class="container">
+        <h1 class="h4 mb-1">Blog / Noutăți</h1>
+        <p class="text-muted small mb-0">
+          Articole educaționale, noutăți și studii de caz.
+        </p>
+      </div>
+    </div>
+
+    <div class="container pb-4">
+    <div class="row g-3">
       <!-- Sidebar filtre -->
-      <div class="col-md-3 mb-4 mb-md-0">
-        <h1 class="h5 mb-3">Blog / Noutăți</h1>
+      <div class="col-md-3">
+        <div class="card">
+          <div class="card-body">
+            <div class="h6 fw-bold mb-3">Filtre</div>
 
         <div class="mb-3">
           <label class="form-label small text-muted">Căutare</label>
@@ -15,7 +27,7 @@
               placeholder="Caută în articole..."
               @keyup.enter="applyFilters"
             />
-            <button class="btn btn-outline-secondary" @click="applyFilters">
+            <button class="btn btn-orange" @click="applyFilters">
               Caută
             </button>
           </div>
@@ -51,6 +63,8 @@
               </button>
             </li>
           </ul>
+        </div>
+          </div>
         </div>
       </div>
 
@@ -104,7 +118,7 @@
                 </p>
                 <RouterLink
                   :to="`/blog/${post.slug}`"
-                  class="btn btn-outline-primary btn-sm"
+                  class="btn btn-outline-secondary btn-sm"
                 >
                   Citește mai mult
                 </RouterLink>
@@ -167,6 +181,7 @@
         </div>
       </div>
     </div>
+  </div>
   </div>
 </template>
 

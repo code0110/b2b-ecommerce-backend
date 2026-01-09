@@ -1,11 +1,8 @@
 <template>
-  <div class="container">
-    <PageHeader
-      title="Compară produse"
-      subtitle="Compară specificațiile tehnice și prețurile pentru mai multe produse."
-    >
-      <template #breadcrumbs>
-        <nav aria-label="breadcrumb">
+  <div>
+    <div class="dd-page-header py-3 mb-3">
+      <div class="container">
+        <nav aria-label="breadcrumb" class="small mb-2">
           <ol class="breadcrumb mb-0">
             <li class="breadcrumb-item">
               <RouterLink :to="{ name: 'home' }">Acasă</RouterLink>
@@ -15,8 +12,14 @@
             </li>
           </ol>
         </nav>
-      </template>
-    </PageHeader>
+        <h1 class="h4 mb-1">Compară produse</h1>
+        <p class="text-muted small mb-0">
+          Compară specificațiile tehnice și prețurile pentru mai multe produse.
+        </p>
+      </div>
+    </div>
+
+    <div class="container pb-4">
 
     <div v-if="!products.length" class="alert alert-info small">
       Nu ai selectat încă produse pentru comparare.
@@ -112,7 +115,7 @@
                   </span>
                   <span
                     v-else-if="p.stockStatus === 'low_stock'"
-                    class="text-warning"
+                    class="text-orange"
                   >
                     Stoc limitat ({{ p.stockQty }} buc)
                   </span>
@@ -166,7 +169,7 @@
                   </button>
                   <RouterLink
                     :to="{ name: 'product-details', params: { slug: 'produs-demo-' + p.id } }"
-                    class="btn btn-outline-primary btn-sm ms-1"
+                    class="btn btn-outline-secondary btn-sm ms-1"
                   >
                     Vezi produs
                   </RouterLink>
@@ -183,13 +186,13 @@
         promoții active și condiții comerciale personalizate.
       </div>
     </div>
+    </div>
   </div>
 </template>
 
 <script setup>
 import { computed } from 'vue'
 import { RouterLink } from 'vue-router'
-import PageHeader from '@/components/common/PageHeader.vue'
 import { useProductNavigationStore } from '@/store/productNavigation'
 
 const navStore = useProductNavigationStore()

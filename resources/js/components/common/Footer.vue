@@ -12,19 +12,19 @@
           <h6 class="text-dark mb-2">{{ contentStore.getBlock('footer_contact_title') || 'Contact' }}</h6>
           <ul class="list-unstyled small mb-0">
             <li class="mb-2 d-flex gap-2" v-if="contentStore.getBlock('footer_contact_address')">
-              <i class="bi bi-geo-alt text-primary"></i>
+              <i class="bi bi-geo-alt text-orange"></i>
               <span>{{ contentStore.getBlock('footer_contact_address') }}</span>
             </li>
             <li class="mb-2 d-flex gap-2" v-if="contentStore.getBlock('footer_contact_phone')">
-              <i class="bi bi-telephone text-primary"></i>
+              <i class="bi bi-telephone text-orange"></i>
               <a :href="`tel:${contentStore.getBlock('footer_contact_phone')}`" class="text-decoration-none text-muted">{{ contentStore.getBlock('footer_contact_phone') }}</a>
             </li>
             <li class="mb-2 d-flex gap-2" v-if="contentStore.getBlock('footer_contact_email')">
-              <i class="bi bi-envelope text-primary"></i>
+              <i class="bi bi-envelope text-orange"></i>
               <a :href="`mailto:${contentStore.getBlock('footer_contact_email')}`" class="text-decoration-none text-muted">{{ contentStore.getBlock('footer_contact_email') }}</a>
             </li>
             <li class="d-flex gap-2" v-if="contentStore.getBlock('footer_contact_schedule')">
-              <i class="bi bi-clock text-primary"></i>
+              <i class="bi bi-clock text-orange"></i>
               <span>{{ contentStore.getBlock('footer_contact_schedule') }}</span>
             </li>
           </ul>
@@ -61,7 +61,7 @@
           <form @submit.prevent="subscribeNewsletter" class="mb-4">
             <div class="input-group">
               <input type="email" class="form-control form-control-sm" :placeholder="contentStore.getBlock('footer_newsletter_placeholder') || 'Adresa ta de email'" required>
-              <button class="btn btn-primary btn-sm" type="submit">{{ contentStore.getBlock('footer_newsletter_button') || 'Abonează-te' }}</button>
+              <button class="btn btn-orange btn-sm" type="submit">{{ contentStore.getBlock('footer_newsletter_button') || 'Abonează-te' }}</button>
             </div>
           </form>
 
@@ -122,7 +122,7 @@ const subscribeNewsletter = () => {
 
 <style scoped>
 .hover-primary:hover {
-  color: var(--bs-primary) !important;
+  color: var(--dd-orange) !important;
   text-decoration: underline !important;
 }
 </style>

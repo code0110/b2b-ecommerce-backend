@@ -8,10 +8,10 @@
     </div>
 
     <div v-if="loading" class="text-center py-5">
-      <div class="spinner-border text-primary" role="status">
-        <span class="visually-hidden">Se încarcă...</span>
-      </div>
-    </div>
+            <div class="spinner-border text-orange" role="status">
+                <span class="visually-hidden">Se încarcă...</span>
+            </div>
+        </div>
 
     <div v-else class="card border-0 shadow-sm">
       <div class="card-body">
@@ -73,7 +73,7 @@
           <hr class="my-4">
 
           <div class="d-flex justify-content-end">
-            <button type="submit" class="btn btn-primary" :disabled="saving">
+            <button type="submit" class="btn btn-orange" :disabled="saving">
               <span v-if="saving" class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
               {{ saving ? 'Se salvează...' : 'Salvează preferințele' }}
             </button>

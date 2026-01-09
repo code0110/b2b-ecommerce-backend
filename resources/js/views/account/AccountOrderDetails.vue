@@ -14,7 +14,7 @@
     </div>
 
     <div v-if="loading" class="text-center py-5">
-      <div class="spinner-border text-primary" role="status">
+      <div class="spinner-border text-orange" role="status">
         <span class="visually-hidden">Se încarcă...</span>
       </div>
       <p class="mt-2 text-muted">Se încarcă detaliile comenzii...</p>
@@ -45,7 +45,7 @@
                   class="badge"
                   :class="{
                     'bg-warning text-dark': order.status === 'pending' || order.status === 'processing',
-                    'bg-info text-dark': order.status === 'shipping' || order.status === 'in_livrare',
+                    'bg-dd-blue text-white': order.status === 'shipping' || order.status === 'in_livrare',
                     'bg-success': order.status === 'completed' || order.status === 'livrata',
                     'bg-secondary': order.status === 'cancelled' || order.status === 'anulata'
                   }"
@@ -61,7 +61,7 @@
                     'bg-danger': order.payment_status === 'unpaid' || order.payment_status === 'neplatita',
                     'bg-warning text-dark': order.payment_status === 'pending' || order.payment_status === 'in_asteptare',
                     'bg-success': order.payment_status === 'paid' || order.payment_status === 'platita',
-                    'bg-info text-dark': order.payment_status === 'refunded'
+                    'bg-dd-blue text-white': order.payment_status === 'refunded'
                   }"
                 >
                   {{ formatPaymentStatus(order.payment_status) }}
@@ -204,10 +204,10 @@
           <div class="card-body">
             <h6 class="card-title">Acțiuni rapide</h6>
             <div class="d-grid gap-2">
-              <button class="btn btn-outline-primary btn-sm" @click="downloadInvoice">
+              <button class="btn btn-outline-secondary btn-sm" @click="downloadInvoice">
                 <i class="bi bi-file-earmark-pdf me-2"></i> Descarcă Factura
               </button>
-              <button class="btn btn-outline-secondary btn-sm" @click="repeatOrder">
+              <button class="btn btn-orange btn-sm" @click="repeatOrder">
                 <i class="bi bi-arrow-repeat me-2"></i> Comandă din nou
               </button>
             </div>

@@ -1,31 +1,35 @@
 <template>
   <div v-if="loading" class="text-center py-5">
-    <div class="spinner-border text-primary" role="status">
-      <span class="visually-hidden">Se încarcă...</span>
+      <div class="spinner-border text-orange" role="status">
+        <span class="visually-hidden">Se încarcă...</span>
+      </div>
+      <div class="mt-2 text-muted">Se încarcă detaliile produsului...</div>
     </div>
-    <div class="mt-2 text-muted">Se încarcă detaliile produsului...</div>
-  </div>
 
-  <div class="container py-4" v-else-if="product">
-    <!-- Breadcrumbs -->
-    <nav aria-label="breadcrumb" class="small mb-3">
-      <ol class="breadcrumb mb-0">
-        <li class="breadcrumb-item">
-          <RouterLink to="/">Acasă</RouterLink>
-        </li>
-        <li class="breadcrumb-item">
-          <RouterLink :to="product.categorySlug ? `/categorie/${product.categorySlug}` : '/produse'">
-            {{ categoryTitle }}
-          </RouterLink>
-        </li>
-        <li class="breadcrumb-item active" aria-current="page">
-          {{ product.name }}
-        </li>
-      </ol>
-    </nav>
+  <div v-else-if="product">
+    <div class="dd-page-header py-3 mb-3">
+      <div class="container">
+        <nav aria-label="breadcrumb" class="small mb-0">
+          <ol class="breadcrumb mb-0">
+            <li class="breadcrumb-item">
+              <RouterLink to="/">Acasă</RouterLink>
+            </li>
+            <li class="breadcrumb-item">
+              <RouterLink :to="product.categorySlug ? `/categorie/${product.categorySlug}` : '/produse'">
+                {{ categoryTitle }}
+              </RouterLink>
+            </li>
+            <li class="breadcrumb-item active" aria-current="page">
+              {{ product.name }}
+            </li>
+          </ol>
+        </nav>
+      </div>
+    </div>
 
-    <!-- Header + preț + stoc -->
-    <div class="row g-4 mb-3">
+    <div class="container pb-4">
+      <!-- Header + preț + stoc -->
+      <div class="row g-4 mb-3">
       <div class="col-md-5">
         <figure class="figure bg-white border rounded p-3 mb-2 w-100 text-center">
           <div class="ratio ratio-4x3 bg-light d-flex align-items-center justify-content-center">
@@ -54,7 +58,7 @@
             <button
               type="button"
               class="btn btn-light p-1 border"
-              :class="{ 'border-primary': thumb === selectedImage }"
+              :class="{ 'border-orange': thumb === selectedImage }"
               @click="selectedImage = thumb"
               :aria-current="thumb === selectedImage ? 'true' : null"
               :aria-label="`Selectează miniatura ${idx + 1} pentru ${product.name}`"
@@ -151,7 +155,7 @@
                 />
               </div>
               <button
-                class="btn btn-primary btn-lg flex-grow-1"
+                class="btn btn-orange btn-lg flex-grow-1"
                 @click="addToCart"
                 :disabled="addLoading || (!isStockAvailable && !product.can_backorder)"
               >
@@ -266,7 +270,7 @@
                       </div>
                     </div>
                     <button
-                      class="btn btn-sm btn-outline-primary"
+                      class="btn btn-sm btn-outline-secondary"
                       @click="openDocumentDemo(doc)"
                     >
                       Descarcă
@@ -415,7 +419,7 @@
                 <input v-model="reviewBody" type="text" class="form-control form-control-sm" placeholder="Recenzie" />
               </div>
               <div class="col-12 d-flex justify-content-end">
-                <button type="submit" class="btn btn-primary btn-sm" :disabled="reviewSubmitting">
+                <button type="submit" class="btn btn-orange btn-sm" :disabled="reviewSubmitting">
                   <span v-if="reviewSubmitting" class="spinner-border spinner-border-sm me-1"></span>
                   Trimite recenzia
                 </button>
@@ -425,6 +429,7 @@
         </div>
       </div>
     </div>
+    </div>
   </div>
 
   <div v-else-if="error" class="container py-4">
@@ -432,7 +437,7 @@
         {{ error }}
      </div>
       <div class="mt-3">
-        <RouterLink to="/" class="btn btn-outline-primary">
+        <RouterLink to="/" class="btn btn-outline-secondary">
           Înapoi la prima pagină
         </RouterLink>
       </div>
@@ -443,7 +448,7 @@
       Produsul nu a fost găsit.
     </div>
     <div class="mt-3">
-        <RouterLink to="/" class="btn btn-outline-primary">
+        <RouterLink to="/" class="btn btn-outline-secondary">
           Înapoi la prima pagină
         </RouterLink>
       </div>
@@ -547,7 +552,18 @@ const loadProduct = async () => {
 
   try {
     const data = await fetchProductBySlug(slug.value)
-    product.value = data.product ?? data
+    const p = data.product ?? data
+    
+    // Map related/complementary from top-level response to product object
+    if (data.related_products) {
+        p.similar_products = data.related_products
+    }
+    if (data.complementary_products) {
+        p.complementary_products = data.complementary_products
+    }
+
+    product.value = p
+
     // Select first variant if available
     if (product.value.variants && product.value.variants.length > 0) {
         selectedVariant.value = product.value.variants[0].code

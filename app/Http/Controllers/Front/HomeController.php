@@ -28,43 +28,46 @@ class HomeController extends Controller
         $customer = optional($user)->customer;
 
         // 1) PROMOȚII ACTIVE
-        $promoCollection = $pricing
-            ->getActivePromotionsForCustomer($customer)
-            ->sortByDesc('start_at')
-            ->take(6);
+        $homePromotions = [];
+        if ($customer) {
+            $promoCollection = $pricing
+                ->getActivePromotionsForCustomer($customer)
+                ->sortByDesc('start_at')
+                ->take(6);
 
-        $homePromotions = $promoCollection->map(function (Promotion $promo) {
-            $start = $promo->start_at ? Carbon::parse($promo->start_at) : null;
-            $end   = $promo->end_at ? Carbon::parse($promo->end_at) : null;
+            $homePromotions = $promoCollection->map(function (Promotion $promo) {
+                $start = $promo->start_at ? Carbon::parse($promo->start_at) : null;
+                $end   = $promo->end_at ? Carbon::parse($promo->end_at) : null;
 
-            $period = 'Permanent';
-            if ($start && $end) {
-                $period = $start->format('d.m.Y') . ' - ' . $end->format('d.m.Y');
-            } elseif ($start && !$end) {
-                $period = 'De la ' . $start->format('d.m.Y');
-            } elseif (!$start && $end) {
-                $period = 'Până la ' . $end->format('d.m.Y');
-            }
+                $period = 'Permanent';
+                if ($start && $end) {
+                    $period = $start->format('d.m.Y') . ' - ' . $end->format('d.m.Y');
+                } elseif ($start && !$end) {
+                    $period = 'De la ' . $start->format('d.m.Y');
+                } elseif (!$start && $end) {
+                    $period = 'Până la ' . $end->format('d.m.Y');
+                }
 
-            $segmentLabel = match ($promo->customer_type) {
-                'b2b'  => 'Clienți B2B',
-                'b2c'  => 'Clienți B2C',
-                default => 'B2B & B2C',
-            };
+                $segmentLabel = match ($promo->customer_type) {
+                    'b2b'  => 'Clienți B2B',
+                    'b2c'  => 'Clienți B2C',
+                    default => 'B2B & B2C',
+                };
 
-            return [
-                'id'           => $promo->id,
-                'slug'         => $promo->slug,
-                'title'        => $promo->name,
-                'badge'        => $this->badgeForPromotion($promo),
-                'teaser'       => $promo->short_description ?: 'Campanie promoțională activă.',
-                'period'       => $period,
-                'segmentLabel' => $segmentLabel,
-                'heroImage'    => $promo->hero_image,
-                'bannerImage'  => $promo->banner_image,
-                'mobileImage'  => $promo->mobile_image,
-            ];
-        })->values();
+                return [
+                    'id'           => $promo->id,
+                    'slug'         => $promo->slug,
+                    'title'        => $promo->name,
+                    'badge'        => $this->badgeForPromotion($promo),
+                    'teaser'       => $promo->short_description ?: 'Campanie promoțională activă.',
+                    'period'       => $period,
+                    'segmentLabel' => $segmentLabel,
+                    'heroImage'    => $promo->hero_image,
+                    'bannerImage'  => $promo->banner_image,
+                    'mobileImage'  => $promo->mobile_image,
+                ];
+            })->values();
+        }
 
         // 2) PRODUSE NOI – max 8 produse
         $newProductsQuery = Product::query()

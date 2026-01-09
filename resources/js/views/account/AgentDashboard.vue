@@ -3,10 +3,10 @@
     <h1 class="h3 mb-4">Panou Control Vânzări</h1>
 
     <!-- Start/End Day Panel -->
-    <div class="card shadow-sm mb-4" :class="trackingStore.isShiftActive ? 'border-success' : 'border-warning'">
+    <div class="card shadow-sm mb-4" :class="trackingStore.isShiftActive ? 'border-orange' : 'border-orange'">
       <div class="card-body d-flex justify-content-between align-items-center">
         <div>
-          <h5 class="mb-1" :class="trackingStore.isShiftActive ? 'text-success' : 'text-dark'">
+          <h5 class="mb-1" :class="trackingStore.isShiftActive ? 'text-orange' : 'text-dark'">
             <i class="bi" :class="trackingStore.isShiftActive ? 'bi-check-circle-fill' : 'bi-clock'"></i>
             {{ trackingStore.isShiftActive ? 'Program de lucru ACTIV' : 'Program de lucru INACTIV' }}
           </h5>
@@ -17,11 +17,11 @@
           </p>
         </div>
         <div>
-           <button v-if="!trackingStore.isShiftActive" class="btn btn-success btn-lg" @click="trackingStore.startDay" :disabled="trackingStore.loading">
+           <button v-if="!trackingStore.isShiftActive" class="btn btn-orange btn-lg" @click="trackingStore.startDay" :disabled="trackingStore.loading">
               <span v-if="trackingStore.loading" class="spinner-border spinner-border-sm me-2"></span>
               <i class="bi bi-play-circle me-1"></i> Start Program
            </button>
-           <button v-else class="btn btn-outline-danger" @click="trackingStore.endDay" :disabled="trackingStore.loading || visitStore.hasActiveVisit">
+           <button v-else class="btn btn-outline-secondary" @click="trackingStore.endDay" :disabled="trackingStore.loading || visitStore.hasActiveVisit">
               <span v-if="trackingStore.loading" class="spinner-border spinner-border-sm me-2"></span>
               <i class="bi bi-stop-circle me-1"></i> Încheie Program
            </button>
@@ -39,10 +39,10 @@
     <div v-else>
 
     <!-- Active Visit Panel -->
-    <div v-if="visitStore.hasActiveVisit" class="card border-primary shadow-sm mb-4">
-      <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+    <div v-if="visitStore.hasActiveVisit" class="card border-orange shadow-sm mb-4">
+      <div class="card-header bg-dd-blue text-white d-flex justify-content-between align-items-center">
         <h5 class="mb-0"><i class="bi bi-geo-alt-fill me-2"></i>Vizită Activă</h5>
-        <span class="badge bg-white text-primary">{{ visitStore.activeVisit.customer?.name }}</span>
+        <span class="badge bg-white text-dd-blue">{{ visitStore.activeVisit.customer?.name }}</span>
       </div>
       <div class="card-body">
         <div class="row align-items-center">
@@ -52,8 +52,8 @@
             <p class="mb-0 text-muted small">Vizită începută la: {{ new Date(visitStore.activeVisit.start_time).toLocaleTimeString() }}</p>
           </div>
           <div class="col-md-4 text-end">
-            <button class="btn btn-outline-primary me-2" @click="impersonateClient(visitStore.activeVisit.customer)">
-              <i class="bi bi-cart-plus me-1"></i> Comandă
+            <button class="btn btn-outline-secondary me-2" @click="impersonateClient(visitStore.activeVisit.customer)">
+              <i class="bi bi-person-badge me-1"></i> Impersonează
             </button>
             <button class="btn btn-danger" @click="handleEndVisit" :disabled="visitStore.loading">
               <span v-if="visitStore.loading" class="spinner-border spinner-border-sm me-1"></span>
@@ -65,7 +65,7 @@
     </div>
 
     <div v-if="loading" class="text-center py-5">
-      <div class="spinner-border text-primary" role="status">
+      <div class="spinner-border text-orange" role="status">
         <span class="visually-hidden">Se încarcă...</span>
       </div>
     </div>
@@ -167,7 +167,7 @@
         <!-- KPI Stats -->
         <div class="row mb-4">
             <div class="col-md-4 mb-3 mb-md-0">
-                <div class="card bg-primary text-white h-100">
+                <div class="card bg-dd-blue text-white h-100">
                     <div class="card-body text-center">
                         <h6 class="text-uppercase small opacity-75 mb-1">Total Clienți Rută</h6>
                         <h2 class="display-6 fw-bold mb-0">{{ kpiStats.total }}</h2>
@@ -175,7 +175,7 @@
                 </div>
             </div>
             <div class="col-md-4 mb-3 mb-md-0">
-                <div class="card bg-success text-white h-100">
+                <div class="card bg-dd-blue text-white h-100">
                      <div class="card-body text-center">
                         <h6 class="text-uppercase small opacity-75 mb-1">Vizitați</h6>
                         <h2 class="display-6 fw-bold mb-0">{{ kpiStats.visited }}</h2>
@@ -195,7 +195,7 @@
         <!-- Progress Bar -->
         <div class="progress mb-4" style="height: 10px;">
             <div 
-                class="progress-bar bg-success" 
+                class="progress-bar bg-orange" 
                 role="progressbar" 
                 :style="{ width: kpiStats.percent + '%' }" 
                 :aria-valuenow="kpiStats.percent" 
@@ -247,7 +247,7 @@
                             <div class="d-flex gap-2">
                                 <button 
                                     v-if="!item.customer?.visits_count && (!visitStore.activeVisit || visitStore.activeVisit.customer_id !== item.customer.id)"
-                                    class="btn btn-outline-primary btn-sm"
+                                    class="btn btn-outline-secondary btn-sm"
                                     @click="handleStartVisit(item.customer)"
                                     :disabled="visitStore.loading"
                                 >
@@ -255,14 +255,14 @@
                                 </button>
                                 <button 
                                     v-if="visitStore.activeVisit?.customer_id === item.customer.id"
-                                    class="btn btn-primary btn-sm"
+                                    class="btn btn-secondary btn-sm"
                                     disabled
                                 >
                                     <i class="bi bi-geo-alt-fill me-1"></i> În curs...
                                 </button>
                                 
                                 <button 
-                                    class="btn btn-warning btn-sm text-dark"
+                                    class="btn btn-orange btn-sm text-white"
                                     @click="createOffer(item.customer)"
                                     title="Creează Ofertă"
                                 >
@@ -303,22 +303,22 @@
 
         <div class="row row-cols-1 g-3">
           <div class="col" v-for="client in filteredClients" :key="client.id">
-            <div class="card border-0 shadow-sm h-100" :class="{'border-primary': visitStore.activeVisit?.customer_id === client.id}">
+            <div class="card border-0 shadow-sm h-100" :class="{'border-orange': visitStore.activeVisit?.customer_id === client.id}">
               <div class="card-body">
                 <div class="d-flex justify-content-between align-items-start">
                   <div class="d-flex flex-column">
                     <div class="d-flex align-items-center gap-2">
                       <h6 class="mb-0 fw-bold">{{ client.name }}</h6>
-                      <span v-if="!isDirector && client.agent_user_id !== authStore.user.id" class="badge bg-warning text-dark" style="font-size: 0.7rem;">Acces Echipă</span>
-                      <span v-if="isDirector && client.agent" class="badge bg-secondary">
+                      <span v-if="!isDirector && client.agent_user_id !== authStore.user.id" class="badge bg-orange text-white" style="font-size: 0.7rem;">Acces Echipă</span>
+                      <span v-if="isDirector && client.agent" class="badge bg-dd-blue">
                         {{ [client.agent.first_name, client.agent.last_name].filter(Boolean).join(' ') }}
                       </span>
-                      <span v-else-if="isDirector && client.agent_user_id === authStore.user.id" class="badge bg-info">Eu</span>
+                      <span v-else-if="isDirector && client.agent_user_id === authStore.user.id" class="badge bg-dd-blue">Eu</span>
                     </div>
                     <small class="text-muted">{{ client.email }}</small>
                   </div>
                   <div class="text-end">
-                    <div :class="client.current_balance > 0 ? 'text-danger fw-bold' : 'text-success fw-bold'">
+                    <div :class="client.current_balance > 0 ? 'text-danger fw-bold' : 'text-dd-blue fw-bold'">
                       {{ formatPrice(client.current_balance, client.currency) }}
                     </div>
                     <small class="text-muted d-block">Sold curent</small>
@@ -335,16 +335,16 @@
                   </div>
                 </div>
                 <div class="mt-3 d-flex flex-wrap gap-2">
-                  <button v-if="!visitStore.activeVisit || visitStore.activeVisit.customer_id !== client.id" class="btn btn-outline-primary btn-sm" @click="handleStartVisit(client)" :disabled="visitStore.loading || (visitStore.activeVisit && visitStore.activeVisit.customer_id !== client.id)" title="Începe Vizită">
+                  <button v-if="!visitStore.activeVisit || visitStore.activeVisit.customer_id !== client.id" class="btn btn-outline-secondary btn-sm" @click="handleStartVisit(client)" :disabled="visitStore.loading || (visitStore.activeVisit && visitStore.activeVisit.customer_id !== client.id)" title="Începe Vizită">
                     <i class="bi bi-geo-alt me-1"></i> Vizită
                   </button>
-                  <button class="btn btn-success btn-sm" @click="openPaymentModal(client)" title="Adaugă Încasare" :disabled="!canPerformAction(client)">
+                  <button class="btn btn-outline-secondary btn-sm" @click="openPaymentModal(client)" title="Adaugă Încasare" :disabled="!canPerformAction(client)">
                     <i class="bi bi-cash-stack me-1"></i> Încasare
                   </button>
-                  <button class="btn btn-warning btn-sm text-dark" @click="createOffer(client)" title="Creează Ofertă" :disabled="!canPerformAction(client)">
+                  <button class="btn btn-outline-dark btn-sm" @click="createOffer(client)" title="Creează Ofertă" :disabled="!canPerformAction(client)">
                     <i class="bi bi-file-earmark-text me-1"></i> Ofertă
                   </button>
-                  <button class="btn btn-primary btn-sm" @click="impersonateClient(client)" title="Plasează Comandă" :disabled="!canPerformAction(client)">
+                  <button class="btn btn-orange btn-sm" @click="impersonateClient(client)" title="Plasează Comandă" :disabled="!canPerformAction(client)">
                     <i class="bi bi-cart-plus me-1"></i> Comandă
                   </button>
                 </div>
@@ -365,13 +365,13 @@
               <h5 class="mb-0">Oferte și Cereri</h5>
               <div class="d-flex gap-2">
                   <button 
-                      class="btn btn-warning text-dark btn-sm"
+                      class="btn btn-orange text-white btn-sm"
                       @click="router.push({ name: 'account-offers-new' })"
                   >
                       <i class="bi bi-plus-lg"></i> Ofertă Nouă
                   </button>
                   <button 
-                      class="btn btn-primary btn-sm"
+                      class="btn btn-outline-secondary btn-sm"
                       @click="router.push({ name: 'account-offers-list' })"
                   >
                       <i class="bi bi-list-ul"></i> Vezi Toate
@@ -382,7 +382,7 @@
           <div class="row g-4">
               <!-- Summary Cards -->
               <div class="col-md-6">
-                   <div class="card h-100 shadow-sm border-0 bg-primary text-white">
+                   <div class="card h-100 shadow-sm border-0 bg-dd-blue text-white">
                        <div class="card-body">
                            <div class="d-flex justify-content-between align-items-center mb-3">
                                <div>
@@ -391,14 +391,14 @@
                                </div>
                                <i class="bi bi-file-earmark-text fs-1 opacity-50"></i>
                            </div>
-                           <button class="btn btn-light btn-sm text-primary w-100" @click="router.push({ name: 'account-offers-list' })">
+                           <button class="btn btn-light btn-sm text-dd-blue w-100" @click="router.push({ name: 'account-offers-list' })">
                                Gestionare Oferte
                            </button>
                        </div>
                    </div>
               </div>
               <div class="col-md-6">
-                   <div class="card h-100 shadow-sm border-0 bg-success text-white">
+                   <div class="card h-100 shadow-sm border-0 bg-orange text-white">
                        <div class="card-body">
                            <div class="d-flex justify-content-between align-items-center mb-3">
                                <div>
@@ -407,7 +407,7 @@
                                </div>
                                <i class="bi bi-inbox fs-1 opacity-50"></i>
                            </div>
-                           <button class="btn btn-light btn-sm text-success w-100" @click="router.push({ name: 'account-offers-list', query: { tab: 'requests' } })">
+                           <button class="btn btn-light btn-sm text-dd-blue w-100" @click="router.push({ name: 'account-offers-list', query: { tab: 'requests' } })">
                                Vezi Toate Cererile
                            </button>
                        </div>
@@ -437,7 +437,7 @@
                                               {{ req.customer_notes || 'Fără notițe' }}
                                           </div>
                                       </div>
-                                      <button class="btn btn-sm btn-outline-primary" @click="router.push({ name: 'account-offers-new', query: { customer_id: req.customer_id, request_id: req.id } })">
+                                      <button class="btn btn-sm btn-outline-secondary" @click="router.push({ name: 'account-offers-new', query: { customer_id: req.customer_id, request_id: req.id } })">
                                           Creează Ofertă
                                       </button>
                                   </div>
@@ -452,7 +452,7 @@
       <!-- Tab Istoric -->
       <div v-if="activeTab === 'history'">
         <div v-if="loadingHistory" class="text-center py-5">
-             <div class="spinner-border text-primary" role="status">
+             <div class="spinner-border text-orange" role="status">
                 <span class="visually-hidden">Se încarcă istoricul...</span>
             </div>
         </div>
@@ -486,7 +486,7 @@
                                 </div>
                             </div>
                             <div class="mt-2 d-flex flex-wrap gap-2">
-                                <span v-if="visit.orders && visit.orders.length > 0" class="badge bg-primary">
+                                <span v-if="visit.orders && visit.orders.length > 0" class="badge bg-dd-blue">
                                     {{ visit.orders.length }} Comenzi ({{ formatPrice(visit.orders.reduce((acc, o) => acc + parseFloat(o.total), 0)) }})
                                 </span>
                                 <span v-if="visit.payments && visit.payments.length > 0" class="badge bg-success">
@@ -494,7 +494,7 @@
                                 </span>
                                 <span class="badge" :class="{
                                     'bg-success': visit.status === 'completed',
-                                    'bg-primary': visit.status === 'in_progress',
+                                    'bg-orange': visit.status === 'in_progress',
                                     'bg-secondary': visit.status === 'planned',
                                     'bg-danger': visit.status === 'cancelled'
                                 }">
@@ -573,7 +573,7 @@
               </div>
               <div class="card-body p-0">
                 <div v-if="approvalsLoading" class="p-4 text-center">
-                  <div class="spinner-border text-primary" role="status">
+                  <div class="spinner-border text-orange" role="status">
                     <span class="visually-hidden">Se încarcă...</span>
                   </div>
                 </div>
@@ -783,7 +783,7 @@
 
               <div class="d-flex justify-content-end gap-2">
                 <button type="button" class="btn btn-secondary" @click="closePaymentModal">Anulează</button>
-                <button type="submit" class="btn btn-primary" :disabled="submitting || !!validationError">
+                <button type="submit" class="btn btn-orange" :disabled="submitting || !!validationError">
                   {{ submitting ? 'Se salvează...' : 'Emite Chitanță' }}
                 </button>
               </div>
@@ -829,7 +829,7 @@
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary" @click="showEndVisitModal = false">Anulează</button>
-            <button type="button" class="btn btn-primary" @click="confirmEndVisit" :disabled="visitStore.loading">
+            <button type="button" class="btn btn-orange" @click="confirmEndVisit" :disabled="visitStore.loading">
                 {{ visitStore.loading ? 'Se salvează...' : 'Confirmă și Închide' }}
             </button>
           </div>

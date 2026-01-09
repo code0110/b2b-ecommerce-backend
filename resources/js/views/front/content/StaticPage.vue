@@ -1,32 +1,38 @@
 <template>
-  <div class="container py-5">
-    <div v-if="loading" class="text-center py-5">
-      <div class="spinner-border text-primary" role="status">
-        <span class="visually-hidden">Se încarcă...</span>
+  <div>
+    <div v-if="page" class="dd-page-header py-3 mb-3">
+      <div class="container">
+        <nav aria-label="breadcrumb" class="small mb-2">
+          <ol class="breadcrumb mb-0">
+            <li class="breadcrumb-item"><router-link to="/">Acasă</router-link></li>
+            <li class="breadcrumb-item active" aria-current="page">{{ page.title }}</li>
+          </ol>
+        </nav>
+        <h1 class="h4 mb-0">{{ page.title }}</h1>
       </div>
     </div>
 
-    <div v-else-if="error" class="alert alert-danger" role="alert">
-      {{ error }}
-    </div>
+    <div class="container pb-4">
+      <div v-if="loading" class="text-center py-5">
+        <div class="spinner-border" role="status">
+          <span class="visually-hidden">Se încarcă...</span>
+        </div>
+      </div>
 
-    <div v-else-if="page" class="static-page">
-      <nav aria-label="breadcrumb" class="mb-4">
-        <ol class="breadcrumb">
-          <li class="breadcrumb-item"><router-link to="/">Acasă</router-link></li>
-          <li class="breadcrumb-item active" aria-current="page">{{ page.title }}</li>
-        </ol>
-      </nav>
+      <div v-else-if="error" class="alert alert-danger" role="alert">
+        {{ error }}
+      </div>
 
-      <h1 class="h2 mb-4">{{ page.title }}</h1>
-      
-      <div class="content" v-html="page.content"></div>
+      <div v-else-if="page" class="static-page card">
+        <div class="card-body">
+          <div class="content" v-html="page.content"></div>
+        </div>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import PageHeader from '@/components/common/PageHeader.vue'
 import { ref, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { fetchStaticPage } from '@/services/content'

@@ -91,7 +91,7 @@
                 <div class="mt-auto d-flex justify-content-between align-items-center pt-2 border-top">
                   <button
                     type="button"
-                    class="btn btn-sm btn-outline-primary"
+                    class="btn btn-sm btn-outline-secondary"
                     @click="openPost(post)"
                   >
                     Citește articolul

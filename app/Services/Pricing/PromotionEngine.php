@@ -258,16 +258,33 @@ class PromotionEngine
             return in_array($promo->type, ['shipping', 'order_total']);
         });
 
+        // --- EXCLUSIVE PROMOTION LOGIC ---
+        // If any applicable promotion is "exclusive", filter out all non-exclusive ones.
+        // We only consider exclusive promotions if they actually apply to this product.
+        // So we need to pre-check applicability or filter the list first?
+        // Checking applicability is expensive if we do it twice.
+        // Better strategy: Filter list to what applies first, then check exclusivity.
+        
+        $applicablePromotions = $itemPromotions->filter(function($promo) use ($product) {
+            return $this->promotionAppliesToProduct($promo, $product);
+        });
+
+        $exclusivePromotions = $applicablePromotions->where('is_exclusive', true);
+
+        if ($exclusivePromotions->isNotEmpty()) {
+            // If we have exclusive promotions, ONLY consider them.
+            // Discard all non-exclusive.
+            $applicablePromotions = $exclusivePromotions;
+        }
+
         $bestFinalPrice = $basePrice;
         $bestPromotion = null;
         $bestDiscountAmount = 0;
 
-        // "Best Deal" Logic: Iterate all and find the one resulting in lowest price
-        foreach ($itemPromotions as $promotion) {
-            if (! $this->promotionAppliesToProduct($promotion, $product)) {
-                continue;
-            }
-
+        // "Best Deal" Logic: Iterate all applicable and find the one resulting in lowest price
+        foreach ($applicablePromotions as $promotion) {
+            // Already checked applicability above
+            
             [$priceAfter, $discountAmount] = $this->applyPromotionToUnit($promotion, $basePrice, $quantity);
 
             if ($discountAmount <= 0) {

@@ -31,6 +31,7 @@ class PageController extends Controller
             'title' => ['required', 'string', 'max:255'],
             'slug' => ['required', 'string', 'max:255', 'unique:pages,slug'],
             'content' => ['nullable', 'string'],
+            'sections' => ['nullable', 'array'],
             'is_published' => ['boolean'],
             'meta_title' => ['nullable', 'string', 'max:255'],
             'meta_description' => ['nullable', 'string', 'max:500'],
@@ -47,6 +48,7 @@ class PageController extends Controller
             'title' => ['required', 'string', 'max:255'],
             'slug' => ['required', 'string', 'max:255', 'unique:pages,slug,' . $page->id],
             'content' => ['nullable', 'string'],
+            'sections' => ['nullable', 'array'],
             'is_published' => ['boolean'],
             'meta_title' => ['nullable', 'string', 'max:255'],
             'meta_description' => ['nullable', 'string', 'max:500'],
@@ -63,4 +65,3 @@ class PageController extends Controller
         return response()->json(['message' => 'Page deleted']);
     }
 }
-

@@ -1,7 +1,7 @@
 <template>
   <div>
     <!-- Header de secțiune cont -->
-    <div class="bg-light border-bottom py-3 mb-3">
+    <div class="dd-page-header py-3 mb-3">
       <div class="container">
         <nav aria-label="breadcrumb" class="small mb-2">
           <ol class="breadcrumb mb-0">

@@ -7,7 +7,7 @@
           <h1 class="h5 mb-0">Tichete suport</h1>
           <button
             type="button"
-            class="btn btn-primary btn-sm"
+            class="btn btn-orange btn-sm"
             @click="startNewTicket"
           >
             Tichet nou
@@ -131,7 +131,7 @@
                 <div class="d-flex gap-2">
                   <button
                     type="submit"
-                    class="btn btn-primary btn-sm"
+                    class="btn btn-orange btn-sm"
                     :disabled="submitting"
                   >
                     <span
@@ -250,7 +250,7 @@
               <div class="d-flex justify-content-end gap-2">
                 <button
                   type="submit"
-                  class="btn btn-primary btn-sm"
+                  class="btn btn-orange btn-sm"
                   :disabled="
                     submitting || !replyMessage.trim()
                   "

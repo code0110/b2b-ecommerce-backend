@@ -129,7 +129,7 @@
                 >
               </div>
             </div>
-            <button class="btn btn-outline-primary btn-sm w-100 mt-2" @click="loadCategory">
+            <button class="btn btn-orange btn-sm w-100 mt-2" @click="loadCategory">
               Aplică preț
             </button>
           </div>
@@ -176,10 +176,23 @@
             Nu am găsit produse pentru filtrele selectate.
           </div>
 
-          <div v-else>
+            <div v-else>
+              <div class="d-lg-none mb-3">
+                <button
+                  type="button"
+                  class="btn btn-outline-secondary btn-sm w-100 d-flex align-items-center justify-content-center gap-2"
+                  data-bs-toggle="offcanvas"
+                  data-bs-target="#filterOffcanvas"
+                  aria-controls="filterOffcanvas"
+                >
+                  <i class="bi bi-funnel"></i>
+                  Filtre
+                </button>
+              </div>
+
             <div v-if="displayMode === 'grid'" class="row g-3">
               <div v-for="product in products" :key="product.id" class="col-12 col-sm-6 col-md-4">
-                <div class="card h-100 border-0 shadow-sm product-card">
+                <div class="card h-100 border-0 shadow-sm dd-product-card product-card">
                   <div class="ratio ratio-4x3 bg-light position-relative">
                     <img v-if="product.main_image_url" :src="product.main_image_url" :alt="product.name" class="card-img-top object-fit-cover rounded-top" loading="lazy">
                     <div v-else class="d-flex align-items-center justify-content-center text-muted small w-100 h-100">Fără imagine</div>
@@ -207,14 +220,21 @@
                     <div class="mt-auto pt-2 border-top">
                          <div class="d-flex justify-content-between align-items-center">
                             <div class="price-container">
-                                <div v-if="product.promoPrice || product.price">
-                                    <span v-if="product.list_price && product.list_price > (product.promoPrice || product.price)" class="text-decoration-line-through text-muted small d-block">{{ formatPrice(product.list_price) }}</span>
-                                    <span :class="(product.hasDiscount || (product.list_price > (product.promoPrice || product.price))) ? 'text-danger fw-bold fs-5' : 'fw-bold fs-5 text-primary'">{{ formatPrice(product.promoPrice || product.price) }}</span>
+                                <div v-if="getUnitPrice(product) !== null">
+                                    <span v-if="getListPrice(product) !== null && getListPrice(product) > getUnitPrice(product)" class="text-decoration-line-through text-muted small d-block">{{ formatPrice(getListPrice(product)) }}</span>
+                                    <span :class="(getListPrice(product) !== null && getListPrice(product) > getUnitPrice(product)) ? 'text-danger fw-bold fs-5' : 'fw-bold fs-5 text-dd-blue'">{{ formatPrice(getUnitPrice(product)) }}</span>
                                 </div>
                                 <div v-else class="text-muted small">Preț indisponibil</div>
                             </div>
-                            <button class="btn btn-primary btn-sm rounded-circle d-flex align-items-center justify-content-center" style="width: 32px; height: 32px; z-index: 2; position: relative;" title="Adaugă în coș" @click.prevent="addToCart(product)">
-                                <i class="bi bi-cart-plus"></i>
+                            <button
+                              class="btn btn-orange btn-sm rounded-circle d-flex align-items-center justify-content-center"
+                              style="width: 32px; height: 32px; z-index: 2; position: relative;"
+                              title="Adaugă în coș"
+                              :disabled="addLoading === product.id"
+                              @click.prevent="addToCart(product)"
+                            >
+                                <span v-if="addLoading === product.id" class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                                <i v-else class="bi bi-cart-plus"></i>
                             </button>
                         </div>
                     </div>
@@ -259,14 +279,16 @@
                                 
                                 <div class="d-flex justify-content-between align-items-center mt-auto border-top pt-3">
                                      <div class="price-container">
-                                        <div v-if="product.promoPrice || product.price">
-                                            <span v-if="product.list_price && product.list_price > (product.promoPrice || product.price)" class="text-decoration-line-through text-muted small d-block">{{ formatPrice(product.list_price) }}</span>
-                                            <span :class="(product.hasDiscount || (product.list_price > (product.promoPrice || product.price))) ? 'text-danger fw-bold fs-4' : 'fw-bold fs-4 text-primary'">{{ formatPrice(product.promoPrice || product.price) }}</span>
+                                        <div v-if="getUnitPrice(product) !== null">
+                                            <span v-if="getListPrice(product) !== null && getListPrice(product) > getUnitPrice(product)" class="text-decoration-line-through text-muted small d-block">{{ formatPrice(getListPrice(product)) }}</span>
+                                            <span :class="(getListPrice(product) !== null && getListPrice(product) > getUnitPrice(product)) ? 'text-danger fw-bold fs-4' : 'fw-bold fs-4 text-dd-blue'">{{ formatPrice(getUnitPrice(product)) }}</span>
                                         </div>
                                          <div v-else class="text-muted small">Preț indisponibil</div>
                                     </div>
-                                    <button class="btn btn-primary d-flex align-items-center gap-2" @click.prevent="addToCart(product)">
-                                        <i class="bi bi-cart-plus"></i> Adaugă în coș
+                                    <button class="btn btn-orange d-flex align-items-center gap-2" :disabled="addLoading === product.id" @click.prevent="addToCart(product)">
+                                        <span v-if="addLoading === product.id" class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                                        <i v-else class="bi bi-cart-plus"></i>
+                                        Adaugă în coș
                                     </button>
                                 </div>
                             </div>
@@ -278,7 +300,7 @@
             <!-- Compact Mode -->
             <div v-else class="row row-cols-2 row-cols-md-4 row-cols-lg-5 g-2">
                  <div v-for="product in products" :key="product.id" class="col">
-                    <div class="card h-100 border-0 shadow-sm product-card-compact">
+                    <div class="card h-100 border-0 shadow-sm dd-product-card product-card-compact">
                          <div class="ratio ratio-1x1 bg-light position-relative">
                             <img v-if="product.main_image_url" :src="product.main_image_url" :alt="product.name" class="card-img-top object-fit-cover rounded-top" loading="lazy">
                              <div v-else class="d-flex align-items-center justify-content-center text-muted small w-100 h-100">Fără imagine</div>
@@ -290,10 +312,15 @@
                                 </RouterLink>
                             </h3>
                              <div class="mt-auto">
-                                <div v-if="product.promoPrice || product.promo_price || product.price">
-                                     <span v-if="product.list_price && product.list_price > (product.promoPrice || product.promo_price || product.price)" class="text-decoration-line-through text-muted small d-block" style="font-size: 0.75rem;">{{ formatPrice(product.list_price) }}</span>
-                                    <span :class="(product.hasDiscount || (product.list_price > (product.promoPrice || product.promo_price || product.price))) ? 'text-danger fw-bold small' : 'fw-bold text-primary small'">{{ formatPrice(product.promoPrice || product.promo_price || product.price) }}</span>
+                                <div v-if="getUnitPrice(product) !== null">
+                                     <span v-if="getListPrice(product) !== null && getListPrice(product) > getUnitPrice(product)" class="text-decoration-line-through text-muted small d-block" style="font-size: 0.75rem;">{{ formatPrice(getListPrice(product)) }}</span>
+                                    <span :class="(getListPrice(product) !== null && getListPrice(product) > getUnitPrice(product)) ? 'text-danger fw-bold small' : 'fw-bold small'">{{ formatPrice(getUnitPrice(product)) }}</span>
                                 </div>
+                                <button class="btn btn-orange btn-sm w-100 mt-2" :disabled="addLoading === product.id" @click.prevent="addToCart(product)">
+                                    <span v-if="addLoading === product.id" class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                                    <i v-else class="bi bi-cart-plus"></i>
+                                    Adaugă
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -440,7 +467,7 @@
             >
           </div>
         </div>
-        <button class="btn btn-outline-primary btn-sm w-100 mt-2" @click="loadCategory" data-bs-dismiss="offcanvas">
+        <button class="btn btn-orange btn-sm w-100 mt-2" @click="loadCategory" data-bs-dismiss="offcanvas">
           Aplică filtre
         </button>
       </div>
@@ -452,6 +479,7 @@
 import { ref, computed, onMounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useAuthStore } from '@/store/auth';
+import { useCartStore } from '@/store/cart';
 import { fetchCategoryPage } from '@/services/catalog';
 import { addCartItem } from '@/services/cart';
 import { useToast } from 'vue-toastification';
@@ -460,6 +488,7 @@ import { setTitle, setMeta, setMetaProperty, setCanonical, setJsonLd, setLink } 
 const route = useRoute();
 const router = useRouter();
 const authStore = useAuthStore();
+const cartStore = useCartStore();
 const toast = useToast();
 
 const isB2B = computed(() => authStore.user?.role === 'b2b');
@@ -481,7 +510,7 @@ const displayMode = ref('grid');
 
 const quantities = ref({});
 const units = ref({});
-const addLoading = ref(false);
+const addLoading = ref(null);
 const unitsOfMeasure = [
   { value: 'buc', label: 'bucată' },
   { value: 'sac', label: 'sac' },
@@ -493,6 +522,25 @@ const unitsOfMeasure = [
 const formatPrice = (value) => {
     if (value === undefined || value === null) return '';
     return Number(value).toLocaleString('ro-RO', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' RON';
+};
+
+const getUnitPrice = (product) => {
+  const raw =
+    product?.promo_price ??
+    product?.promoPrice ??
+    product?.price ??
+    product?.unit_price ??
+    null;
+  if (raw === null || raw === undefined || raw === '') return null;
+  const v = Number(raw);
+  return Number.isFinite(v) ? v : null;
+};
+
+const getListPrice = (product) => {
+  const raw = product?.list_price ?? product?.listPrice ?? null;
+  if (raw === null || raw === undefined || raw === '') return null;
+  const v = Number(raw);
+  return Number.isFinite(v) ? v : null;
 };
 
 // filtre
@@ -675,16 +723,21 @@ const addToCart = async (product) => {
   try {
     addLoading.value = product.id;
     const qty = Number(quantities.value[product.id]) || 1;
-    await addCartItem({
+    const cart = await addCartItem({
       product_id: product.id,
       quantity: qty,
       unit: units.value[product.id]
     });
+    if (cart) {
+      cartStore.setCartData(cart);
+    } else {
+      await cartStore.fetchCart();
+    }
     toast.success('Produs adăugat în coș');
   } catch (e) {
     toast.error('Nu s-a putut adăuga produsul în coș');
   } finally {
-    addLoading.value = false;
+    addLoading.value = null;
   }
 };
 

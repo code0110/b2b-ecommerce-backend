@@ -114,10 +114,10 @@
         
         <!-- Loading State -->
         <div v-if="loading" class="text-center py-5">
-          <div class="spinner-border text-primary" role="status">
-            <span class="visually-hidden">Loading...</span>
-          </div>
+        <div class="spinner-border text-orange" role="status">
+          <span class="visually-hidden">Loading...</span>
         </div>
+      </div>
 
         <div v-else>
           <!-- Toolbar -->
@@ -199,7 +199,7 @@
                     </div>
                     <RouterLink
                       :to="`/produse/${product.slug}`"
-                      class="btn btn-outline-primary btn-sm w-100"
+                      class="btn btn-orange btn-sm w-100"
                     >
                       Detalii produs
                     </RouterLink>

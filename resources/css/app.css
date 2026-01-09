@@ -16,6 +16,37 @@ html {
     font-size: 14px;
 }
 
+/* Dedeman-inspired Colors */
+:root {
+    --dd-orange: #ff7900;
+    --dd-orange-hover: #e66d00;
+    --dd-blue: #0060aa;
+    --dd-gray-bg: #f2f4f8;
+    --dd-text-dark: #333333;
+}
+
+body {
+    background-color: var(--dd-gray-bg) !important;
+    color: var(--dd-text-dark);
+}
+
+.bg-orange { background-color: var(--dd-orange) !important; }
+.text-orange { color: var(--dd-orange) !important; }
+.border-orange { border-color: var(--dd-orange) !important; }
+.bg-dd-blue { background-color: var(--dd-blue) !important; }
+.text-dd-blue { color: var(--dd-blue) !important; }
+
+.btn-orange {
+    background-color: var(--dd-orange);
+    color: white;
+    border: none;
+    font-weight: 600;
+}
+.btn-orange:hover {
+    background-color: var(--dd-orange-hover);
+    color: white;
+}
+
 @layer utilities {
   .custom-scrollbar::-webkit-scrollbar {
     width: 6px;
@@ -52,4 +83,73 @@ html {
 .hero-subtitle {
   font-size: 0.95rem;
   color: #64748b;
+}
+
+/* Product Card Improvements */
+.dd-product-card {
+    transition: all 0.2s ease-in-out;
+    border: 1px solid transparent;
+}
+.dd-product-card:hover {
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    transform: translateY(-2px);
+    border-color: #e2e8f0;
+}
+
+.front-layout .card {
+    border: 0;
+    border-radius: 0.75rem;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
+}
+
+.front-layout .card-header,
+.front-layout .card-footer {
+    background-color: #fff;
+    border-color: #e9ecef;
+}
+
+.front-layout .btn-primary {
+    background-color: var(--dd-orange);
+    border-color: var(--dd-orange);
+    font-weight: 600;
+}
+.front-layout .btn-primary:hover,
+.front-layout .btn-primary:focus {
+    background-color: var(--dd-orange-hover);
+    border-color: var(--dd-orange-hover);
+}
+
+.front-layout .btn-outline-primary {
+    color: var(--dd-orange);
+    border-color: var(--dd-orange);
+    font-weight: 600;
+}
+.front-layout .btn-outline-primary:hover,
+.front-layout .btn-outline-primary:focus {
+    background-color: var(--dd-orange);
+    border-color: var(--dd-orange);
+    color: #fff;
+}
+
+.dd-page-header {
+    background-color: #fff;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.line-clamp-1,
+.line-clamp-2,
+.line-clamp-3 {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+.line-clamp-1 { -webkit-line-clamp: 1; }
+.line-clamp-2 { -webkit-line-clamp: 2; }
+.line-clamp-3 { -webkit-line-clamp: 3; }
+
+.text-truncate-2 {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
 }

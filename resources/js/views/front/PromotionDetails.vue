@@ -93,7 +93,7 @@
         <div class="d-flex flex-wrap gap-2 mb-2">
           <button
             type="button"
-            class="btn btn-primary btn-sm"
+            class="btn btn-orange btn-sm"
             :disabled="adding"
             @click="addToCart"
           >
@@ -108,7 +108,7 @@
           </button>
           <button
             type="button"
-            class="btn btn-outline-primary btn-sm"
+            class="btn btn-outline-secondary btn-sm"
           >
             Solicită ofertă
           </button>
@@ -254,9 +254,9 @@
   </div>
 
   <!-- Loading / 404 -->
-  <div v-else-if="loading" class="container py-4">
-    <div class="alert alert-info">
-      Se încarcă detaliile produsului...
+  <div v-else-if="loading" class="container py-4 text-center">
+    <div class="spinner-border text-orange" role="status">
+      <span class="visually-hidden">Se încarcă...</span>
     </div>
   </div>
   <div v-else class="container py-4">
@@ -325,7 +325,7 @@ const hasPromo = computed(() => {
 const addMessageClass = computed(() => {
   return addMessageType.value === 'error'
     ? 'text-danger'
-    : 'text-success';
+    : 'text-dd-blue';
 });
 
 const loadProduct = async () => {

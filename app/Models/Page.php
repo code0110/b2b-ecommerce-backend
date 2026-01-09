@@ -10,6 +10,7 @@ class Page extends Model
         'title',
         'slug',
         'content',
+        'sections',
         'is_published',
         'meta_title',
         'meta_description',
@@ -17,5 +18,6 @@ class Page extends Model
 
     protected $casts = [
         'is_published' => 'boolean',
+        'sections' => 'array',
     ];
 }

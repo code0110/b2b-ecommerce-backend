@@ -5,9 +5,9 @@
       <div class="card-body p-3">
         <div class="d-flex align-items-center">
           <div
-            class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center me-2"
-            style="width: 36px; height: 36px;"
-          >
+        class="rounded-circle bg-dd-blue text-white d-flex align-items-center justify-content-center me-2"
+        style="width: 36px; height: 36px;"
+      >
             <span class="fw-semibold">
               {{ initials }}
             </span>
@@ -25,26 +25,26 @@
         <!-- Toggle Start/Stop Program -->
         <div v-if="isAgentOrDirector" class="mt-3 pt-2 border-top">
              <div v-if="trackingStore.loading" class="text-center small text-muted">
-                <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                <span class="spinner-border spinner-border-sm text-orange" role="status" aria-hidden="true"></span>
                 Se actualizează...
              </div>
              <button 
                 v-else-if="!trackingStore.isShiftActive"
                 @click="startDay"
-                class="btn btn-sm btn-success w-100 d-flex align-items-center justify-content-center"
+                class="btn btn-sm btn-orange w-100 d-flex align-items-center justify-content-center"
              >
                 <i class="bi bi-play-circle me-2"></i> Start Program
              </button>
              <button 
                 v-else
                 @click="endDay"
-                class="btn btn-sm btn-danger w-100 d-flex align-items-center justify-content-center"
+                class="btn btn-sm btn-outline-secondary w-100 d-flex align-items-center justify-content-center"
              >
                 <i class="bi bi-stop-circle me-2"></i> Încheie Program
              </button>
              
              <div v-if="trackingStore.isShiftActive" class="text-center mt-1">
-                <small class="text-success fw-bold" style="font-size: 0.7rem;">
+                <small class="text-orange fw-bold" style="font-size: 0.7rem;">
                     <i class="bi bi-broadcast me-1"></i> Monitorizare Activă
                 </small>
              </div>
@@ -369,15 +369,51 @@ const initials = computed(() => {
   return (parts[0][0] + parts[1][0]).toUpperCase();
 });
 
+const isImpersonating = computed(() => !!authStore.impersonatedCustomer || !!localStorage.getItem('impersonated_client_id') || !!sessionStorage.getItem('impersonating'));
+
+const isCustomer = computed(() => {
+  if (!authStore.user) return false;
+
+  // 1. Explicit checks for customer indicators
+  if (authStore.user.customer_id || authStore.user.customer) return true;
+  
+  // Impersonation acts as customer
+  if (isImpersonating.value) return true;
+
+  // Role checks
+  const currentRole = String(authStore.role || '').toLowerCase();
+  if (['customer', 'customer_b2b', 'customer_b2c', 'b2b', 'b2c'].includes(currentRole)) return true;
+  if (currentRole.includes('customer')) return true;
+
+  const roles = (authStore.user.roles || []).map(r => (r.slug || r.code || '').toLowerCase());
+  if (roles.some(r => r.includes('customer') || r === 'b2b' || r === 'b2c')) return true;
+
+  // 2. Check for staff roles - if ANY staff role exists, they are NOT a customer
+  const hasStaffRole = roles.some(r => ['admin', 'sales_agent', 'sales_director', 'operator', 'manager'].includes(r));
+  
+  if (hasStaffRole) return false;
+
+  // 3. Fallback: if not staff, assume customer
+  return true;
+});
+
 const isCompanyAccount = computed(() => {
-  // Verificare mai robustă, în caz că nu avem customerType setat explicit
   const roles = (authStore.user?.roles || []).map(r => r.slug || r.code);
   return authStore.customerType === 'b2b' || authStore.role === 'customer_b2b' || roles.includes('company_owner');
 });
 
 const isAgentOrDirector = computed(() => {
-  const roles = (authStore.user?.roles || []).map(r => r.slug || r.code);
-  return roles.includes('sales_agent') || roles.includes('sales_director');
+  // If identified as customer, NEVER show agent controls
+  if (isCustomer.value) return false;
+  
+  // Double check: if user has customer data, they are NOT an agent for this context
+  if (authStore.user?.customer_id || authStore.user?.customer) return false;
+
+  // Check impersonation again to be sure
+  if (isImpersonating.value) return false;
+
+  const roles = (authStore.user?.roles || []).map(r => (r.slug || r.code || '').toLowerCase());
+  return roles.includes('sales_agent') || roles.includes('sales_director') || roles.includes('admin') || authStore.role === 'admin';
 });
 
 const isDirector = computed(() => {
@@ -427,8 +463,8 @@ onMounted(() => {
 
 <style scoped>
 .account-sidebar .list-group-item.active {
-  background-color: #0d6efd;
-  border-color: #0d6efd;
+  background-color: var(--dd-blue);
+  border-color: var(--dd-blue);
   color: #fff;
 }
 .account-sidebar .list-group-item.active .text-muted {

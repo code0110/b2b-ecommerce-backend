@@ -113,18 +113,20 @@ const router = createRouter({
       path: '/',
       component: FrontLayout,
       children: [
-        { path: '', name: 'home', component: Home },
-        { path: 'promotii', name: 'promotions', component: Promotions },
+        { path: '', name: 'home', component: Home, meta: { public: true } },
+        { path: 'promotii', name: 'promotions', component: Promotions, meta: { public: true } },
         {
           path: 'promotii/:slug',
           name: 'promotion-landing',
-          component: PromotionLanding
+          component: PromotionLanding,
+          meta: { public: true }
         },
-        { path: 'noutati', name: 'new-products', component: NewProducts },
+        { path: 'noutati', name: 'new-products', component: NewProducts, meta: { public: true } },
         {
           path: 'reduceri',
           name: 'discounted-products',
-          component: DiscountedProducts
+          component: DiscountedProducts,
+          meta: { public: true }
         },
         {
       path: 'produse',

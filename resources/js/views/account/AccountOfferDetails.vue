@@ -1,7 +1,7 @@
 <template>
   <div class="container py-4">
     <div v-if="loading" class="text-center py-5">
-      <div class="spinner-border text-primary" role="status"></div>
+      <div class="spinner-border text-orange" role="status"></div>
     </div>
     
     <div v-else-if="offer" class="row">
@@ -53,7 +53,7 @@
                                 <td class="text-center">{{ item.quantity }}</td>
                                 <td class="text-end">{{ formatPrice(item.unit_price) }}</td>
                                 <td class="text-center">
-                                    <span v-if="item.discount_percent > 0" class="badge bg-success">-{{ item.discount_percent }}%</span>
+                                    <span v-if="item.discount_percent > 0" class="badge bg-danger">-{{ item.discount_percent }}%</span>
                                     <span v-else>-</span>
                                 </td>
                                 <td class="text-end pe-4 fw-bold">{{ formatPrice(item.final_price * item.quantity) }}</td>
@@ -91,7 +91,7 @@
                         Nu există mesaje. Începe o discuție mai jos.
                     </div>
                     <div v-for="msg in sortedMessages" :key="msg.id" class="mb-3 d-flex flex-column" :class="{'align-items-end': isMe(msg.user_id), 'align-items-start': !isMe(msg.user_id)}">
-                        <div class="p-2 rounded shadow-sm" style="max-width: 85%;" :class="isMe(msg.user_id) ? 'bg-primary text-white' : 'bg-light text-dark'">
+                        <div class="p-2 rounded shadow-sm" style="max-width: 85%;" :class="isMe(msg.user_id) ? 'bg-orange text-white' : 'bg-light text-dark'">
                             <div class="small fw-bold mb-1" v-if="!isMe(msg.user_id)">{{ msg.user?.name }}</div>
                             <div class="text-break">{{ msg.message }}</div>
                         </div>
@@ -107,7 +107,7 @@
                         v-model="newMessage"
                         @keydown.enter.prevent="sendMessage"
                     ></textarea>
-                    <button class="btn btn-primary w-100 btn-sm" @click="sendMessage" :disabled="sending || !newMessage.trim()">
+                    <button class="btn btn-orange w-100 btn-sm" @click="sendMessage" :disabled="sending || !newMessage.trim()">
                         <i class="bi bi-send me-1"></i> Trimite
                     </button>
                 </div>
@@ -221,10 +221,10 @@ const statusLabel = (s) => {
 const statusBadge = (s) => {
     const map = {
         'draft': 'bg-secondary',
-        'sent': 'bg-primary',
-        'pending_approval': 'bg-warning text-dark',
+        'sent': 'bg-dd-blue',
+        'pending_approval': 'bg-orange text-white',
         'approved': 'bg-success',
-        'negotiation': 'bg-info text-dark',
+        'negotiation': 'bg-warning text-dark',
         'rejected': 'bg-danger',
         'accepted': 'bg-success',
         'completed': 'bg-success'

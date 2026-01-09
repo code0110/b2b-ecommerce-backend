@@ -82,13 +82,14 @@ Route::prefix('auth')->group(function () {
 
 // Public Config
 Route::get('config', [\App\Http\Controllers\Admin\SettingController::class, 'publicConfig']);
-Route::get('content-blocks', [\App\Http\Controllers\Api\ContentController::class, 'index']);
+Route::get('content-blocks', [\App\Http\Controllers\Front\ContentBlockController::class, 'index']);
 
 // Front-office public catalog
 Route::get('home', [HomeController::class, 'homepage']);
 Route::get('promotions', [CatalogController::class, 'promotions']);
 Route::get('categories', [CatalogController::class, 'categories']);
 Route::get('categories/{slug}', [CatalogController::class, 'category']);
+Route::get('products', [\App\Http\Controllers\Front\ProductController::class, 'index']);
 Route::get('products/{slug}', [CatalogController::class, 'product']);
 Route::get('brands', [CatalogController::class, 'brands']);
 Route::get('brands/{slug}', [CatalogController::class, 'brand']);
@@ -297,8 +298,8 @@ Route::middleware(['auth:sanctum', 'impersonate'])->group(function () {
     Route::get('products/discounted', [HomeController::class, 'discountedProducts']);
 
     // Content Blocks (Front)
-    Route::get('content-blocks', [\App\Http\Controllers\Front\ContentBlockController::class, 'index']);
-    Route::get('pages/{slug}', [\App\Http\Controllers\Front\PageController::class, 'show']);
+    // Route::get('content-blocks', [\App\Http\Controllers\Front\ContentBlockController::class, 'index']);
+    // Route::get('pages/{slug}', [\App\Http\Controllers\Front\PageController::class, 'show']);
 
 });
 
@@ -364,7 +365,7 @@ Route::middleware(['auth:sanctum', 'role:admin,sales_director'])->prefix('admin'
 });
 
 // Customer Visits (Agent/Admin/Director) - Shared routes with 'admin' prefix
-Route::middleware(['auth:sanctum', 'role:admin,sales_agent,sales_director'])->prefix('admin')->group(function () {
+Route::middleware(['auth:sanctum', 'role:admin,sales_agent,sales_director,customer_b2b,customer_b2c'])->prefix('admin')->group(function () {
     // Quick Order Promotions
     Route::get('customers/{id}/promotions', [\App\Http\Controllers\Admin\QuickOrderController::class, 'getPromotionsForCustomer']);
     Route::get('quick-order/checkout-data', [\App\Http\Controllers\Admin\QuickOrderController::class, 'getCheckoutData']);

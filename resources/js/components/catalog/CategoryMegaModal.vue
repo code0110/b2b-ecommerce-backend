@@ -2,7 +2,7 @@
   <div class="catalog-overlay" @click.self="close">
     <div class="catalog-panel bg-white shadow-lg">
       <!-- Header portocaliu -->
-      <div class="catalog-header d-flex justify-content-between align-items-center px-4 py-3">
+      <div class="catalog-header d-flex justify-content-between align-items-center px-4 py-3" style="background-color: #ff7900;">
         <div>
           <div class="text-uppercase small text-white-50 mb-1">
             Categorie

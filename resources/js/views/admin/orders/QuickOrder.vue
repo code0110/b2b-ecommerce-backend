@@ -2,31 +2,31 @@
   <div class="flex flex-col h-screen bg-gray-100 font-sans overflow-hidden text-sm md:text-base relative">
     
     <!-- HEADER (Material Design Blue) -->
-    <header class="bg-blue-600 text-white shadow-md z-30 flex-shrink-0 flex flex-col">
+    <header class="bg-[#0060aa] text-white shadow-md z-30 flex-shrink-0 flex flex-col">
         <!-- Top Bar -->
         <div class="flex items-center justify-between px-4 h-14">
             <div class="flex items-center gap-3 overflow-hidden">
-                <button @click="router.back()" class="p-1 -ml-2 rounded-full hover:bg-blue-700 transition-colors">
+                <button @click="router.back()" class="p-1 -ml-2 rounded-full hover:bg-[#004d88] transition-colors">
                      <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
                 </button>
                 <div class="min-w-0 flex flex-col">
                     <h1 class="text-lg font-bold leading-none truncate">Comandă nouă</h1>
-                    <p class="text-xs text-blue-100 truncate font-medium mt-0.5">{{ selectedCustomer ? selectedCustomer.name : 'Selectează Client' }}</p>
+                    <p class="text-xs text-white opacity-90 truncate font-medium mt-0.5">{{ selectedCustomer ? selectedCustomer.name : 'Selectează Client' }}</p>
                 </div>
             </div>
             
             <!-- Header Actions -->
             <div class="flex items-center gap-1">
-                 <button v-if="activeTab === 'products'" @click="showFilters = true" class="p-2 rounded-full hover:bg-blue-700 transition-colors relative">
+                 <button v-if="activeTab === 'products'" @click="showFilters = true" class="p-2 rounded-full hover:bg-[#004d88] transition-colors relative">
                     <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" /></svg>
-                    <span v-if="activeFiltersCount > 0" class="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-red-500 rounded-full border border-blue-600"></span>
+                    <span v-if="activeFiltersCount > 0" class="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-red-500 rounded-full border border-[#0060aa]"></span>
                  </button>
                  
-                 <button @click="submitOrder" :disabled="items.length === 0 || loadingSubmit" class="p-2 rounded-full hover:bg-blue-700 transition-colors disabled:opacity-50">
+                 <button @click="submitOrder" :disabled="items.length === 0 || loadingSubmit" class="p-2 rounded-full hover:bg-[#004d88] transition-colors disabled:opacity-50">
                     <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" /></svg>
                  </button>
                  
-                 <button @click="showPreview = true" class="p-2 rounded-full hover:bg-blue-700 transition-colors" title="Previzualizare comandă">
+                 <button @click="showPreview = true" class="p-2 rounded-full hover:bg-[#004d88] transition-colors" title="Previzualizare comandă">
                     <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
                  </button>
             </div>
@@ -34,16 +34,16 @@
 
         <!-- Material Tabs -->
         <div class="flex text-sm font-bold uppercase tracking-wide overflow-x-auto scrollbar-hide">
-            <button @click="activeTab = 'antet'" class="flex-1 min-w-[80px] py-3 text-center border-b-2 transition-colors relative" :class="activeTab === 'antet' ? 'border-white text-white' : 'border-transparent text-blue-200 hover:text-white'">
+            <button @click="activeTab = 'antet'" class="flex-1 min-w-[80px] py-3 text-center border-b-2 transition-colors relative" :class="activeTab === 'antet' ? 'border-white text-white' : 'border-transparent text-white opacity-70 hover:text-white'">
                 ANTET
             </button>
-            <button @click="activeTab = 'products'" class="flex-1 min-w-[80px] py-3 text-center border-b-2 transition-colors relative" :class="activeTab === 'products' ? 'border-white text-white' : 'border-transparent text-blue-200 hover:text-white'">
+            <button @click="activeTab = 'products'" class="flex-1 min-w-[80px] py-3 text-center border-b-2 transition-colors relative" :class="activeTab === 'products' ? 'border-white text-white' : 'border-transparent text-white opacity-70 hover:text-white'">
                 PRODUSE
             </button>
-            <button @click="activeTab = 'promotions'" class="flex-1 min-w-[80px] py-3 text-center border-b-2 transition-colors relative" :class="activeTab === 'promotions' ? 'border-white text-white' : 'border-transparent text-blue-200 hover:text-white'">
+            <button @click="activeTab = 'promotions'" class="flex-1 min-w-[80px] py-3 text-center border-b-2 transition-colors relative" :class="activeTab === 'promotions' ? 'border-white text-white' : 'border-transparent text-white opacity-70 hover:text-white'">
                 PROMOȚII
             </button>
-            <button @click="activeTab = 'cart'" class="flex-1 min-w-[80px] py-3 text-center border-b-2 transition-colors relative" :class="activeTab === 'cart' ? 'border-white text-white' : 'border-transparent text-blue-200 hover:text-white'">
+            <button @click="activeTab = 'cart'" class="flex-1 min-w-[80px] py-3 text-center border-b-2 transition-colors relative" :class="activeTab === 'cart' ? 'border-white text-white' : 'border-transparent text-white opacity-70 hover:text-white'">
                 COȘ <span v-if="items.length > 0">({{ items.length }})</span>
             </button>
         </div>
@@ -53,29 +53,37 @@
     <main class="flex-1 overflow-y-auto relative bg-gray-100" ref="mainScroll">
         
         <!-- TAB 1: ANTET (Header Info) -->
-        <div v-show="activeTab === 'antet'" class="pb-20">
+            <div v-show="activeTab === 'antet'" class="pb-20">
             <div v-if="!selectedCustomer" class="p-4 bg-white m-4 rounded-lg shadow-sm space-y-3">
-                <div class="p-3 bg-yellow-50 border border-yellow-200 text-yellow-800 rounded">
+                <div v-if="isSalesAgentOrDirector && !isCustomer" class="p-3 bg-yellow-50 border border-yellow-200 text-yellow-800 rounded">
                     <div class="font-bold text-sm mb-1">Nu există vizită activă</div>
                     <div class="text-xs mb-2">Dacă ai o vizită programată, începe vizita pentru a prelua automat clientul.</div>
                     <button @click="goToPlanning" class="text-xs bg-yellow-100 px-2 py-1 rounded border border-yellow-300 hover:bg-yellow-200 font-medium">
                         Mergi la Planificare
                     </button>
                 </div>
-                <CustomerSelector @select="selectCustomer" />
+                
+                <div v-if="!isCustomer">
+                    <CustomerSelector @select="selectCustomer" />
+                </div>
+
+                <div v-if="isCustomer" class="text-center py-8">
+                    <div class="w-8 h-8 border-4 border-[#ff7900] border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
+                    <p class="text-xs text-gray-500 font-medium">Se încarcă datele clientului...</p>
+                </div>
             </div>
             
             <div v-else class="space-y-0.5 animate-fade-in">
                 <!-- Client Details Card -->
-                <div class="bg-white p-4 mb-4 shadow-sm border-l-4 border-blue-600">
+                <div class="bg-white p-4 mb-4 shadow-sm border-l-4 border-[#0060aa]">
                     <div class="flex justify-between items-start">
                         <div>
                             <h3 class="font-bold text-gray-900 text-lg">{{ selectedCustomer.name }}</h3>
-                            <p class="text-sm text-gray-500 font-mono">{{ selectedCustomer.fiscal_code || 'CUI: -' }}</p>
+                            <p class="text-sm text-gray-500 font-mono">{{ selectedCustomer.cif || selectedCustomer.fiscal_code || 'CUI: -' }}</p>
                             <p class="text-xs text-gray-400 mt-1">{{ selectedCustomer.reg_com || '-' }}</p>
                         </div>
                         <div class="text-right">
-                             <span class="inline-block bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded font-bold mb-1">
+                             <span class="inline-block bg-[#e6f0fa] text-[#0060aa] text-xs px-2 py-1 rounded font-bold mb-1">
                                 {{ selectedCustomer.currency || 'RON' }}
                              </span>
                         </div>
@@ -83,7 +91,7 @@
                     <div class="mt-3 pt-3 border-t border-gray-100 flex justify-between text-xs">
                         <div>
                             <span class="text-gray-400 block">Agent Asignat</span>
-                            <span class="font-bold text-gray-700">{{ selectedCustomer.agent_name || 'Nespecificat' }}</span>
+                            <span class="font-bold text-gray-700">{{ selectedCustomer.agent_name || (selectedCustomer.agent ? (selectedCustomer.agent.first_name + ' ' + selectedCustomer.agent.last_name) : 'Nespecificat') }}</span>
                         </div>
                         <div class="text-right">
                             <span class="text-gray-400 block">Discount</span>
@@ -95,12 +103,12 @@
                 <!-- Order Details List -->
                  <!-- Order Details List -->
                  <div class="bg-white p-4 flex items-center gap-4 border-b border-gray-100">
-                     <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
+                     <div class="w-10 h-10 rounded-full bg-[#e6f0fa] flex items-center justify-center text-[#0060aa]">
                          <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
                      </div>
                      <div class="flex-1">
                          <label class="text-xs text-gray-500 block mb-1">Dată livrare</label>
-                         <input type="date" v-model="orderDetails.deliveryDate" class="w-full font-medium text-gray-900 border-b border-gray-200 focus:border-blue-500 outline-none pb-1 bg-transparent">
+                         <input type="date" v-model="orderDetails.deliveryDate" class="w-full font-medium text-gray-900 border-b border-gray-200 focus:border-[#ff7900] outline-none pb-1 bg-transparent">
                      </div>
                  </div>
 
@@ -110,7 +118,7 @@
                     </div>
                     <div class="flex-1">
                         <label class="text-xs text-gray-500 block mb-1">Tip plată</label>
-                        <select v-model="orderDetails.paymentMethod" class="w-full font-medium text-gray-900 border-b border-gray-200 focus:border-blue-500 outline-none pb-1 bg-transparent">
+                        <select v-model="orderDetails.paymentMethod" class="w-full font-medium text-gray-900 border-b border-gray-200 focus:border-[#ff7900] outline-none pb-1 bg-transparent">
                             <option value="CHS">CHS - Numerar</option>
                             <option value="BO">BO - Bilet la Ordin</option>
                             <option value="CEC">CEC</option>
@@ -126,7 +134,7 @@
                     </div>
                     <div class="flex-1">
                         <label class="text-xs text-gray-500 block mb-1">Document plată (Nr./Serie)</label>
-                        <input type="text" v-model="orderDetails.paymentDocument" placeholder="ex: BO-12345" class="w-full font-medium text-gray-900 border-b border-gray-200 focus:border-blue-500 outline-none pb-1 bg-transparent">
+                        <input type="text" v-model="orderDetails.paymentDocument" placeholder="ex: BO-12345" class="w-full font-medium text-gray-900 border-b border-gray-200 focus:border-[#ff7900] outline-none pb-1 bg-transparent">
                     </div>
                  </div>
 
@@ -137,7 +145,7 @@
                     </div>
                     <div class="flex-1">
                         <label class="text-xs text-gray-500 block mb-1">Discount Financiar (Global) %</label>
-                        <input type="number" v-model.number="orderDetails.globalDiscount" min="0" :max="discountRules.max_discount" class="w-full font-medium text-gray-900 border-b border-gray-200 focus:border-blue-500 outline-none pb-1 bg-transparent">
+                        <input type="number" v-model.number="orderDetails.globalDiscount" min="0" :max="discountRules.max_discount" class="w-full font-medium text-gray-900 border-b border-gray-200 focus:border-[#ff7900] outline-none pb-1 bg-transparent">
                         <div v-if="orderDetails.globalDiscount > discountRules.approval_threshold" class="text-xs text-amber-600 font-bold mt-1">
                             ⚠️ Necesită aprobare
                         </div>
@@ -159,7 +167,7 @@
 
                  <div class="bg-white p-4 flex items-center justify-between">
                      <div class="flex items-center gap-4 w-full">
-                        <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 flex-shrink-0">
+                        <div class="w-10 h-10 rounded-full bg-[#e6f0fa] flex items-center justify-center text-[#0060aa] flex-shrink-0">
                              <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" /></svg>
                         </div>
                         <div class="flex-1">
@@ -170,21 +178,21 @@
                  </div>
 
                  <!-- Client Financial Info Summary -->
-                 <div class="mt-4 p-4 bg-blue-50 border-t border-b border-blue-100">
-                     <h3 class="text-xs font-bold text-blue-800 uppercase mb-3">Informații Financiare</h3>
+                 <div class="mt-4 p-4 bg-[#e6f0fa] border-t border-b border-[#0060aa]">
+                     <h3 class="text-xs font-bold text-[#0060aa] uppercase mb-3">Informații Financiare</h3>
                      <div class="grid grid-cols-2 gap-4">
                          <div>
-                             <p class="text-[10px] text-blue-500 uppercase">Sold Curent</p>
+                             <p class="text-[10px] text-[#0060aa] uppercase">Sold Curent</p>
                              <p class="font-mono font-bold text-gray-900">{{ formatPrice(selectedCustomer.balance) }}</p>
                          </div>
                          <div>
-                             <p class="text-[10px] text-blue-500 uppercase">Limită Credit</p>
+                             <p class="text-[10px] text-[#0060aa] uppercase">Limită Credit</p>
                              <p class="font-mono font-bold text-gray-900">{{ formatPrice(selectedCustomer.credit_limit || 0) }}</p>
                          </div>
                      </div>
                  </div>
                  
-                 <div class="p-4">
+                 <div class="p-4" v-if="!isCustomer">
                     <button @click="selectCustomer(null)" class="w-full py-3 text-red-600 text-sm font-bold bg-white border border-red-200 rounded-lg shadow-sm">
                         Schimbă Client
                     </button>
@@ -211,12 +219,12 @@
             <!-- Product List -->
             <div class="flex-1 overflow-y-auto">
                  <div v-if="loadingProducts && products.length === 0" class="flex justify-center py-20">
-                     <div class="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                     <div class="w-8 h-8 border-4 border-[#ff7900] border-t-transparent rounded-full animate-spin"></div>
                  </div>
 
                  <div v-else-if="products.length === 0" class="text-center py-20 text-gray-400">
                      <p>Nu am găsit produse.</p>
-                     <button @click="resetFilters" class="mt-4 text-blue-600 font-bold">Resetează Filtre</button>
+                     <button @click="resetFilters" class="mt-4 text-[#0060aa] font-bold">Resetează Filtre</button>
                  </div>
 
                  <div v-else class="divide-y divide-gray-100">
@@ -249,11 +257,11 @@
                                     class="w-full text-center font-bold text-gray-900 outline-none text-base p-0 border-none focus:ring-0 h-5"
                                     min="0"
                                  >
-                                <button @click="toggleItemUnit(product)" class="text-[10px] font-bold text-blue-600 uppercase hover:text-blue-800 leading-none">
+                                <button @click="toggleItemUnit(product)" class="text-[10px] font-bold text-[#0060aa] uppercase hover:text-[#004d88] leading-none">
                                     {{ getItemUnit(product) }}
                                 </button>
                              </div>
-                             <button @click="updateProductQuantity(product, 1)" class="w-10 h-10 flex items-center justify-center text-blue-600 hover:bg-blue-50 rounded-r-lg font-bold text-lg transition-colors">
+                             <button @click="updateProductQuantity(product, 1)" class="w-10 h-10 flex items-center justify-center text-[#ff7900] hover:bg-[#fff0e0] rounded-r-lg font-bold text-lg transition-colors">
                                 +
                              </button>
                          </div>
@@ -632,6 +640,7 @@ import { useRouter } from 'vue-router';
 import api, { adminApi } from '@/services/http';
 import CustomerSelector from '@/components/admin/CustomerSelector.vue';
 import { useVisitStore } from '@/store/visit';
+import { useAuthStore } from '@/store/auth';
 
 // Simple debounce
 const debounce = (fn, delay) => {
@@ -646,6 +655,46 @@ const debounce = (fn, delay) => {
 
 const router = useRouter();
 const visitStore = useVisitStore();
+const authStore = useAuthStore();
+
+const isImpersonating = computed(() => !!authStore.impersonatedCustomer || !!localStorage.getItem('impersonated_client_id'));
+
+const isCustomer = computed(() => {
+    if (!authStore.user) return false;
+    
+    // 1. Explicit checks for customer indicators
+    // Strongest check: Linked customer ID
+    if (authStore.user.customer_id || authStore.user.customer) return true;
+    
+    // Impersonation acts as customer
+    if (isImpersonating.value) return true;
+
+    // Role checks - Check BOTH current active role string AND roles array
+    const currentRole = String(authStore.role || '').toLowerCase();
+    if (['customer', 'customer_b2b', 'customer_b2c', 'b2b', 'b2c'].includes(currentRole)) return true;
+    if (currentRole.includes('customer')) return true;
+
+    const roles = (authStore.user.roles || []).map(r => (r.slug || r.code || '').toLowerCase());
+    if (roles.some(r => r.includes('customer') || r === 'b2b' || r === 'b2c')) return true;
+
+    // 2. Check for staff roles - if ANY staff role exists, they are NOT a customer
+    const hasStaffRole = roles.some(r => ['admin', 'sales_agent', 'sales_director', 'operator', 'manager'].includes(r));
+    
+    if (hasStaffRole) return false;
+
+    // 3. Fallback: if not staff, assume customer
+    return true;
+});
+
+const isSalesAgentOrDirector = computed(() => {
+    if (!authStore.user) return false;
+    if (isCustomer.value) return false;
+    if (authStore.user.customer_id || authStore.user.customer) return false;
+    if (isImpersonating.value) return false;
+
+    const roles = (authStore.user.roles || []).map(r => (r.slug || r.code || '').toLowerCase());
+    return roles.includes('sales_agent') || roles.includes('sales_director');
+});
 
 // UI State
 const activeTab = ref('antet'); // Default to ANTET
@@ -1229,20 +1278,58 @@ const submitOrder = async () => {
 onMounted(() => {
     fetchProducts();
     fetchCategories();
-    if (visitStore.hasActiveVisit) {
-        const v = visitStore.activeVisit;
-        if (v && v.customer) {
-            selectedCustomer.value = v.customer;
-            fetchPromotions();
-            fetchCart(); // Fetch cart on mount if customer exists
-            fetchCheckoutData(); // Fetch checkout data on mount
+    
+    // 1. Handle Impersonation
+    if (isImpersonating.value) {
+        const imp = authStore.impersonatedCustomer;
+        if (imp && imp.id) {
+            adminApi.get(`/customers/${imp.id}`)
+                .then(({ data }) => {
+                    selectCustomer(data);
+                })
+                .catch(err => console.error("Failed to load impersonated customer", err));
+            return;
         }
-    } else {
-        visitStore.checkActiveVisit();
+    }
+
+    // 2. Handle Real Customer (Logged in as customer)
+    if (isCustomer.value) {
+        // Prefer using the already loaded customer object if available
+        if (authStore.user?.customer) {
+             selectCustomer(authStore.user.customer);
+             return;
+        }
+        
+        if (authStore.user?.customer_id) {
+            adminApi.get(`/customers/${authStore.user.customer_id}`)
+                .then(({ data }) => {
+                    selectCustomer(data);
+                })
+                .catch(err => {
+                    console.error("Failed to load customer profile", err);
+                    showToast('Eroare la încărcarea profilului de client.', 'error');
+                });
+        } else if (!isImpersonating.value) {
+            console.error("User identified as customer but missing customer_id");
+            // If we are sure it's a customer but no ID, maybe they are a fresh B2C without profile?
+            // But usually B2B/B2C have customer profile.
+            // Just warn for now.
+        }
+        return; 
+    }
+
+    // 3. Handle Agent with Active Visit
+    if (isSalesAgentOrDirector.value) {
+        if (visitStore.hasActiveVisit) {
+            const v = visitStore.activeVisit;
+            if (v && v.customer) {
+                selectCustomer(v.customer);
+            }
+        } else {
+            visitStore.checkActiveVisit();
+        }
     }
 });
-
-const hasActiveVisit = computed(() => visitStore.hasActiveVisit);
 const goToPlanning = () => router.push({ name: 'account-agent-routes' });
 </script>
 

@@ -28,6 +28,12 @@ class ProductController extends Controller
                 'brand:id,name,slug',
             ]);
 
+        /** @var \App\Models\User $user */
+        $user = $request->user();
+        if ($user && $user->hasRole(['customer_b2b', 'customer_b2c'])) {
+             $query->where('status', 'published');
+        }
+
         // Căutare text (denumire, cod, barcode, ERP)
         if ($search = $request->query('search')) {
             $query->where(function ($q) use ($search) {

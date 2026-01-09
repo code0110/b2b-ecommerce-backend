@@ -1,12 +1,18 @@
 <template>
-  <div class="container py-4">
-    <div class="row">
-      <div class="col-lg-7">
-        <h1 class="h3 mb-3">Devino partener B2B</h1>
-        <p class="text-muted small mb-4">
+  <div>
+    <div class="dd-page-header py-3 mb-3">
+      <div class="container">
+        <h1 class="h4 mb-1">Devino partener B2B</h1>
+        <p class="text-muted small mb-0">
           Completează formularul de mai jos și un reprezentant de vânzări te va
           contacta pentru detalii comerciale.
         </p>
+      </div>
+    </div>
+
+    <div class="container pb-4">
+      <div class="row g-3">
+        <div class="col-lg-7">
 
         <div v-if="success" class="alert alert-success small">
           {{ success }}
@@ -15,8 +21,10 @@
           {{ error }}
         </div>
 
-        <form @submit.prevent="submit" class="vstack gap-3">
-          <div class="row g-3">
+        <div class="card">
+          <div class="card-body">
+            <form @submit.prevent="submit" class="vstack gap-3">
+              <div class="row g-3">
             <div class="col-md-8">
               <label class="form-label small">Denumire firmă *</label>
               <input
@@ -117,7 +125,7 @@
           <div class="d-flex align-items-center gap-2">
             <button
               type="submit"
-              class="btn btn-primary btn-sm"
+              class="btn btn-orange btn-sm"
               :disabled="loading"
             >
               <span
@@ -131,25 +139,30 @@
               Vei primi un răspuns în cel mai scurt timp.
             </span>
           </div>
-        </form>
+            </form>
+          </div>
+        </div>
       </div>
 
-      <div class="col-lg-5 mt-4 mt-lg-0">
-        <div class="border rounded p-3 bg-light small">
-          <h2 class="h6">Beneficii pentru parteneri</h2>
-          <ul class="mb-3">
-            <li>Liste de preț dedicate și discounturi pe volum;</li>
-            <li>Termene de plată și limită de credit;</li>
-            <li>Acces la promoții și campanii exclusive B2B;</li>
-            <li>Suport dedicat prin reprezentanți de vânzări.</li>
-          </ul>
-          <p class="mb-0 text-muted">
-            Dacă ești deja client, te poți autentifica în cont pentru a vedea
-            condițiile comerciale existente.
-          </p>
+      <div class="col-lg-5">
+        <div class="card">
+          <div class="card-body small">
+            <h2 class="h6 fw-bold">Beneficii pentru parteneri</h2>
+            <ul class="mb-3">
+              <li>Liste de preț dedicate și discounturi pe volum;</li>
+              <li>Termene de plată și limită de credit;</li>
+              <li>Acces la promoții și campanii exclusive B2B;</li>
+              <li>Suport dedicat prin reprezentanți de vânzări.</li>
+            </ul>
+            <p class="mb-0 text-muted">
+              Dacă ești deja client, te poți autentifica în cont pentru a vedea
+              condițiile comerciale existente.
+            </p>
+          </div>
         </div>
       </div>
     </div>
+  </div>
   </div>
 </template>
 

@@ -10,7 +10,7 @@
       <div class="d-flex gap-2">
         <RouterLink 
             :to="{ name: 'account-notification-settings' }" 
-            class="btn btn-outline-primary btn-sm"
+            class="btn btn-outline-secondary btn-sm"
         >
             <i class="bi bi-gear-fill me-1"></i> Setări
         </RouterLink>
@@ -26,7 +26,7 @@
     </div>
 
     <div v-if="loading && notifications.length === 0" class="text-center py-4">
-      <div class="spinner-border spinner-border-sm" role="status" />
+      <div class="spinner-border spinner-border-sm text-orange" role="status" />
       <div class="small text-muted mt-2">Se încarcă notificările...</div>
     </div>
 
@@ -58,7 +58,7 @@
           <div class="text-end small">
             <span
               v-if="!notif.read_at"
-              class="badge bg-primary"
+              class="badge bg-orange"
             >
               Nou
             </span>
@@ -99,9 +99,9 @@ const getIconForLevel = (level) => {
 const getColorForLevel = (level) => {
     switch(level) {
         case 'success': return '#198754';
-        case 'warning': return '#ffc107';
+        case 'warning': return '#ff7900';
         case 'error': return '#dc3545';
-        default: return '#0d6efd';
+        default: return '#0060aa';
     }
 };
 

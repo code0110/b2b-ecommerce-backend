@@ -118,7 +118,7 @@
                 </div>
                 <RouterLink 
                   :to="{ name: 'account-order-details', params: { id: order.id } }"
-                  class="btn btn-sm btn-outline-primary"
+                  class="btn btn-sm btn-outline-secondary"
                 >
                   Detalii
                 </RouterLink>

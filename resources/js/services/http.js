@@ -96,7 +96,19 @@ function attachInterceptors(instance, { attachCartSession = false } = {}) {
           // Putem curăța starea locală direct fără să mai apelăm API-ul dacă suntem deja 401
           // Sau apelăm logout care face try/catch pe request
           await authStore.logout(); 
-          window.location.href = '/login';
+          
+          // Check if current route requires auth before redirecting
+          // Use dynamic import to avoid circular dependency
+          try {
+            const router = (await import('@/router')).default;
+            if (router.currentRoute.value.meta.requiresAuth) {
+               router.push({ name: 'login', query: { redirect: router.currentRoute.value.fullPath } });
+            }
+          } catch (e) {
+             // Fallback if router access fails
+             window.location.href = '/login';
+          }
+          
           return new Promise(() => {});
         }
       }

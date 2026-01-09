@@ -33,6 +33,9 @@ class PromotionController extends Controller
             'end_at'              => ['nullable', 'date', 'after_or_equal:start_at'],
             'status'              => ['required', Rule::in(['draft', 'active', 'inactive'])],
             
+            'is_exclusive'        => ['boolean'],
+            'is_iterative'        => ['boolean'],
+
             // New Fields
             'type'                => ['required', Rule::in(['standard', 'volume', 'bundle', 'shipping', 'special_price', 'gift'])],
             'value_type'          => ['required', Rule::in(['percent', 'fixed_amount', 'fixed_price'])],
@@ -120,6 +123,9 @@ class PromotionController extends Controller
             'start_at'            => ['nullable', 'date'],
             'end_at'              => ['nullable', 'date', 'after_or_equal:start_at'],
             'status'              => ['sometimes', Rule::in(['draft', 'active', 'inactive'])],
+
+            'is_exclusive'        => ['boolean'],
+            'is_iterative'        => ['boolean'],
 
             'type'                => ['sometimes', Rule::in(['standard', 'volume', 'bundle', 'shipping', 'special_price', 'gift'])],
             'value_type'          => ['sometimes', Rule::in(['percent', 'fixed_amount', 'fixed_price'])],

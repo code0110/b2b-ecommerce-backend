@@ -2,7 +2,7 @@
   <div class="card border-0 shadow-sm">
     <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
       <h5 class="mb-0">Cererile Mele de Ofertă</h5>
-      <router-link :to="{ name: 'account-quote-requests-new' }" class="btn btn-primary btn-sm">
+      <router-link :to="{ name: 'account-quote-requests-new' }" class="btn btn-orange btn-sm">
         <i class="bi bi-plus-lg"></i> Cerere Nouă
       </router-link>
     </div>
@@ -27,7 +27,7 @@
       </div>
 
       <div v-if="loading" class="text-center py-5">
-        <div class="spinner-border text-primary" role="status">
+        <div class="spinner-border text-orange" role="status">
           <span class="visually-hidden">Se încarcă...</span>
         </div>
       </div>
@@ -55,7 +55,7 @@
                   <div class="text-end">
                     <router-link
                       :to="{ name: 'account-quote-requests-show', params: { id: req.id } }"
-                      class="btn btn-sm btn-outline-primary"
+                      class="btn btn-sm btn-outline-secondary"
                     >
                       Detalii
                     </router-link>
@@ -123,13 +123,13 @@ const statusLabel = (s) => {
 };
 
 const statusBadge = (s) => {
-    const map = {
-        'new': 'bg-info text-dark',
-        'processed': 'bg-primary',
-        'converted': 'bg-success',
-        'rejected': 'bg-danger'
-    };
-    return map[s] || 'bg-secondary';
+  const map = {
+    'new': 'bg-dd-blue text-white',
+    'processed': 'bg-orange text-white',
+    'converted': 'bg-success',
+    'rejected': 'bg-danger'
+  };
+  return map[s] || 'bg-secondary';
 };
 
 const loadRequests = async (page = 1) => {

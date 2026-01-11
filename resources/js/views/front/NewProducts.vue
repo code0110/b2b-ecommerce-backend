@@ -25,6 +25,7 @@
           class="col-lg-3 col-md-4 col-sm-6"
         >
           <div class="card h-100 dd-product-card">
+<<<<<<< HEAD
             <div class="ratio ratio-4x3 bg-white border-bottom position-relative">
               <WishlistButton :product="p" />
               <CompareButton 
@@ -32,6 +33,9 @@
                 custom-class="position-absolute top-0 end-0 me-2 mt-5 shadow-sm"
                 :round="true"
               />
+=======
+            <div class="ratio ratio-4x3 bg-white border-bottom">
+>>>>>>> bfb5b04ca9c1881d6b1bc203b41a8819391dca76
               <img
                 v-if="p.main_image_url || p.image_url"
                 :src="p.main_image_url || p.image_url"

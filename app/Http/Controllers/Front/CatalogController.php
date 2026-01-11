@@ -43,6 +43,7 @@ class CatalogController extends Controller
         return Promotion::where('status', 'active')->paginate(20);
     }
 
+<<<<<<< HEAD
     /**
      * List all products with filters (for /produse page)
      */
@@ -127,6 +128,10 @@ class CatalogController extends Controller
 
     public function categories(Request $request)
     {
+=======
+    public function categories(Request $request)
+    {
+>>>>>>> bfb5b04ca9c1881d6b1bc203b41a8819391dca76
         $query = Category::whereNull('parent_id')
             ->with('children')
             ->where('is_published', true)
@@ -228,6 +233,7 @@ class CatalogController extends Controller
 
         // 1. Încercăm să găsim produsul după slug
         $product = Product::query()
+<<<<<<< HEAD
             ->where('slug', $slug)
             ->where('status', 'published')
             ->with([
@@ -245,6 +251,23 @@ class CatalogController extends Controller
                 'reviews',
             ])
             ->first();
+=======
+    ->where('slug', $slug)
+    ->where('status', 'published')
+    ->with([
+        'brand',
+        'mainCategory',
+        'categories',
+        'images',
+        'variants',
+        'attributeValues.attribute',
+        'documents',
+        'relatedProducts',
+        'complementaryProducts',
+        'reviews',
+    ])
+    ->firstOrFail();
+>>>>>>> bfb5b04ca9c1881d6b1bc203b41a8819391dca76
 
         $currentVariant = null;
 
@@ -282,7 +305,43 @@ class CatalogController extends Controller
         // Folosim serviciul actualizat care știe să facă merge și să calculeze unitățile
         $formattedProduct = $this->pricingService->formatProductForFrontend($product, $customer, $currentVariant);
 
+<<<<<<< HEAD
         // 4. Gestionăm produsele similare / complementare
+=======
+        $productArray['category'] = $product->mainCategory ? [
+    'id'   => $product->mainCategory->id,
+    'name' => $product->mainCategory->name,
+    'slug' => $product->mainCategory->slug ?? null,
+] : null;
+
+        $productArray['images'] = $product->images?->map(function ($img) {
+            return [
+                'id'       => $img->id,
+                'url'      => $img->url ?? $img->path ?? null,
+                'is_main'  => (bool) ($img->is_main ?? false),
+                'position' => $img->position ?? 0,
+            ];
+        })->values() ?? [];
+
+        $productArray['documents'] = $product->documents?->map(function ($doc) {
+            return [
+                'id'       => $doc->id,
+                'name'     => $doc->name,
+                'type'     => $doc->type,
+                'url'      => $doc->url ?? null,
+                'is_locked'=> (bool) ($doc->is_locked ?? false),
+            ];
+        })->values() ?? [];
+
+        $productArray['attributes'] = $product->attributeValues?->map(function ($av) {
+            return [
+                'name'  => $av->attribute->name ?? '',
+                'value' => $av->value,
+            ];
+        })->values() ?? [];
+
+        // produse similare / complementare cu pricing
+>>>>>>> bfb5b04ca9c1881d6b1bc203b41a8819391dca76
         $relatedProducts = $product->relatedProducts
             ? $product->relatedProducts
                 ->map(fn($rel) => $rel->relatedProduct)

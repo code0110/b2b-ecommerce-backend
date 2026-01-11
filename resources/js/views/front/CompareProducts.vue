@@ -110,6 +110,7 @@
                   :key="'stock-' + p.id"
                   class="small"
                 >
+<<<<<<< HEAD
                   <template v-if="showNumericStock">
                     <span v-if="p.stockQty > 0" class="text-success fw-bold">
                         Stoc: {{ p.stockQty }} buc.
@@ -135,6 +136,26 @@
                          {{ p.stockStatus || 'La comandă' }}
                     </span>
                   </template>
+=======
+                  <span v-if="p.stockStatus === 'in_stock'">
+                    În stoc ({{ p.stockQty }} buc)
+                  </span>
+                  <span
+                    v-else-if="p.stockStatus === 'low_stock'"
+                    class="text-orange"
+                  >
+                    Stoc limitat ({{ p.stockQty }} buc)
+                  </span>
+                  <span
+                    v-else-if="p.stockStatus === 'out_of_stock'"
+                    class="text-danger"
+                  >
+                    Stoc epuizat
+                  </span>
+                  <span v-else>
+                    La comandă
+                  </span>
+>>>>>>> bfb5b04ca9c1881d6b1bc203b41a8819391dca76
                 </td>
               </tr>
               <tr>

@@ -413,8 +413,12 @@ const isAgentOrDirector = computed(() => {
   if (isImpersonating.value) return false;
 
   const roles = (authStore.user?.roles || []).map(r => (r.slug || r.code || '').toLowerCase());
+<<<<<<< HEAD
   return roles.includes('sales_agent') || roles.includes('sales_director') || roles.includes('admin') || 
          authStore.role === 'admin' || authStore.role === 'sales_agent' || authStore.role === 'sales_director';
+=======
+  return roles.includes('sales_agent') || roles.includes('sales_director') || roles.includes('admin') || authStore.role === 'admin';
+>>>>>>> bfb5b04ca9c1881d6b1bc203b41a8819391dca76
 });
 
 const isDirector = computed(() => {

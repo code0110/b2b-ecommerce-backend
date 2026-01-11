@@ -64,6 +64,7 @@
                       </span>
                     </div>
                     <div class="small text-muted">
+<<<<<<< HEAD
                       Cod: {{ item.product_variant?.sku || item.product?.internal_code || item.product?.sku || '-' }}
                     </div>
                     <div class="small text-muted" v-if="item.product_variant">
@@ -99,6 +100,10 @@
                       </template>
                     </div>
 
+=======
+                      Cod: {{ item.product?.internal_code || item.product?.sku || '-' }}
+                    </div>
+>>>>>>> bfb5b04ca9c1881d6b1bc203b41a8819391dca76
                     <div v-if="item.applied_promotions && item.applied_promotions.length" class="small text-danger mt-2">
                     <div v-for="promo in item.applied_promotions" :key="promo.id">
                       <i class="bi bi-tag-fill me-1"></i>{{ promo.name }} (-{{ promo.discount_amount }} RON)
@@ -110,10 +115,17 @@
                     <div class="d-flex flex-column align-items-sm-end">
                       <div class="small">
                         <div v-if="item.unit_base_price > item.unit_final_price" class="text-muted text-decoration-line-through">
+<<<<<<< HEAD
                           {{ formatPriceGlobal(item.unit_base_price, item.product?.vat_rate, item.product?.vat_included) }}
                         </div>
                         <div :class="item.unit_base_price > item.unit_final_price ? 'text-danger fw-bold' : 'fw-semibold'">
                           {{ formatPriceGlobal(item.unit_final_price, item.product?.vat_rate, item.product?.vat_included) }}
+=======
+                          {{ item.unit_base_price.toLocaleString('ro-RO', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }} RON
+                        </div>
+                        <div :class="item.unit_base_price > item.unit_final_price ? 'text-danger fw-bold' : 'fw-semibold'">
+                          {{ item.unit_final_price.toLocaleString('ro-RO', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }} RON
+>>>>>>> bfb5b04ca9c1881d6b1bc203b41a8819391dca76
                         </div>
                       </div>
 
@@ -145,7 +157,11 @@
                       </div>
 
                       <div class="fw-semibold mt-2">
+<<<<<<< HEAD
                         {{ formatPriceGlobal(item.line_final_total, item.product?.vat_rate, item.product?.vat_included) }}
+=======
+                        {{ item.line_final_total.toLocaleString('ro-RO', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }} RON
+>>>>>>> bfb5b04ca9c1881d6b1bc203b41a8819391dca76
                       </div>
 
                       <button
@@ -169,19 +185,31 @@
                 <div class="d-flex justify-content-between mb-2 small">
                   <span>Subtotal</span>
                   <span>
+<<<<<<< HEAD
                     {{ new Intl.NumberFormat('ro-RO', { style: 'currency', currency: 'RON' }).format(displayedSubtotal) }}
+=======
+                    {{ subtotal.toLocaleString('ro-RO', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }} RON
+>>>>>>> bfb5b04ca9c1881d6b1bc203b41a8819391dca76
                   </span>
                 </div>
                 <div v-if="discountTotal > 0" class="d-flex justify-content-between mb-2 text-danger small">
                   <span>Reducere</span>
                   <span>
+<<<<<<< HEAD
                     -{{ formatPriceGlobal(discountTotal, 19, true) }}
+=======
+                    -{{ discountTotal.toLocaleString('ro-RO', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }} RON
+>>>>>>> bfb5b04ca9c1881d6b1bc203b41a8819391dca76
                   </span>
                 </div>
                 <div class="d-flex justify-content-between mb-3 border-top pt-2">
                   <span class="fw-bold">Total de plată</span>
                   <span class="fw-bold">
+<<<<<<< HEAD
                     {{ formatPriceGlobal(grandTotal, 19, true) }}
+=======
+                    {{ grandTotal.toLocaleString('ro-RO', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }} RON
+>>>>>>> bfb5b04ca9c1881d6b1bc203b41a8819391dca76
                   </span>
                 </div>
                 <RouterLink :to="{ name: 'checkout' }" class="btn btn-orange w-100 btn-sm mb-2">

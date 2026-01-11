@@ -26,6 +26,7 @@
         >
           <div class="card h-100 dd-product-card">
             <div class="ratio ratio-4x3 bg-white border-bottom position-relative">
+<<<<<<< HEAD
               <WishlistButton :product="p" />
               <CompareButton 
                 :product="p" 
@@ -36,13 +37,23 @@
                 v-if="p?.main_image_url || p?.image_url"
                 :src="p.main_image_url || p.image_url"
                 :alt="p.name || 'Produs'"
+=======
+              <img
+                v-if="p.main_image_url || p.image_url"
+                :src="p.main_image_url || p.image_url"
+                :alt="p.name"
+>>>>>>> bfb5b04ca9c1881d6b1bc203b41a8819391dca76
                 class="w-100 h-100 object-fit-contain p-3"
                 loading="lazy"
               >
               <div v-else class="d-flex align-items-center justify-content-center text-muted small w-100 h-100 bg-light">
                 Fără imagine
               </div>
+<<<<<<< HEAD
               <span v-if="p?.promo_price" class="position-absolute top-0 start-0 m-2 badge bg-danger rounded-pill shadow-sm">
+=======
+              <span v-if="p.promo_price" class="position-absolute top-0 start-0 m-2 badge bg-danger rounded-pill shadow-sm">
+>>>>>>> bfb5b04ca9c1881d6b1bc203b41a8819391dca76
                 Promo
               </span>
             </div>

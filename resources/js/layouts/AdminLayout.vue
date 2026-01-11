@@ -73,10 +73,13 @@
             <i class="bi bi-person-badge me-2"></i> <span class="link-text">Utilizatori & Clienți</span>
           </RouterLink>
           
+<<<<<<< HEAD
           <RouterLink v-if="authStore.role === 'admin'" :to="{ name: 'admin-sales-reps' }" class="nav-link text-white rounded d-flex align-items-center px-3 py-2" active-class="active-link" title="Reprezentanți">
             <i class="bi bi-person-badge me-2"></i> <span class="link-text">Reprezentanți</span>
           </RouterLink>
           
+=======
+>>>>>>> bfb5b04ca9c1881d6b1bc203b41a8819391dca76
           <RouterLink v-if="isAdmin || isAgentOrDirector" :to="{ name: 'admin-customer-groups' }" class="nav-link text-white rounded d-flex align-items-center px-3 py-2" active-class="active-link" title="Grupuri clienți">
             <i class="bi bi-people-fill me-2"></i> <span class="link-text">Grupuri clienți</span>
           </RouterLink>
@@ -128,6 +131,7 @@
           <RouterLink v-if="authStore.role === 'admin'" :to="{ name: 'admin-settings-general' }" class="nav-link text-white rounded d-flex align-items-center px-3 py-2" active-class="active-link" title="Setări Generale">
             <i class="bi bi-gear me-2"></i> <span class="link-text">Setări Generale</span>
           </RouterLink>
+<<<<<<< HEAD
 
           <RouterLink v-if="authStore.role === 'admin'" :to="{ name: 'admin-settings-offers' }" class="nav-link text-white rounded d-flex align-items-center px-3 py-2" active-class="active-link" title="Reguli Discount">
             <i class="bi bi-sliders me-2"></i> <span class="link-text">Reguli Discount</span>
@@ -136,6 +140,8 @@
           <RouterLink v-if="authStore.role === 'admin'" :to="{ name: 'admin-settings-financial-risk' }" class="nav-link text-white rounded d-flex align-items-center px-3 py-2" active-class="active-link" title="Setări Risc Financiar">
             <i class="bi bi-cash-coin me-2"></i> <span class="link-text">Risc Financiar</span>
           </RouterLink>
+=======
+>>>>>>> bfb5b04ca9c1881d6b1bc203b41a8819391dca76
           
           <RouterLink v-if="authStore.role === 'admin'" :to="{ name: 'admin-roles-permissions' }" class="nav-link text-white rounded d-flex align-items-center px-3 py-2" active-class="active-link" title="Roluri & Permisiuni">
             <i class="bi bi-shield-lock me-2"></i> <span class="link-text">Roluri & Permisiuni</span>

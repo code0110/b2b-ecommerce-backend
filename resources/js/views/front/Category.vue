@@ -188,6 +188,61 @@
                   <i class="bi bi-funnel"></i>
                   Filtre
                 </button>
+<<<<<<< HEAD
+=======
+              </div>
+
+            <div v-if="displayMode === 'grid'" class="row g-3">
+              <div v-for="product in products" :key="product.id" class="col-12 col-sm-6 col-md-4">
+                <div class="card h-100 border-0 shadow-sm dd-product-card product-card">
+                  <div class="ratio ratio-4x3 bg-light position-relative">
+                    <img v-if="product.main_image_url" :src="product.main_image_url" :alt="product.name" class="card-img-top object-fit-cover rounded-top" loading="lazy">
+                    <div v-else class="d-flex align-items-center justify-content-center text-muted small w-100 h-100">Fără imagine</div>
+                    
+                    <!-- Discount Badge -->
+                     <span v-if="product.hasDiscount || product.discountPercent" class="position-absolute top-0 start-0 m-2 badge bg-danger rounded-pill shadow-sm">
+                        <span v-if="product.discountPercent">-{{ product.discountPercent }}%</span>
+                        <span v-else>Promo</span>
+                    </span>
+                  </div>
+                  <div class="card-body d-flex flex-column p-3">
+                    <div class="small text-muted mb-1">{{ product.main_category_name || category?.name }}</div>
+                    <h3 class="h6 mb-2 fw-bold text-truncate-2">
+                      <RouterLink :to="`/produs/${product.slug}`" class="text-decoration-none text-dark stretched-link">
+                        {{ product.name }}
+                      </RouterLink>
+                    </h3>
+                    <div class="small text-muted mb-2">Cod: {{ product.internal_code || product.sku || '-' }}</div>
+                    
+                    <div class="mb-2" v-if="product.average_rating || product.rating">
+                      <i v-for="n in 5" :key="'star-' + product.id + '-' + n" :class="(Number(product.average_rating || product.rating) >= n) ? 'bi-star-fill text-warning me-1' : 'bi-star text-muted me-1'"></i>
+                      <span class="text-muted small ms-1" v-if="product.reviews_count">({{ product.reviews_count }})</span>
+                    </div>
+
+                    <div class="mt-auto pt-2 border-top">
+                         <div class="d-flex justify-content-between align-items-center">
+                            <div class="price-container">
+                                <div v-if="getUnitPrice(product) !== null">
+                                    <span v-if="getListPrice(product) !== null && getListPrice(product) > getUnitPrice(product)" class="text-decoration-line-through text-muted small d-block">{{ formatPrice(getListPrice(product)) }}</span>
+                                    <span :class="(getListPrice(product) !== null && getListPrice(product) > getUnitPrice(product)) ? 'text-danger fw-bold fs-5' : 'fw-bold fs-5 text-dd-blue'">{{ formatPrice(getUnitPrice(product)) }}</span>
+                                </div>
+                                <div v-else class="text-muted small">Preț indisponibil</div>
+                            </div>
+                            <button
+                              class="btn btn-orange btn-sm rounded-circle d-flex align-items-center justify-content-center"
+                              style="width: 32px; height: 32px; z-index: 2; position: relative;"
+                              title="Adaugă în coș"
+                              :disabled="addLoading === product.id"
+                              @click.prevent="addToCart(product)"
+                            >
+                                <span v-if="addLoading === product.id" class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                                <i v-else class="bi bi-cart-plus"></i>
+                            </button>
+                        </div>
+                    </div>
+                  </div>
+                </div>
+>>>>>>> bfb5b04ca9c1881d6b1bc203b41a8819391dca76
               </div>
 
             <!-- Grid Mode -->
@@ -199,15 +254,94 @@
 
             <!-- List Mode -->
             <div v-else-if="displayMode === 'list'" class="d-flex flex-column gap-3">
+<<<<<<< HEAD
                 <div v-for="product in products" :key="product.id">
                    <ProductCardList :product="product" />
+=======
+                <div v-for="product in products" :key="product.id" class="card border-0 shadow-sm overflow-hidden">
+                    <div class="row g-0">
+                        <div class="col-md-3 bg-light position-relative">
+                             <div class="ratio ratio-4x3 h-100">
+                                <img v-if="product.main_image_url" :src="product.main_image_url" :alt="product.name" class="object-fit-cover w-100 h-100" loading="lazy">
+                                <div v-else class="d-flex align-items-center justify-content-center text-muted small w-100 h-100">Fără imagine</div>
+                             </div>
+                              <span v-if="product.hasDiscount || product.discountPercent" class="position-absolute top-0 start-0 m-2 badge bg-danger rounded-pill shadow-sm">
+                                <span v-if="product.discountPercent">-{{ product.discountPercent }}%</span>
+                                <span v-else>Promo</span>
+                            </span>
+                        </div>
+                        <div class="col-md-9">
+                            <div class="card-body h-100 d-flex flex-column">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                     <div>
+                                        <div class="small text-muted mb-1">{{ product.main_category_name || category?.name }}</div>
+                                        <h3 class="h5 mb-1 fw-bold">
+                                            <RouterLink :to="`/produs/${product.slug}`" class="text-decoration-none text-dark">
+                                                {{ product.name }}
+                                            </RouterLink>
+                                        </h3>
+                                        <div class="small text-muted">Cod: {{ product.internal_code || product.sku || '-' }}</div>
+                                     </div>
+                                     <div class="text-end">
+                                          <div class="mb-1" v-if="product.average_rating || product.rating">
+                                              <i v-for="n in 5" :key="'star-list-' + product.id + '-' + n" :class="(Number(product.average_rating || product.rating) >= n) ? 'bi-star-fill text-warning me-1' : 'bi-star text-muted me-1'"></i>
+                                          </div>
+                                     </div>
+                                </div>
+                                <p class="card-text text-muted small mb-3 flex-grow-1 line-clamp-2">{{ product.short_description || product.description }}</p>
+                                
+                                <div class="d-flex justify-content-between align-items-center mt-auto border-top pt-3">
+                                     <div class="price-container">
+                                        <div v-if="getUnitPrice(product) !== null">
+                                            <span v-if="getListPrice(product) !== null && getListPrice(product) > getUnitPrice(product)" class="text-decoration-line-through text-muted small d-block">{{ formatPrice(getListPrice(product)) }}</span>
+                                            <span :class="(getListPrice(product) !== null && getListPrice(product) > getUnitPrice(product)) ? 'text-danger fw-bold fs-4' : 'fw-bold fs-4 text-dd-blue'">{{ formatPrice(getUnitPrice(product)) }}</span>
+                                        </div>
+                                         <div v-else class="text-muted small">Preț indisponibil</div>
+                                    </div>
+                                    <button class="btn btn-orange d-flex align-items-center gap-2" :disabled="addLoading === product.id" @click.prevent="addToCart(product)">
+                                        <span v-if="addLoading === product.id" class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                                        <i v-else class="bi bi-cart-plus"></i>
+                                        Adaugă în coș
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+>>>>>>> bfb5b04ca9c1881d6b1bc203b41a8819391dca76
                 </div>
             </div>
 
             <!-- Compact Mode -->
             <div v-else class="row row-cols-2 row-cols-md-4 row-cols-lg-5 g-2">
                  <div v-for="product in products" :key="product.id" class="col">
+<<<<<<< HEAD
                     <ProductCard :product="product" :compact="true" />
+=======
+                    <div class="card h-100 border-0 shadow-sm dd-product-card product-card-compact">
+                         <div class="ratio ratio-1x1 bg-light position-relative">
+                            <img v-if="product.main_image_url" :src="product.main_image_url" :alt="product.name" class="card-img-top object-fit-cover rounded-top" loading="lazy">
+                             <div v-else class="d-flex align-items-center justify-content-center text-muted small w-100 h-100">Fără imagine</div>
+                        </div>
+                        <div class="card-body p-2 d-flex flex-column">
+                             <h3 class="h6 mb-1 fw-bold text-truncate small">
+                                <RouterLink :to="`/produs/${product.slug}`" class="text-decoration-none text-dark stretched-link">
+                                    {{ product.name }}
+                                </RouterLink>
+                            </h3>
+                             <div class="mt-auto">
+                                <div v-if="getUnitPrice(product) !== null">
+                                     <span v-if="getListPrice(product) !== null && getListPrice(product) > getUnitPrice(product)" class="text-decoration-line-through text-muted small d-block" style="font-size: 0.75rem;">{{ formatPrice(getListPrice(product)) }}</span>
+                                    <span :class="(getListPrice(product) !== null && getListPrice(product) > getUnitPrice(product)) ? 'text-danger fw-bold small' : 'fw-bold small'">{{ formatPrice(getUnitPrice(product)) }}</span>
+                                </div>
+                                <button class="btn btn-orange btn-sm w-100 mt-2" :disabled="addLoading === product.id" @click.prevent="addToCart(product)">
+                                    <span v-if="addLoading === product.id" class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                                    <i v-else class="bi bi-cart-plus"></i>
+                                    Adaugă
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+>>>>>>> bfb5b04ca9c1881d6b1bc203b41a8819391dca76
                  </div>
             </div>
           </div>
@@ -363,14 +497,26 @@
 import { ref, computed, onMounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useAuthStore } from '@/store/auth';
+<<<<<<< HEAD
 import ProductCard from '@/components/common/ProductCard.vue';
 import ProductCardList from '@/components/common/ProductCardList.vue';
 import { fetchCategoryPage, fetchAllProducts } from '@/services/catalog';
+=======
+import { useCartStore } from '@/store/cart';
+import { fetchCategoryPage } from '@/services/catalog';
+import { addCartItem } from '@/services/cart';
+import { useToast } from 'vue-toastification';
+>>>>>>> bfb5b04ca9c1881d6b1bc203b41a8819391dca76
 import { setTitle, setMeta, setMetaProperty, setCanonical, setJsonLd, setLink } from '@/utils/seo';
 
 const route = useRoute();
 const router = useRouter();
 const authStore = useAuthStore();
+<<<<<<< HEAD
+=======
+const cartStore = useCartStore();
+const toast = useToast();
+>>>>>>> bfb5b04ca9c1881d6b1bc203b41a8819391dca76
 
 const isB2B = computed(() => authStore.user?.role === 'b2b');
 
@@ -389,11 +535,52 @@ const pagination = ref({
 
 const displayMode = ref('grid');
 
+<<<<<<< HEAD
 // Filtre
 const showFilters = computed(() => {
     return brandFilters.value.length > 0 || (priceFilter.value.min !== null && priceFilter.value.max !== null);
 });
 const sort = ref('relevance');
+=======
+const quantities = ref({});
+const units = ref({});
+const addLoading = ref(null);
+const unitsOfMeasure = [
+  { value: 'buc', label: 'bucată' },
+  { value: 'sac', label: 'sac' },
+  { value: 'bax', label: 'bax' },
+  { value: 'palet', label: 'palet' }
+];
+
+// Helper formatting
+const formatPrice = (value) => {
+    if (value === undefined || value === null) return '';
+    return Number(value).toLocaleString('ro-RO', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' RON';
+};
+
+const getUnitPrice = (product) => {
+  const raw =
+    product?.promo_price ??
+    product?.promoPrice ??
+    product?.price ??
+    product?.unit_price ??
+    null;
+  if (raw === null || raw === undefined || raw === '') return null;
+  const v = Number(raw);
+  return Number.isFinite(v) ? v : null;
+};
+
+const getListPrice = (product) => {
+  const raw = product?.list_price ?? product?.listPrice ?? null;
+  if (raw === null || raw === undefined || raw === '') return null;
+  const v = Number(raw);
+  return Number.isFinite(v) ? v : null;
+};
+
+// filtre
+const brandFilters = ref([]);
+const selectedBrands = ref([]);
+>>>>>>> bfb5b04ca9c1881d6b1bc203b41a8819391dca76
 const brandSearch = ref('');
 const selectedBrands = ref([]);
 const brandFilters = ref([]);
@@ -542,6 +729,31 @@ const loadCategory = async () => {
   }
 };
 
+<<<<<<< HEAD
+=======
+const addToCart = async (product) => {
+  try {
+    addLoading.value = product.id;
+    const qty = Number(quantities.value[product.id]) || 1;
+    const cart = await addCartItem({
+      product_id: product.id,
+      quantity: qty,
+      unit: units.value[product.id]
+    });
+    if (cart) {
+      cartStore.setCartData(cart);
+    } else {
+      await cartStore.fetchCart();
+    }
+    toast.success('Produs adăugat în coș');
+  } catch (e) {
+    toast.error('Nu s-a putut adăuga produsul în coș');
+  } finally {
+    addLoading.value = null;
+  }
+};
+
+>>>>>>> bfb5b04ca9c1881d6b1bc203b41a8819391dca76
 const goToPage = (page) => {
   if (page < 1 || page > pagination.value.last_page) return;
   pagination.value.current_page = page;

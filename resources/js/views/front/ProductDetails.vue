@@ -568,7 +568,11 @@ const loadProduct = async () => {
 
     product.value = p
 
+<<<<<<< HEAD
     // Select variant matching current slug/sku if possible, otherwise first one
+=======
+    // Select first variant if available
+>>>>>>> bfb5b04ca9c1881d6b1bc203b41a8819391dca76
     if (product.value.variants && product.value.variants.length > 0) {
         const currentSlug = product.value.slug
         const currentSku = product.value.code

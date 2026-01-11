@@ -434,22 +434,22 @@
                               <div class="text-xs text-gray-500 font-medium">Discount Aplicat</div>
                           </div>
                           
-                          <!-- Add All Button -->
-                          <button 
-                            @click="() => {
-                                if (promo.products) {
-                                    promo.products.forEach(prod => {
-                                        const p = { ...prod, price: prod.base_price, list_price: prod.base_price };
-                                        p.temp_qty = 1;
-                                        selectProduct(p);
-                                    });
-                                }
-                            }"
-                            class="flex items-center gap-1 text-xs font-bold text-purple-700 hover:text-purple-900 bg-purple-100 hover:bg-purple-200 px-3 py-1.5 rounded-lg transition-colors"
-                          >
-                              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
-                              Adaugă tot
-                          </button>
+                          <!-- Quantity & Add Button -->
+                          <div class="flex items-center gap-2 mt-2 sm:mt-0">
+                              <div class="flex items-center bg-white rounded-lg border border-purple-200 h-9">
+                                  <button @click="promo.selected_quantity = Math.max(1, (promo.selected_quantity || 1) - 1)" class="w-8 h-full flex items-center justify-center text-purple-500 hover:text-purple-700 font-bold">-</button>
+                                  <input type="number" v-model="promo.selected_quantity" class="w-12 text-center bg-transparent border-none text-sm font-bold text-purple-900 focus:ring-0 p-0" min="1">
+                                  <button @click="promo.selected_quantity = (promo.selected_quantity || 1) + 1" class="w-8 h-full flex items-center justify-center text-purple-500 hover:text-purple-700 font-bold">+</button>
+                              </div>
+
+                              <button 
+                                @click="addPromotionToCart(promo)"
+                                class="flex items-center gap-1 text-xs font-bold text-white bg-purple-600 hover:bg-purple-700 px-3 py-1.5 rounded-lg transition-colors shadow-sm"
+                              >
+                                  <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
+                                  Adaugă
+                              </button>
+                          </div>
                       </div>
                   </div>
 
@@ -683,7 +683,14 @@ const loadPromotions = async () => {
         const { data } = await api.post('/account/quick-order/customer-promotions', {
             customer_id: props.customerId
         });
-        promotions.value = Array.isArray(data) ? data : (data?.data || []);
+        const loadedPromotions = Array.isArray(data) ? data : (data?.data || []);
+        
+        // Initialize selected_quantity
+        loadedPromotions.forEach(p => {
+            p.selected_quantity = p.min_qty || 1;
+        });
+        
+        promotions.value = loadedPromotions;
     } catch (e) {
         console.error('Error loading promotions:', e);
     } finally {
@@ -774,6 +781,18 @@ const loadMore = () => {
 
 const selectProduct = (product) => {
     emit('select', product);
+};
+
+const addPromotionToCart = (promo) => {
+    const multiplier = promo.selected_quantity || 1;
+    if (promo.products) {
+        promo.products.forEach(prod => {
+            const p = { ...prod, price: prod.base_price, list_price: prod.base_price };
+            // Add 'multiplier' units of each product to the cart
+            p.temp_qty = multiplier; 
+            selectProduct(p);
+        });
+    }
 };
 
 const formatPrice = (val) => {

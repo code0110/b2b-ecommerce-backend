@@ -8,6 +8,7 @@
                 <a href="#" class="text-white text-decoration-none hover-underline"><i class="bi bi-shop me-1"></i>Magazine</a>
                 <a href="#" class="text-white text-decoration-none hover-underline"><i class="bi bi-tools me-1"></i>Servicii</a>
             </div>
+<<<<<<< HEAD
             <div class="d-flex gap-3 align-items-center">
                 <!-- VAT Toggle -->
                 <div class="form-check form-switch d-flex align-items-center gap-2 mb-0 me-3" title="Schimbă modul de afișare al prețurilor">
@@ -25,6 +26,9 @@
                     </label>
                 </div>
 
+=======
+            <div class="d-flex gap-3">
+>>>>>>> bfb5b04ca9c1881d6b1bc203b41a8819391dca76
                 <a href="#" class="text-white text-decoration-none hover-underline">Retur</a>
                 <a href="#" class="text-white text-decoration-none hover-underline">Contact</a>
             </div>
@@ -38,6 +42,7 @@
             <!-- Brand -->
             <div class="col-6 col-lg-2">
                 <RouterLink to="/" class="d-flex align-items-center text-decoration-none gap-2">
+<<<<<<< HEAD
                     <img 
                       v-if="siteConfig.config.site_logo"
                       :src="siteConfig.config.site_logo" 
@@ -50,6 +55,14 @@
                     </div>
                     <div v-if="!siteConfig.config.site_logo" class="d-flex flex-column lh-1">
                         <span class="fw-bold text-dark fs-4 tracking-tight" style="color: #0060aa;">{{ siteConfig.config.site_name || 'MB2B' }}</span>
+=======
+                    <div class="rounded d-flex align-items-center justify-content-center fw-bold text-white fs-3" 
+                         style="width: 48px; height: 48px; background: #0060aa;">
+                        M
+                    </div>
+                    <div class="d-flex flex-column lh-1">
+                        <span class="fw-bold text-dark fs-4 tracking-tight" style="color: #0060aa;">MB2B</span>
+>>>>>>> bfb5b04ca9c1881d6b1bc203b41a8819391dca76
                         <span class="text-muted" style="font-size: 0.6rem; letter-spacing: 1px; text-transform: uppercase;">Industry</span>
                     </div>
                 </RouterLink>
@@ -57,7 +70,29 @@
 
             <!-- Search (Desktop) -->
             <div class="col-12 col-lg-6 order-3 order-lg-2">
+<<<<<<< HEAD
                 <SearchAutocomplete />
+=======
+                <div class="input-group input-group-lg">
+                    <input 
+                        v-model="searchQuery" 
+                        @keyup.enter="goToSearch"
+                        type="text" 
+                        class="form-control border-end-0 shadow-none fs-6" 
+                        placeholder="Caută produse, branduri..." 
+                        aria-label="Search"
+                        style="border-color: #ced4da; border-radius: 4px 0 0 4px;"
+                    >
+                    <button 
+                        class="btn btn-orange text-white fw-bold px-4" 
+                        type="button"
+                        @click="goToSearch"
+                        style="border-radius: 0 4px 4px 0;"
+                    >
+                        <i class="bi bi-search"></i>
+                    </button>
+                </div>
+>>>>>>> bfb5b04ca9c1881d6b1bc203b41a8819391dca76
             </div>
 
             <!-- Actions -->
@@ -73,6 +108,7 @@
                     </div>
                 </RouterLink>
 
+<<<<<<< HEAD
                 <!-- Favorites -->
                 <RouterLink :to="{ name: 'wishlist' }" class="d-flex flex-column align-items-center text-decoration-none text-dark gap-1 header-action position-relative">
                     <div class="position-relative">
@@ -86,6 +122,15 @@
                         <div class="small fw-semibold">Favorite</div>
                     </div>
                 </RouterLink>
+=======
+                <!-- Favorites (Placeholder) -->
+                <a href="#" class="d-flex flex-column align-items-center text-decoration-none text-dark gap-1 header-action">
+                    <i class="bi bi-heart fs-4 text-secondary"></i>
+                    <div class="d-none d-xl-block lh-1 text-center">
+                        <div class="small fw-semibold">Favorite</div>
+                    </div>
+                </a>
+>>>>>>> bfb5b04ca9c1881d6b1bc203b41a8819391dca76
 
                 <!-- Cart -->
                 <RouterLink :to="{ name: 'cart' }" class="d-flex flex-column align-items-center text-decoration-none text-dark gap-1 position-relative header-action">
@@ -148,9 +193,15 @@
                       <RouterLink :to="{ name: 'sales-representatives' }" class="text-decoration-none text-dark fw-bold small hover-orange text-uppercase">Suport</RouterLink>
                   </nav>
 
+<<<<<<< HEAD
                   <div v-if="authStore.isAuthenticated && (visitStore.activeVisit || impersonatingClient)" class="ms-auto d-flex align-items-center gap-2 py-1">
                        <span v-if="visitStore.activeVisit" class="badge bg-danger animate-pulse d-flex align-items-center gap-1">
                           <i class="bi bi-geo-alt-fill"></i> Vizită: {{ visitStore.client?.name || visitStore.activeVisit.customer?.name || 'Client' }}
+=======
+                  <div v-if="visitStore.activeVisit || impersonatingClient" class="ms-auto d-flex align-items-center gap-2 py-1">
+                       <span v-if="visitStore.activeVisit" class="badge bg-danger animate-pulse d-flex align-items-center gap-1">
+                          <i class="bi bi-geo-alt-fill"></i> Vizită: {{ visitStore.client?.name }}
+>>>>>>> bfb5b04ca9c1881d6b1bc203b41a8819391dca76
                       </span>
                       <button v-if="impersonatingClient" @click="stopImpersonation" class="btn btn-sm btn-outline-dark ms-2">
                         Stop Impersonare
@@ -248,7 +299,10 @@ import { useWishlistStore } from '@/store/wishlist';
 import { useCompareStore } from '@/store/compare';
 import { usePreferencesStore } from '@/store/preferences';
 import CategoryMegaModal from '@/components/catalog/CategoryMegaModal.vue';
+<<<<<<< HEAD
 import CompareFloatingBar from '@/components/common/CompareFloatingBar.vue';
+=======
+>>>>>>> bfb5b04ca9c1881d6b1bc203b41a8819391dca76
 import Footer from '@/components/common/Footer.vue';
 import SearchAutocomplete from '@/components/common/SearchAutocomplete.vue';
 
@@ -264,7 +318,11 @@ const compareStore = useCompareStore();
 const preferencesStore = usePreferencesStore();
 
 const showCatalog = ref(false);
+<<<<<<< HEAD
 // const searchQuery = ref('');
+=======
+const searchQuery = ref('');
+>>>>>>> bfb5b04ca9c1881d6b1bc203b41a8819391dca76
 
 const impersonatingClient = ref(!!localStorage.getItem('impersonated_client_id'));
 
@@ -311,7 +369,10 @@ const handleOpenCatalogEvent = () => {
 };
 
 onMounted(() => {
+<<<<<<< HEAD
   siteConfig.fetchConfig();
+=======
+>>>>>>> bfb5b04ca9c1881d6b1bc203b41a8819391dca76
   if (authStore.isAuthenticated) {
     visitStore.checkActiveVisit();
   }

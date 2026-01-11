@@ -302,11 +302,7 @@
                       {{ formatPriceGlobal(item.line_base_total, item.product_vat_rate, item.product_vat_included) }}
                     </div>
                     <div :class="{'text-danger fw-bold': item.line_discount > 0}">
-<<<<<<< HEAD
                       {{ formatPriceGlobal(item.line_final_total, item.product_vat_rate, item.product_vat_included) }}
-=======
-                      {{ formatPrice(item.line_final_total) }} RON
->>>>>>> bfb5b04ca9c1881d6b1bc203b41a8819391dca76
                     </div>
                   </div>
                 </div>
@@ -324,11 +320,7 @@
               <template v-if="discountTotal > 0">
                 <dt class="col-6 text-danger">Reduceri</dt>
                 <dd class="col-6 text-end text-danger">
-<<<<<<< HEAD
                   -{{ formatPriceGlobal(discountTotal, 19, true) }}
-=======
-                  -{{ formatPrice(discountTotal) }} RON
->>>>>>> bfb5b04ca9c1881d6b1bc203b41a8819391dca76
                 </dd>
               </template>
 

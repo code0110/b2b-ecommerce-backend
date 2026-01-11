@@ -393,6 +393,14 @@ class QuickOrderController extends Controller
             'customer_id' => 'required|exists:customers,id',
         ]);
 
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+        if ($user->hasRole(['customer_b2b', 'customer_b2c'])) {
+             if ($user->customer_id != $request->customer_id) {
+                 abort(403, 'Unauthorized access to promotions.');
+             }
+        }
+
         $customer = Customer::findOrFail($request->customer_id);
         
         // Get all active promotions

@@ -81,47 +81,38 @@ Route::prefix('auth')->group(function () {
 });
 
 // Public Config
-<<<<<<< HEAD
 Route::get('config/public', [\App\Http\Controllers\Admin\SettingController::class, 'publicConfig']);
 Route::get('content-blocks', [\App\Http\Controllers\Front\ContentBlockController::class, 'index']);
 
 // Shared Wishlist
 Route::get('wishlists/shared/{token}', [\App\Http\Controllers\Front\WishlistController::class, 'shared']);
-=======
-Route::get('config', [\App\Http\Controllers\Admin\SettingController::class, 'publicConfig']);
-Route::get('content-blocks', [\App\Http\Controllers\Front\ContentBlockController::class, 'index']);
->>>>>>> bfb5b04ca9c1881d6b1bc203b41a8819391dca76
 
 // Front-office public catalog
 Route::get('home', [HomeController::class, 'homepage']);
 Route::get('promotions', [CatalogController::class, 'promotions']);
 Route::get('categories', [CatalogController::class, 'categories']);
 Route::get('categories/{slug}', [CatalogController::class, 'category']);
-<<<<<<< HEAD
-// Recent viewed / Compare (Moved above products/{slug} to avoid conflict)
-=======
-Route::get('products', [\App\Http\Controllers\Front\ProductController::class, 'index']);
-Route::get('products/{slug}', [CatalogController::class, 'product']);
+
+// Brands
 Route::get('brands', [CatalogController::class, 'brands']);
 Route::get('brands/{slug}', [CatalogController::class, 'brand']);
-Route::post('products/{product}/reviews', [ProductReviewController::class, 'store']);
-// Search
-Route::get('search', [SearchController::class, 'search']);
-Route::get('search/autocomplete', [SearchController::class, 'autocomplete']);
-// Recent viewed / Compare
->>>>>>> bfb5b04ca9c1881d6b1bc203b41a8819391dca76
+
+// Recent viewed / Compare (Must be before products/{slug})
 Route::post('products/{product}/track-view', [ProductToolsController::class, 'trackView']);
 Route::get('products/recently-viewed', [ProductToolsController::class, 'recentlyViewed']);
 Route::get('products/compare', [ProductToolsController::class, 'comparisonList']);
 Route::post('products/compare', [ProductToolsController::class, 'addToComparison']);
 Route::delete('products/compare/{product}', [ProductToolsController::class, 'removeFromComparison']);
 
+// Products
 Route::get('products', [\App\Http\Controllers\Front\ProductController::class, 'index']);
+Route::post('products/{product}/reviews', [ProductReviewController::class, 'store']);
 Route::get('products/{slug}', [CatalogController::class, 'product']);
 
 // Search
-Route::get('search/suggestions', [SearchController::class, 'suggestions']);
 Route::get('search', [SearchController::class, 'search']);
+Route::get('search/autocomplete', [SearchController::class, 'autocomplete']);
+Route::get('search/suggestions', [SearchController::class, 'suggestions']);
 
 // Quick order
 Route::get('quick-order/search', [QuickOrderController::class, 'search']);

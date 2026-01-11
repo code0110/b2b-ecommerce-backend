@@ -163,53 +163,7 @@
               :key="product.id"
               class="col-6 col-md-4 col-lg-3 col-xxl-2"
             >
-<<<<<<< HEAD
               <ProductCard :product="product" />
-=======
-              <div class="card h-100">
-                <!-- Image placeholder if no image -->
-                <div class="ratio ratio-4x3 bg-light text-center d-flex align-items-center justify-content-center text-muted" v-if="!product.main_image">
-                   <i class="bi bi-image" style="font-size: 2rem;"></i>
-                </div>
-                <!-- Real image would go here -->
-                
-                <div class="card-body d-flex flex-column">
-                  <div class="small text-muted mb-1" v-if="product.brand">
-                    Brand: {{ product.brand.name }}
-                  </div>
-                  <h3 class="h6 mb-1">
-                    <RouterLink :to="`/produse/${product.slug}`" class="text-decoration-none text-dark">
-                      {{ product.name }}
-                    </RouterLink>
-                  </h3>
-                  <div class="small text-muted mb-2">
-                    {{ product.internal_code }}
-                  </div>
-                  
-                  <div class="mb-2 small">
-                    <span
-                      class="badge"
-                      :class="product.stock_qty > 0 ? 'bg-success' : 'bg-secondary'"
-                    >
-                      {{ product.stock_qty > 0 ? 'În stoc' : 'Indisponibil' }}
-                    </span>
-                  </div>
-                  
-                  <div class="mt-auto">
-                    <div class="fw-semibold mb-1">
-                      {{ (product.price_override || product.list_price).toLocaleString('ro-RO', { minimumFractionDigits: 2 }) }}
-                      RON
-                    </div>
-                    <RouterLink
-                      :to="`/produse/${product.slug}`"
-                      class="btn btn-orange btn-sm w-100"
-                    >
-                      Detalii produs
-                    </RouterLink>
-                  </div>
-                </div>
-              </div>
->>>>>>> bfb5b04ca9c1881d6b1bc203b41a8819391dca76
             </div>
 
             <!-- Empty State -->

@@ -20,9 +20,6 @@
               <option value="upcoming">În curând</option>
               <option value="all">Toate</option>
             </select>
-<<<<<<< HEAD
-=======
-
             <select
               v-model="customerType"
               class="form-select form-select-sm w-auto"
@@ -32,7 +29,6 @@
               <option value="b2c">Doar B2C</option>
               <option value="b2b">Doar B2B</option>
             </select>
->>>>>>> bfb5b04ca9c1881d6b1bc203b41a8819391dca76
           </div>
         </div>
       </div>

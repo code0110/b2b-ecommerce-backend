@@ -150,18 +150,9 @@
 
                       <div v-else-if="section.type === 'rich_text'">
                         <label class="form-label small">Text (HTML)</label>
-<<<<<<< HEAD
                         <AppEditor
                           v-model="section.html"
                           height="280px"
-=======
-                        <QuillEditor
-                          v-model:content="section.html"
-                          contentType="html"
-                          theme="snow"
-                          toolbar="full"
-                          style="height: 280px;"
->>>>>>> bfb5b04ca9c1881d6b1bc203b41a8819391dca76
                         />
                       </div>
 
@@ -224,17 +215,7 @@
               </div>
 
               <div v-else>
-<<<<<<< HEAD
-                <div ref="editorContainer" style="height: 400px;"></div>
-=======
-                <QuillEditor
-                  v-model:content="form.content"
-                  contentType="html"
-                  theme="snow"
-                  toolbar="full"
-                  style="height: 400px;"
-                />
->>>>>>> bfb5b04ca9c1881d6b1bc203b41a8819391dca76
+                <AppEditor v-model="form.content" height="400px" />
               </div>
             </div>
           </div>
@@ -281,6 +262,7 @@ import axios from '@/services/http';
 import { useToast } from 'vue-toastification';
 import Quill from 'quill';
 import 'quill/dist/quill.snow.css';
+import AppEditor from '@/components/AppEditor.vue';
 
 const route = useRoute();
 const router = useRouter();
@@ -299,10 +281,7 @@ const form = reactive({
 });
 
 const editorMode = ref('sections');
-<<<<<<< HEAD
 // AppEditor handles its own initialization, so we don't need manual Quill logic here anymore.
-=======
->>>>>>> bfb5b04ca9c1881d6b1bc203b41a8819391dca76
 
 const uid = () => Math.random().toString(16).slice(2) + '-' + Date.now().toString(16);
 

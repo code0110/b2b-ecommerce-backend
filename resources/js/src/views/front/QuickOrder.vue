@@ -1,154 +1,191 @@
 <template>
-  <div class="container py-4">
-    <div class="row mb-3">
-      <div class="col-md-8">
-        <h1 class="h5 mb-1">Comandă rapidă</h1>
-        <p class="text-muted small mb-0">
+  <div class="container py-5">
+    <!-- Header Section -->
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4">
+      <div>
+        <h1 class="h3 fw-bold mb-1 text-primary">
+          <i class="bi bi-lightning-charge-fill me-2"></i>Comandă rapidă
+        </h1>
+        <p class="text-muted mb-0">
           Caută produse după denumire sau cod și adaugă-le rapid în coș.
         </p>
       </div>
-      <div class="col-md-4 text-md-end small mt-2 mt-md-0" v-if="frontClientLabel">
-        <div class="text-muted">
-          Client activ: <strong>{{ frontClientLabel }}</strong>
-        </div>
-        <div class="text-muted" v-if="isImpersonating">
-          (mod impersonare – {{ user?.name || 'agent/director' }})
-        </div>
-      </div>
-    </div>
-
-    <div class="card shadow-sm mb-3">
-      <div class="card-body small">
-        <div class="row g-2 align-items-end">
-          <div class="col-md-6">
-            <label class="form-label">Căutare rapidă</label>
-            <input
-              v-model="filters.search"
-              type="text"
-              class="form-control form-control-sm"
-              placeholder="Caută după denumire, cod produs..."
-              @input="onSearchInput"
-            />
+      
+      <!-- Client Info Badge -->
+      <div v-if="frontClientLabel" class="mt-3 mt-md-0">
+        <div class="d-inline-flex align-items-center bg-white border rounded-pill px-3 py-2 shadow-sm">
+          <i class="bi bi-person-circle text-secondary me-2"></i>
+          <div class="d-flex flex-column lh-1 text-start">
+            <span class="small text-muted">Client activ</span>
+            <span class="fw-semibold text-dark">{{ frontClientLabel }}</span>
           </div>
-          <div class="col-md-3">
-            <label class="form-label">Status</label>
-             <div v-if="loading" class="text-muted form-control-plaintext form-control-sm">
-                Se încarcă...
-             </div>
-             <div v-else class="text-muted form-control-plaintext form-control-sm">
-                Gata de căutare
-             </div>
+          <div v-if="isImpersonating" class="ms-3 ps-3 border-start">
+            <span class="badge bg-warning text-dark">Impersonare</span>
           </div>
         </div>
       </div>
     </div>
 
-    <div class="card shadow-sm">
-      <div class="card-header py-2 d-flex justify-content-between align-items-center">
-        <strong class="small text-uppercase">Rezultate căutare</strong>
-        <span class="badge bg-light text-dark small">
-          {{ products.length }} produse găsite
-        </span>
+    <!-- Search Section -->
+    <div class="card border-0 shadow-sm mb-4 overflow-hidden">
+      <div class="card-body p-4 bg-light bg-opacity-50">
+        <div class="row g-3 align-items-center">
+          <div class="col-md-8 col-lg-6">
+            <div class="input-group input-group-lg shadow-sm">
+              <span class="input-group-text bg-white border-end-0 text-muted">
+                <i class="bi bi-search"></i>
+              </span>
+              <input
+                v-model="filters.search"
+                type="text"
+                class="form-control border-start-0 ps-0"
+                placeholder="Caută produs (nume, cod, SKU)..."
+                @input="onSearchInput"
+                autofocus
+              />
+              <button 
+                v-if="filters.search" 
+                class="btn btn-white border border-start-0"
+                @click="clearSearch"
+              >
+                <i class="bi bi-x-lg text-muted"></i>
+              </button>
+            </div>
+          </div>
+          <div class="col-md-4 col-lg-3">
+             <div v-if="loading" class="d-flex align-items-center text-primary">
+                <span class="spinner-border spinner-border-sm me-2"></span>
+                <span class="small fw-semibold">Se caută...</span>
+             </div>
+             <div v-else-if="products.length > 0" class="text-success small fw-semibold">
+                <i class="bi bi-check-circle-fill me-1"></i> {{ products.length }} produse găsite
+             </div>
+          </div>
+        </div>
       </div>
-      <div class="card-body p-0">
-        <div class="table-responsive">
-          <table class="table table-sm align-middle mb-0">
-            <thead class="table-light small text-uppercase text-muted">
-              <tr>
-                <th style="width: 40px;" class="text-center">#</th>
-                <th>Produs</th>
-                <th style="width: 120px;">Cod intern</th>
-                <th style="width: 100px;" class="text-center">Unitate</th>
-                <th style="width: 110px;" class="text-end">Preț Listă</th>
-                <th style="width: 90px;" class="text-center">Stoc</th>
-                <th style="width: 120px;" class="text-center">Cantitate</th>
-              </tr>
-            </thead>
-            <tbody class="small">
-              <tr v-for="(product, index) in products" :key="`${product.id}_${product.variant_id || 'main'}`">
-                <td class="text-center">{{ index + 1 }}</td>
-                <td>
-                  <div class="fw-semibold">
-                    <router-link :to="`/product/${product.slug}`" class="text-decoration-none text-dark">
-                      {{ product.name }}
-                    </router-link>
-                  </div>
-                  <div class="text-muted">
-                    {{ product.category || 'Fără categorie' }}
-                  </div>
-                </td>
-                <td>
-                  <span class="text-monospace">{{ product.code }}</span>
-                </td>
-                <td class="text-center">
-                  <select 
-                    v-if="product.units && product.units.length > 1" 
-                    v-model="product.selectedUnit" 
-                    class="form-select form-select-sm"
-                  >
-                    <option v-for="u in product.units" :key="u.name" :value="u.name">
-                      {{ u.name }} (x{{ u.conversion_factor }})
-                    </option>
-                  </select>
-                  <span v-else class="badge bg-light text-dark border">
-                    {{ product.selectedUnit || 'buc' }}
-                  </span>
-                </td>
-                <td class="text-end">
-                  {{ formatMoney(product.price) }}
-                </td>
-                <td class="text-center">
-                  <span
-                    class="badge"
-                    :class="{
-                      'bg-success': product.stock_status === 'in_stock',
-                      'bg-secondary': product.stock_status !== 'in_stock'
-                    }"
-                  >
-                    {{ stockStatusLabel(product.stock_status) }}
-                  </span>
-                </td>
-                <td class="text-center" style="max-width: 120px;">
+    </div>
+
+    <!-- Results Section -->
+    <div class="card border-0 shadow-sm">
+      <!-- Table Header (Visible on Desktop) -->
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead class="bg-light text-uppercase small text-muted">
+            <tr>
+              <th class="ps-4 py-3" style="width: 50px;">#</th>
+              <th class="py-3">Produs</th>
+              <th class="py-3" style="width: 140px;">Cod</th>
+              <th class="py-3 text-center" style="width: 120px;">Unitate</th>
+              <th class="py-3 text-end" style="width: 130px;">Preț</th>
+              <th class="py-3 text-center" style="width: 120px;">Stoc</th>
+              <th class="py-3 text-center pe-4" style="width: 140px;">Cantitate</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="(product, index) in products" :key="`${product.id}_${product.variant_id || 'main'}`" class="position-relative">
+              <td class="ps-4 text-muted small">{{ index + 1 }}</td>
+              <td>
+                <div class="d-flex flex-column">
+                  <router-link :to="`/product/${product.slug}`" class="fw-bold text-dark text-decoration-none text-truncate" style="max-width: 300px;">
+                    {{ product.name }}
+                  </router-link>
+                  <small class="text-muted">{{ product.category || 'General' }}</small>
+                </div>
+              </td>
+              <td>
+                <span class="badge bg-light text-dark border font-monospace">{{ product.code }}</span>
+              </td>
+              <td class="text-center">
+                <select 
+                  v-if="product.units && product.units.length > 1" 
+                  v-model="product.selectedUnit" 
+                  class="form-select form-select-sm"
+                >
+                  <option v-for="u in product.units" :key="u.name" :value="u.name">
+                    {{ u.name }} (x{{ u.conversion_factor }})
+                  </option>
+                </select>
+                <span v-else class="small text-muted">
+                  {{ product.selectedUnit || 'buc' }}
+                </span>
+              </td>
+              <td class="text-end fw-semibold text-dark">
+                {{ formatMoney(product.price) }}
+              </td>
+              <td class="text-center">
+                <div 
+                  class="badge rounded-pill"
+                  :class="{
+                    'bg-success-subtle text-success border border-success-subtle': product.stock_status === 'in_stock',
+                    'bg-warning-subtle text-warning-emphasis border border-warning-subtle': product.stock_status === 'low_stock',
+                    'bg-danger-subtle text-danger border border-danger-subtle': product.stock_status === 'out_of_stock',
+                    'bg-secondary-subtle text-secondary border border-secondary-subtle': product.stock_status === 'supplier'
+                  }"
+                >
+                  {{ stockStatusLabel(product.stock_status) }}
+                </div>
+              </td>
+              <td class="pe-4">
+                <div class="input-group input-group-sm">
+                  <button class="btn btn-outline-secondary" type="button" @click="decrement(product)">-</button>
                   <input
                     type="number"
                     min="0"
-                    class="form-control form-control-sm text-center"
+                    class="form-control text-center fw-bold"
                     v-model.number="product.orderQuantity"
+                    @focus="$event.target.select()"
                   />
-                </td>
-              </tr>
-              <tr v-if="products.length === 0 && !loading">
-                <td colspan="6">
-                  <div class="text-center text-muted py-4">
-                    Nu au fost găsite produse. Încearcă alt termen de căutare.
-                  </div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+                  <button class="btn btn-outline-secondary" type="button" @click="increment(product)">+</button>
+                </div>
+              </td>
+            </tr>
+            
+            <!-- Empty State -->
+            <tr v-if="products.length === 0 && !loading">
+              <td colspan="7" class="text-center py-5">
+                <div class="text-muted">
+                  <i class="bi bi-search display-4 d-block mb-3 opacity-25"></i>
+                  <h5 class="fw-normal">Începe tastarea pentru a căuta produse</h5>
+                  <p class="small mb-0">Poți căuta după nume, cod produs sau SKU</p>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
-      <div class="card-footer d-flex justify-content-between align-items-center small">
-        <div class="text-muted">
-          Cantitate totală selectată: <strong>{{ totalQuantity }}</strong> buc.
-          <span v-if="addingToCart" class="ms-2 text-orange">Se adaugă în coș...</span>
-        </div>
-        <div class="d-flex gap-2">
-          <button
-            type="button"
-            class="btn btn-outline-secondary btn-sm"
-            @click="resetQuantities"
-          >
-            Resetează
-          </button>
-          <button
-            type="button"
-            class="btn btn-orange btn-sm"
-            :disabled="totalQuantity === 0 || addingToCart"
-            @click="addAllToCart"
-          >
-            Adaugă tot în coș
-          </button>
+      
+      <!-- Footer Action Bar -->
+      <div class="card-footer bg-white py-3 border-top">
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-center gap-3">
+          <div class="d-flex align-items-center">
+            <div class="bg-primary bg-opacity-10 text-primary rounded-circle p-2 me-3">
+              <i class="bi bi-cart-check fs-4"></i>
+            </div>
+            <div>
+              <div class="small text-muted text-uppercase fw-bold">Total produse selectate</div>
+              <div class="fs-5 fw-bold text-dark">{{ totalQuantity }} <span class="fs-6 text-muted fw-normal">buc.</span></div>
+            </div>
+          </div>
+          
+          <div class="d-flex gap-2 w-100 w-md-auto">
+            <button
+              type="button"
+              class="btn btn-light border"
+              @click="resetQuantities"
+              :disabled="totalQuantity === 0"
+            >
+              <i class="bi bi-trash me-1"></i> Resetează
+            </button>
+            <button
+              type="button"
+              class="btn btn-primary px-4 flex-grow-1 flex-md-grow-0"
+              :disabled="totalQuantity === 0 || addingToCart"
+              @click="addAllToCart"
+            >
+              <span v-if="addingToCart" class="spinner-border spinner-border-sm me-2"></span>
+              <span v-else><i class="bi bi-cart-plus me-2"></i>Adaugă în coș</span>
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -198,6 +235,21 @@ const stockStatusLabel = (status) => {
     case 'out_of_stock': return 'Stoc epuizat'
     case 'supplier': return 'La furnizor'
     default: return status || 'N/A'
+  }
+}
+
+const clearSearch = () => {
+  filters.search = ''
+  products.value = []
+}
+
+const increment = (product) => {
+  product.orderQuantity = (product.orderQuantity || 0) + 1
+}
+
+const decrement = (product) => {
+  if (product.orderQuantity > 0) {
+    product.orderQuantity--
   }
 }
 
@@ -283,5 +335,6 @@ const addAllToCart = async () => {
 // Initial fetch
 onMounted(() => {
   fetchProducts()
+  fetchPromotions()
 })
 </script>

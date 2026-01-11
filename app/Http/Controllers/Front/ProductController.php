@@ -47,14 +47,10 @@ class ProductController extends Controller
             $query->where('main_category_id', $request->input('category_id'));
         }
 
-<<<<<<< HEAD
         if ($request->has('ids')) {
             $ids = is_array($request->input('ids')) ? $request->input('ids') : explode(',', $request->input('ids'));
             $query->whereIn('id', $ids);
         }
-
-=======
->>>>>>> bfb5b04ca9c1881d6b1bc203b41a8819391dca76
         // Sorting
         $sort = $request->input('sort', 'newest');
         switch ($sort) {
@@ -75,15 +71,10 @@ class ProductController extends Controller
 
         // Format prices
         $customer = optional($request->user())->customer;
-<<<<<<< HEAD
-        
         // Allow Agents to view prices for specific customer
         if ($request->has('customer_id') && $request->user() && $request->user()->hasRole(['sales_agent', 'sales_director', 'admin'])) {
             $customer = \App\Models\Customer::find($request->input('customer_id'));
         }
-
-=======
->>>>>>> bfb5b04ca9c1881d6b1bc203b41a8819391dca76
         $products->getCollection()->transform(function ($product) use ($customer) {
             return $this->pricingService->formatProductForFrontend($product, $customer);
         });

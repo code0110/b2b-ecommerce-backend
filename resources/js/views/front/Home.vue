@@ -31,11 +31,7 @@
 </template>
 
 <script setup>
-<<<<<<< HEAD
 import { ref, onMounted, defineAsyncComponent, computed } from 'vue';
-=======
-import { ref, onMounted, defineAsyncComponent } from 'vue';
->>>>>>> bfb5b04ca9c1881d6b1bc203b41a8819391dca76
 import axios from 'axios';
 import { useHead } from '@vueuse/head';
 
@@ -49,16 +45,12 @@ const SectionHtml = defineAsyncComponent(() => import('@/components/builder/Sect
 const loading = ref(true);
 const pageData = ref(null);
 
-<<<<<<< HEAD
 useHead({
     title: computed(() => pageData.value?.meta_title || 'Acasă - B2B Ecommerce'),
     meta: [
         { name: 'description', content: computed(() => pageData.value?.meta_description || '') }
     ]
 });
-
-=======
->>>>>>> bfb5b04ca9c1881d6b1bc203b41a8819391dca76
 const getComponent = (type) => {
     switch (type) {
         case 'hero': return SectionHero;
@@ -77,20 +69,9 @@ onMounted(async () => {
         // We'll try 'acasa' first as it's Romanian, then fallback to 'home' if needed logic existed, 
         // but for now let's assume 'acasa' is the convention or we create it.
         const response = await axios.get('/api/pages/acasa');
-<<<<<<< HEAD
         // Handle response structure (unwrapped vs wrapped in data)
         const data = response.data.data || response.data;
         pageData.value = data;
-=======
-        pageData.value = response.data.data;
-        
-        useHead({
-            title: pageData.value.meta_title || 'Acasă - B2B Ecommerce',
-            meta: [
-                { name: 'description', content: pageData.value.meta_description || '' }
-            ]
-        });
->>>>>>> bfb5b04ca9c1881d6b1bc203b41a8819391dca76
     } catch (error) {
         console.error('Failed to load home page content:', error);
     } finally {

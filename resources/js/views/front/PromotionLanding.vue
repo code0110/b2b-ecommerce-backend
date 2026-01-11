@@ -84,7 +84,6 @@
             :key="product.id"
             class="col-md-3 col-sm-6"
           >
-<<<<<<< HEAD
             <div class="card h-100 dd-product-card position-relative">
               <WishlistButton :product="product" custom-class="position-absolute top-0 end-0 m-2" />
               <CompareButton 
@@ -92,9 +91,6 @@
                 custom-class="position-absolute top-0 end-0 me-2 mt-5 shadow-sm"
                 :round="true"
               />
-=======
-            <div class="card h-100 dd-product-card">
->>>>>>> bfb5b04ca9c1881d6b1bc203b41a8819391dca76
               <div class="card-body d-flex flex-column">
                 <div class="d-flex justify-content-between align-items-start mb-1">
                   <div class="small text-muted">

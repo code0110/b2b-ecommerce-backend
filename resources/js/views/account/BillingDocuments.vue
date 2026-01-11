@@ -47,7 +47,7 @@
                 type="date"
                 class="form-control form-control-sm"
               />
-              <button class="btn btn-primary btn-sm" type="submit">
+              <button class="btn btn-orange btn-sm" type="submit">
                 Filtrează
               </button>
             </div>
@@ -124,7 +124,7 @@
                     <button
                       v-if="doc.can_pay_online"
                       type="button"
-                      class="btn btn-outline-primary btn-sm"
+                      class="btn btn-orange btn-sm"
                       @click="payOnline(doc)"
                     >
                       Plătește

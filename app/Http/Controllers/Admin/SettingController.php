@@ -13,6 +13,15 @@ class SettingController extends Controller
         return Setting::all();
     }
 
+    /**
+     * Store a newly created resource in storage.
+     * Proxies to update for bulk settings saving.
+     */
+    public function store(Request $request)
+    {
+        return $this->update($request);
+    }
+
     public function update(Request $request)
     {
         $data = $request->validate([
@@ -22,10 +31,13 @@ class SettingController extends Controller
         ]);
 
         foreach ($data['settings'] as $item) {
+            // Handle boolean/integer conversion if needed based on existing type
+            // But Setting::set stores as string, so we are fine.
+            // We might want to look up the type to cast appropriately if we were strict.
             Setting::set($item['key'], $item['value']);
         }
 
-        return response()->json(['message' => 'Settings updated successfully']);
+        return response()->json(['message' => 'Setările au fost actualizate cu succes']);
     }
 
     // Public endpoint for frontend to fetch necessary configs (like max discount)
@@ -35,6 +47,13 @@ class SettingController extends Controller
         $keys = [
             'offer_discount_threshold_approval',
             'offer_discount_max',
+            'site_name',
+            'site_description',
+            'site_logo',
+            'contact_phone',
+            'contact_email',
+            'show_vat_toggle',
+            'enable_registration'
         ];
 
         $settings = Setting::whereIn('key', $keys)->get()->mapWithKeys(function ($s) {

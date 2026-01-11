@@ -3,10 +3,10 @@
 namespace App\Services\Pricing;
 
 use App\Models\Cart;
-use App\Models\CartItem;
 use App\Models\Coupon;
 use App\Models\Customer;
 use App\Models\Product;
+use App\Models\ProductVariant;
 use App\Models\Promotion;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
@@ -83,7 +83,7 @@ class PromotionPricingService
      */
     public function applyPromotionOnPrice(Promotion $promotion, float $basePrice): array
     {
-        [$newPrice, $discountValue] = $this->promotionEngine->applyPromotionToUnit($promotion, $basePrice, 1);
+        [$newPrice] = $this->promotionEngine->applyPromotionToUnit($promotion, $basePrice, 1);
         
         $discountPercent = 0;
         if ($basePrice > 0) {
@@ -102,19 +102,72 @@ class PromotionPricingService
     }
 
     /**
-     * Returnează un array gata de trimis la frontend pentru un produs.
+     * Returnează un array gata de trimis la frontend pentru un produs (sau variantă).
      */
-    public function formatProductForFrontend(Product $product, ?Customer $customer = null): array
+    public function formatProductForFrontend(Product $product, ?Customer $customer = null, ?ProductVariant $variant = null): array
     {
-        $pricing = $this->calculateProductPrice($product, $customer);
+        // 1. Calculate Price (Variant or Product)
+        $pricing = $this->calculatePriceForEntity($product, $variant, $customer);
+
+        // 2. Build Units List (Base + Secondary)
+        $unitsList = $this->buildUnitsList($product, $variant, $pricing['price'], $pricing['promo_price']);
+
+        // 3. Determine effective fields
+        $effectiveName = $variant ? $variant->name : $product->name;
+        $effectiveSlug = $variant ? $variant->slug : $product->slug;
+        $effectiveCode = $variant ? $variant->sku : $product->internal_code;
+        $listPrice     = $variant ? (float)$variant->list_price : (float)$product->list_price;
+        $stockQty      = $variant ? (int)$variant->stock_qty : (int)$product->stock_qty;
+        $stockStatus   = $variant ? $variant->stock_status : $product->stock_status;
+
+        // 4. Variant Attributes (if selected)
+        $selectedAttributes = [];
+        if ($variant) {
+            $selectedAttributes = collect($variant->attributes)->map(function ($av) {
+                return [
+                    'name'  => $av->attribute ? $av->attribute->name : 'Attribute',
+                    'slug'  => $av->attribute ? $av->attribute->slug : '',
+                    'value' => $av->value,
+                ];
+            })->toArray();
+        }
+
+        // 5. Display Attributes (Specifications) for the "Specificații" tab
+        $displayAttributes = collect();
+
+        // Common Attributes (where product_variant_id is NULL)
+        if ($product->relationLoaded('attributeValues')) {
+            $common = $product->attributeValues->whereNull('product_variant_id');
+            foreach ($common as $av) {
+                $displayAttributes->push([
+                    'name' => $av->attribute ? $av->attribute->name : 'Attribute',
+                    'value' => $av->value,
+                ]);
+            }
+        }
+
+        // Variant Specific Attributes
+        if ($variant && $variant->relationLoaded('attributes')) {
+             foreach ($variant->attributes as $av) {
+                 $displayAttributes->push([
+                    'name' => $av->attribute ? $av->attribute->name : 'Attribute',
+                    'value' => $av->value,
+                 ]);
+             }
+        }
 
         return [
             'id'               => $product->id,
-            'name'             => $product->name,
-            'slug'             => $product->slug,
-            'code'             => $product->internal_code,
+            'variant_id'       => $variant ? $variant->id : null,
+            'parent_slug'      => $variant ? $product->slug : null,
+            'name'             => $effectiveName,
+            'slug'             => $effectiveSlug,
+            'code'             => $effectiveCode,
             'category'         => $product->relationLoaded('mainCategory')
                                     ? optional($product->mainCategory)->name
+                                    : null,
+            'category_slug'    => $product->relationLoaded('mainCategory')
+                                    ? optional($product->mainCategory)->slug
                                     : null,
             'brand'            => $product->relationLoaded('brand')
                                     ? optional($product->brand)->name
@@ -130,8 +183,171 @@ class PromotionPricingService
                 'is_promo'       => (bool) $product->is_promo,
             ],
             'appliedPromotion' => $pricing['applied_promotion'],
-            'list_price'       => (float) $product->list_price,
+            'list_price'       => $listPrice,
+            'stock_qty'        => $stockQty,
+            'stock_status'     => $stockStatus,
+            'allow_backorder'  => (bool) $product->allow_backorder,
+            'vat_rate'         => (float) $product->vat_rate,
+            'vat_included'     => (bool) $product->vat_included,
+            'main_image_url'   => $product->main_image_url,
+            'units'            => $unitsList,
+            'selected_attributes' => $selectedAttributes,
+            'attributes'       => $displayAttributes->toArray(),
+            'variants'         => $product->variants->map(function ($v) {
+                return [
+                    'id' => $v->id,
+                    'sku' => $v->sku,
+                    'slug' => $v->slug, // Important for linking
+                    'name' => $v->name,
+                    'price' => (float) $v->list_price,
+                    'stock_qty' => (int) $v->stock_qty,
+                    'attributes' => collect($v->attributes)->map(function ($av) {
+                        return [
+                            'name' => $av->attribute ? $av->attribute->name : 'Attribute',
+                            'slug' => $av->attribute ? $av->attribute->slug : '',
+                            'value' => $av->value,
+                        ];
+                    })->toArray(),
+                ];
+            }),
         ];
+    }
+
+    /**
+     * Calculează prețul pentru Produs sau Varianta (dacă există).
+     * Aplică promoțiile de pe produsul părinte și pe variantă.
+     */
+    protected function calculatePriceForEntity(Product $product, ?ProductVariant $variant, ?Customer $customer): array
+    {
+        // Dacă nu avem variantă, folosim logica standard
+        if (!$variant) {
+            return $this->calculateProductPrice($product, $customer);
+        }
+
+        // Dacă avem variantă, prețul de bază este cel al variantei
+        $basePrice = (float) $variant->list_price;
+
+        // Putem folosi PromotionEngine, dar trebuie să-i spunem să folosească acest basePrice
+        // Momentan, PromotionEngine ia prețul din produs ($product->list_price).
+        // Putem "falsifica" prețul produsului temporar sau extinde engine-ul.
+        // Pentru siguranță și simplitate, vom face o logică similară aici, reutilizand ce putem.
+        
+        // 1. Get promotions for parent product
+        $user = Auth::user();
+        $promotions = $this->promotionEngine->getActivePromotions($user, $customer);
+        
+        // Filter applicable to product
+        $applicable = $promotions->filter(function ($promo) use ($product) {
+            return $this->promotionEngine->promotionAppliesToProduct($promo, $product);
+        });
+
+        // 2. Apply best promotion on the VARIANT price
+        $finalPrice = $basePrice;
+        $appliedPromoData = null;
+
+        // Simple logic: apply first/best. 
+        // Note: This duplicates some logic from PromotionEngine::calculateProductPriceWithPromotions
+        // Ideally we'd pass $variant to engine.
+        
+        foreach ($applicable as $promo) {
+            [$newPrice] = $this->promotionEngine->applyPromotionToUnit($promo, $basePrice, 1);
+            if ($newPrice < $finalPrice) {
+                $finalPrice = $newPrice;
+                $appliedPromoData = [
+                    'id' => $promo->id,
+                    'name' => $promo->name,
+                    'slug' => $promo->slug,
+                ];
+            }
+        }
+
+        $hasDiscount = $finalPrice < $basePrice;
+        $discountPercent = 0;
+        if ($basePrice > 0) {
+            $discountPercent = round(($basePrice - $finalPrice) / $basePrice * 100, 2);
+        }
+
+        return [
+            'has_discount'      => $hasDiscount,
+            'price'             => $basePrice,
+            'promo_price'       => $finalPrice,
+            'discount_percent'  => $discountPercent,
+            'applied_promotion' => $appliedPromoData,
+        ];
+    }
+
+    /**
+     * Construiește lista de unități de măsură (Base + Secondary) cu prețuri calculate.
+     */
+    protected function buildUnitsList(Product $product, ?ProductVariant $variant, float $basePrice, float $promoPrice): array
+    {
+        $units = collect();
+
+        // 1. Unitatea de bază (din ERP/Produs)
+        // Dacă produsul are unit_of_measure setat, îl adăugăm ca unitate implicită
+        // User-ul vrea: "O unitate de masura principala care este cea din erp"
+        
+        $mainUnitName = $product->unit_of_measure ?? 'buc';
+        
+        $units->push([
+            'id'                => 'base',
+            'name'              => $mainUnitName, // ex: buc
+            'unit'              => $mainUnitName,
+            'conversion_factor' => 1.0,
+            'price'             => $basePrice,
+            'promo_price'       => $promoPrice,
+            'is_base'           => true,
+            'is_default'        => true, // Default selection
+        ]);
+
+        // 2. Unități secundare definite în `product_units`
+        // Acestea pot fi legate de produs sau de variantă
+        
+        $productUnits = $product->units;
+        
+        if ($variant) {
+            // Dacă suntem pe variantă, luăm și unitățile variantei
+            // (și posibil și cele ale produsului dacă sunt generice? 
+            //  User-ul zice: "Fiecare produs/variatie are posibilitatea sa i se seteze...")
+            // Presupunem că dacă varianta are unități, le folosim pe acelea.
+            // Dacă nu, fallback la produs? Sau cumulate?
+            // De obicei, ambalarea e specifică fizic.
+            // Vom include unitățile produsului care NU sunt legate de o altă variantă.
+            // + unitățile legate specific de varianta curentă.
+            
+            $variantUnits = $variant->units;
+            $productUnits = $productUnits->whereNull('product_variant_id')->merge($variantUnits);
+        } else {
+             // Doar unitățile produsului care nu țin de variante specifice
+             $productUnits = $productUnits->whereNull('product_variant_id');
+        }
+
+        foreach ($productUnits as $u) {
+            $factor = (float) $u->conversion_factor;
+            if ($factor <= 0) $factor = 1;
+
+            // Calcul preț per unitate de ambalare
+            // Ex: 1 bax = 10 buc. Preț bax = 10 * Preț buc.
+            
+            $unitPrice = $basePrice * $factor;
+            $unitPromoPrice = $promoPrice * $factor;
+
+            // Override price if specific price is set? (User didn't explicitly ask, but DB has `specific_price`)
+            // if ($u->specific_price) { ... }
+
+            $units->push([
+                'id'                => $u->id,
+                'name'              => $u->name, // ex: Bax 10 buc
+                'unit'              => $u->unit ?? $mainUnitName, // ex: bax
+                'conversion_factor' => $factor,
+                'price'             => $unitPrice,
+                'promo_price'       => $unitPromoPrice,
+                'is_base'           => (bool) $u->is_base,
+                'is_default'        => false,
+            ]);
+        }
+
+        return $units->values()->toArray();
     }
 
     /**
@@ -176,7 +392,8 @@ class PromotionPricingService
                         'slug'          => $product->slug,
                         'internal_code' => $product->internal_code,
                         'sku'           => $product->internal_code,
-                        'thumbnail'     => null, // Can add if needed
+                        'thumbnail'     => $product->main_image_url, 
+                        'main_image_url'=> $product->main_image_url,
                     ],
 
                     'applied_promotions'=> collect($itemData['applied_promotions']),
@@ -198,16 +415,34 @@ class PromotionPricingService
             });
             
             $product = $originalItem ? $originalItem->product : Product::find($itemData['product_id']);
+            $variant = $originalItem ? $originalItem->variant : null;
             
+            // Determine stock status and qty
+            $stockStatus = 'in_stock';
+            $stockQty = 0;
+
+            if ($variant) {
+                $stockStatus = $variant->stock_status;
+                $stockQty = (int) $variant->stock_qty;
+            } elseif ($product) {
+                $stockStatus = $product->stock_status;
+                $stockQty = (int) $product->stock_qty;
+            }
+
             // applied_promotions is array of arrays in engine result
             $appliedPromosList = $itemData['applied_promotions'];
             
             $mappedItems[] = [
                 'id'                => $itemData['id'],
                 'product_id'        => $itemData['product_id'],
+                'product_variant_id'=> $originalItem ? $originalItem->product_variant_id : null,
                 'product_name'      => $itemData['product_name'],
+                'product_code'      => $variant ? $variant->sku : ($product->internal_code ?? ''),
                 'product_slug'      => $product->slug ?? '',
                 'quantity'          => $itemData['quantity'],
+                'unit'              => $originalItem->unit ?? 'buc',
+                'unitInfo'          => $originalItem->unit ?? 'buc',
+                'stockStatus'       => $stockStatus,
                 
                 // Legacy keys
                 'unit_price'        => $itemData['unit_base_price'],
@@ -227,8 +462,21 @@ class PromotionPricingService
                     'slug'          => $product->slug,
                     'internal_code' => $product->internal_code,
                     'sku'           => $product->internal_code,
-                    'thumbnail'     => null, 
+                    'thumbnail'     => $product->main_image_url,
+                    'main_image_url'=> $product->main_image_url,
+                    'vat_rate'      => (float) $product->vat_rate,
+                    'vat_included'  => (bool) $product->vat_included,
+                    'stock_qty'     => $stockQty,
+                    'stock_status'  => $stockStatus,
                 ],
+                'product_variant'   => $variant ? [
+                    'id'   => $variant->id,
+                    'sku'  => $variant->sku,
+                    'name' => $variant->name,
+                    'stock_qty' => (int) $variant->stock_qty,
+                ] : null,
+                'product_vat_rate'     => (float) $product->vat_rate,
+                'product_vat_included' => (bool) $product->vat_included,
 
                 'applied_promotions'=> collect($appliedPromosList),
                 'applied_promotion' => count($appliedPromosList) > 0 ? [

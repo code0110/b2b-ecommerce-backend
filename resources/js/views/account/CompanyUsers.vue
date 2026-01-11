@@ -9,7 +9,7 @@
       </div>
       <button
         type="button"
-        class="btn btn-primary btn-sm"
+        class="btn btn-orange btn-sm"
         @click="startInvite"
       >
         Invită utilizator nou
@@ -147,7 +147,7 @@
             <div class="col-12 d-flex justify-content-end">
               <button
                 type="submit"
-                class="btn btn-primary btn-sm"
+                class="btn btn-orange btn-sm"
                 :disabled="saving"
               >
                 <span

@@ -29,6 +29,13 @@ export const useAuthStore = defineStore('auth', {
   actions: {
     hasRole(roleName) {
       if (!this.user || !this.user.roles) return false;
+      
+      if (Array.isArray(roleName)) {
+        return roleName.some(name => 
+          this.user.roles.some(r => (r.slug === name || r.code === name))
+        );
+      }
+      
       return this.user.roles.some(r => (r.slug === roleName || r.code === roleName));
     },
 
@@ -105,6 +112,18 @@ export const useAuthStore = defineStore('auth', {
       localStorage.removeItem('access_token');
       localStorage.removeItem('current_user');
       localStorage.removeItem('role');
+      
+      // Clear impersonation and visit data
+      localStorage.removeItem('impersonated_client_id');
+      localStorage.removeItem('impersonated_client_name');
+      localStorage.removeItem('active_visit');
+      
+      // Optionally clear cart if needed, but maybe not if we want persistence?
+      // For B2B agents, it's safer to clear.
+      localStorage.removeItem('cart');
+      
+      // Reload to clear all memory states
+      window.location.href = '/login';
     },
 
     async refreshUser() {

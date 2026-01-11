@@ -1,42 +1,48 @@
-<!-- resources/js/views/front/Checkout.vue -->
 <template>
-  <div class="container my-4">
-    <h1 class="h4 mb-3">Checkout</h1>
-
-    <div v-if="loading" class="alert alert-info">
-      Se încarcă sumarul comenzii...
+  <div>
+    <div class="dd-page-header py-3 mb-3">
+      <div class="container">
+        <h1 class="h4 mb-1">Checkout</h1>
+        <p class="text-muted small mb-0">
+          Completează datele și confirmă comanda.
+        </p>
+      </div>
     </div>
 
-    <div v-if="error" class="alert alert-danger">
-      {{ error }}
-    </div>
+    <div class="container pb-4">
 
-    <div
-      v-if="!loading && !error && successMessage"
-      class="alert alert-success"
-    >
-      {{ successMessage }}
-    </div>
+      <div v-if="loading" class="alert alert-info">
+        Se încarcă sumarul comenzii...
+      </div>
 
-    <div
-      v-if="!loading && !error && !successMessage && !cartItems.length"
-      class="alert alert-secondary"
-    >
-      Coșul este gol. Te rugăm să adaugi produse înainte de a finaliza comanda.
-      <RouterLink to="/cos" class="alert-link ms-1">
-        Mergi la coș
-      </RouterLink>
-    </div>
+      <div v-if="error" class="alert alert-danger">
+        {{ error }}
+      </div>
 
-    <div v-if="!loading && !error && cartItems.length > 0" class="row">
-      <!-- Stânga: pașii de checkout -->
-      <div class="col-lg-8">
-        <!-- Pas 1: Adrese (Interactiv: Select existing or Add new) -->
-        <div class="card mb-3">
-          <div class="card-header">
-            <strong>1. Adrese facturare și livrare</strong>
-          </div>
-          <div class="card-body">
+      <div
+        v-if="!loading && !error && successMessage"
+        class="alert alert-success"
+      >
+        {{ successMessage }}
+      </div>
+
+      <div
+        v-if="!loading && !error && !successMessage && !cartItems.length"
+        class="alert alert-secondary"
+      >
+        Coșul este gol. Te rugăm să adaugi produse înainte de a finaliza comanda.
+        <RouterLink to="/cos" class="alert-link ms-1">
+          Mergi la coș
+        </RouterLink>
+      </div>
+
+      <div v-if="!loading && !error && cartItems.length > 0" class="row g-3">
+        <div class="col-lg-8">
+          <div class="card mb-3">
+            <div class="card-header py-2">
+              <strong>1. Adrese facturare și livrare</strong>
+            </div>
+            <div class="card-body">
              <!-- Adresă Facturare -->
              <h6 class="mb-3 border-bottom pb-2">Adresă de facturare</h6>
              
@@ -147,9 +153,8 @@
           </div>
         </div>
 
-        <!-- Pas 2: Metodă livrare -->
         <div class="card mb-3">
-          <div class="card-header">
+          <div class="card-header py-2">
             <strong>2. Metodă de livrare</strong>
           </div>
           <div class="card-body">
@@ -183,9 +188,8 @@
           </div>
         </div>
 
-        <!-- Pas 3: Metodă plată -->
         <div class="card mb-3">
-          <div class="card-header">
+          <div class="card-header py-2">
             <strong>3. Metodă de plată</strong>
           </div>
           <div class="card-body">
@@ -237,9 +241,8 @@
           </div>
         </div>
 
-        <!-- Pas 4: Confirmare -->
         <div class="card mb-4">
-          <div class="card-header">
+          <div class="card-header py-2">
             <strong>4. Confirmare comandă</strong>
           </div>
           <div class="card-body">
@@ -251,7 +254,7 @@
 
             <button
               type="button"
-              class="btn btn-primary"
+              class="btn btn-orange"
               :disabled="submitting"
               @click="onPlaceOrder"
             >
@@ -262,7 +265,6 @@
         </div>
       </div>
 
-      <!-- Dreapta: sumar comandă -->
       <div class="col-lg-4">
         <div class="card mb-3">
           <div class="card-body">
@@ -279,22 +281,28 @@
                     <div class="fw-semibold">
                       {{ item.product_name || 'Produs' }}
                     </div>
+                    <div class="text-muted" style="font-size: 0.85em;">
+                      Cod: {{ item.product_variant?.sku || item.product?.internal_code || item.product?.sku || '-' }}
+                    </div>
+                    <div class="text-muted" style="font-size: 0.85em;" v-if="item.product_variant">
+                      {{ item.product_variant.name || item.product_variant.sku }}
+                    </div>
                     <div class="text-muted">
                       x {{ item.quantity }}
                     </div>
                     <!-- Afisare promotii aplicate -->
-                    <div v-if="item.applied_promotions && item.applied_promotions.length" class="text-success mt-1">
-                      <div v-for="promo in item.applied_promotions" :key="promo.id">
-                        <i class="bi bi-tag-fill me-1"></i> {{ promo.name }} (-{{ promo.discount_amount }} RON)
-                      </div>
-                    </div>
+                    <div v-if="item.applied_promotions && item.applied_promotions.length" class="text-danger mt-1">
+                <div v-for="promo in item.applied_promotions" :key="promo.id">
+                  <i class="bi bi-tag-fill me-1"></i> {{ promo.name }} (-{{ promo.discount_amount }} RON)
+                </div>
+              </div>
                   </div>
                   <div class="text-end">
                     <div v-if="item.line_discount > 0" class="text-decoration-line-through text-muted" style="font-size: 0.9em;">
-                      {{ formatPrice(item.line_base_total) }} RON
+                      {{ formatPriceGlobal(item.line_base_total, item.product_vat_rate, item.product_vat_included) }}
                     </div>
-                    <div :class="{'text-success fw-bold': item.line_discount > 0}">
-                      {{ formatPrice(item.line_final_total) }} RON
+                    <div :class="{'text-danger fw-bold': item.line_discount > 0}">
+                      {{ formatPriceGlobal(item.line_final_total, item.product_vat_rate, item.product_vat_included) }}
                     </div>
                   </div>
                 </div>
@@ -306,19 +314,19 @@
             <dl class="row mb-0 small">
               <dt class="col-6">Subtotal produse</dt>
               <dd class="col-6 text-end">
-                {{ formatPrice(subtotal) }} RON
+                {{ formatPriceGlobal(subtotal, 19, true) }}
               </dd>
               
               <template v-if="discountTotal > 0">
-                <dt class="col-6 text-success">Reduceri</dt>
-                <dd class="col-6 text-end text-success">
-                  -{{ formatPrice(discountTotal) }} RON
+                <dt class="col-6 text-danger">Reduceri</dt>
+                <dd class="col-6 text-end text-danger">
+                  -{{ formatPriceGlobal(discountTotal, 19, true) }}
                 </dd>
               </template>
 
               <dt class="col-6">Transport</dt>
               <dd class="col-6 text-end text-muted">
-                {{ shippingTotal > 0 ? formatPrice(shippingTotal) + ' RON' : 'Calculat ulterior' }}
+                {{ shippingTotal > 0 ? formatPriceGlobal(shippingTotal, 19, true) : 'Calculat ulterior' }}
               </dd>
             </dl>
 
@@ -327,18 +335,13 @@
             <div class="d-flex justify-content-between align-items-center">
               <div class="fw-semibold">Total de plată</div>
               <div class="fw-bold h5 mb-0">
-                {{ formatPrice(grandTotal) }} RON
+                {{ formatPriceGlobal(grandTotal, 19, true) }}
               </div>
             </div>
           </div>
         </div>
-
-        <div class="small text-muted">
-          Ruta de API pentru sumar: <code>GET /api/checkout/summary</code><br />
-          Ruta pentru plasare comandă:
-          <code>POST /api/checkout/place-order</code>
-        </div>
       </div>
+    </div>
     </div>
   </div>
 </template>
@@ -348,9 +351,11 @@ import { ref, computed, onMounted, reactive, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { getCheckoutSummary, placeOrder } from '@/services/cart';
 import { useVisitStore } from '@/store/visit';
+import { usePrice } from '@/composables/usePrice';
 
 const router = useRouter();
 const visitStore = useVisitStore();
+const { formatPrice: formatPriceGlobal } = usePrice();
 const loading = ref(false);
 const submitting = ref(false);
 const error = ref('');
@@ -385,14 +390,6 @@ const newShippingAddress = reactive({
   street: '',
   postal_code: '',
 });
-
-const formatPrice = (value) => {
-  const num = Number(value) || 0;
-  return num.toLocaleString('ro-RO', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
-};
 
 const cartItems = computed(() => summary.value?.items ?? []);
 const subtotal = computed(() => Number(summary.value?.subtotal) || 0);

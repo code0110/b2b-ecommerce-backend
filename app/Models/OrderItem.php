@@ -14,6 +14,8 @@ class OrderItem extends Model
         'product_name',
         'sku',
         'quantity',
+        'unit',
+        'unit_conversion_factor',
         'unit_price',
         'discount_amount',
         'tax_amount',

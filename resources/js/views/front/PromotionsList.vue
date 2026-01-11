@@ -73,7 +73,7 @@
               </span>
               <span
                 class="badge"
-                :class="promo.segment === 'B2B' ? 'bg-primary' : promo.segment === 'B2C' ? 'bg-info text-dark' : 'bg-dark'"
+                :class="promo.segment === 'B2B' ? 'bg-dd-blue' : promo.segment === 'B2C' ? 'bg-orange text-white' : 'bg-dark'"
               >
                 {{ promo.segmentLabel }}
               </span>
@@ -92,7 +92,7 @@
             <div class="mt-auto d-flex justify-content-between align-items-center">
               <RouterLink
                 :to="`/promotii/${promo.slug}`"
-                class="btn btn-outline-primary btn-sm"
+                class="btn btn-outline-secondary btn-sm"
               >
                 Detalii
               </RouterLink>

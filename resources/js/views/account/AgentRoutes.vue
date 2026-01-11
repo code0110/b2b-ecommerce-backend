@@ -18,7 +18,7 @@
              </div>
              <div class="vr"></div>
              <div class="text-center">
-                <div class="h5 mb-0 fw-bold text-primary">{{ kpi.total }}</div>
+                <div class="h5 mb-0 fw-bold text-orange">{{ kpi.total }}</div>
                 <div class="small text-muted">Total</div>
              </div>
              <div class="vr"></div>
@@ -47,7 +47,7 @@
     <div class="card border-0 shadow-sm">
         <div class="card-body p-0">
             <div v-if="loading" class="text-center py-5">
-                <div class="spinner-border text-primary"></div>
+                <div class="spinner-border text-orange"></div>
             </div>
             <div v-else-if="filteredRouteCustomers.length === 0" class="text-center py-5 text-muted">
                 <i class="bi bi-calendar-check fs-1 mb-3 d-block opacity-25"></i>
@@ -56,7 +56,7 @@
             <div v-else class="list-group list-group-flush">
                 <div v-for="(item, index) in filteredRouteCustomers" :key="item.id" 
                     class="list-group-item d-flex align-items-center p-3"
-                    :class="{'bg-light': item.visitStatus === 'completed', 'border-start border-5 border-success': item.visitStatus === 'completed', 'border-start border-5 border-primary': item.visitStatus === 'active'}"
+                    :class="{'bg-light': item.visitStatus === 'completed', 'border-start border-5 border-success': item.visitStatus === 'completed', 'border-start border-5 border-orange': item.visitStatus === 'active'}"
                 >
                     <div class="me-3 text-muted fw-bold" style="width: 25px;">{{ index + 1 }}.</div>
                     <div class="flex-grow-1">
@@ -70,7 +70,7 @@
                             </div>
                             <div class="text-end ms-2">
                                 <span v-if="item.visitStatus === 'completed'" class="badge bg-success mb-1 d-block"><i class="bi bi-check-lg"></i> Vizitat</span>
-                                <span v-else-if="item.visitStatus === 'active'" class="badge bg-primary mb-1 d-block"><i class="bi bi-geo-alt-fill"></i> Activ</span>
+                                <span v-else-if="item.visitStatus === 'active'" class="badge bg-orange mb-1 d-block"><i class="bi bi-geo-alt-fill"></i> Activ</span>
                                 
                                 <span class="badge bg-light text-dark border" v-if="item.week_type !== 'all'">
                                     {{ item.week_type === 'odd' ? 'Săpt. Impară' : 'Săpt. Pară' }}
@@ -81,7 +81,7 @@
                     <div class="ms-3">
                          <button 
                             class="btn btn-sm"
-                            :class="item.visitStatus === 'active' ? 'btn-primary' : (item.visitStatus === 'completed' ? 'btn-outline-secondary' : 'btn-outline-primary')"
+                            :class="item.visitStatus === 'active' ? 'btn-orange' : (item.visitStatus === 'completed' ? 'btn-outline-secondary' : 'btn-outline-secondary')"
                             @click="handleStartVisit(item.customer)"
                             :disabled="visitStore.loading || !item.customer || (visitStore.activeVisit && item.customer && visitStore.activeVisit.customer_id !== item.customer.id)"
                          >
@@ -300,7 +300,7 @@ watch(currentDay, () => {
     transition: transform 0.2s;
 }
 .route-card.active {
-    border: 1px solid var(--bs-primary) !important;
+    border: 1px solid var(--dd-orange) !important;
 }
 .route-card.completed {
     background-color: #f8f9fa;

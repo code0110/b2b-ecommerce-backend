@@ -36,4 +36,9 @@ class ProductVariant extends Model
     {
         return $this->hasMany(AttributeValue::class);
     }
+
+    public function units(): HasMany
+    {
+        return $this->hasMany(ProductUnit::class);
+    }
 }

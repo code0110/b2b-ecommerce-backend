@@ -14,6 +14,7 @@ use App\Models\User;
 use App\Services\Pricing\PromotionPricingService;
 use App\Services\Pricing\PromotionEngine;
 use App\Services\DiscountRuleService;
+use App\Services\FinancialRiskService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -24,15 +25,18 @@ class QuickOrderController extends Controller
     protected $pricingService;
     protected $promotionEngine;
     protected $discountRuleService;
+    protected $financialRiskService;
 
     public function __construct(
         PromotionPricingService $pricingService,
         PromotionEngine $promotionEngine,
-        DiscountRuleService $discountRuleService
+        DiscountRuleService $discountRuleService,
+        FinancialRiskService $financialRiskService
     ) {
         $this->pricingService = $pricingService;
         $this->promotionEngine = $promotionEngine;
         $this->discountRuleService = $discountRuleService;
+        $this->financialRiskService = $financialRiskService;
     }
 
     public function getCheckoutData(Request $request)
@@ -47,6 +51,9 @@ class QuickOrderController extends Controller
         if (!$customer) {
             return response()->json(['message' => 'Customer not found'], 404);
         }
+
+        // Financial Risk Analysis
+        $riskAnalysis = $this->financialRiskService->calculateRisk($customer);
 
         $addresses = $customer->addresses;
         $shippingMethods = ShippingMethod::where('is_active', true)->get();
@@ -69,7 +76,8 @@ class QuickOrderController extends Controller
                 'max_discount' => $maxDiscount,
                 'approval_threshold' => $derogationThreshold,
                 'apply_to_total' => $applyToTotal,
-            ]
+            ],
+            'financial_risk' => $riskAnalysis,
         ]);
     }
 
@@ -82,7 +90,9 @@ class QuickOrderController extends Controller
             'customer_id' => 'required|exists:customers,id',
             'items' => 'required|array',
             'items.*.product_id' => 'required|exists:products,id',
+            'items.*.product_variant_id' => 'nullable|exists:product_variants,id',
             'items.*.quantity' => 'required|integer|min:1',
+            'items.*.unit' => 'nullable|string',
             'items.*.price_override' => 'nullable|numeric|min:0',
             'items.*.discount_override' => 'nullable|numeric|min:0|max:100',
         ]);
@@ -113,6 +123,8 @@ class QuickOrderController extends Controller
             $virtualItem = new \stdClass();
             $virtualItem->product = $product;
             $virtualItem->quantity = $itemData['quantity'];
+            $virtualItem->unit = $itemData['unit'] ?? null;
+            $virtualItem->product_variant_id = $itemData['product_variant_id'] ?? null;
             $virtualItem->id = null; // No ID
             
             // Attach overrides only if user has permission
@@ -212,6 +224,8 @@ class QuickOrderController extends Controller
                 'product_name' => $cItem['product_name'],
                 'sku' => $products->get($cItem['product_id'])->internal_code ?? $products->get($cItem['product_id'])->sku,
                 'quantity' => $virtualItem->quantity,
+                'unit' => $cItem['unit'] ?? 'buc',
+                'unit_conversion_factor' => $cItem['conversion_factor'] ?? 1.0,
                 'unit_price' => round($unitPrice, 2),
                 'discount_percent' => round($discountPercent, 2),
                 'final_unit_price' => round($finalUnitPrice, 2),
@@ -310,6 +324,14 @@ class QuickOrderController extends Controller
     public function getPromotionsForCustomer($customerId)
     {
         $customer = Customer::findOrFail($customerId);
+
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+        if ($user->hasRole(['customer_b2b', 'customer_b2c'])) {
+             if ($user->customer_id != $customerId) {
+                 abort(403, 'Unauthorized access to promotions.');
+             }
+        }
         
         // Get all active promotions
         $promotions = $this->pricingService->getActivePromotionsForCustomer($customer);
@@ -323,6 +345,7 @@ class QuickOrderController extends Controller
                 'bonus_type' => $promotion->bonus_type,
                 'applies_to' => $promotion->applies_to,
                 'min_qty' => $promotion->min_qty_per_product,
+                'is_iterative' => $promotion->is_iterative,
                 'discount_percent' => $promotion->discount_percent,
                 'discount_value' => $promotion->discount_value,
                 'products' => [],
@@ -345,6 +368,8 @@ class QuickOrderController extends Controller
                         'id' => $product->id,
                         'name' => $product->name,
                         'sku' => $product->internal_code ?? $product->sku,
+                        'code' => $product->internal_code ?? $product->sku, // For frontend compatibility
+                        'unit_of_measure' => $product->unit_of_measure,
                         'base_price' => $this->pricingService->getBasePrice($product, $customer),
                         'promo_price' => $promoPrice,
                         'discount_percent' => $discountPercent,
@@ -443,6 +468,21 @@ class QuickOrderController extends Controller
         
         $data = $calcResponse->getData(); // Object
         
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+
+        // Enforce Visit Requirement for Agents and Directors
+        if ($user && $user->hasRole(['sales_agent', 'sales_director'])) {
+             if (!$request->customer_visit_id) {
+                 return response()->json(['message' => 'Comenzile pot fi plasate doar în timpul unei vizite active la client.'], 403);
+             }
+             
+             $visit = \App\Models\CustomerVisit::find($request->customer_visit_id);
+             if (!$visit || $visit->agent_id !== $user->id || $visit->status !== 'in_progress') {
+                  return response()->json(['message' => 'Vizita specificată nu este validă sau activă.'], 403);
+             }
+        }
+
         DB::beginTransaction();
         try {
             // Generate Order Number
@@ -471,6 +511,34 @@ class QuickOrderController extends Controller
             // Status logic
             $requiresApproval = $data->requires_approval;
             
+            $customer = Customer::findOrFail($request->customer_id);
+
+            // Financial Risk Check
+            $risk = $this->financialRiskService->calculateRisk($customer);
+            
+            // Check if risk is ignored via Derogation
+            if (!$risk['is_derogated']) {
+                if ($risk['status'] === FinancialRiskService::STATUS_BLOCKED) {
+                    DB::rollBack();
+                    return response()->json(['message' => 'Clientul este blocat financiar și nu poate plasa comenzi.'], 403);
+                }
+
+                if ($risk['status'] === FinancialRiskService::STATUS_APPROVAL_REQUIRED) {
+                    if ($user->hasRole(['sales_director', 'admin', 'owner'])) {
+                        // Director can override if acknowledged
+                        if (!$request->director_ack_risk) {
+                            DB::rollBack();
+                            return response()->json(['message' => 'Trebuie să confirmați că ați luat la cunoștință riscul financiar.'], 422);
+                        }
+                        // Director overrides, so no approval needed for risk
+                    } else {
+                        // Agent needs derogation
+                        DB::rollBack();
+                        return response()->json(['message' => 'Clientul necesită aprobare financiară. Contactați directorul pentru derogare.'], 403);
+                    }
+                }
+            }
+
             if ($requiresApproval) {
                 $order->status = 'pending_approval';
                 $order->approval_status = 'pending';
@@ -510,6 +578,8 @@ class QuickOrderController extends Controller
                     'product_name' => $item->product_name,
                     'sku' => $item->sku,
                     'quantity' => $item->quantity,
+                    'unit' => $item->unit ?? 'buc',
+                    'unit_conversion_factor' => $item->unit_conversion_factor ?? 1.0,
                     'unit_price' => $item->unit_price,
                     'discount_amount' => $item->line_discount, // Total discount for line
                     'total' => $item->line_total,

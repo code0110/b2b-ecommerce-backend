@@ -34,7 +34,7 @@
 
               <div class="d-flex justify-content-end gap-2 mt-4">
                 <button type="button" class="btn btn-light border" @click="$router.back()">Anulează</button>
-                <button type="submit" class="btn btn-primary px-4" :disabled="submitting">
+                <button type="submit" class="btn btn-orange px-4" :disabled="submitting">
                   <span v-if="submitting" class="spinner-border spinner-border-sm me-2"></span>
                   Trimite Cererea
                 </button>

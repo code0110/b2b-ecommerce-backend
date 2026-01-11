@@ -20,7 +20,7 @@
         <div class="row text-center g-4">
           <div class="col-md-4 position-relative">
             <div class="d-flex flex-column align-items-center position-relative z-1">
-              <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center shadow-sm mb-3" style="width: 48px; height: 48px;">
+              <div class="rounded-circle bg-orange text-white d-flex align-items-center justify-content-center shadow-sm mb-3" style="width: 48px; height: 48px;">
                 <i class="bi bi-pencil-square fs-5"></i>
               </div>
               <h6 class="fw-bold mb-1">1. Trimite Cererea</h6>
@@ -31,7 +31,7 @@
           </div>
           <div class="col-md-4 position-relative">
             <div class="d-flex flex-column align-items-center position-relative z-1">
-              <div class="rounded-circle bg-light text-primary d-flex align-items-center justify-content-center mb-3" style="width: 48px; height: 48px;">
+              <div class="rounded-circle bg-light text-orange d-flex align-items-center justify-content-center mb-3" style="width: 48px; height: 48px;">
                 <i class="bi bi-person-gear fs-5"></i>
               </div>
               <h6 class="fw-bold mb-1">2. Analiză Agent</h6>
@@ -42,7 +42,7 @@
           </div>
           <div class="col-md-4 position-relative">
             <div class="d-flex flex-column align-items-center position-relative z-1">
-              <div class="rounded-circle bg-light text-primary d-flex align-items-center justify-content-center mb-3" style="width: 48px; height: 48px;">
+              <div class="rounded-circle bg-light text-dd-blue d-flex align-items-center justify-content-center mb-3" style="width: 48px; height: 48px;">
                 <i class="bi bi-envelope-check fs-5"></i>
               </div>
               <h6 class="fw-bold mb-1">3. Primire Ofertă</h6>
@@ -121,7 +121,7 @@
               </button>
               <button 
                 type="submit" 
-                class="btn btn-primary px-4 d-flex align-items-center gap-2"
+                class="btn btn-orange px-4 d-flex align-items-center gap-2"
                 :disabled="submitting || !isValid"
               >
                 <span v-if="submitting" class="spinner-border spinner-border-sm"></span>

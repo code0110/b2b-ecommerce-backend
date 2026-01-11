@@ -15,7 +15,7 @@ class OrderTemplateController extends Controller
     {
         $user = $request->user();
 
-        $templates = OrderTemplate::with('items.product')
+        $templates = OrderTemplate::with('items.product.images')
             ->where('user_id', $user->id)
             ->orderBy('name')
             ->get();
@@ -27,7 +27,7 @@ class OrderTemplateController extends Controller
     {
         $this->authorizeTemplate($request->user()->id, $orderTemplate);
 
-        $orderTemplate->load('items.product');
+        $orderTemplate->load('items.product.images');
 
         return response()->json($orderTemplate);
     }
@@ -62,7 +62,7 @@ class OrderTemplateController extends Controller
             }
         }
 
-        $template->load('items.product');
+        $template->load('items.product.images');
 
         return response()->json($template, 201);
     }

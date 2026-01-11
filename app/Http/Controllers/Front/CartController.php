@@ -103,6 +103,7 @@ class CartController extends Controller
                 'product_id'         => $item->product_id,
                 'product_variant_id' => $item->product_variant_id,
                 'quantity'           => $item->quantity,
+                'unit'               => $item->unit, // Return unit
                 'unit_price'         => (float) $item->unit_price,
                 'total'              => (float) $lineTotal,
                 'product'            => $product,
@@ -123,6 +124,8 @@ class CartController extends Controller
     protected function respondWithEnrichedCart(Cart $cart, Request $request)
     {
         \Illuminate\Support\Facades\Log::info('respondWithEnrichedCart: Start', ['cart_id' => $cart->id]);
+
+        $cart->loadMissing(['items.product.images']);
 
         $user     = $request->user();
         // If cart has a specific customer_id, use it. Otherwise fall back to user's customer.
@@ -167,6 +170,7 @@ class CartController extends Controller
             'product_id'         => ['required', 'integer', 'exists:products,id'],
             'product_variant_id' => ['nullable', 'integer', 'exists:product_variants,id'],
             'quantity'           => ['required', 'integer', 'min:1'],
+            'unit'               => ['nullable', 'string'],
         ]);
 
         $cart = $this->resolveCart($request);
@@ -178,19 +182,48 @@ class CartController extends Controller
             $variant = ProductVariant::findOrFail($data['product_variant_id']);
         }
 
-        // Stabilim prețul (fallback pe list_price)
-        $unitPrice = 0;
-
+        // Stabilim prețul de bază (fallback pe list_price)
+        $basePrice = 0;
         if ($variant) {
-            $unitPrice = $variant->price_override ?? $variant->list_price ?? 0;
+            $basePrice = $variant->price_override ?? $variant->list_price ?? 0;
         } else {
-            $unitPrice = $product->price_override ?? $product->list_price ?? 0;
+            $basePrice = $product->price_override ?? $product->list_price ?? 0;
         }
 
-        // Item existent cu același produs / variantă
+        // Gestionare Unități și Conversie
+        $unitName = $data['unit'] ?? 'buc';
+        $conversionFactor = 1;
+
+        // Căutare unitate (după cod 'unit' sau nume 'name')
+        $units = \App\Models\ProductUnit::where('product_id', $product->id)
+            ->where(function($q) use ($unitName) {
+                 $q->where('unit', $unitName)
+                   ->orWhere('name', $unitName);
+            })
+            ->get();
+
+        $productUnit = null;
+        if ($variant) {
+            // Prioritate: unitate specifică variantei
+            $productUnit = $units->where('product_variant_id', $variant->id)->first();
+        }
+
+        if (!$productUnit) {
+            // Fallback: unitate generică pe produs (fără variantă)
+            $productUnit = $units->whereNull('product_variant_id')->first();
+        }
+
+        if ($productUnit) {
+             $conversionFactor = $productUnit->conversion_factor ?? 1;
+        }
+
+        $unitPrice = $basePrice * $conversionFactor;
+
+        // Item existent cu același produs / variantă / unitate
         $item = $cart->items()
             ->where('product_id', $product->id)
             ->where('product_variant_id', $variant ? $variant->id : null)
+            ->where('unit', $unitName)
             ->first();
 
         if ($item) {
@@ -201,6 +234,7 @@ class CartController extends Controller
                 'product_id'         => $product->id,
                 'product_variant_id' => $variant ? $variant->id : null,
                 'quantity'           => $data['quantity'],
+                'unit'               => $unitName,
                 'unit_price'         => $unitPrice,
             ]);
             $cart->items()->save($item);

@@ -14,7 +14,7 @@ class CustomerController extends Controller
     {
         $query = Customer::query()
             ->visibleTo($request->user())
-            ->with(['group', 'agent:id,first_name,last_name,email', 'salesDirector:id,first_name,last_name,email', 'teamMembers:id,first_name,last_name,email']);
+            ->with(['group', 'users', 'agent:id,first_name,last_name,email', 'salesDirector:id,first_name,last_name,email', 'teamMembers:id,first_name,last_name,email']);
 
         if ($type = $request->get('type')) {
             $query->where('type', $type);
@@ -99,7 +99,35 @@ class CustomerController extends Controller
             }
         }
 
+        if ($request->boolean('create_user')) {
+            $request->validate([
+                'first_name' => ['required', 'string', 'max:255'],
+                'last_name'  => ['nullable', 'string', 'max:255'],
+                'user_password' => ['required', 'string', 'min:8', 'confirmed'],
+                'email' => ['required', 'email', 'unique:users,email'],
+            ]);
+        }
+
         $customer = Customer::create($data);
+
+        if ($request->boolean('create_user')) {
+            $roleSlug = $customer->type === 'b2b' ? 'customer_b2b' : 'customer_b2c';
+            $role = \App\Models\Role::where('slug', $roleSlug)->first();
+
+            if ($role) {
+                $newUser = User::create([
+                    'first_name' => $request->input('first_name'),
+                    'last_name'  => $request->input('last_name'),
+                    'email'      => $request->input('email'),
+                    'phone'      => $request->input('phone'),
+                    'password'   => \Illuminate\Support\Facades\Hash::make($request->input('user_password')),
+                    'is_active'  => true,
+                    'customer_id'=> $customer->id,
+                    'company_role' => 'owner',
+                ]);
+                $newUser->roles()->attach($role->id);
+            }
+        }
 
         if ($request->has('team_members')) {
             $customer->teamMembers()->sync($request->input('team_members', []));
@@ -214,6 +242,9 @@ class CustomerController extends Controller
     {
         $user = request()->user();
         if ($user->hasRole('admin')) return;
+
+        // Allow customer to access their own profile
+        if ($user->customer_id && $user->customer_id == $customer->id) return;
 
         if ($user->hasRole('sales_director')) {
              if ($customer->sales_director_user_id == $user->id) return;

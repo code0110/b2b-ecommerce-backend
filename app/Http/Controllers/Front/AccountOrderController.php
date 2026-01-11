@@ -13,7 +13,7 @@ class AccountOrderController extends Controller
         $user = $request->user();
         $customer = $user->customer;
 
-        $query = Order::with(['items.product', 'shippingMethod'])
+        $query = Order::with(['items.product.images', 'shippingMethod'])
             ->where('customer_id', $customer?->id)
             ->orderByDesc('created_at');
 

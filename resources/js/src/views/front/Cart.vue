@@ -56,8 +56,8 @@
                           <div class="text-muted">
                             Cod: {{ item.code }}
                           </div>
-                          <div class="text-muted" v-if="item.unitInfo">
-                            UM: {{ item.unitInfo }}
+                          <div class="text-muted" v-if="item.unit">
+                            UM: {{ item.unit }}
                           </div>
                         </div>
                       </div>

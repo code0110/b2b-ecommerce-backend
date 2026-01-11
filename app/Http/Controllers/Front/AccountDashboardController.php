@@ -14,7 +14,7 @@ class AccountDashboardController extends Controller
         $user = $request->user();
         $customer = $user->customer;
 
-        $ordersQuery = Order::with('items.product')
+        $ordersQuery = Order::with('items.product.images')
             ->where('customer_id', $customer?->id)
             ->orderByDesc('created_at');
 

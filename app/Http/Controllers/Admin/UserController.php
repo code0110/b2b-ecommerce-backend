@@ -45,6 +45,14 @@ class UserController extends Controller
             });
         }
 
+        if ($type = $request->query('type')) {
+            if ($type === 'internal') {
+                $query->whereNull('customer_id');
+            } elseif ($type === 'customer') {
+                $query->whereNotNull('customer_id');
+            }
+        }
+
         if ($request->filled('is_active')) {
              $query->where('is_active', (bool) $request->query('is_active'));
         }

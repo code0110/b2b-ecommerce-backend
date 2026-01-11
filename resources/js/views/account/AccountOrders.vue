@@ -24,14 +24,14 @@
             <div v-if="isImpersonating">
               Client activ (impersonare):
               <strong>{{ frontCustomerName || '—' }}</strong>
-              <span v-if="frontClientType" class="badge bg-warning text-dark ms-1">
+              <span v-if="frontClientType" class="badge bg-orange text-white ms-1">
                 {{ frontClientType }}
               </span>
             </div>
             <div v-else>
               Client activ:
               <strong>{{ frontCustomerName || 'N/A' }}</strong>
-              <span v-if="frontClientType" class="badge bg-primary ms-1">
+              <span v-if="frontClientType" class="badge bg-dd-blue ms-1">
                 {{ frontClientType }}
               </span>
             </div>
@@ -129,7 +129,7 @@
                     <div class="mt-1">
                       <span
                         class="badge"
-                        :class="order.clientType === 'B2B' ? 'bg-primary' : 'bg-secondary'"
+                        :class="order.clientType === 'B2B' ? 'bg-dd-blue' : 'bg-secondary'"
                       >
                         {{ order.clientType }}
                       </span>
@@ -141,7 +141,7 @@
                         class="badge"
                         :class="{
                           'bg-warning text-dark': order.status === 'in_procesare',
-                          'bg-info text-dark': order.status === 'in_livrare',
+                          'bg-dd-blue text-white': order.status === 'in_livrare',
                           'bg-success': order.status === 'livrata',
                           'bg-secondary': order.status === 'anulata'
                         }"
@@ -164,7 +164,7 @@
                           'bg-danger': order.paymentStatus === 'neplatita',
                           'bg-warning text-dark': order.paymentStatus === 'in_asteptare',
                           'bg-success': order.paymentStatus === 'platita',
-                          'bg-info text-dark': order.paymentStatus === 'ramburs'
+                          'bg-dd-blue text-white': order.paymentStatus === 'ramburs'
                         }"
                       >
                         {{
@@ -197,7 +197,7 @@
                 <div class="mt-3 d-flex justify-content-end gap-2">
                   <button
                     type="button"
-                    class="btn btn-sm btn-outline-primary"
+                    class="btn btn-sm btn-orange"
                     @click="repeatOrder(order)"
                   >
                     Comandă din nou

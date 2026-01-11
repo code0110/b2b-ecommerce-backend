@@ -12,6 +12,13 @@ class CategoryController extends Controller
     public function index(Request $request)
     {
         $query = Category::with('parent')->orderBy('sort_order');
+
+        /** @var \App\Models\User $user */
+        $user = $request->user();
+        if ($user && $user->hasRole(['customer_b2b', 'customer_b2c'])) {
+             $query->where('is_published', true);
+        }
+
         if ($q = $request->get('q')) {
              $query->where('name', 'like', "%{$q}%");
         }

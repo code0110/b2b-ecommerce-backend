@@ -26,6 +26,7 @@ import BlogList from '@/views/front/content/BlogList.vue'
 import BlogPost from '@/views/front/content/BlogPost.vue'
 import StaticPage from '@/views/front/content/StaticPage.vue'
 import BecomePartner from '@/views/front/BecomePartner.vue'
+import WishlistPage from '@/views/front/WishlistPage.vue'
 
 // Account
 import AccountDashboard from '@/views/account/AccountDashboard.vue'
@@ -139,6 +140,11 @@ const router = createRouter({
           path: 'reprezentanti-vanzari',
           name: 'sales-representatives',
           component: SalesRepresentatives
+        },
+        {
+          path: 'favorite',
+          name: 'wishlist',
+          component: WishlistPage
         },
         {
           path: 'cos',

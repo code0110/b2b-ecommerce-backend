@@ -9,7 +9,7 @@
       </div>
       <button
         type="button"
-        class="btn btn-primary btn-sm"
+        class="btn btn-orange btn-sm"
         @click="startCreate('shipping')"
       >
         Adresă nouă
@@ -46,7 +46,7 @@
                     {{ addr.name || 'Adresă livrare' }}
                     <span
                       v-if="addr.is_default"
-                      class="badge bg-primary ms-1"
+                      class="badge bg-orange ms-1"
                     >
                       Implicită
                     </span>
@@ -111,7 +111,7 @@
                     {{ addr.name || 'Adresă facturare' }}
                     <span
                       v-if="addr.is_default"
-                      class="badge bg-primary ms-1"
+                      class="badge bg-dd-blue ms-1"
                     >
                       Implicită
                     </span>
@@ -295,7 +295,7 @@
               <div class="col-12 d-flex justify-content-end">
                 <button
                   type="submit"
-                  class="btn btn-primary btn-sm"
+                  class="btn btn-orange btn-sm"
                   :disabled="saving"
                 >
                   <span

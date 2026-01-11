@@ -26,7 +26,14 @@ class ProductController extends Controller
             ->with([
                 'mainCategory:id,name,slug',
                 'brand:id,name,slug',
+                'images'
             ]);
+
+        /** @var \App\Models\User $user */
+        $user = $request->user();
+        if ($user && $user->hasRole(['customer_b2b', 'customer_b2c'])) {
+             $query->where('status', 'published');
+        }
 
         // Căutare text (denumire, cod, barcode, ERP)
         if ($search = $request->query('search')) {
@@ -161,6 +168,9 @@ class ProductController extends Controller
             // Atribute (valori)
             $this->syncAttributeValues($product, $data);
 
+            // Unități
+            $this->syncUnits($product, $data);
+
             // Imagini
             $this->syncImages($product, $data);
 
@@ -224,6 +234,7 @@ class ProductController extends Controller
 
             $this->syncCategories($product, $data);
             $this->syncAttributeValues($product, $data);
+            $this->syncUnits($product, $data);
             $this->syncImages($product, $data);
             $this->syncVariants($product, $data);
             $this->syncRelatedProducts($product, $data);
@@ -326,6 +337,14 @@ class ProductController extends Controller
             'images.*.is_main'        => ['nullable', 'boolean'],
             'images.*.sort_order'     => ['nullable', 'integer'],
 
+            // Unități de măsură (Product Level)
+            'units'                     => ['nullable', 'array'],
+            'units.*.id'                => ['nullable', 'integer'],
+            'units.*.name'              => ['required_with:units', 'string', 'max:50'],
+            'units.*.unit'              => ['required_with:units', 'string', 'max:20'],
+            'units.*.conversion_factor' => ['required_with:units', 'numeric', 'min:0'],
+            'units.*.is_base'           => ['boolean'],
+
             // Variante
             'variants'                        => ['nullable', 'array'],
             'variants.*.id'                   => ['nullable', 'integer'],
@@ -336,6 +355,10 @@ class ProductController extends Controller
             'variants.*.stock_qty'            => ['nullable', 'integer', 'min:0'],
             'variants.*.slug'                 => ['nullable', 'string', 'max:255'],
             'variants.*.attributes'           => ['nullable', 'array'], // ex: {color: 'red', size: 'XL'}
+            'variants.*.units'                => ['nullable', 'array'],
+            'variants.*.units.*.name'         => ['required_with:variants.*.units', 'string', 'max:50'],
+            'variants.*.units.*.unit'         => ['required_with:variants.*.units', 'string', 'max:20'],
+            'variants.*.units.*.conversion_factor' => ['required_with:variants.*.units', 'numeric', 'min:0'],
 
             // Produse asociate
             'related_products'                => ['nullable', 'array'],
@@ -419,24 +442,81 @@ class ProductController extends Controller
         }
     }
 
+    protected function syncUnits(Product $product, array $data): void
+    {
+        // Ștergem unitățile existente ale produsului (cele care nu sunt legate de variante)
+        $product->units()->whereNull('product_variant_id')->delete();
+
+        if (!array_key_exists('units', $data)) {
+            return;
+        }
+
+        foreach ($data['units'] as $u) {
+            $product->units()->create([
+                'name'              => $u['name'],
+                'unit'              => $u['unit'],
+                'conversion_factor' => $u['conversion_factor'],
+                'is_base'           => $u['is_base'] ?? false,
+                'is_default'        => $u['is_default'] ?? false,
+            ]);
+        }
+    }
+
     protected function syncVariants(Product $product, array $data): void
     {
         if (!array_key_exists('variants', $data)) {
             return;
         }
 
+        // Ștergem variantele existente (cascade delete ar trebui să șteargă și unitățile variantelor)
+        // Dar pentru siguranță, putem șterge manual dacă e nevoie.
+        // Presupunem că ștergerea variantei șterge și unitățile ei (FK constraint).
         $product->variants()->delete();
 
-        foreach ($data['variants'] as $variant) {
-            $product->variants()->create([
-                'sku'        => $variant['sku'],
-                'barcode'    => $variant['barcode'] ?? null,
-                'erp_id'     => $variant['erp_id'] ?? null,
-                'price'      => $variant['price'] ?? null,
-                'stock_qty'  => $variant['stock_qty'] ?? 0,
-                'slug'       => $variant['slug'] ?? null,
-                'attributes' => $variant['attributes'] ?? null, // dacă e cast JSON în model
+        foreach ($data['variants'] as $variantData) {
+            /** @var \App\Models\ProductVariant $variant */
+            $variant = $product->variants()->create([
+                'sku'        => $variantData['sku'],
+                'barcode'    => $variantData['barcode'] ?? null,
+                'erp_id'     => $variantData['erp_id'] ?? null,
+                'price'      => $variantData['price'] ?? null,
+                'stock_qty'  => $variantData['stock_qty'] ?? 0,
+                'slug'       => $variantData['slug'] ?? null,
+                // 'attributes' => ... nu salvăm aici direct dacă e relație
             ]);
+
+            // Sync Variant Attributes
+            if (!empty($variantData['attributes'])) {
+                 // Presupunem că vine un array de genul [['attribute_id' => 1, 'value' => 'Rosu'], ...]
+                 // Sau poate vine sub formă de obiect cheie-valoare? 
+                 // Validarea din validateProduct zice 'variants.*.attributes' => ['nullable', 'array']
+                 // Să zicem că vine array de obiecte pentru consistență cu produsul
+                 foreach ($variantData['attributes'] as $attr) {
+                     // Check format. If simple key-value, adapt.
+                     // If standard structure:
+                     if (isset($attr['attribute_id'])) {
+                         $variant->attributes()->create([
+                             'product_id' => $product->id, // Legăm și de produs? AttributeValue are product_id.
+                             'attribute_id' => $attr['attribute_id'],
+                             'value' => $attr['value'],
+                         ]);
+                     }
+                 }
+            }
+
+            // Sync Variant Units
+            if (!empty($variantData['units'])) {
+                foreach ($variantData['units'] as $u) {
+                    $variant->units()->create([
+                        'product_id'        => $product->id, // Legăm și de produs
+                        'name'              => $u['name'],
+                        'unit'              => $u['unit'],
+                        'conversion_factor' => $u['conversion_factor'],
+                        'is_base'           => $u['is_base'] ?? false,
+                        'is_default'        => $u['is_default'] ?? false,
+                    ]);
+                }
+            }
         }
     }
 
@@ -491,6 +571,7 @@ class ProductController extends Controller
             'is_promo'     => (bool) $product->is_promo,
             'is_best_seller' => (bool) $product->is_best_seller,
             'status'       => $product->status,
+            'main_image_url' => $product->main_image_url, // Added this line
             'main_category' => $product->mainCategory ? [
                 'id'   => $product->mainCategory->id,
                 'name' => $product->mainCategory->name,

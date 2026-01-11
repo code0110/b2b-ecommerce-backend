@@ -9,7 +9,7 @@
       <div class="alert alert-info mb-0" v-if="frontCustomerName">
         Client activ:
         <strong>{{ frontCustomerName }}</strong>
-        <span v-if="frontClientType" class="badge bg-primary ms-1">
+        <span v-if="frontClientType" class="badge bg-dd-blue ms-1">
           {{ frontClientType }}
         </span>
         <span class="text-muted ms-2 small">
@@ -41,8 +41,8 @@
                     <div class="fw-semibold">{{ doc.number }}</div>
                     <div class="small text-muted">{{ doc.date }}</div>
                     <div class="mt-1">
-                      <span class="badge bg-secondary" v-if="doc.type === 'invoice'">Factură</span>
-                      <span class="badge bg-info text-dark" v-else>Proformă</span>
+                      <span class="badge bg-dd-blue" v-if="doc.type === 'invoice'">Factură</span>
+                      <span class="badge bg-secondary" v-else>Proformă</span>
                     </div>
                   </div>
                   <div class="text-end">
@@ -73,7 +73,7 @@
                 <div class="mt-3 d-flex justify-content-end gap-2">
                   <button
                     type="button"
-                    class="btn btn-sm btn-outline-primary"
+                    class="btn btn-sm btn-outline-secondary"
                     @click="downloadDocument(doc)"
                   >
                     Descarcă PDF
@@ -81,7 +81,7 @@
                   <button
                     v-if="doc.paymentStatus !== 'platita'"
                     type="button"
-                    class="btn btn-sm btn-outline-success"
+                    class="btn btn-sm btn-orange"
                     @click="payDocument(doc)"
                   >
                     Plătește acum

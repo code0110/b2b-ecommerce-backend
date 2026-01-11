@@ -24,3 +24,18 @@ export async function updateCustomer(id, payload) {
 export async function deleteCustomer(id) {
   await adminApi.delete(`/customers/${id}`);
 }
+
+export async function fetchFinancialRisk(id) {
+  const { data } = await adminApi.get(`/customers/${id}/financial-risk`);
+  return data;
+}
+
+export async function acknowledgeRisk(id) {
+  const { data } = await adminApi.post(`/customers/${id}/financial-risk/acknowledge`);
+  return data;
+}
+
+export async function grantDerogation(id, payload) {
+  const { data } = await adminApi.post(`/customers/${id}/financial-risk/derogation`, payload);
+  return data;
+}

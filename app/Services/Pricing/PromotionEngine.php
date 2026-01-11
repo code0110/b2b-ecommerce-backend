@@ -4,6 +4,7 @@ namespace App\Services\Pricing;
 
 use App\Models\Promotion;
 use App\Models\Product;
+use App\Models\ProductVariant;
 use App\Models\Cart;
 use App\Models\Customer;
 use App\Models\CustomerGroup;
@@ -129,7 +130,57 @@ class PromotionEngine
             $product = $item->product;
             $quantity = $item->quantity;
 
-            $priceData = $this->getProductPriceWithPromotions($product, $user, $customer, $quantity, $cart);
+            // Determine Conversion Factor
+            $conversionFactor = 1.0;
+            $unitName = $item->unit;
+
+            // Resolve Variant
+            $variant = null;
+            if (!empty($item->product_variant_id)) {
+                $variant = ProductVariant::find($item->product_variant_id);
+                 \Illuminate\Support\Facades\Log::info('PromotionEngine Variant Found', ['id' => $item->product_variant_id, 'variant' => $variant]);
+            } else {
+                  \Illuminate\Support\Facades\Log::info('PromotionEngine No Variant ID', ['item' => $item]);
+            }
+
+            if (!empty($unitName) && $unitName !== ($product->unit_of_measure ?? 'buc')) {
+                // Filter units matching the name/code
+                $matchingUnits = $product->units->filter(function($u) use ($unitName) {
+                     return $u->unit === $unitName || $u->name === $unitName;
+                });
+
+                $u = null;
+                $variantId = $item->product_variant_id ?? null;
+                
+                if ($variantId) {
+                     // Prioritize variant-specific unit
+                     $u = $matchingUnits->firstWhere('product_variant_id', $variantId);
+                }
+                
+                if (!$u) {
+                     // Fallback to generic product unit (no variant)
+                     $u = $matchingUnits->whereNull('product_variant_id')->first();
+                }
+                
+                if (!$u) {
+                    // Fallback to any match
+                    $u = $matchingUnits->first();
+                }
+
+                if ($u) {
+                    $conversionFactor = (float) $u->conversion_factor;
+                }
+            }
+
+            // Calculate price based on TOTAL base units (quantity * factor)
+            // This ensures volume discounts apply correctly to the total amount of product
+            $totalBaseUnits = $quantity * $conversionFactor;
+
+            $priceData = $this->getProductPriceWithPromotions($product, $user, $customer, (int)$totalBaseUnits, $cart, $variant);
+
+            // Adjust per-unit prices to the PACKED unit
+            $priceData['base_price'] *= $conversionFactor;
+            $priceData['final_price'] *= $conversionFactor;
 
             $lineSubtotal = $priceData['base_price'] * $quantity;
             $lineTotal = $priceData['final_price'] * $quantity;
@@ -143,6 +194,8 @@ class PromotionEngine
                 'product_id' => $product->id,
                 'product_name' => $product->name,
                 'quantity' => $quantity,
+                'unit' => $unitName ?? 'buc',
+                'conversion_factor' => $conversionFactor,
                 'unit_base_price' => $priceData['base_price'],
                 'unit_final_price' => $priceData['final_price'],
                 'line_subtotal' => $lineSubtotal,
@@ -248,9 +301,10 @@ class PromotionEngine
         ?Authenticatable $user = null,
         ?Customer $customer = null,
         int $quantity = 1,
-        ?Cart $cart = null
+        ?Cart $cart = null,
+        ?ProductVariant $variant = null
     ): array {
-        $basePrice = $this->getBasePrice($product, $customer);
+        $basePrice = $this->getBasePrice($product, $customer, $variant);
         $promotions = $this->getActivePromotions($user, $customer, $cart);
 
         // Filter out cart-level promotions (shipping) from unit price calculation
@@ -258,16 +312,33 @@ class PromotionEngine
             return in_array($promo->type, ['shipping', 'order_total']);
         });
 
+        // --- EXCLUSIVE PROMOTION LOGIC ---
+        // If any applicable promotion is "exclusive", filter out all non-exclusive ones.
+        // We only consider exclusive promotions if they actually apply to this product.
+        // So we need to pre-check applicability or filter the list first?
+        // Checking applicability is expensive if we do it twice.
+        // Better strategy: Filter list to what applies first, then check exclusivity.
+        
+        $applicablePromotions = $itemPromotions->filter(function($promo) use ($product) {
+            return $this->promotionAppliesToProduct($promo, $product);
+        });
+
+        $exclusivePromotions = $applicablePromotions->where('is_exclusive', true);
+
+        if ($exclusivePromotions->isNotEmpty()) {
+            // If we have exclusive promotions, ONLY consider them.
+            // Discard all non-exclusive.
+            $applicablePromotions = $exclusivePromotions;
+        }
+
         $bestFinalPrice = $basePrice;
         $bestPromotion = null;
         $bestDiscountAmount = 0;
 
-        // "Best Deal" Logic: Iterate all and find the one resulting in lowest price
-        foreach ($itemPromotions as $promotion) {
-            if (! $this->promotionAppliesToProduct($promotion, $product)) {
-                continue;
-            }
-
+        // "Best Deal" Logic: Iterate all applicable and find the one resulting in lowest price
+        foreach ($applicablePromotions as $promotion) {
+            // Already checked applicability above
+            
             [$priceAfter, $discountAmount] = $this->applyPromotionToUnit($promotion, $basePrice, $quantity);
 
             if ($discountAmount <= 0) {
@@ -334,7 +405,7 @@ class PromotionEngine
         ];
     }
 
-    public function getBasePrice(Product $product, ?Customer $customer = null): float
+    public function getBasePrice(Product $product, ?Customer $customer = null, ?ProductVariant $variant = null): float
     {
         if ($customer) {
             $customerContractPrice = ContractPrice::where('customer_id', $customer->id)
@@ -356,7 +427,15 @@ class PromotionEngine
             }
         }
 
-        $basePrice = (float) ($product->price_override ?? 0);
+        $basePrice = 0.0;
+        if ($variant) {
+            $basePrice = (float) ($variant->price_override ?? $variant->list_price ?? 0);
+        }
+
+        if ($basePrice <= 0) {
+            $basePrice = (float) ($product->price_override ?? 0);
+        }
+        
         if ($basePrice <= 0) {
             $basePrice = (float) ($product->list_price ?? 0);
         }

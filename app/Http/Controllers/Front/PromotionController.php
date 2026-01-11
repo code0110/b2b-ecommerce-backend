@@ -21,10 +21,22 @@ class PromotionController extends Controller
         $now = Carbon::now();
 
         $scope = $request->query('scope', 'current'); // current | upcoming | all
-        $customerType = $request->query('customer_type'); // b2b | b2c | null
+        $requestedType = $request->query('customer_type'); // b2b | b2c | null
 
         $query = Promotion::query()
             ->where('status', 'active');
+
+        // 1. Determine Allowed Types based on User Context
+        $allowedTypes = $this->getAllowedCustomerTypes($request);
+        $query->whereIn('customer_type', $allowedTypes);
+
+        // 2. Apply Requested Filter (intersection with allowed)
+        if ($requestedType) {
+            $query->where(function ($q) use ($requestedType) {
+                $q->where('customer_type', $requestedType)
+                  ->orWhere('customer_type', 'both');
+            });
+        }
 
         if ($scope === 'current') {
             $query
@@ -39,13 +51,6 @@ class PromotionController extends Controller
         } elseif ($scope === 'upcoming') {
             $query->whereNotNull('start_at')
                   ->where('start_at', '>', $now);
-        }
-
-        if (in_array($customerType, ['b2b', 'b2c'])) {
-            $query->where(function ($q) use ($customerType) {
-                $q->where('customer_type', $customerType)
-                  ->orWhere('customer_type', 'both');
-            });
         }
 
         $paginator = $query
@@ -84,12 +89,13 @@ class PromotionController extends Controller
      * GET /api/promotions/{slug}
      * Landing promoție + produse asociate.
      */
-    public function show(string $slug)
+    public function show(Request $request, string $slug)
     {
-        $now = Carbon::now();
+        $allowedTypes = $this->getAllowedCustomerTypes($request);
 
         $promotion = Promotion::with(['categories', 'brands', 'customerGroups'])
             ->where('slug', $slug)
+            ->whereIn('customer_type', $allowedTypes)
             ->firstOrFail();
 
         // Produse asociate promoției prin pivot product_promotion
@@ -119,11 +125,6 @@ class PromotionController extends Controller
                 ->pluck('brand_id');
             $productsQuery->whereIn('products.brand_id', $brandIds);
         } else {
-            // applies_to = all sau altceva
-            // Dacă e 'all', nu listăm toate produsele (ar fi prea multe).
-            // Putem returna o listă goală sau logică specifică.
-            // Pentru moment, dacă nu e 'products', 'categories' sau 'brands', lăsăm gol
-            // doar dacă nu avem produse specificate explicit (fallback)
             if ($productIds->isNotEmpty()) {
                 $productsQuery->whereIn('products.id', $productIds);
             } else {
@@ -197,8 +198,32 @@ class PromotionController extends Controller
         return match ($promotion->customer_type) {
             'b2b'  => 'Clienți B2B',
             'b2c'  => 'Clienți B2C',
-            'both' => 'B2B & B2C',
-            default => 'Toți clienții',
+            'both' => 'Toți clienții',
+            default => 'General',
         };
+    }
+
+    /**
+     * Determine allowed customer types based on authenticated user.
+     */
+    private function getAllowedCustomerTypes(Request $request): array
+    {
+        $user = $request->user('sanctum');
+
+        if (!$user) {
+            return ['b2c', 'both'];
+        }
+
+        if ($user->hasRole(['admin', 'operator'])) {
+            return ['b2b', 'b2c', 'both'];
+        }
+
+        if ($user->customer) {
+            return $user->customer->type === 'b2b' 
+                ? ['b2b', 'both', 'b2c'] 
+                : ['b2c', 'both'];
+        }
+        
+        return ['b2c', 'both'];
     }
 }

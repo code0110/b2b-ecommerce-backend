@@ -87,7 +87,7 @@
             <div class="mt-auto">
               <button
                 type="button"
-                class="btn btn-outline-primary btn-sm w-100"
+                class="btn btn-outline-secondary btn-sm w-100"
                 @click="contactRepDemo(rep)"
               >
                 Contactează

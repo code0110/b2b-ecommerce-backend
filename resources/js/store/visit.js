@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia';
 import { adminApi } from '@/services/http';
+import { useAuthStore } from './auth';
 
 export const useVisitStore = defineStore('visit', {
   state: () => ({
@@ -15,18 +16,31 @@ export const useVisitStore = defineStore('visit', {
 
   actions: {
     async checkActiveVisit() {
-      // Check backend for any active visit for current user
+      this.loading = true;
       try {
-        const response = await adminApi.get('/customer-visits', { params: { status: 'in_progress', limit: 1 } });
+        const authStore = useAuthStore();
+        if (!authStore.user) return;
+
+        const response = await adminApi.get('/customer-visits', { 
+            params: { 
+                status: 'in_progress', 
+                limit: 1,
+                agent_id: authStore.user.id
+            } 
+        });
         const visits = response.data.data;
+        console.log('Active Visits:', visits);
         if (visits && visits.length > 0) {
           this.setActiveVisit(visits[0]);
-          this.startLocationTracking(); // Repornim tracking-ul dacă există vizită activă
+          this.startLocationTracking();
         } else {
           this.clearActiveVisit();
         }
       } catch (e) {
         console.error('Failed to check active visit', e);
+        this.clearActiveVisit();
+      } finally {
+        this.loading = false;
       }
     },
 

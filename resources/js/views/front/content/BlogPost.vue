@@ -1,71 +1,80 @@
 <template>
-  <div class="container py-4">
-    <div v-if="loading" class="text-center py-5 text-muted">
-      Se încarcă articolul...
+  <div>
+    <div v-if="post" class="dd-page-header py-3 mb-3">
+      <div class="container">
+        <div class="d-flex flex-wrap justify-content-between align-items-end gap-2">
+          <div>
+            <nav class="small mb-2">
+              <RouterLink
+                to="/blog"
+                class="text-decoration-none text-orange fw-semibold"
+              >
+                ← Înapoi la blog
+              </RouterLink>
+            </nav>
+            <h1 class="h4 mb-1">{{ post.title }}</h1>
+            <div class="small text-muted mb-0">
+              <span v-if="post.category">
+                {{ post.category.name }} ·
+              </span>
+              <span v-if="post.published_at">
+                {{ formatDate(post.published_at) }}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
-    <div v-else-if="error" class="alert alert-danger small">
-      {{ error }}
-    </div>
+    <div class="container pb-4">
+      <div v-if="loading" class="text-center py-5 text-muted">
+        Se încarcă articolul...
+      </div>
 
-    <div v-else-if="post">
-      <nav class="small mb-2">
-        <RouterLink
-          to="/blog"
-          class="text-decoration-none"
+      <div v-else-if="error" class="alert alert-danger small">
+        {{ error }}
+      </div>
+
+      <div v-else-if="post">
+        <div v-if="post.image_url" class="mb-4">
+          <img :src="post.image_url" :alt="post.title" class="img-fluid rounded shadow-sm w-100" style="max-height: 500px; object-fit: cover;">
+        </div>
+
+        <div
+          class="mb-4 cms-content"
+          v-html="post.content"
+        ></div>
+
+        <section
+          v-if="related.length"
+          class="mt-5"
         >
-          ← Înapoi la blog
-        </RouterLink>
-      </nav>
-
-      <h1 class="h3 mb-2">{{ post.title }}</h1>
-      <div class="small text-muted mb-3">
-        <span v-if="post.category">
-          {{ post.category.name }} ·
-        </span>
-        <span v-if="post.published_at">
-          {{ formatDate(post.published_at) }}
-        </span>
-      </div>
-
-      <div v-if="post.image_url" class="mb-4">
-        <img :src="post.image_url" :alt="post.title" class="img-fluid rounded shadow-sm w-100" style="max-height: 500px; object-fit: cover;">
-      </div>
-
-      <div
-        class="mb-4 cms-content"
-        v-html="post.content"
-      ></div>
-
-      <section
-        v-if="related.length"
-        class="mt-5"
-      >
-        <h2 class="h6 mb-3">Articole similare</h2>
-        <div class="row g-3">
-          <div
-            v-for="item in related"
-            :key="item.id"
-            class="col-md-4"
-          >
-            <div class="card h-100 border-0 shadow-sm">
-              <div class="card-body">
-                <RouterLink
-                  :to="`/blog/${item.slug}`"
-                  class="fw-semibold text-decoration-none d-block mb-1"
-                >
-                  {{ item.title }}
-                </RouterLink>
-                <div class="small text-muted">
-                  <span v-if="item.published_at">
-                    {{ formatDate(item.published_at) }}
-                  </span>
+          <h2 class="h6 mb-3 fw-bold">Articole similare</h2>
+          <div class="row g-3">
+            <div
+              v-for="item in related"
+              :key="item.id"
+              class="col-md-4"
+            >
+              <div class="card h-100 border-0 shadow-sm dd-product-card">
+                <div class="card-body">
+                  <RouterLink
+                    :to="`/blog/${item.slug}`"
+                    class="fw-semibold text-decoration-none d-block mb-1 text-dark"
+                  >
+                    {{ item.title }}
+                  </RouterLink>
+                  <div class="small text-muted">
+                    <span v-if="item.published_at">
+                      {{ formatDate(item.published_at) }}
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
+      </div>
     </div>
   </div>
 </template>

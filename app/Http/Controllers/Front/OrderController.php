@@ -43,7 +43,7 @@ class OrderController extends Controller
 
         $order = Order::where('customer_id', $customerId)
             ->where('id', $id)
-            ->with('items.product')
+            ->with('items.product.images')
             ->firstOrFail();
 
         return $order;

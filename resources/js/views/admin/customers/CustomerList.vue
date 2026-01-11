@@ -1,10 +1,13 @@
 <template>
-  <div class="container-fluid py-4">
+  <div class="container-fluid" :class="{ 'py-4': !embedded, 'p-0': embedded }">
     <!-- Header -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
-      <div>
+    <div class="d-flex justify-content-between align-items-center mb-4" :class="{ 'mt-3': embedded }">
+      <div v-if="!embedded">
         <h1 class="h3 fw-bold mb-1">Clienți</h1>
         <p class="text-muted small mb-0">Gestionează baza de date a clienților, statusurile și asignările acestora.</p>
+      </div>
+      <div v-else>
+         <!-- Spacer for embedded view -->
       </div>
       <button class="btn btn-primary d-flex align-items-center gap-2 shadow-sm" @click="openCreateModal">
         <i class="bi bi-person-plus-fill"></i>
@@ -154,6 +157,21 @@
                   <div class="d-flex align-items-center text-truncate" v-if="c.phone">
                       <i class="bi bi-telephone text-muted me-2" style="width: 16px;"></i>
                       <span class="text-dark">{{ c.phone }}</span>
+                  </div>
+              </div>
+
+              <!-- Linked Users -->
+              <div class="mb-3 small">
+                  <div class="text-muted mb-1" style="font-size: 0.75rem;">CONT UTILIZATOR</div>
+                  <div v-if="c.users && c.users.length > 0">
+                    <div v-for="user in c.users" :key="user.id" class="d-flex align-items-center text-truncate mb-1">
+                        <i class="bi bi-person-check-fill me-2 text-success"></i>
+                        <span class="text-dark fw-medium text-truncate" :title="user.email">{{ user.email }}</span>
+                    </div>
+                  </div>
+                  <div v-else class="d-flex align-items-center text-truncate">
+                      <i class="bi bi-person-x me-2 text-muted"></i>
+                      <span class="text-muted fst-italic">Niciun cont de acces</span>
                   </div>
               </div>
 
@@ -327,6 +345,13 @@ import { useToast } from 'vue-toastification'
 import { useAuthStore } from '@/store/auth'
 import { useVisitStore } from '@/store/visit'
 import CustomerFormModal from './CustomerFormModal.vue'
+
+const props = defineProps({
+  embedded: {
+    type: Boolean,
+    default: false
+  }
+})
 
 // State
 const customers = ref([])
@@ -568,6 +593,12 @@ const handleStartVisit = async (customer) => {
     toast.error('Nu s-a putut începe vizita.');
   }
 }
+
+// Expose methods for parent components
+defineExpose({
+  openCreateModal,
+  loadCustomers
+})
 </script>
 
 <style scoped>

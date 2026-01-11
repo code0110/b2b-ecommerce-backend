@@ -14,7 +14,7 @@
     </div>
 
     <div v-if="loading" class="text-center py-5">
-      <div class="spinner-border text-primary" role="status">
+      <div class="spinner-border text-orange" role="status">
         <span class="visually-hidden">Se încarcă...</span>
       </div>
       <p class="mt-2 text-muted">Se încarcă detaliile comenzii...</p>
@@ -45,7 +45,7 @@
                   class="badge"
                   :class="{
                     'bg-warning text-dark': order.status === 'pending' || order.status === 'processing',
-                    'bg-info text-dark': order.status === 'shipping' || order.status === 'in_livrare',
+                    'bg-dd-blue text-white': order.status === 'shipping' || order.status === 'in_livrare',
                     'bg-success': order.status === 'completed' || order.status === 'livrata',
                     'bg-secondary': order.status === 'cancelled' || order.status === 'anulata'
                   }"
@@ -61,7 +61,7 @@
                     'bg-danger': order.payment_status === 'unpaid' || order.payment_status === 'neplatita',
                     'bg-warning text-dark': order.payment_status === 'pending' || order.payment_status === 'in_asteptare',
                     'bg-success': order.payment_status === 'paid' || order.payment_status === 'platita',
-                    'bg-info text-dark': order.payment_status === 'refunded'
+                    'bg-dd-blue text-white': order.payment_status === 'refunded'
                   }"
                 >
                   {{ formatPaymentStatus(order.payment_status) }}
@@ -82,7 +82,10 @@
                   <div class="me-3">
                     <div class="fw-semibold">{{ item.product_name || item.product?.name }}</div>
                     <div class="text-muted small">
-                      Cod: {{ item.sku || item.product?.sku }}
+                      Cod: {{ item.variant?.sku || item.sku || item.product?.sku }}
+                    </div>
+                    <div class="text-muted small" v-if="item.variant">
+                      Variantă: {{ item.variant.name || item.variant.sku }}
                     </div>
                   </div>
                   <div class="text-end">
@@ -92,11 +95,11 @@
                 </div>
                 <div class="d-flex justify-content-between mt-2">
                   <div class="small text-muted">Preț unit. (RON)</div>
-                  <div class="fw-semibold">{{ formatMoney(item.unit_price) }}</div>
+                  <div class="fw-semibold">{{ formatPriceGlobal(item.unit_price, item.vat_rate || 0.19, false) }}</div>
                 </div>
                 <div class="d-flex justify-content-between">
                   <div class="small text-muted">Total linie (RON)</div>
-                  <div class="fw-bold">{{ formatMoney(item.total) }}</div>
+                  <div class="fw-bold">{{ formatPriceGlobal(item.total, item.vat_rate || 0.19, false) }}</div>
                 </div>
               </div>
             </div>
@@ -204,10 +207,10 @@
           <div class="card-body">
             <h6 class="card-title">Acțiuni rapide</h6>
             <div class="d-grid gap-2">
-              <button class="btn btn-outline-primary btn-sm" @click="downloadInvoice">
+              <button class="btn btn-outline-secondary btn-sm" @click="downloadInvoice">
                 <i class="bi bi-file-earmark-pdf me-2"></i> Descarcă Factura
               </button>
-              <button class="btn btn-outline-secondary btn-sm" @click="repeatOrder">
+              <button class="btn btn-orange btn-sm" @click="repeatOrder">
                 <i class="bi bi-arrow-repeat me-2"></i> Comandă din nou
               </button>
             </div>
@@ -226,10 +229,12 @@ import { fetchOrder } from '@/services/account/orders'
 import { adminApi } from '@/services/http'
 import api from '@/services/http'
 import { fetchInvoices } from '@/services/account/documents'
+import { usePrice } from '@/composables/usePrice'
 
 const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
+const { formatPrice: formatPriceGlobal } = usePrice()
 
 const order = ref(null)
 const loading = ref(true)
@@ -338,6 +343,7 @@ const repeatOrder = async () => {
   try {
     const items = (order.value.items || []).map(i => ({
       product_id: i.product_id || i.product?.id,
+      product_variant_id: i.product_variant_id || i.variant?.id,
       quantity: i.quantity
     })).filter(i => i.product_id && i.quantity > 0)
 

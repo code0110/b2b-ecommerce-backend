@@ -45,8 +45,17 @@ export const fetchCategoryTree = () =>
 export const fetchCategoryPage = (slug, params = {}) =>
   api.get(`/catalog/category/${slug}`, { params }).then((r) => r.data);
 
+export const fetchAllProducts = (params = {}) =>
+  api.get('/catalog/products', { params }).then((r) => r.data);
+
 export const fetchNewProductsPage = (params = {}) =>
   api.get('/catalog/new-products', { params }).then((r) => r.data);
 
 export const fetchDiscountedProductsPage = (params = {}) =>
   api.get('/catalog/discounted-products', { params }).then((r) => r.data);
+
+export const fetchProductsByIds = (ids) => {
+  // If ids is array, join them
+  const idsParam = Array.isArray(ids) ? ids.join(',') : ids;
+  return api.get('/products', { params: { ids: idsParam } }).then(r => r.data);
+};

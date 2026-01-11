@@ -21,7 +21,7 @@ class OfferController extends Controller
 
         $query = Offer::where('customer_id', $user->customer_id)
             ->whereIn('status', ['sent', 'accepted', 'rejected', 'negotiation'])
-            ->with(['agent', 'items.product'])
+            ->with(['agent', 'items.product.images'])
             ->orderByDesc('created_at');
 
         if ($status = $request->get('status')) {

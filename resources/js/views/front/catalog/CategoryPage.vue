@@ -114,10 +114,10 @@
         
         <!-- Loading State -->
         <div v-if="loading" class="text-center py-5">
-          <div class="spinner-border text-primary" role="status">
-            <span class="visually-hidden">Loading...</span>
-          </div>
+        <div class="spinner-border text-orange" role="status">
+          <span class="visually-hidden">Loading...</span>
         </div>
+      </div>
 
         <div v-else>
           <!-- Toolbar -->
@@ -161,51 +161,9 @@
             <div
               v-for="product in products"
               :key="product.id"
-              class="col-md-4 col-sm-6"
+              class="col-6 col-md-4 col-lg-3 col-xxl-2"
             >
-              <div class="card h-100">
-                <!-- Image placeholder if no image -->
-                <div class="ratio ratio-4x3 bg-light text-center d-flex align-items-center justify-content-center text-muted" v-if="!product.main_image">
-                   <i class="bi bi-image" style="font-size: 2rem;"></i>
-                </div>
-                <!-- Real image would go here -->
-                
-                <div class="card-body d-flex flex-column">
-                  <div class="small text-muted mb-1" v-if="product.brand">
-                    Brand: {{ product.brand.name }}
-                  </div>
-                  <h3 class="h6 mb-1">
-                    <RouterLink :to="`/produse/${product.slug}`" class="text-decoration-none text-dark">
-                      {{ product.name }}
-                    </RouterLink>
-                  </h3>
-                  <div class="small text-muted mb-2">
-                    {{ product.internal_code }}
-                  </div>
-                  
-                  <div class="mb-2 small">
-                    <span
-                      class="badge"
-                      :class="product.stock_qty > 0 ? 'bg-success' : 'bg-secondary'"
-                    >
-                      {{ product.stock_qty > 0 ? 'În stoc' : 'Indisponibil' }}
-                    </span>
-                  </div>
-                  
-                  <div class="mt-auto">
-                    <div class="fw-semibold mb-1">
-                      {{ (product.price_override || product.list_price).toLocaleString('ro-RO', { minimumFractionDigits: 2 }) }}
-                      RON
-                    </div>
-                    <RouterLink
-                      :to="`/produse/${product.slug}`"
-                      class="btn btn-outline-primary btn-sm w-100"
-                    >
-                      Detalii produs
-                    </RouterLink>
-                  </div>
-                </div>
-              </div>
+              <ProductCard :product="product" />
             </div>
 
             <!-- Empty State -->
@@ -243,6 +201,7 @@
 import { ref, reactive, computed, watch, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { fetchCategoryPage } from '@/services/catalog'
+import ProductCard from '@/components/common/ProductCard.vue'
 
 const route = useRoute()
 const router = useRouter()

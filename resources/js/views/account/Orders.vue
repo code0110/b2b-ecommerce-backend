@@ -53,7 +53,7 @@
             >
               Reset
             </button>
-            <button type="submit" class="btn btn-primary btn-sm">
+            <button type="submit" class="btn btn-orange btn-sm">
               Aplică filtre
             </button>
           </div>
@@ -317,13 +317,13 @@ const statusLabel = (status) => {
 const statusBadgeClass = (status) => {
   switch (status) {
     case 'pending':
-      return 'bg-warning text-dark';
+      return 'bg-orange text-white';
     case 'processing':
-      return 'bg-info text-dark';
+      return 'bg-dd-blue text-white';
     case 'completed':
-      return 'bg-success';
+      return 'bg-success text-white';
     case 'cancelled':
-      return 'bg-danger';
+      return 'bg-danger text-white';
     case 'awaiting_payment':
       return 'bg-secondary';
     case 'on_hold':
@@ -353,15 +353,15 @@ const paymentStatusLabel = (status) => {
 const paymentStatusBadgeClass = (status) => {
   switch (status) {
     case 'pending':
-      return 'bg-warning text-dark';
+      return 'bg-orange text-white';
     case 'paid':
-      return 'bg-success';
+      return 'bg-success text-white';
     case 'failed':
-      return 'bg-danger';
+      return 'bg-danger text-white';
     case 'refunded':
-      return 'bg-info text-dark';
+      return 'bg-dd-blue text-white';
     case 'partially_paid':
-      return 'bg-primary';
+      return 'bg-dd-blue text-white';
     default:
       return 'bg-light text-dark';
   }

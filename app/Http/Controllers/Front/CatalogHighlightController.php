@@ -31,7 +31,14 @@ class CatalogHighlightController extends Controller
         $query = Product::query()
             ->with(['brand', 'mainCategory'])
             ->where('status', 'published')
-            ->whereNotNull('promo_price') // adaptează la coloanele tale
+            ->where(function ($q) {
+                $q->where('is_promo', true)
+                  ->orWhere(function ($sub) {
+                      $sub->whereNotNull('price_override')
+                          ->whereNotNull('list_price')
+                          ->whereColumn('price_override', '<', 'list_price');
+                  });
+            })
             ->orderByDesc('updated_at');
 
         $perPage = min((int) $request->input('per_page', 24), 100);

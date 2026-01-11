@@ -17,31 +17,7 @@
           :key="p.id"
           class="col"
         >
-          <div class="border rounded-3 h-100 p-2 small">
-            <div class="fw-semibold mb-1">
-              <RouterLink
-                :to="{ name: 'product-details', params: { slug: 'produs-demo-' + p.id } }"
-                class="text-decoration-none"
-              >
-                {{ p.name }}
-              </RouterLink>
-            </div>
-            <div class="text-muted mb-1">
-              {{ p.internalCode }}
-            </div>
-            <div class="d-flex justify-content-between align-items-center">
-              <span class="fw-semibold">
-                {{ formatMoney(p.overridePrice || p.listPrice) }}
-              </span>
-              <button
-                type="button"
-                class="btn btn-outline-secondary btn-sm"
-                @click="$emit('toggle-compare', p.id)"
-              >
-                Compară
-              </button>
-            </div>
-          </div>
+          <ProductCard :product="p" :compact="true" />
         </div>
       </div>
     </div>
@@ -52,6 +28,7 @@
 import { computed } from 'vue'
 import { RouterLink } from 'vue-router'
 import { useProductNavigationStore } from '@/store/productNavigation'
+import ProductCard from '@/components/common/ProductCard.vue'
 
 const props = defineProps({
   title: {
@@ -71,15 +48,6 @@ const props = defineProps({
 const navStore = useProductNavigationStore()
 
 const products = computed(() => navStore.recentlyViewedProducts.slice(0, props.limit))
-const compareCount = computed(() => navStore.compareIds.length)
+// const compareCount = computed(() => navStore.compareIds.length) // No longer needed from navStore if we use CompareStore globally
 
-const formatMoney = (value) => {
-  const v = Number(value || 0)
-  return (
-    v.toLocaleString('ro-RO', {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2
-    }) + ' RON'
-  )
-}
 </script>

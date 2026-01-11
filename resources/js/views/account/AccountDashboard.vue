@@ -26,7 +26,7 @@
       <section class="col-12">
         <!-- Loading / error -->
         <div v-if="loading" class="text-center py-5">
-          <div class="spinner-border text-primary mb-3" role="status"></div>
+          <div class="spinner-border text-orange mb-3" role="status"></div>
           <div class="text-muted">Se încarcă datele contului...</div>
         </div>
 
@@ -42,7 +42,7 @@
                 <div class="card-body">
                   <div class="d-flex justify-content-between align-items-start mb-2">
                     <div class="text-muted small">Comenzi totale</div>
-                    <i class="bi bi-basket2 fs-5 text-primary"></i>
+                    <i class="bi bi-basket2 fs-5 text-dd-blue"></i>
                   </div>
                   <div class="h4 mb-0">
                     {{ overview?.orders?.total ?? 0 }}
@@ -81,7 +81,7 @@
                 <div class="card-body">
                   <div class="d-flex justify-content-between align-items-start mb-2">
                     <div class="text-muted small">Facturi recente</div>
-                    <i class="bi bi-receipt fs-5 text-warning"></i>
+                    <i class="bi bi-receipt fs-5 text-orange"></i>
                   </div>
                   <div class="h4 mb-0">
                     {{ invoicesCount }}
@@ -344,10 +344,10 @@ const statusBadgeClass = (status) => {
   if (!status) return 'bg-light text-dark';
 
   const s = status.toLowerCase();
-  if (['pending', 'in_review'].includes(s)) return 'bg-warning text-dark';
-  if (['processing', 'approved'].includes(s)) return 'bg-info text-dark';
-  if (['completed', 'delivered'].includes(s)) return 'bg-success';
-  if (['cancelled', 'rejected'].includes(s)) return 'bg-danger';
+  if (['pending', 'in_review'].includes(s)) return 'bg-orange text-white';
+  if (['processing', 'approved'].includes(s)) return 'bg-dd-blue text-white';
+  if (['completed', 'delivered'].includes(s)) return 'bg-success text-white';
+  if (['cancelled', 'rejected'].includes(s)) return 'bg-danger text-white';
 
   return 'bg-light text-dark';
 };

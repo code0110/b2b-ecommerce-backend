@@ -15,6 +15,20 @@ class CustomerVisitController extends Controller
     {
         /** @var User $user */
         $user = Auth::user();
+
+        // If user is a customer, return empty list (they don't perform visits)
+        // Or if you want them to see visits TO them, filter by customer_id
+        if ($user->hasRole(['customer_b2b', 'customer_b2c'])) {
+             // For checkActiveVisit which looks for "in_progress", customers don't have active visits they are performing.
+             return response()->json([
+                 'data' => [],
+                 'current_page' => 1,
+                 'last_page' => 1,
+                 'per_page' => 20,
+                 'total' => 0
+             ]);
+        }
+
         $query = CustomerVisit::with(['customer', 'agent', 'orders', 'payments'])->orderByDesc('created_at');
 
         if ($user->hasRole('sales_agent')) {

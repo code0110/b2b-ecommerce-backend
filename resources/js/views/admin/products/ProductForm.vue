@@ -115,21 +115,8 @@
                     <strong>Cum funcționează:</strong> Introdu sau lipește textul brut al produsului în editorul de mai jos, apoi apasă butonul din dreapta sus pentru a-l structura automat (tabele, liste, subtitluri).
                 </div>
                 
-                <div v-if="!quillError" class="quill-wrapper">
+                <div class="quill-wrapper">
                   <div ref="editorContainer"></div>
-                </div>
-                
-                <div v-else>
-                   <div class="alert alert-warning py-2 small">
-                      <i class="bi bi-exclamation-triangle me-1"></i>
-                      Editorul vizual a întâmpinat o eroare. S-a trecut automat la modul HTML simplu.
-                   </div>
-                   <textarea 
-                      v-model="form.long_description" 
-                      class="form-control font-monospace bg-light" 
-                      rows="12" 
-                      placeholder="Conținut HTML..."
-                   ></textarea>
                 </div>
               </div>
             </div>
@@ -421,15 +408,15 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted, onUnmounted, nextTick, onErrorCaptured } from 'vue';
+import { ref, reactive, computed, onMounted, onUnmounted, nextTick } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useToast } from 'vue-toastification';
 import { fetchProduct, createProduct, updateProduct, fetchProducts, generateSeo } from '@/services/admin/products';
 import { fetchCategories, fetchCategory } from '@/services/admin/categories';
 import { fetchBrands } from '@/services/admin/brands';
 import { adminApi } from '@/services/http';
-import { Quill } from '@vueup/vue-quill';
-import '@vueup/vue-quill/dist/vue-quill.snow.css';
+import Quill from 'quill';
+import 'quill/dist/quill.snow.css';
 
 const route = useRoute();
 const router = useRouter();
@@ -445,19 +432,8 @@ const activeSection = ref('general');
 const dragOver = ref(false);
 const uploading = ref(false);
 const uploadProgress = ref(0);
-const quillError = ref(false);
 const editorContainer = ref(null);
 let quillInstance = null;
-
-// Error Handling for Quill
-onErrorCaptured((err) => {
-  if (err && (err.toString().includes('Quill') || err.toString().includes('emit') || err.toString().includes('Scroll2'))) {
-     console.warn('Quill Error captured:', err);
-     // We don't switch to textarea automatically here anymore as we use native Quill, 
-     // but we keep the error state just in case
-     return false; 
-  }
-});
 
 // Data
 const categories = ref([]);

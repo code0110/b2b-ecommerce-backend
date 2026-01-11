@@ -261,7 +261,10 @@ const form = ref({
   sales_director_user_id: null,
   team_members: [],
   group_id: null,
-  is_active: true
+  is_active: true,
+  create_user: false,
+  user_password: '',
+  user_password_confirmation: ''
 })
 
 // Auto-assign director when agent is selected
@@ -355,6 +358,18 @@ const handleSubmit = async () => {
       throw new Error('Completați Numele Companiei.')
     }
     
+    if (form.value.create_user) {
+        if (!form.value.first_name) {
+            throw new Error('Prenumele este necesar pentru crearea contului de utilizator.')
+        }
+        if (!form.value.user_password || form.value.user_password.length < 8) {
+            throw new Error('Parola trebuie să aibă minim 8 caractere.')
+        }
+        if (form.value.user_password !== form.value.user_password_confirmation) {
+            throw new Error('Parolele nu coincid.')
+        }
+    }
+
     const payload = {
       ...form.value,
       id: props.customer?.id,

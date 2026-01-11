@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Support\Facades\Storage;
 
 class Product extends Model
 {
@@ -48,6 +49,7 @@ class Product extends Model
         'overstock_policy',
         'estimated_delivery_text',
         'unit_of_measure',
+        'packaging_unit',
         'min_order_quantity',
         'order_quantity_step',
         'requires_quote',
@@ -60,8 +62,10 @@ class Product extends Model
         'rrp_price'           => 'float',
         'vat_rate'            => 'float',
         'price_override'      => 'float',
-        'stock_qty'           => 'integer',
-        'supplier_stock_qty'  => 'integer',
+        'stock_qty'           => 'float',
+        'supplier_stock_qty'  => 'float',
+        'min_order_quantity'  => 'float',
+        'order_quantity_step' => 'float',
         'lead_time_days'      => 'integer',
         'is_new'              => 'boolean',
         'is_promo'            => 'boolean',
@@ -74,6 +78,8 @@ class Product extends Model
         'requires_quote'      => 'boolean',
         'erp_last_sync_at'    => 'datetime',
     ];
+
+    protected $appends = ['promo_price', 'price', 'main_image_url'];
 
     /* ---------- RELAȚII ---------- */
 
@@ -151,5 +157,40 @@ class Product extends Model
     public function orderItems(): HasMany
     {
         return $this->hasMany(OrderItem::class);
+    }
+
+    /* ---------- ACCESSORS ---------- */
+
+    public function getPromoPriceAttribute()
+    {
+        return $this->is_promo ? $this->price_override : null;
+    }
+
+    public function getPriceAttribute()
+    {
+        // Dacă avem price_override, îl folosim ca preț curent de vânzare
+        if ($this->price_override !== null && $this->price_override > 0) {
+            return $this->price_override;
+        }
+        return $this->list_price;
+    }
+
+    public function getMainImageUrlAttribute()
+    {
+        // Avoid N+1 if images are not loaded, but if appended it will trigger anyway.
+        // Best practice: eager load 'images' in controller.
+        $image = $this->images->sortByDesc('is_main')->first();
+        
+        if (!$image) {
+            return null;
+        }
+
+        $path = $image->path;
+        
+        if (str_starts_with($path, 'http') || str_starts_with($path, '/storage/')) {
+            return $path;
+        }
+
+        return Storage::url($path);
     }
 }

@@ -13,8 +13,10 @@ export const useTrackingStore = defineStore('tracking', {
 
   actions: {
     async checkStatus() {
+        this.loading = true;
         try {
             const { data } = await adminApi.get('/tracking/status');
+            console.log('Tracking Status:', data);
             this.isShiftActive = data.active;
             this.activeRoute = data.route;
             
@@ -25,6 +27,8 @@ export const useTrackingStore = defineStore('tracking', {
             }
         } catch (e) {
             console.error('Failed to check tracking status', e);
+        } finally {
+            this.loading = false;
         }
     },
 

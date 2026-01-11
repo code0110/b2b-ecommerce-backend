@@ -300,6 +300,70 @@
 
       <!-- Col dreapta: structură comercială & ierarhie -->
       <div class="col-xl-4 mb-3">
+        <!-- Risc Financiar Card -->
+        <div class="card shadow-sm mb-3">
+            <div class="card-header py-2 d-flex justify-content-between align-items-center">
+                <strong>Risc Financiar</strong>
+                <span v-if="financialRisk && financialRisk.is_derogated" class="badge bg-warning text-dark">
+                    Derogare activă
+                </span>
+            </div>
+            <div class="card-body small">
+                <div v-if="financialRiskLoading" class="text-center py-2">
+                    <div class="spinner-border spinner-border-sm text-primary" role="status">
+                        <span class="visually-hidden">Se încarcă...</span>
+                    </div>
+                </div>
+                <div v-else-if="financialRisk">
+                    <div class="mb-2">
+                        <span class="fw-semibold">Status:</span>
+                        <span class="ms-2 badge" :class="financialRiskStatusClass">
+                            {{ financialRiskStatusText }}
+                        </span>
+                    </div>
+                    <div v-if="financialRisk.messages && financialRisk.messages.length" class="mb-2">
+                        <span class="fw-semibold">Mesaje:</span>
+                        <ul class="ms-3 mb-0">
+                            <li v-for="msg in financialRisk.messages" :key="msg" class="text-muted small">
+                                {{ msg }}
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="mb-2" v-if="financialRisk.details">
+                        <span class="fw-semibold">Detalii:</span>
+                        <ul class="ms-3 mb-0">
+                            <li class="text-muted small">Facturi restante: {{ financialRisk.details.unpaid_count }}</li>
+                            <li class="text-muted small">Zile întârziere maxime: {{ financialRisk.details.max_overdue_days }}</li>
+                            <li class="text-muted small">Sold curent: {{ financialRisk.details.total_balance }} RON</li>
+                            <li class="text-muted small">Limită credit: {{ financialRisk.details.credit_limit }} RON</li>
+                            <li class="text-muted small">Credit disponibil: {{ financialRisk.details.credit_remaining }} RON</li>
+                        </ul>
+                    </div>
+                    <div class="d-flex gap-2 mt-3">
+                        <button 
+                            class="btn btn-outline-primary btn-sm"
+                            @click="acknowledgeFinancialRisk"
+                            :disabled="acknowledgeLoading"
+                        >
+                            <span v-if="acknowledgeLoading" class="spinner-border spinner-border-sm me-1"></span>
+                            Confirmă notificare
+                        </button>
+                        <button 
+                            class="btn btn-outline-warning btn-sm"
+                            @click="openDerogationModal"
+                            :disabled="grantDerogationLoading"
+                        >
+                            <span v-if="grantDerogationLoading" class="spinner-border spinner-border-sm me-1"></span>
+                            Acordă derogare
+                        </button>
+                    </div>
+                </div>
+                <div v-else class="text-muted">
+                    Nu există date despre risc financiar pentru acest client.
+                </div>
+            </div>
+        </div>
+
         <div class="card shadow-sm mb-3">
           <div class="card-header py-2">
             <strong>Structură comercială</strong>
@@ -525,6 +589,36 @@
         </div>
       </div>
     </div>
+    
+    <!-- Derogation Modal -->
+    <div v-if="showDerogationModal" class="modal fade show" style="display: block; background-color: rgba(0,0,0,0.5);" tabindex="-1">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Acordă Derogare</h5>
+            <button type="button" class="btn-close" @click="showDerogationModal = false"></button>
+          </div>
+          <div class="modal-body">
+            <div class="mb-3">
+              <label class="form-label">Valabil până la</label>
+              <input type="date" class="form-control" v-model="derogationForm.valid_until">
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Motiv / Observații</label>
+              <textarea class="form-control" rows="3" v-model="derogationForm.reason"></textarea>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" @click="showDerogationModal = false">Anulează</button>
+            <button type="button" class="btn btn-primary" @click="handleGrantDerogation" :disabled="grantDerogationLoading">
+                <span v-if="grantDerogationLoading" class="spinner-border spinner-border-sm me-1"></span>
+                Salvează
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
   </div>
 </template>
 
@@ -534,7 +628,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useCustomersStore } from '@/store/customers'
 import { useAuthStore } from '@/store/auth'
 import { useVisitStore } from '@/store/visit'
-import { fetchCustomer, updateCustomer } from '@/services/admin/customers'
+import { fetchCustomer, updateCustomer, fetchFinancialRisk, acknowledgeRisk, grantDerogation } from '@/services/admin/customers'
 import CustomerFormModal from './CustomerFormModal.vue'
 import { useToast } from 'vue-toastification'
 
@@ -548,6 +642,17 @@ const toast = useToast()
 const loading = ref(true)
 const customer = ref(null)
 const showFormModal = ref(false)
+
+// Financial Risk State
+const financialRisk = ref(null)
+const financialRiskLoading = ref(false)
+const acknowledgeLoading = ref(false)
+const grantDerogationLoading = ref(false)
+const showDerogationModal = ref(false)
+const derogationForm = ref({
+    valid_until: '',
+    reason: ''
+})
 
 const isAgentOrDirector = computed(() => {
   return authStore.hasRole('sales_agent') || authStore.hasRole('sales_director')
@@ -570,12 +675,78 @@ const loadCustomerData = async () => {
   try {
     const data = await fetchCustomer(route.params.id)
     customer.value = data
+    await loadFinancialRisk()
   } catch (e) {
     console.error('Error loading customer', e)
     toast.error('Nu s-a putut încărca clientul.')
   } finally {
     loading.value = false
   }
+}
+
+const loadFinancialRisk = async () => {
+    if (!customer.value) return
+    financialRiskLoading.value = true
+    try {
+        financialRisk.value = await fetchFinancialRisk(customer.value.id)
+    } catch (e) {
+        console.error('Error loading financial risk', e)
+    } finally {
+        financialRiskLoading.value = false
+    }
+}
+
+const financialRiskStatusClass = computed(() => {
+    if (!financialRisk.value) return ''
+    if (financialRisk.value.status === 'blocked') return 'bg-danger'
+    if (financialRisk.value.status === 'warning') return 'bg-warning text-dark'
+    return 'bg-success'
+})
+
+const financialRiskStatusText = computed(() => {
+    if (!financialRisk.value) return ''
+    const map = {
+        'ok': 'OK',
+        'warning': 'Avertisment',
+        'blocked': 'Blocat'
+    }
+    return map[financialRisk.value.status] || financialRisk.value.status
+})
+
+const acknowledgeFinancialRisk = async () => {
+    if (!confirm('Confirmați că ați luat la cunoștință situația financiară?')) return
+    acknowledgeLoading.value = true
+    try {
+        await acknowledgeRisk(customer.value.id)
+        toast.success('Notificare confirmată.')
+        await loadFinancialRisk()
+    } catch (e) {
+        toast.error('Eroare la confirmare.')
+    } finally {
+        acknowledgeLoading.value = false
+    }
+}
+
+const openDerogationModal = () => {
+    const date = new Date()
+    date.setDate(date.getDate() + 7)
+    derogationForm.value.valid_until = date.toISOString().split('T')[0]
+    derogationForm.value.reason = ''
+    showDerogationModal.value = true
+}
+
+const handleGrantDerogation = async () => {
+    grantDerogationLoading.value = true
+    try {
+        await grantDerogation(customer.value.id, derogationForm.value)
+        toast.success('Derogare acordată.')
+        showDerogationModal.value = false
+        await loadFinancialRisk()
+    } catch (e) {
+        toast.error('Eroare la acordarea derogării.')
+    } finally {
+        grantDerogationLoading.value = false
+    }
 }
 
 onMounted(async () => {

@@ -81,27 +81,31 @@ Route::prefix('auth')->group(function () {
 });
 
 // Public Config
-Route::get('config', [\App\Http\Controllers\Admin\SettingController::class, 'publicConfig']);
-Route::get('content-blocks', [\App\Http\Controllers\Api\ContentController::class, 'index']);
+Route::get('config/public', [\App\Http\Controllers\Admin\SettingController::class, 'publicConfig']);
+Route::get('content-blocks', [\App\Http\Controllers\Front\ContentBlockController::class, 'index']);
+
+// Shared Wishlist
+Route::get('wishlists/shared/{token}', [\App\Http\Controllers\Front\WishlistController::class, 'shared']);
 
 // Front-office public catalog
 Route::get('home', [HomeController::class, 'homepage']);
 Route::get('promotions', [CatalogController::class, 'promotions']);
 Route::get('categories', [CatalogController::class, 'categories']);
 Route::get('categories/{slug}', [CatalogController::class, 'category']);
-Route::get('products/{slug}', [CatalogController::class, 'product']);
-Route::get('brands', [CatalogController::class, 'brands']);
-Route::get('brands/{slug}', [CatalogController::class, 'brand']);
-Route::post('products/{product}/reviews', [ProductReviewController::class, 'store']);
-// Search
-Route::get('search', [SearchController::class, 'search']);
-Route::get('search/autocomplete', [SearchController::class, 'autocomplete']);
-// Recent viewed / Compare
+// Recent viewed / Compare (Moved above products/{slug} to avoid conflict)
 Route::post('products/{product}/track-view', [ProductToolsController::class, 'trackView']);
 Route::get('products/recently-viewed', [ProductToolsController::class, 'recentlyViewed']);
 Route::get('products/compare', [ProductToolsController::class, 'comparisonList']);
 Route::post('products/compare', [ProductToolsController::class, 'addToComparison']);
 Route::delete('products/compare/{product}', [ProductToolsController::class, 'removeFromComparison']);
+
+Route::get('products', [\App\Http\Controllers\Front\ProductController::class, 'index']);
+Route::get('products/{slug}', [CatalogController::class, 'product']);
+
+// Search
+Route::get('search/suggestions', [SearchController::class, 'suggestions']);
+Route::get('search', [SearchController::class, 'search']);
+
 // Quick order
 Route::get('quick-order/search', [QuickOrderController::class, 'search']);
 Route::post('quick-order/add-to-cart', [QuickOrderController::class, 'addToCart']);
@@ -154,6 +158,9 @@ Route::get('catalog/categories-tree', CategoryTreeController::class);
 // Pagina de categorie (front)
 Route::get('catalog/category/{slug}', [CatalogCategoryController::class, 'show']);
 
+// Catalog complet (pentru /produse)
+Route::get('catalog/products', [CatalogController::class, 'products']);
+
 // Promoții (front)
 Route::get('promotions', [FrontPromotionController::class, 'index']);
 Route::get('promotions/{slug}', [FrontPromotionController::class, 'show']);
@@ -197,6 +204,7 @@ Route::middleware(['auth:sanctum', 'impersonate'])->group(function () {
 
         // Offers (Agent/Director System - Client Access)
         Route::get('client-offers', [\App\Http\Controllers\Front\OfferController::class, 'index']); 
+
         Route::get('client-offers/{id}', [\App\Http\Controllers\Front\OfferController::class, 'show']);
         Route::post('client-offers/{id}/status', [\App\Http\Controllers\Front\OfferController::class, 'changeStatus']);
         Route::post('client-offers/{id}/messages', [\App\Http\Controllers\Front\OfferController::class, 'addMessage']);
@@ -258,6 +266,17 @@ Route::middleware(['auth:sanctum', 'impersonate'])->group(function () {
     Route::post('products/stock-alert', [ProductStockAlertController::class, 'subscribe']);
     Route::get('products/stock-alert/status', [ProductStockAlertController::class, 'checkStatus']);
 
+    // Wishlists
+    Route::prefix('wishlists')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Front\WishlistController::class, 'index']);
+        Route::post('/', [\App\Http\Controllers\Front\WishlistController::class, 'store']);
+        Route::post('merge', [\App\Http\Controllers\Front\WishlistController::class, 'merge']);
+        Route::post('toggle', [\App\Http\Controllers\Front\WishlistController::class, 'toggle']);
+        Route::get('{id}', [\App\Http\Controllers\Front\WishlistController::class, 'show']);
+        Route::put('{id}', [\App\Http\Controllers\Front\WishlistController::class, 'update']);
+        Route::delete('{id}', [\App\Http\Controllers\Front\WishlistController::class, 'destroy']);
+    });
+
     // Oferte (front) - pentru client
     Route::get('client-offers', [\App\Http\Controllers\Front\OfferController::class, 'index']);
     Route::get('client-offers/{id}', [\App\Http\Controllers\Front\OfferController::class, 'show']);
@@ -297,14 +316,15 @@ Route::middleware(['auth:sanctum', 'impersonate'])->group(function () {
     Route::get('products/discounted', [HomeController::class, 'discountedProducts']);
 
     // Content Blocks (Front)
-    Route::get('content-blocks', [\App\Http\Controllers\Front\ContentBlockController::class, 'index']);
-    Route::get('pages/{slug}', [\App\Http\Controllers\Front\PageController::class, 'show']);
+    // Route::get('content-blocks', [\App\Http\Controllers\Front\ContentBlockController::class, 'index']);
+    // Route::get('pages/{slug}', [\App\Http\Controllers\Front\PageController::class, 'show']);
 
 });
 
 // Admin Routes
 Route::middleware(['auth:sanctum', 'role:admin'])->prefix('admin')->group(function () {
     Route::apiResource('content-blocks', \App\Http\Controllers\Admin\ContentBlockController::class);
+    Route::post('upload', [\App\Http\Controllers\Admin\UploadController::class, 'store']);
     Route::apiResource('pages', \App\Http\Controllers\Admin\PageController::class);
     Route::apiResource('settings', \App\Http\Controllers\Admin\SettingController::class);
     Route::apiResource('attributes', \App\Http\Controllers\Admin\AttributeController::class);
@@ -313,6 +333,10 @@ Route::middleware(['auth:sanctum', 'role:admin'])->prefix('admin')->group(functi
     // Discount Rules
     Route::get('discount-rules/options', [\App\Http\Controllers\Admin\DiscountRuleController::class, 'options']);
     Route::apiResource('discount-rules', \App\Http\Controllers\Admin\DiscountRuleController::class);
+
+    // Financial Risk Settings
+    Route::get('financial-risk-settings', [\App\Http\Controllers\Admin\FinancialRiskSettingController::class, 'show']);
+    Route::put('financial-risk-settings', [\App\Http\Controllers\Admin\FinancialRiskSettingController::class, 'update']);
 
     Route::apiResource('promotions', AdminPromotionController::class);
     Route::post('products/generate-seo', [\App\Http\Controllers\Admin\ProductController::class, 'generateSeo']);
@@ -335,6 +359,16 @@ Route::middleware(['auth:sanctum', 'role:admin'])->prefix('admin')->group(functi
     Route::apiResource('partner-requests', AdminPartnerRequestController::class);
     Route::apiResource('receipt-books', \App\Http\Controllers\Admin\ReceiptBookController::class);
     Route::apiResource('tickets', AdminTicketController::class)->only(['index', 'show', 'update']);
+});
+
+// Financial Risk Operations (Agents/Directors/Admins)
+Route::middleware(['auth:sanctum'])->prefix('admin')->group(function () {
+    Route::get('customers/{customer}/financial-risk', [\App\Http\Controllers\Admin\FinancialRiskController::class, 'check']);
+    Route::post('customers/{customer}/financial-risk/acknowledge', [\App\Http\Controllers\Admin\FinancialRiskController::class, 'acknowledge']);
+    Route::post('customers/{customer}/financial-risk/derogation', [\App\Http\Controllers\Admin\FinancialRiskController::class, 'grantDerogation']);
+});
+
+Route::middleware(['auth:sanctum', 'role:admin'])->prefix('admin')->group(function () {
     Route::apiResource('roles', AdminRoleController::class);
     Route::apiResource('permissions', AdminPermissionController::class);
     Route::get('dashboard', [\App\Http\Controllers\Admin\DashboardController::class, 'index']);
@@ -364,7 +398,7 @@ Route::middleware(['auth:sanctum', 'role:admin,sales_director'])->prefix('admin'
 });
 
 // Customer Visits (Agent/Admin/Director) - Shared routes with 'admin' prefix
-Route::middleware(['auth:sanctum', 'role:admin,sales_agent,sales_director'])->prefix('admin')->group(function () {
+Route::middleware(['auth:sanctum', 'role:admin,sales_agent,sales_director,customer_b2b,customer_b2c'])->prefix('admin')->group(function () {
     // Quick Order Promotions
     Route::get('customers/{id}/promotions', [\App\Http\Controllers\Admin\QuickOrderController::class, 'getPromotionsForCustomer']);
     Route::get('quick-order/checkout-data', [\App\Http\Controllers\Admin\QuickOrderController::class, 'getCheckoutData']);

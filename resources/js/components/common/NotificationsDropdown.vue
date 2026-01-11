@@ -8,7 +8,7 @@
       aria-expanded="false"
       @click="handleDropdownClick"
     >
-      <i class="bi bi-bell fs-5" :class="hasUnread ? 'text-primary' : 'text-secondary'"></i>
+      <i class="bi bi-bell fs-5" :class="hasUnread ? 'text-orange' : 'text-secondary'"></i>
       <span
         v-if="unreadCount > 0"
         class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
@@ -69,7 +69,7 @@
                  <a 
                    v-if="n.data?.action_url" 
                    :href="n.data.action_url" 
-                   class="btn btn-sm btn-outline-primary py-0 px-2"
+                   class="btn btn-sm btn-outline-secondary py-0 px-2"
                    style="font-size: 0.75rem;"
                    @click="markRead(n)"
                  >

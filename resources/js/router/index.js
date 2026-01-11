@@ -17,7 +17,7 @@ import DiscountedProducts from '@/views/front/DiscountedProducts.vue'
 import Category from '@/views/front/Category.vue'
 import ProductDetails from '@/views/front/ProductDetails.vue'
 import SearchResults from '@/views/front/SearchResults.vue'
-import CompareProducts from '@/views/front/CompareProducts.vue'
+import ComparePage from '@/views/front/ComparePage.vue'
 import SalesRepresentatives from '@/views/front/SalesRepresentatives.vue'
 import Cart from '@/views/front/Cart.vue'
 import Checkout from '@/views/front/Checkout.vue'
@@ -26,6 +26,8 @@ import BlogList from '@/views/front/content/BlogList.vue'
 import BlogPost from '@/views/front/content/BlogPost.vue'
 import StaticPage from '@/views/front/content/StaticPage.vue'
 import BecomePartner from '@/views/front/BecomePartner.vue'
+import WishlistPage from '@/views/front/WishlistPage.vue'
+import SharedWishlistPage from '@/views/front/SharedWishlistPage.vue'
 
 
 
@@ -113,18 +115,20 @@ const router = createRouter({
       path: '/',
       component: FrontLayout,
       children: [
-        { path: '', name: 'home', component: Home },
-        { path: 'promotii', name: 'promotions', component: Promotions },
+        { path: '', name: 'home', component: Home, meta: { public: true } },
+        { path: 'promotii', name: 'promotions', component: Promotions, meta: { public: true } },
         {
           path: 'promotii/:slug',
           name: 'promotion-landing',
-          component: PromotionLanding
+          component: PromotionLanding,
+          meta: { public: true }
         },
-        { path: 'noutati', name: 'new-products', component: NewProducts },
+        { path: 'noutati', name: 'new-products', component: NewProducts, meta: { public: true } },
         {
           path: 'reduceri',
           name: 'discounted-products',
-          component: DiscountedProducts
+          component: DiscountedProducts,
+          meta: { public: true }
         },
         {
       path: 'produse',
@@ -149,9 +153,9 @@ const router = createRouter({
           component: SearchResults
         },
         {
-          path: 'compara',
+          path: 'comparare',
           name: 'compare-products',
-          component: CompareProducts
+          component: ComparePage
         },
         {
           path: 'reprezentanti-vanzari',
@@ -183,6 +187,18 @@ const router = createRouter({
           path: 'become-partner',
           name: 'become-partner',
           component: BecomePartner
+        },
+        {
+          path: 'favorite',
+          name: 'wishlist',
+          component: WishlistPage,
+          meta: { public: true }
+        },
+        {
+          path: 'wishlist/shared/:token',
+          name: 'shared-wishlist',
+          component: SharedWishlistPage,
+          meta: { public: true }
         },
         {
           path: ':slug',
@@ -595,12 +611,37 @@ const router = createRouter({
           component: AgentRoutes
         },
         {
+          path: 'sales-representatives',
+          name: 'admin-sales-reps',
+          component: () => import('@/views/admin/sales-reps/SalesRepList.vue')
+        },
+        {
+          path: 'sales-representatives/create',
+          name: 'admin-sales-reps-create',
+          component: () => import('@/views/admin/sales-reps/SalesRepForm.vue')
+        },
+        {
+          path: 'sales-representatives/:id',
+          name: 'admin-sales-reps-edit',
+          component: () => import('@/views/admin/sales-reps/SalesRepForm.vue')
+        },
+        {
+          path: 'settings/general',
+          name: 'admin-settings-general',
+          component: () => import('@/views/admin/settings/GeneralSettings.vue')
+        },
+        {
           path: 'settings/offers',
           name: 'admin-settings-offers',
           component: () => import('@/views/admin/settings/OfferSettings.vue')
         },
         {
-  path: 'settings/users',
+          path: 'settings/financial-risk',
+          name: 'admin-settings-financial-risk',
+          component: () => import('@/views/admin/settings/FinancialSettings.vue')
+        },
+        {
+          path: 'settings/users',
   name: 'admin-users',
   component: AdminUsers
 },

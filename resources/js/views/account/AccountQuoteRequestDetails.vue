@@ -32,7 +32,7 @@
                     <span class="badge" :class="statusBadge(request.status)">{{ statusLabel(request.status) }}</span>
                     <button 
                         v-if="request.offer" 
-                        class="btn btn-sm btn-success" 
+                        class="btn btn-sm btn-orange" 
                         @click="router.push({ name: 'account-offer-details', params: { id: request.offer.id } })"
                     >
                         <i class="bi bi-file-earmark-check me-1"></i> Vezi Oferta Primită
@@ -110,8 +110,8 @@ const statusLabel = (s) => {
 
 const statusBadge = (s) => {
     const map = {
-        'new': 'bg-info text-dark',
-        'processed': 'bg-primary',
+        'new': 'bg-warning text-dark',
+        'processed': 'bg-dd-blue',
         'converted': 'bg-success',
         'rejected': 'bg-danger'
     };

@@ -1,31 +1,35 @@
 <template>
   <div v-if="loading" class="text-center py-5">
-    <div class="spinner-border text-primary" role="status">
-      <span class="visually-hidden">Se încarcă...</span>
+      <div class="spinner-border text-orange" role="status">
+        <span class="visually-hidden">Se încarcă...</span>
+      </div>
+      <div class="mt-2 text-muted">Se încarcă detaliile produsului...</div>
     </div>
-    <div class="mt-2 text-muted">Se încarcă detaliile produsului...</div>
-  </div>
 
-  <div class="container py-4" v-else-if="product">
-    <!-- Breadcrumbs -->
-    <nav aria-label="breadcrumb" class="small mb-3">
-      <ol class="breadcrumb mb-0">
-        <li class="breadcrumb-item">
-          <RouterLink to="/">Acasă</RouterLink>
-        </li>
-        <li class="breadcrumb-item">
-          <RouterLink :to="product.categorySlug ? `/categorie/${product.categorySlug}` : '/produse'">
-            {{ categoryTitle }}
-          </RouterLink>
-        </li>
-        <li class="breadcrumb-item active" aria-current="page">
-          {{ product.name }}
-        </li>
-      </ol>
-    </nav>
+  <div v-else-if="product">
+    <div class="dd-page-header py-3 mb-3">
+      <div class="container">
+        <nav aria-label="breadcrumb" class="small mb-0">
+          <ol class="breadcrumb mb-0">
+            <li class="breadcrumb-item">
+              <RouterLink to="/">Acasă</RouterLink>
+            </li>
+            <li class="breadcrumb-item">
+              <RouterLink :to="product.categorySlug ? `/categorie/${product.categorySlug}` : '/produse'">
+                {{ categoryTitle }}
+              </RouterLink>
+            </li>
+            <li class="breadcrumb-item active" aria-current="page">
+              {{ product.name }}
+            </li>
+          </ol>
+        </nav>
+      </div>
+    </div>
 
-    <!-- Header + preț + stoc -->
-    <div class="row g-4 mb-3">
+    <div class="container pb-4">
+      <!-- Header + preț + stoc -->
+      <div class="row g-4 mb-3">
       <div class="col-md-5">
         <figure class="figure bg-white border rounded p-3 mb-2 w-100 text-center">
           <div class="ratio ratio-4x3 bg-light d-flex align-items-center justify-content-center">
@@ -54,7 +58,7 @@
             <button
               type="button"
               class="btn btn-light p-1 border"
-              :class="{ 'border-primary': thumb === selectedImage }"
+              :class="{ 'border-orange': thumb === selectedImage }"
               @click="selectedImage = thumb"
               :aria-current="thumb === selectedImage ? 'true' : null"
               :aria-label="`Selectează miniatura ${idx + 1} pentru ${product.name}`"
@@ -90,11 +94,14 @@
             <div class="d-flex align-items-center justify-content-between mb-3">
               <div class="price-main">
                 <span v-if="product.list_price && product.list_price > displayPrice" class="text-muted text-decoration-line-through me-2 h6">
-                  {{ formatPrice(product.list_price) }}
+                  {{ formatPriceGlobal(product.list_price, product.vat_rate, product.vat_included) }}
                 </span>
                 <span class="price-value fw-bold mb-0" :class="{'text-danger': (product.list_price && product.list_price > displayPrice)}">
-                  {{ formatPrice(displayPrice) }}
+                  {{ formatPriceGlobal(displayPrice, product.vat_rate, product.vat_included) }}
                 </span>
+                <div class="text-muted small">
+                  {{ showVat ? 'TVA inclus' : '+TVA' }}
+                </div>
               </div>
               <div class="text-end">
                 <span v-if="product.has_discount || (product.list_price && product.list_price > displayPrice)" class="badge bg-danger rounded-pill me-2">
@@ -108,25 +115,61 @@
               </div>
             </div>
             <div class="d-flex align-items-center gap-2 mb-3">
-              <span class="badge rounded-pill" :class="isStockAvailable ? 'bg-success' : 'bg-secondary'">
-                {{ isStockAvailable ? 'În stoc' : 'La comandă' }}
-              </span>
-              <span v-if="product.stock_qty !== null && isB2B" class="badge bg-light text-dark rounded-pill">
-                Stoc B2B: {{ product.stock_qty }}
-              </span>
+              <template v-if="showNumericStock">
+                <span class="badge rounded-pill" :class="product.stock_qty > 0 ? 'bg-success' : 'bg-danger'">
+                    Stoc: {{ product.stock_qty }} buc.
+                </span>
+              </template>
+              <template v-else>
+                  <span v-if="isStockAvailable" class="badge bg-success rounded-pill">
+                    În stoc
+                  </span>
+                  <span v-else-if="product.stock_status && product.stock_status.toLowerCase().includes('furnizor')" class="badge bg-info text-dark rounded-pill">
+                    Stoc furnizor
+                  </span>
+                  <span v-else-if="product.stock_status" class="badge bg-warning text-dark rounded-pill">
+                     {{ product.stock_status }}
+                  </span>
+                  <span v-else class="badge bg-danger rounded-pill">
+                    Stoc epuizat
+                  </span>
+              </template>
             </div>
             <div class="row g-2 mb-3 small">
-              <div class="col-md-6" v-if="product.variants && product.variants.length">
-                <label class="form-label">Variantă</label>
-                <select class="form-select form-select-sm" v-model="selectedVariant">
-                  <option
-                    v-for="variant in product.variants"
-                    :key="variant.code"
-                    :value="variant.code"
-                  >
-                    {{ variant.label }} (cod: {{ variant.code }})
-                  </option>
-                </select>
+              <div class="col-12" v-if="product.variants && product.variants.length">
+                <template v-if="Object.keys(variationAxes).length > 0">
+                  <div v-for="(axis, axisName) in variationAxes" :key="axisName" class="mb-3">
+                    <label class="form-label fw-bold small text-uppercase">{{ axisName }}</label>
+                    <div class="d-flex flex-wrap gap-2">
+                      <button
+                        v-for="value in axis.values"
+                        :key="value"
+                        type="button"
+                        class="btn btn-sm"
+                        :class="isAttributeSelected(axisName, value) ? 'btn-dark text-white' : 'btn-outline-secondary'"
+                        @click="selectAttribute(axisName, value)"
+                        :disabled="!isCombinationAvailable(axisName, value)"
+                      >
+                        {{ value }}
+                      </button>
+                    </div>
+                  </div>
+                </template>
+                <template v-else>
+                   <label class="form-label fw-bold small text-uppercase">Variante</label>
+                   <div class="d-flex flex-wrap gap-2">
+                     <button
+                       v-for="variant in product.variants"
+                       :key="variant.sku || variant.code"
+                       type="button"
+                       class="btn btn-sm"
+                       :class="(selectedVariant === (variant.sku || variant.code)) ? 'btn-dark text-white' : 'btn-outline-secondary'"
+                       @click="selectedVariant = (variant.sku || variant.code)"
+                     >
+                       {{ getShortVariantName(variant) }}
+                     </button>
+                   </div>
+                </template>
               </div>
               <div class="col-md-6">
                 <label class="form-label">Unitate de măsură</label>
@@ -151,7 +194,7 @@
                 />
               </div>
               <button
-                class="btn btn-primary btn-lg flex-grow-1"
+                class="btn btn-orange btn-lg flex-grow-1"
                 @click="addToCart"
                 :disabled="addLoading || (!isStockAvailable && !product.can_backorder)"
               >
@@ -159,13 +202,16 @@
                 <i v-else class="bi bi-cart-plus"></i>
                 Adaugă în coș
               </button>
-              <button
-                class="btn btn-outline-secondary"
-                title="Adaugă la favorite"
-                @click="addToFavoritesDemo"
-              >
-                <i class="bi bi-heart"></i>
-              </button>
+              <WishlistButton 
+                :product="product" 
+                :round="false" 
+                size="" 
+                custom-class="btn-outline-secondary px-3 py-2 border" 
+              />
+              <CompareButton 
+                :product="product" 
+                custom-class="btn-outline-secondary px-3 py-2 border ms-2"
+              />
               <button
                 v-if="isB2B"
                 class="btn btn-outline-secondary"
@@ -232,14 +278,16 @@
                 id="specs-pane"
                 role="tabpanel"
               >
-                <table class="table table-sm table-striped small mb-0" v-if="product.attributes && product.attributes.length">
-                  <tbody>
-                    <tr v-for="(attr, idx) in product.attributes" :key="idx">
-                      <td class="text-muted" style="width: 40%">{{ attr.name }}</td>
-                      <td class="fw-semibold">{{ attr.value }}</td>
-                    </tr>
-                  </tbody>
-                </table>
+                <div class="row g-0 border rounded overflow-hidden" v-if="product.attributes && product.attributes.length">
+                  <div 
+                    v-for="(attr, idx) in product.attributes" 
+                    :key="idx" 
+                    class="col-12 col-md-6 p-2 border-bottom border-end d-flex justify-content-between align-items-center bg-white"
+                  >
+                    <span class="text-muted small">{{ attr.name }}</span>
+                    <span class="fw-semibold small text-end ps-2">{{ attr.value }}</span>
+                  </div>
+                </div>
                 <div v-else class="small text-muted">Nu există specificații.</div>
               </div>
               <div
@@ -266,7 +314,7 @@
                       </div>
                     </div>
                     <button
-                      class="btn btn-sm btn-outline-primary"
+                      class="btn btn-sm btn-outline-secondary"
                       @click="openDocumentDemo(doc)"
                     >
                       Descarcă
@@ -282,77 +330,27 @@
     </div>
 
     <!-- Produse similare / complementare -->
-    <div class="row g-4 mt-2">
+    <div class="row g-4 mt-4">
       <div class="col-md-6">
-        <div class="card h-100">
-          <div class="card-header py-2">
-            <strong class="small text-uppercase">Produse similare</strong>
-          </div>
-          <div class="card-body small">
-            <div
-              v-for="similar in similarProducts"
-              :key="similar.slug"
-              class="d-flex justify-content-between align-items-center py-1 border-bottom"
-            >
-              <div>
-                <div class="fw-semibold">{{ similar.name }}</div>
-                <div class="text-muted">{{ similar.internal_code || similar.code }}</div>
-                <div class="small mt-1" v-if="similar.price || similar.list_price">
-                    <span v-if="similar.list_price && similar.list_price > (similar.promo_price || similar.price)" class="text-decoration-line-through text-muted me-1">
-                        {{ formatPrice(similar.list_price) }}
-                    </span>
-                    <span :class="(similar.list_price > (similar.promo_price || similar.price)) ? 'text-danger fw-bold' : 'fw-bold'">
-                        {{ formatPrice(similar.promo_price || similar.price) }}
-                    </span>
-                </div>
-              </div>
-              <RouterLink
-                :to="`/produs/${similar.slug}`"
-                class="btn btn-outline-secondary btn-sm"
-              >
-                Detalii
-              </RouterLink>
+        <h5 class="mb-3 fw-bold small text-uppercase border-bottom pb-2">Produse similare</h5>
+        <div v-if="similarProducts && similarProducts.length > 0" class="row g-2">
+            <div v-for="similar in similarProducts" :key="similar.slug" class="col-6">
+               <ProductCard :product="similar" :compact="true" />
             </div>
-            <div v-if="similarProducts.length === 0" class="text-muted">
-              Nu sunt definite produse similare.
-            </div>
-          </div>
+        </div>
+        <div v-else class="text-muted small fst-italic">
+            Nu sunt definite produse similare.
         </div>
       </div>
       <div class="col-md-6">
-        <div class="card h-100">
-          <div class="card-header py-2">
-            <strong class="small text-uppercase">Produse complementare</strong>
-          </div>
-          <div class="card-body small">
-            <div
-              v-for="comp in complementaryProducts"
-              :key="comp.slug"
-              class="d-flex justify-content-between align-items-center py-2 border-bottom"
-            >
-              <div>
-                <div class="fw-semibold">{{ comp.name }}</div>
-                <div class="text-muted small">{{ comp.internal_code || comp.code }}</div>
-                <div class="small mt-1" v-if="comp.price || comp.list_price">
-                    <span v-if="comp.list_price && comp.list_price > (comp.promo_price || comp.price)" class="text-decoration-line-through text-muted me-1">
-                        {{ formatPrice(comp.list_price) }}
-                    </span>
-                    <span :class="(comp.list_price > (comp.promo_price || comp.price)) ? 'text-danger fw-bold' : 'fw-bold'">
-                        {{ formatPrice(comp.promo_price || comp.price) }}
-                    </span>
-                </div>
-              </div>
-              <RouterLink
-                :to="`/produs/${comp.slug}`"
-                class="btn btn-outline-secondary btn-sm ms-2"
-              >
-                Detalii
-              </RouterLink>
+        <h5 class="mb-3 fw-bold small text-uppercase border-bottom pb-2">Produse complementare</h5>
+        <div v-if="complementaryProducts && complementaryProducts.length > 0" class="row g-2">
+            <div v-for="comp in complementaryProducts" :key="comp.slug" class="col-6">
+               <ProductCard :product="comp" :compact="true" />
             </div>
-            <div v-if="complementaryProducts.length === 0" class="text-muted">
-              Nu sunt definite produse complementare.
-            </div>
-          </div>
+        </div>
+        <div v-else class="text-muted small fst-italic">
+            Nu sunt definite produse complementare.
         </div>
       </div>
     </div>
@@ -415,7 +413,7 @@
                 <input v-model="reviewBody" type="text" class="form-control form-control-sm" placeholder="Recenzie" />
               </div>
               <div class="col-12 d-flex justify-content-end">
-                <button type="submit" class="btn btn-primary btn-sm" :disabled="reviewSubmitting">
+                <button type="submit" class="btn btn-orange btn-sm" :disabled="reviewSubmitting">
                   <span v-if="reviewSubmitting" class="spinner-border spinner-border-sm me-1"></span>
                   Trimite recenzia
                 </button>
@@ -425,6 +423,7 @@
         </div>
       </div>
     </div>
+    </div>
   </div>
 
   <div v-else-if="error" class="container py-4">
@@ -432,7 +431,7 @@
         {{ error }}
      </div>
       <div class="mt-3">
-        <RouterLink to="/" class="btn btn-outline-primary">
+        <RouterLink to="/" class="btn btn-outline-secondary">
           Înapoi la prima pagină
         </RouterLink>
       </div>
@@ -443,7 +442,7 @@
       Produsul nu a fost găsit.
     </div>
     <div class="mt-3">
-        <RouterLink to="/" class="btn btn-outline-primary">
+        <RouterLink to="/" class="btn btn-outline-secondary">
           Înapoi la prima pagină
         </RouterLink>
       </div>
@@ -455,6 +454,10 @@ import { computed, ref, reactive, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/store/auth'
 import { useProductsStore } from '@/store/products'
+import { usePrice } from '@/composables/usePrice'
+import WishlistButton from '@/components/common/WishlistButton.vue'
+import CompareButton from '@/components/common/CompareButton.vue'
+import ProductCard from '@/components/common/ProductCard.vue'
 import { fetchProductBySlug, submitProductReview } from '@/services/catalog'
 import { addCartItem } from '@/services/cart'
 import axios from '@/services/http'
@@ -465,6 +468,7 @@ const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
 const productsStore = useProductsStore()
+const { formatPrice: formatPriceGlobal, showVat } = usePrice()
 const toast = useToast()
 
 const loading = ref(false)
@@ -487,6 +491,11 @@ const frontClientType = computed(() => {
 })
 
 const isB2B = computed(() => frontClientType.value === 'B2B')
+
+const showNumericStock = computed(() => {
+  const roles = (authStore.user?.roles || []).map(r => (r.slug || r.code || '').toLowerCase());
+  return roles.some(r => ['admin', 'sales_agent', 'sales_director', 'operator', 'manager'].includes(r));
+});
 
 const slug = computed(() => route.params.slug || '')
 const selectedImage = ref('')
@@ -547,10 +556,34 @@ const loadProduct = async () => {
 
   try {
     const data = await fetchProductBySlug(slug.value)
-    product.value = data.product ?? data
-    // Select first variant if available
+    const p = data.product ?? data
+    
+    // Map related/complementary from top-level response to product object
+    if (data.related_products) {
+        p.similar_products = data.related_products
+    }
+    if (data.complementary_products) {
+        p.complementary_products = data.complementary_products
+    }
+
+    product.value = p
+
+    // Select variant matching current slug/sku if possible, otherwise first one
     if (product.value.variants && product.value.variants.length > 0) {
-        selectedVariant.value = product.value.variants[0].code
+        const currentSlug = product.value.slug
+        const currentSku = product.value.code
+        
+        let match = product.value.variants.find(v => v.slug === currentSlug)
+        if (!match && currentSku) {
+             match = product.value.variants.find(v => v.sku === currentSku)
+        }
+        
+        if (match) {
+             selectedVariant.value = match.sku || match.code
+        } else {
+             const v = product.value.variants[0]
+             selectedVariant.value = v.sku || v.code
+        }
     }
     checkSubscriptionStatus()
     applySeo()
@@ -579,7 +612,7 @@ const checkSubscriptionStatus = async () => {
     }
     let variantId = null
     if (selectedVariant.value && product.value.variants) {
-      const v = product.value.variants.find(v => v.code === selectedVariant.value)
+      const v = product.value.variants.find(v => (v.sku || v.code) === selectedVariant.value)
       if (v) variantId = v.id
     }
     const { data } = await axios.get('/api/products/stock-alert/status', {
@@ -637,7 +670,14 @@ const applySeo = () => {
     '@type': 'BreadcrumbList',
     'itemListElement': [
       { '@type': 'ListItem', position: 1, name: 'Acasă', item: window.location.origin + '/' },
-      { '@type': 'ListItem', position: 2, name: product.value.category?.name || product.value.category_name || 'Categorie produse', item: window.location.origin + (router.resolve({ name: 'category', params: { slug: product.value.categorySlug || product.value.category?.slug || '' } }).href || '/produse') },
+      { 
+        '@type': 'ListItem', 
+        position: 2, 
+        name: product.value.category?.name || product.value.category_name || 'Categorie produse', 
+        item: (product.value.categorySlug || product.value.category?.slug) 
+          ? window.location.origin + router.resolve({ name: 'category', params: { slug: product.value.categorySlug || product.value.category?.slug } }).href 
+          : window.location.origin + '/produse' 
+      },
       { '@type': 'ListItem', position: 3, name: product.value.name, item: url }
     ]
   }
@@ -741,16 +781,201 @@ const categoryTitle = computed(() => {
 
 const selectedVariant = ref(null)
 
-const unitsOfMeasure = [
-  { value: 'buc', label: 'bucată' },
-  { value: 'sac', label: 'sac' },
-  { value: 'bax', label: 'bax' },
-  { value: 'palet', label: 'palet' }
-]
+const selectedAttributes = reactive({})
+
+const allAttributes = computed(() => {
+    if (!product.value) return [];
+    
+    // Combine product attributes and variant attributes for a complete view if needed
+    // But for variation selection we focus on attributes that vary
+    return product.value.attributes || [];
+})
+
+const variationAxes = computed(() => {
+    if (!product.value || !product.value.variants) return {};
+    const axes = {};
+    
+    product.value.variants.forEach(variant => {
+        if (variant.attributes && Array.isArray(variant.attributes)) {
+            variant.attributes.forEach(attr => {
+                const name = attr.name;
+                if (!axes[name]) {
+                    axes[name] = { name: name, values: [] };
+                }
+                if (!axes[name].values.includes(attr.value)) {
+                    axes[name].values.push(attr.value);
+                }
+            });
+        }
+    });
+    return axes;
+})
+
+const isAttributeSelected = (axisName, value) => {
+    return selectedAttributes[axisName] === value;
+}
+
+const selectAttribute = (axisName, value) => {
+    selectedAttributes[axisName] = value;
+    
+    // Try to find a matching variant
+    const axesNames = Object.keys(variationAxes.value);
+    
+    // Check if we have all attributes selected
+    const allSelected = axesNames.every(name => selectedAttributes[name]);
+    
+    if (allSelected) {
+        const variant = product.value.variants.find(v => {
+            return v.attributes.every(attr => selectedAttributes[attr.name] === attr.value);
+        });
+        
+        if (variant) {
+            selectedVariant.value = variant.sku || variant.code;
+        }
+    } else {
+        // If not all selected, we might want to auto-select the first available option for other axes
+        // For now, let's keep it simple and just wait for user
+    }
+}
+
+const isCombinationAvailable = (axisName, value) => {
+    // Check if there is any variant that has this attribute value
+    // AND matches the OTHER currently selected attributes
+    
+    // Create a candidate selection
+    const candidate = { ...selectedAttributes, [axisName]: value };
+    
+    // Find if any variant matches this subset
+    return product.value.variants.some(v => {
+        return Object.entries(candidate).every(([k, val]) => {
+            // Skip checking the axis we are testing if we want to show all options for that axis
+            // But here we want to know if selecting this value is valid given OTHER selections.
+            // However, if we are checking "Color: Red", and we have "Size: M" selected,
+            // we want to know if there is a Red-M variant.
+            
+            // Note: If we haven't selected other attributes yet, they are undefined, so we don't filter by them.
+            if (!val) return true;
+            
+            const attr = v.attributes.find(a => a.name === k);
+            return attr && attr.value === val;
+        });
+    });
+}
+
+const getShortVariantName = (variant) => {
+    if (!variant) return '';
+    // Construct name from attributes
+    if (variant.attributes && variant.attributes.length) {
+        return variant.attributes.map(a => a.value).join(' / ');
+    }
+    // Fallback to removing product name from variant name
+    if (product.value && variant.name.startsWith(product.value.name)) {
+        let short = variant.name.substring(product.value.name.length).trim();
+        // Remove leading separator if any (like "- ", ", ")
+        short = short.replace(/^[-,\s]+/, '');
+        if (short) return short;
+    }
+    return variant.name || variant.sku;
+}
+
+// Initialize attributes when product or selectedVariant changes
+watch(() => product.value, (newP) => {
+    if (newP && newP.variants && selectedVariant.value) {
+        const v = newP.variants.find(v => (v.sku || v.code) === selectedVariant.value);
+        if (v && v.attributes) {
+            v.attributes.forEach(attr => {
+                selectedAttributes[attr.name] = attr.value;
+            });
+        }
+    }
+}, { immediate: true });
+
+// Also watch selectedVariant changes (e.g. from URL or user selection)
+watch(selectedVariant, (newVal) => {
+     if (!product.value || !product.value.variants) return;
+     const v = product.value.variants.find(v => (v.sku || v.code) === newVal);
+     if (v) {
+         // 1. Update attributes
+         if (v.attributes) {
+             // Clear and set to ensure we match the variant exactly
+             Object.keys(selectedAttributes).forEach(k => delete selectedAttributes[k]);
+             v.attributes.forEach(attr => {
+                selectedAttributes[attr.name] = attr.value;
+             });
+         }
+         
+         // 2. Navigate if slug is different (Variant as Product)
+         if (v.slug && v.slug !== route.params.slug) {
+             // Use replace instead of push if we don't want to clutter history, but push is standard for navigation
+             router.push({ name: 'product-details', params: { slug: v.slug } });
+         }
+     }
+});
+
+const currentVariant = computed(() => {
+  if (!product.value?.variants || !selectedVariant.value) return null
+  // Match by sku (preferred) or code/id if needed
+  return product.value.variants.find(v => (v.sku || v.code) === selectedVariant.value)
+})
+
+const unitsOfMeasure = computed(() => {
+  if (product.value && product.value.units && product.value.units.length > 0) {
+      return product.value.units.map(u => {
+          // Determine the best label
+          let label = u.name;
+          if (!label) {
+              label = u.unit;
+              if (u.conversion_factor && u.conversion_factor !== 1) {
+                  label += ` (x${u.conversion_factor})`;
+              }
+          }
+          
+          // Determine the value to send to cart
+          // We prefer the unit code if it's unique enough, but name is safer for secondary units
+          // CartController searches by unit OR name.
+          const val = u.name || u.unit;
+          
+          return {
+              value: val,
+              label: label,
+              factor: u.conversion_factor,
+              price: u.price
+          };
+      });
+  }
+  // Fallback if no units defined
+  return [{ value: 'buc', label: 'bucată', factor: 1 }];
+})
+
 const selectedUnit = ref('buc')
+
+// Update selectedUnit when product loads
+watch(() => product.value, (newP) => {
+    if (newP && newP.units && newP.units.length > 0) {
+        // Try to keep current selection if valid, otherwise select base (factor 1) or first
+        // We must use the same logic as unitsOfMeasure for the value (name || unit)
+        const currentVal = selectedUnit.value;
+        const exists = newP.units.find(u => (u.name || u.unit) === currentVal);
+        
+        if (!exists) {
+            const base = newP.units.find(u => u.conversion_factor == 1) || newP.units[0];
+            selectedUnit.value = base.name || base.unit;
+        }
+    }
+}, { immediate: true });
 
 const displayPrice = computed(() => {
   if (!product.value) return 0
+  
+  // If variant is selected and has specific price
+  if (currentVariant.value) {
+    const v = currentVariant.value
+    // If variant has specific price override
+    if (v.price_override) return parseFloat(v.price_override)
+    // If variant has specific list price (and it differs from product default, though hard to tell here)
+    if (v.list_price) return parseFloat(v.list_price)
+  }
+
   if (product.value.price_override) return parseFloat(product.value.price_override)
   
   const promo = product.value.promoPrice || product.value.promo_price
@@ -764,6 +989,15 @@ const displayPrice = computed(() => {
 
 const isStockAvailable = computed(() => {
     if (!product.value) return false
+    
+    // Check variant stock first
+    if (currentVariant.value) {
+       const v = currentVariant.value
+       if (v.stock_status === 'in_stock') return true
+       if (v.stock_qty > 0) return true
+       return false
+    }
+
     if (product.value.stock_status === 'in_stock') return true
     if (product.value.stock_qty > 0) return true
     return false
@@ -778,14 +1012,6 @@ const complementaryProducts = computed(() => {
   if (!product.value || !product.value.complementary_products) return []
   return product.value.complementary_products
 })
-
-const formatPrice = (val) => {
-    if (val === null || val === undefined) return '-'
-    return new Intl.NumberFormat('ro-RO', { 
-        style: 'currency', 
-        currency: 'RON' 
-    }).format(val)
-}
 
 const addToCart = async () => {
   if (!product.value) return;
@@ -804,7 +1030,12 @@ const addToCart = async () => {
     const payload = {
       product_id: product.value.id,
       quantity: Number(quantity.value) || 1,
+      unit: selectedUnit.value // Add selected unit
     };
+    
+    if (currentVariant.value) {
+        payload.product_variant_id = currentVariant.value.id;
+    }
 
     const cartData = await addCartItem(payload);
     addMessage.value = 'Produsul a fost adăugat în coș.';
@@ -834,9 +1065,9 @@ const subscribeToStock = async () => {
     try {
         let variantId = null;
         if (selectedVariant.value && product.value.variants) {
-             const v = product.value.variants.find(v => v.code === selectedVariant.value);
-             if (v) variantId = v.id;
-        }
+         const v = product.value.variants.find(v => (v.sku || v.code) === selectedVariant.value);
+         if (v) variantId = v.id;
+    }
 
         await axios.post('/api/products/stock-alert', {
             product_id: product.value.id,

@@ -1,11 +1,8 @@
 <template>
-  <div class="container">
-    <PageHeader
-      title="Compară produse"
-      subtitle="Compară specificațiile tehnice și prețurile pentru mai multe produse."
-    >
-      <template #breadcrumbs>
-        <nav aria-label="breadcrumb">
+  <div>
+    <div class="dd-page-header py-3 mb-3">
+      <div class="container">
+        <nav aria-label="breadcrumb" class="small mb-2">
           <ol class="breadcrumb mb-0">
             <li class="breadcrumb-item">
               <RouterLink :to="{ name: 'home' }">Acasă</RouterLink>
@@ -15,8 +12,14 @@
             </li>
           </ol>
         </nav>
-      </template>
-    </PageHeader>
+        <h1 class="h4 mb-1">Compară produse</h1>
+        <p class="text-muted small mb-0">
+          Compară specificațiile tehnice și prețurile pentru mai multe produse.
+        </p>
+      </div>
+    </div>
+
+    <div class="container pb-4">
 
     <div v-if="!products.length" class="alert alert-info small">
       Nu ai selectat încă produse pentru comparare.
@@ -89,14 +92,14 @@
                 >
                   <div v-if="p.promoPrice || p.promo_price || p.price">
                     <span v-if="p.list_price && p.list_price > (p.promoPrice || p.promo_price || p.price)" class="text-decoration-line-through text-muted small d-block">
-                      {{ formatMoney(p.list_price) }}
+                      {{ formatPriceGlobal(p.list_price, p.vat_rate, p.vat_included) }}
                     </span>
                     <span :class="(p.discountPercent || p.discount_percent || (p.list_price > (p.promoPrice || p.promo_price || p.price))) ? 'fw-bold text-danger' : 'fw-bold'">
-                      {{ formatMoney(p.promoPrice || p.promo_price || p.price) }}
+                      {{ formatPriceGlobal(p.promoPrice || p.promo_price || p.price, p.vat_rate, p.vat_included) }}
                     </span>
                   </div>
                   <div v-else>
-                    {{ formatMoney(p.price || p.list_price || p.listPrice || 0) }}
+                    {{ formatPriceGlobal(p.price || p.list_price || p.listPrice || 0, p.vat_rate, p.vat_included) }}
                   </div>
                 </td>
               </tr>
@@ -107,24 +110,31 @@
                   :key="'stock-' + p.id"
                   class="small"
                 >
-                  <span v-if="p.stockStatus === 'in_stock'">
-                    În stoc ({{ p.stockQty }} buc)
-                  </span>
-                  <span
-                    v-else-if="p.stockStatus === 'low_stock'"
-                    class="text-warning"
-                  >
-                    Stoc limitat ({{ p.stockQty }} buc)
-                  </span>
-                  <span
-                    v-else-if="p.stockStatus === 'out_of_stock'"
-                    class="text-danger"
-                  >
-                    Stoc epuizat
-                  </span>
-                  <span v-else>
-                    La comandă
-                  </span>
+                  <template v-if="showNumericStock">
+                    <span v-if="p.stockQty > 0" class="text-success fw-bold">
+                        Stoc: {{ p.stockQty }} buc.
+                    </span>
+                    <span v-else class="text-danger fw-bold">
+                        Stoc: 0
+                    </span>
+                  </template>
+                  <template v-else>
+                    <span v-if="p.stockStatus === 'in_stock' || p.stockQty > 0" class="text-success fw-bold">
+                        În stoc
+                    </span>
+                    <span v-else-if="p.stockStatus === 'low_stock'" class="text-orange fw-bold">
+                        Stoc limitat
+                    </span>
+                    <span v-else-if="p.stockStatus === 'out_of_stock'" class="text-danger fw-bold">
+                        Stoc epuizat
+                    </span>
+                     <span v-else-if="p.stockStatus && p.stockStatus.includes('furnizor')" class="text-info fw-bold">
+                        Stoc furnizor
+                    </span>
+                    <span v-else class="fw-bold">
+                         {{ p.stockStatus || 'La comandă' }}
+                    </span>
+                  </template>
                 </td>
               </tr>
               <tr>
@@ -166,7 +176,7 @@
                   </button>
                   <RouterLink
                     :to="{ name: 'product-details', params: { slug: 'produs-demo-' + p.id } }"
-                    class="btn btn-outline-primary btn-sm ms-1"
+                    class="btn btn-outline-secondary btn-sm ms-1"
                   >
                     Vezi produs
                   </RouterLink>
@@ -183,28 +193,28 @@
         promoții active și condiții comerciale personalizate.
       </div>
     </div>
+    </div>
   </div>
 </template>
 
 <script setup>
 import { computed } from 'vue'
 import { RouterLink } from 'vue-router'
-import PageHeader from '@/components/common/PageHeader.vue'
 import { useProductNavigationStore } from '@/store/productNavigation'
+import { useAuthStore } from '@/store/auth'
+import { usePrice } from '@/composables/usePrice'
 
 const navStore = useProductNavigationStore()
+const authStore = useAuthStore()
+const { formatPrice: formatPriceGlobal } = usePrice()
+
 
 const products = computed(() => navStore.compareProducts)
 
-const formatMoney = (value) => {
-  const v = Number(value || 0)
-  return (
-    v.toLocaleString('ro-RO', {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2
-    }) + ' RON'
-  )
-}
+const showNumericStock = computed(() => {
+  const roles = (authStore.user?.roles || []).map(r => (r.slug || r.code || '').toLowerCase());
+  return roles.some(r => ['admin', 'sales_agent', 'sales_director', 'operator', 'manager'].includes(r));
+});
 
 const removeFromCompare = (id) => {
   navStore.removeFromCompare(id)

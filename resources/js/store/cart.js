@@ -47,7 +47,8 @@ export const useCartStore = defineStore('cart', {
         total: parseFloat(item.line_total || 0),
         // Keep other fields
         id: item.id,
-        quantity: item.quantity
+        quantity: item.quantity,
+        unit: item.unit
       }))
       this.subtotal = parseFloat(data.subtotal || 0)
       this.total = parseFloat(data.total || 0)
@@ -63,12 +64,20 @@ export const useCartStore = defineStore('cart', {
       }
     },
 
-    async addItem(productId, qty = 1) {
+    async addItem(productId, qty = 1, productVariantId = null, unit = null) {
       try {
-        const { data } = await api.post('/cart/items', {
+        const payload = {
           product_id: productId,
           quantity: qty
-        })
+        }
+        if (productVariantId) {
+          payload.product_variant_id = productVariantId
+        }
+        if (unit) {
+          payload.unit = unit
+        }
+
+        const { data } = await api.post('/cart/items', payload)
         this.setCartData(data)
         return true
       } catch (e) {

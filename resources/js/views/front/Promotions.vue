@@ -1,42 +1,38 @@
 <template>
-  <div class="container py-4">
-    <div class="d-flex flex-wrap justify-content-between align-items-center mb-3">
-      <div>
-        <h1 class="h4 mb-1">Promoții active</h1>
-        <p class="text-muted mb-0 small">
-          Campanii promoționale pentru clienți B2B și B2C.
-        </p>
-      </div>
+  <div>
+    <div class="dd-page-header py-3 mb-3">
+      <div class="container">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+          <div>
+            <h1 class="h4 mb-1">Promoții active</h1>
+            <p class="text-muted mb-0 small">
+              Campanii promoționale pentru clienți B2B și B2C.
+            </p>
+          </div>
 
-      <div class="d-flex flex-wrap gap-2 mt-2 mt-md-0">
-        <select
-          v-model="scope"
-          class="form-select form-select-sm w-auto"
-          @change="loadPromotions"
-        >
-          <option value="current">Active acum</option>
-          <option value="upcoming">În curând</option>
-          <option value="all">Toate</option>
-        </select>
-
-        <select
-          v-model="customerType"
-          class="form-select form-select-sm w-auto"
-          @change="loadPromotions"
-        >
-          <option value="">B2B & B2C</option>
-          <option value="b2c">Doar B2C</option>
-          <option value="b2b">Doar B2B</option>
-        </select>
+          <div class="d-flex flex-wrap gap-2">
+            <select
+              v-model="scope"
+              class="form-select form-select-sm w-auto"
+              @change="loadPromotions"
+            >
+              <option value="current">Active acum</option>
+              <option value="upcoming">În curând</option>
+              <option value="all">Toate</option>
+            </select>
+          </div>
+        </div>
       </div>
     </div>
+
+    <div class="container pb-4">
 
     <div v-if="error" class="alert alert-danger py-2 mb-3">
       {{ error }}
     </div>
 
     <div v-if="loading" class="text-center py-5">
-      <div class="spinner-border spinner-border-sm" role="status" />
+      <div class="spinner-border spinner-border-sm text-orange" role="status" />
       <div class="small text-muted mt-2">Se încarcă promoțiile...</div>
     </div>
 
@@ -82,16 +78,16 @@
               <div class="mt-auto d-flex gap-2">
                 <RouterLink
                   :to="`/promotii/${promo.slug}`"
-                  class="btn btn-outline-primary btn-sm flex-grow-1"
+                  class="btn btn-outline-secondary btn-sm flex-grow-1"
                 >
                   Vezi detalii
                 </RouterLink>
                 <button
-                  class="btn btn-primary btn-sm flex-grow-1"
+                  class="btn btn-orange btn-sm flex-grow-1"
                   @click="addPromoToCart(promo)"
                   :disabled="addingPromo === promo.id"
                 >
-                  <span v-if="addingPromo === promo.id" class="spinner-border spinner-border-sm me-1"></span>
+                  <span v-if="addingPromo === promo.id" class="spinner-border spinner-border-sm me-1 text-white"></span>
                   Adaugă în coș
                 </button>
               </div>
@@ -101,6 +97,7 @@
       </div>
 
       <!-- Dacă vrei paginare mai târziu, aici e locul -->
+    </div>
     </div>
   </div>
 </template>
@@ -117,8 +114,7 @@ const loading = ref(false);
 const error = ref('');
 const addingPromo = ref(null);
 
-const scope = ref('current');       // current | upcoming | all
-const customerType = ref('');       // '' | b2b | b2c
+const scope = ref('all');       // current | upcoming | all
 
 const loadPromotions = async () => {
   loading.value = true;
@@ -127,7 +123,6 @@ const loadPromotions = async () => {
   try {
     const data = await fetchPromotions({
       scope: scope.value,
-      customer_type: customerType.value || undefined,
     });
 
     promotions.value = data.data ?? [];

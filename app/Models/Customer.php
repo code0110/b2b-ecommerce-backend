@@ -29,6 +29,7 @@ class Customer extends Model
         'longitude',
         'agent_user_id',
         'sales_director_user_id',
+        'financial_derogation_until',
     ];
 
     protected $casts = [
@@ -38,6 +39,7 @@ class Customer extends Model
         'is_partner' => 'boolean',
         'credit_limit' => 'decimal:2',
         'current_balance' => 'decimal:2',
+        'financial_derogation_until' => 'datetime',
     ];
 
     public function group(): BelongsTo

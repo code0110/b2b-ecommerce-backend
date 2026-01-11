@@ -1,6 +1,6 @@
 <template>
   <div v-if="loading" class="text-center py-5">
-    <div class="spinner-border text-primary" role="status">
+    <div class="spinner-border text-orange" role="status">
       <span class="visually-hidden">Se încarcă...</span>
     </div>
     <div class="mt-2 text-muted">Se încarcă detaliile produsului...</div>
@@ -60,18 +60,28 @@
         </div>
 
         <div class="mb-2">
-          <span
-            class="badge"
-            :class="isStockAvailable ? 'bg-success' : 'bg-secondary'"
-          >
-            {{ isStockAvailable ? 'În stoc' : 'La comandă' }}
-          </span>
-          <span
-            v-if="product.stock_qty !== null && isB2B"
-            class="badge bg-light text-dark ms-2"
-          >
-            Stoc B2B: {{ product.stock_qty }}
-          </span>
+          <template v-if="showNumericStock">
+            <span v-if="product.stock_qty > 0" class="badge bg-success">
+               Stoc: {{ product.stock_qty }} buc.
+            </span>
+            <span v-else class="badge bg-danger">
+               Stoc: 0
+            </span>
+          </template>
+          <template v-else>
+            <span v-if="product.stock_qty > 0 || (product.stock_status && product.stock_status.includes('in stoc'))" class="badge bg-success">
+                În stoc
+            </span>
+            <span v-else-if="product.stock_status && product.stock_status.includes('furnizor')" class="badge bg-info text-dark">
+                Stoc furnizor
+            </span>
+            <span v-else-if="product.stock_status && product.stock_status.includes('epuizat')" class="badge bg-danger">
+                Stoc epuizat
+            </span>
+            <span v-else class="badge bg-secondary">
+               {{ product.stock_status || 'Indisponibil' }}
+            </span>
+          </template>
         </div>
 
         <div class="mb-3">
@@ -92,7 +102,7 @@
             </span>
           </div>
           <div class="small mt-1" v-if="isB2B">
-            <span class="badge bg-primary me-1">B2B</span>
+            <span class="badge bg-dd-blue me-1">B2B</span>
             Prețuri și condiții comerciale B2B (termen plată, limită credit) se aplică în cont sau la impersonare.
           </div>
         </div>
@@ -136,7 +146,7 @@
             />
           </div>
           <button
-            class="btn btn-primary"
+            class="btn btn-orange"
             @click="addToCartDemo"
             :disabled="!isStockAvailable && !product.can_backorder"
           >
@@ -245,7 +255,7 @@
                   </div>
                 </div>
                 <button
-                  class="btn btn-sm btn-outline-primary"
+                  class="btn btn-sm btn-outline-secondary"
                   @click="openDocumentDemo(doc)"
                 >
                   Descarcă
@@ -324,7 +334,7 @@
         {{ error }}
      </div>
       <div class="mt-3">
-        <RouterLink to="/" class="btn btn-outline-primary">
+        <RouterLink to="/" class="btn btn-outline-secondary">
           Înapoi la prima pagină
         </RouterLink>
       </div>
@@ -335,7 +345,7 @@
       Produsul nu a fost găsit.
     </div>
     <div class="mt-3">
-        <RouterLink to="/" class="btn btn-outline-primary">
+        <RouterLink to="/" class="btn btn-outline-secondary">
           Înapoi la prima pagină
         </RouterLink>
       </div>
@@ -347,6 +357,8 @@ import { computed, ref, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useAuthStore } from '@/store/auth'
 import { fetchProductBySlug } from '@/services/catalog'
+import { addCartItem } from '@/services/cart'
+import { setTitle, setMeta, setMetaProperty, setCanonical, setJsonLd } from '@/utils/seo'
 
 const route = useRoute()
 const authStore = useAuthStore()
@@ -355,6 +367,11 @@ const loading = ref(false)
 const error = ref(null)
 const product = ref(null)
 const quantity = ref(1)
+
+const showNumericStock = computed(() => {
+  const roles = (authStore.user?.roles || []).map(r => (r.slug || r.code || '').toLowerCase())
+  return roles.some(r => ['admin', 'sales_agent', 'sales_director', 'operator', 'manager'].includes(r))
+})
 
 const frontClientType = computed(() => {
   if (authStore.impersonatedCustomer?.clientType) {

@@ -103,7 +103,7 @@ const handleSubmit = async () => {
               </div>
 
               <button
-                class="btn btn-primary w-100"
+                class="btn btn-orange w-100"
                 type="submit"
                 :disabled="loading"
               >

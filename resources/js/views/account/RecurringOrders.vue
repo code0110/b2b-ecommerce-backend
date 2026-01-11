@@ -9,7 +9,7 @@
       </div>
       <button
         type="button"
-        class="btn btn-primary btn-sm"
+        class="btn btn-orange btn-sm"
         @click="startCreate"
       >
         Template nou
@@ -65,7 +65,7 @@
                     </button>
                     <button
                       type="button"
-                      class="btn btn-outline-primary btn-sm"
+                      class="btn btn-orange btn-sm"
                       @click="addToCart(tpl)"
                     >
                       Adaugă în coș
@@ -158,7 +158,7 @@
             <div class="d-flex justify-content-end">
               <button
                 type="submit"
-                class="btn btn-primary btn-sm"
+                class="btn btn-orange btn-sm"
                 :disabled="saving"
               >
                 <span

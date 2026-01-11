@@ -7,7 +7,7 @@
           Cereri de ofertă și oferte comerciale legate de comenzi.
         </p>
       </div>
-      <RouterLink to="/cont/cere-oferta" class="btn btn-primary btn-sm">
+      <RouterLink to="/cont/cere-oferta" class="btn btn-orange btn-sm">
         <i class="bi bi-plus-lg me-1"></i> Cere Ofertă
       </RouterLink>
     </div>
@@ -40,7 +40,7 @@
             </select>
           </div>
           <div class="col-6 col-md-4">
-             <button class="btn btn-sm btn-outline-primary w-100" @click="loadOffers">
+             <button class="btn btn-sm btn-outline-secondary w-100" @click="loadOffers">
                <i class="bi bi-filter me-1"></i> Filtrează
              </button>
           </div>

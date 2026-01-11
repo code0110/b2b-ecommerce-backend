@@ -124,7 +124,9 @@ class CheckoutController extends Controller
         }
 
         if (!$customer) {
-             return response()->json(['message' => 'Customer identification failed. Please login or provide a valid address linked to a customer.'], 400);
+            // Check if we are in Guest Mode (no customer, but addresses provided)
+            // In strict B2B, this might be forbidden, but for B2C/Guest we allow it.
+            // We'll proceed with customer = null.
         }
 
         // Helper to resolve address
@@ -134,7 +136,7 @@ class CheckoutController extends Controller
             }
             if ($addrData && is_array($addrData)) {
                 return Address::create([
-                    'customer_id' => $customerId,
+                    'customer_id' => $customerId, // can be null
                     'type'        => $type,
                     'contact_name'=> $addrData['contact_name'] ?? 'N/A',
                     'phone'       => $addrData['phone'] ?? null,
@@ -155,17 +157,21 @@ class CheckoutController extends Controller
                 $data['billing_address_id'] ?? null,
                 $data['billing_address'] ?? null,
                 'billing',
-                $customer->id
+                $customer ? $customer->id : null
             );
             $shippingAddress = $resolveAddress(
                 $data['shipping_address_id'] ?? null,
                 $data['shipping_address'] ?? null,
                 'shipping',
-                $customer->id
+                $customer ? $customer->id : null
             );
 
-            if (!$billingAddress || !$shippingAddress) {
-                throw new \Exception('Addresses could not be resolved.');
+            if (!$billingAddress) {
+                throw new \Exception('Adresa de facturare este invalidă.');
+            }
+            if (!$shippingAddress) {
+                 // Fallback to billing if same
+                 $shippingAddress = $billingAddress;
             }
 
             // 3. Re-calculate prices
@@ -178,11 +184,12 @@ class CheckoutController extends Controller
             $grandTotal = $priced['total'] + $shippingTotal;
             
             $order = Order::create([
-                'order_number'       => 'C' . now()->format('Ymd') . '-' . Str::upper(Str::random(6)),
-                'customer_id'        => $customer->id,
+                'order_number'       => 'ORD-' . strtoupper(Str::random(10)), // Temp
+                'customer_id'        => $customer ? $customer->id : null,
                 'placed_by_user_id'  => $user ? $user->id : null,
                 'status'             => 'pending',
-                'type'               => $customer->type ?? 'b2c',
+                'approval_status'    => 'none',
+                'type'               => $customer ? $customer->type : 'b2c', // Default to b2c for guests
                 'total_items'        => $cart->items->sum('quantity'),
                 'subtotal'           => $subtotal,
                 'discount_total'     => $discountTotal,
@@ -208,6 +215,40 @@ class CheckoutController extends Controller
                 $finalLineTotal = $calculatedItem ? $calculatedItem['line_final_total'] : $item->total;
                 $discountAmount = $calculatedItem ? ($calculatedItem['unit_base_price'] - $calculatedItem['unit_final_price']) : 0;
 
+                // Find conversion factor if needed
+                $conversionFactor = 1;
+                // This is a bit redundant since we calculate it in CartController/PromotionService,
+                // but we should store it.
+                // For now, let's try to get it from cart item or recalculate.
+                // Assuming cart item will have it in the future, but current CartItem model doesn't have it explicitly stored as float?
+                // Wait, CartItem has `unit` (string).
+                
+                // Let's resolve it quickly
+                $itemUnitStr = $item->unit ?? 'buc';
+                
+                // Căutare unitate (după cod 'unit' sau nume 'name')
+                $units = \App\Models\ProductUnit::where('product_id', $item->product_id)
+                    ->where(function($q) use ($itemUnitStr) {
+                         $q->where('unit', $itemUnitStr)
+                           ->orWhere('name', $itemUnitStr);
+                    })
+                    ->get();
+
+                $productUnit = null;
+                if ($item->product_variant_id) {
+                    // Prioritate: unitate specifică variantei
+                    $productUnit = $units->where('product_variant_id', $item->product_variant_id)->first();
+                }
+
+                if (!$productUnit) {
+                    // Fallback: unitate generică pe produs (fără variantă)
+                    $productUnit = $units->whereNull('product_variant_id')->first();
+                }
+
+                if ($productUnit) {
+                    $conversionFactor = $productUnit->conversion_factor;
+                }
+
                 OrderItem::create([
                     'order_id'          => $order->id,
                     'product_id'        => $item->product_id,
@@ -215,6 +256,8 @@ class CheckoutController extends Controller
                     'product_name'      => $item->product->name,
                     'sku'               => $item->product->internal_code,
                     'quantity'          => $item->quantity,
+                    'unit'              => $item->unit,
+                    'unit_conversion_factor' => $conversionFactor,
                     'unit_price'        => $finalUnitPrice,
                     'discount_amount'   => $discountAmount,
                     'tax_amount'        => 0,
@@ -223,14 +266,17 @@ class CheckoutController extends Controller
             }
 
             // Approval & Credit Logic
-             $requiresApproval = $customer->type === 'b2b' && $user && $user->requiresOrderApproval();
- 
+            $requiresApproval = false;
+            if ($customer && $customer->type === 'b2b' && $user && $user->requiresOrderApproval()) {
+                 $requiresApproval = true;
+            }
+
              if ($requiresApproval) {
                  $order->approval_status = 'pending';
                  $order->status          = 'pending_approval';
                  $order->save();
              } else {
-                 if ($customer->type === 'b2b' && $customer->credit_limit > 0) {
+                 if ($customer && $customer->type === 'b2b' && $customer->credit_limit > 0) {
                      $futureBalance = ($customer->current_balance ?? 0) + $order->grand_total;
  
                      if ($futureBalance > $customer->credit_limit) {

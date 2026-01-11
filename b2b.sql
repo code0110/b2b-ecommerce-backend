@@ -3,9 +3,9 @@
 -- https://www.phpmyadmin.net/
 --
 -- Gazdă: localhost
--- Timp de generare: ian. 08, 2026 la 07:16 PM
+-- Timp de generare: ian. 09, 2026 la 04:22 PM
 -- Versiune server: 8.0.44
--- Versiune PHP: 8.2.30
+-- Versiune PHP: 8.2.28
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
@@ -45,6 +45,14 @@ CREATE TABLE `addresses` (
   `updated_at` timestamp NULL DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+--
+-- Eliminarea datelor din tabel `addresses`
+--
+
+INSERT INTO `addresses` (`id`, `customer_id`, `type`, `label`, `contact_name`, `country`, `county`, `city`, `street`, `postal_code`, `phone`, `is_default_billing`, `is_default_shipping`, `created_at`, `updated_at`) VALUES
+(3, NULL, 'billing', NULL, 'Guest User', 'Romania', 'Bucuresti', 'Bucuresti', 'Strada Test 123', '010101', '0700123456', 0, 0, '2026-01-09 05:20:07', '2026-01-09 05:20:07'),
+(4, NULL, 'shipping', NULL, 'Guest User', 'Romania', 'Bucuresti', 'Bucuresti', 'Strada Test 123', '010101', '0700123456', 0, 0, '2026-01-09 05:20:07', '2026-01-09 05:20:07');
+
 -- --------------------------------------------------------
 
 --
@@ -58,14 +66,6 @@ CREATE TABLE `agent_customer` (
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
---
--- Eliminarea datelor din tabel `agent_customer`
---
-
-INSERT INTO `agent_customer` (`id`, `agent_id`, `customer_id`, `created_at`, `updated_at`) VALUES
-(1, 3, 3, '2026-01-08 06:01:32', '2026-01-08 06:01:32'),
-(2, 3, 4, '2026-01-08 12:16:40', '2026-01-08 12:16:40');
 
 -- --------------------------------------------------------
 
@@ -92,7 +92,9 @@ CREATE TABLE `agent_daily_routes` (
 INSERT INTO `agent_daily_routes` (`id`, `user_id`, `date`, `start_time`, `end_time`, `total_distance`, `status`, `created_at`, `updated_at`) VALUES
 (1, 2, '2026-01-07', '2026-01-07 18:12:21', NULL, 0, 'active', '2026-01-07 18:12:21', '2026-01-07 18:12:21'),
 (2, 2, '2026-01-08', '2026-01-08 05:54:35', NULL, 0, 'active', '2026-01-08 05:54:35', '2026-01-08 05:54:35'),
-(3, 1, '2026-01-08', '2026-01-08 06:04:53', NULL, 0, 'active', '2026-01-08 06:04:53', '2026-01-08 06:04:53');
+(3, 1, '2026-01-08', '2026-01-08 06:04:53', NULL, 0, 'active', '2026-01-08 06:04:53', '2026-01-08 06:04:53'),
+(4, 2, '2026-01-09', '2026-01-09 08:35:58', NULL, 0, 'active', '2026-01-09 08:35:58', '2026-01-09 08:35:58'),
+(5, 4, '2026-01-09', '2026-01-09 12:38:12', NULL, 0, 'active', '2026-01-09 12:38:12', '2026-01-09 12:38:12');
 
 -- --------------------------------------------------------
 
@@ -110,6 +112,14 @@ CREATE TABLE `agent_routes` (
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Eliminarea datelor din tabel `agent_routes`
+--
+
+INSERT INTO `agent_routes` (`id`, `agent_id`, `customer_id`, `day_of_week`, `week_type`, `sort_order`, `created_at`, `updated_at`) VALUES
+(1, 2, 11, 'Friday', 'all', 1, '2026-01-09 09:46:12', '2026-01-09 09:46:12'),
+(2, 2, 12, 'Friday', 'all', 2, '2026-01-09 09:46:55', '2026-01-09 09:46:55');
 
 -- --------------------------------------------------------
 
@@ -232,7 +242,57 @@ INSERT INTO `audit_logs` (`id`, `user_id`, `action`, `entity_type`, `entity_id`,
 (36, 4, 'updated', 'Product', 2, '{\"after\": {\"vat_rate\": 21, \"updated_at\": \"2026-01-08 17:06:32\"}, \"before\": {\"vat_rate\": 19, \"updated_at\": \"2026-01-08T09:22:39.000000Z\"}}', '{\"ip\": \"127.0.0.1\", \"url\": \"http://localhost:8000/api/admin/products/2\", \"user_agent\": \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Trae/1.104.3 Chrome/138.0.7204.251 Electron/37.6.1 Safari/537.36\"}', '2026-01-08 15:06:32', '2026-01-08 15:06:32'),
 (37, 4, 'updated', 'Product', 2, '{\"after\": {\"name\": \"Plasa fibra sticla 160g/mp STANDARD– 50mp – Galben\", \"brand_id\": 1, \"updated_at\": \"2026-01-08 18:15:37\", \"long_description\": \"<div class=\'product-description\'>\\n<h2>Descriere Detaliată: Plasa fibra sticla 160g/mp STANDARD– 50mp – Galben</h2>\\n<p>???? Plasa fibra sticla 160g/mp STANDARD – 50mp – Galben ???? Descriere produs Plasa din fibra de sticla 160 STANDARD Galben este destinata consolidarii stratului suport in sistemele de termoizolare (ETICS), oferind o rezistenta mecanica excelenta si stabilitate dimensionala in timp. Este fabricata din fibra de sticla tratata anti-alcalin si este ideala pentru utilizari in zone cu expunere la vibratii, contractii sau trafic moderat. Culoarea galbena permite o aplicare vizibila si un control facil pe santier. Structura de ochiuri 5x5 mm si greutatea constanta de 160 +/- 5% g/mp o recomanda pentru aplicatii profesionale in constructii. ⚙️ Caracteristici tehnice: Cod produs: 1030002.004 Culoare: Galben – cod 004 Greutate specifica: 160 +/- 5% g/mp Lungime rola: 50 m ±2% Latime rola: 1 m ±2% Suprafata acoperita: 50 mp/rola Structura ochiuri: 5 × 5 mm Material: Fibra de sticla E tratata anti-alcalin Utilizare: Armare tencuieli, sisteme ETICS, aplicatii generale Ambalare: Rola individuala Destinatie: Exterior Conditii depozitare: -10°C pana la +40°C, ferit de razele solare si umiditate Recomandare: Se depoziteaza doar pe paleti si in pozitie orizontala Durata de valabilitate: 2 ani, daca este depozitata in spatiu uscat si ventilat</p>\\n<h3>De ce să alegi acest produs?</h3>\\n<ul>\\n<li><strong>Raport Calitate-Preț Excelent:</strong> Investiție inteligentă pe termen lung.</li>\\n<li><strong>Garanție și Suport:</strong> Produs susținut de servicii post-vânzare de încredere.</li>\\n</ul>\\n<p style=\'margin-top: 20px; font-style: italic; color: #6c757d;\'><strong>Notă:</strong> Imaginile sunt cu titlu de prezentare. Pentru detalii suplimentare, consultați fișa tehnică sau contactați echipa noastră de suport.</p>\\n</div>\", \"short_description\": \"<p>???? Plasa fibra sticla 160g/mp STANDARD – 50mp – Galben ???? Descriere produs Plasa din fibra de sticla 160 STANDARD Galben este destinata consolidarii stratului suport in sistemele de termoizolare (ETICS), oferind o rezistenta mecanica excelenta si stabilitate dimensionala in timp.</p>\"}, \"before\": {\"name\": \"Profil metalic UW 50\", \"brand_id\": 2, \"updated_at\": \"2026-01-08T17:06:32.000000Z\", \"long_description\": null, \"short_description\": null}}', '{\"ip\": \"127.0.0.1\", \"url\": \"http://127.0.0.1:8000/api/admin/products/2\", \"user_agent\": \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36\"}', '2026-01-08 16:15:37', '2026-01-08 16:15:37'),
 (38, 4, 'updated', 'Product', 2, '{\"after\": {\"updated_at\": \"2026-01-08 18:25:51\", \"long_description\": \"<p><span style=\\\"color: rgb(34, 34, 34);\\\">???? Plasa fibra sticla 160g/mp STANDARD – 50mp – Galben ???? Descriere produs Plasa din fibra de sticla 160 STANDARD Galben este destinata consolidarii stratului suport in sistemele de termoizolare (ETICS), oferind o rezistenta mecanica excelenta si stabilitate dimensionala in timp. Este fabricata din fibra de sticla tratata anti-alcalin si este ideala pentru utilizari in zone cu expunere la vibratii, contractii sau trafic moderat. Culoarea galbena permite o aplicare vizibila si un control facil pe santier. Structura de ochiuri 5x5 mm si greutatea constanta de 160 +/- 5% g/mp o recomanda pentru aplicatii profesionale in constructii. ⚙️ Caracteristici tehnice: Cod produs: 1030002.004 Culoare: Galben – cod 004 Greutate specifica: 160 +/- 5% g/mp Lungime rola: 50 m ±2% Latime rola: 1 m ±2% Suprafata acoperita: 50 mp/rola Structura ochiuri: 5 × 5 mm Material: Fibra de sticla E tratata anti-alcalin Utilizare: Armare tencuieli, sisteme ETICS, aplicatii generale Ambalare: Rola individuala Destinatie: Exterior Conditii depozitare: -10°C pana la +40°C, ferit de razele solare si umiditate Recomandare: Se depoziteaza doar pe paleti si in pozitie orizontala Durata de valabilitate: 2 ani, daca este depozitata in spatiu uscat si ventilat</span></p>\"}, \"before\": {\"updated_at\": \"2026-01-08T18:15:37.000000Z\", \"long_description\": \"<div class=\'product-description\'>\\n<h2>Descriere Detaliată: Plasa fibra sticla 160g/mp STANDARD– 50mp – Galben</h2>\\n<p>???? Plasa fibra sticla 160g/mp STANDARD – 50mp – Galben ???? Descriere produs Plasa din fibra de sticla 160 STANDARD Galben este destinata consolidarii stratului suport in sistemele de termoizolare (ETICS), oferind o rezistenta mecanica excelenta si stabilitate dimensionala in timp. Este fabricata din fibra de sticla tratata anti-alcalin si este ideala pentru utilizari in zone cu expunere la vibratii, contractii sau trafic moderat. Culoarea galbena permite o aplicare vizibila si un control facil pe santier. Structura de ochiuri 5x5 mm si greutatea constanta de 160 +/- 5% g/mp o recomanda pentru aplicatii profesionale in constructii. ⚙️ Caracteristici tehnice: Cod produs: 1030002.004 Culoare: Galben – cod 004 Greutate specifica: 160 +/- 5% g/mp Lungime rola: 50 m ±2% Latime rola: 1 m ±2% Suprafata acoperita: 50 mp/rola Structura ochiuri: 5 × 5 mm Material: Fibra de sticla E tratata anti-alcalin Utilizare: Armare tencuieli, sisteme ETICS, aplicatii generale Ambalare: Rola individuala Destinatie: Exterior Conditii depozitare: -10°C pana la +40°C, ferit de razele solare si umiditate Recomandare: Se depoziteaza doar pe paleti si in pozitie orizontala Durata de valabilitate: 2 ani, daca este depozitata in spatiu uscat si ventilat</p>\\n<h3>De ce să alegi acest produs?</h3>\\n<ul>\\n<li><strong>Raport Calitate-Preț Excelent:</strong> Investiție inteligentă pe termen lung.</li>\\n<li><strong>Garanție și Suport:</strong> Produs susținut de servicii post-vânzare de încredere.</li>\\n</ul>\\n<p style=\'margin-top: 20px; font-style: italic; color: #6c757d;\'><strong>Notă:</strong> Imaginile sunt cu titlu de prezentare. Pentru detalii suplimentare, consultați fișa tehnică sau contactați echipa noastră de suport.</p>\\n</div>\"}}', '{\"ip\": \"127.0.0.1\", \"url\": \"http://localhost:8000/api/admin/products/2\", \"user_agent\": \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Trae/1.104.3 Chrome/138.0.7204.251 Electron/37.6.1 Safari/537.36\"}', '2026-01-08 16:25:51', '2026-01-08 16:25:51'),
-(39, 4, 'updated', 'Product', 2, '{\"after\": {\"updated_at\": \"2026-01-08 18:43:16\", \"main_category_id\": 1}, \"before\": {\"updated_at\": \"2026-01-08T18:25:51.000000Z\", \"main_category_id\": 3}}', '{\"ip\": \"127.0.0.1\", \"url\": \"http://localhost:8000/api/admin/products/2\", \"user_agent\": \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Trae/1.104.3 Chrome/138.0.7204.251 Electron/37.6.1 Safari/537.36\"}', '2026-01-08 16:43:16', '2026-01-08 16:43:16');
+(39, 4, 'updated', 'Product', 2, '{\"after\": {\"updated_at\": \"2026-01-08 18:43:16\", \"main_category_id\": 1}, \"before\": {\"updated_at\": \"2026-01-08T18:25:51.000000Z\", \"main_category_id\": 3}}', '{\"ip\": \"127.0.0.1\", \"url\": \"http://localhost:8000/api/admin/products/2\", \"user_agent\": \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Trae/1.104.3 Chrome/138.0.7204.251 Electron/37.6.1 Safari/537.36\"}', '2026-01-08 16:43:16', '2026-01-08 16:43:16'),
+(40, 4, 'login', 'User', 4, '[]', '{\"ip\": \"127.0.0.1\", \"url\": \"http://localhost:8000/api/auth/login\", \"user_agent\": \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36\"}', '2026-01-09 05:40:59', '2026-01-09 05:40:59'),
+(41, 4, 'login', 'User', 4, '[]', '{\"ip\": \"127.0.0.1\", \"url\": \"http://localhost:8000/api/auth/login\", \"user_agent\": \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36\"}', '2026-01-09 05:40:59', '2026-01-09 05:40:59'),
+(42, 4, 'created', 'User', 5, '{\"after\": {\"id\": 5, \"email\": \"b2c@example.com\", \"phone\": \"0752222222\", \"password\": \"[REDACTED]\", \"is_active\": true, \"last_name\": \"b2c\", \"created_at\": \"2026-01-09 07:47:35\", \"first_name\": \"client\", \"updated_at\": \"2026-01-09 07:47:35\", \"director_id\": null}}', '{\"ip\": \"127.0.0.1\", \"url\": \"http://localhost:8000/api/admin/users\", \"user_agent\": \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36\"}', '2026-01-09 05:47:35', '2026-01-09 05:47:35'),
+(43, 4, 'created', 'User', 6, '{\"after\": {\"id\": 6, \"email\": \"b2b@example.com\", \"phone\": \"0758888888\", \"password\": \"[REDACTED]\", \"is_active\": true, \"last_name\": \"b2b\", \"created_at\": \"2026-01-09 07:48:01\", \"first_name\": \"client\", \"updated_at\": \"2026-01-09 07:48:01\", \"director_id\": null}}', '{\"ip\": \"127.0.0.1\", \"url\": \"http://localhost:8000/api/admin/users\", \"user_agent\": \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36\"}', '2026-01-09 05:48:01', '2026-01-09 05:48:01'),
+(44, 4, 'updated', 'User', 2, '{\"after\": {\"email\": \"bc-nt@metal-rom.ro\", \"password\": \"[REDACTED]\", \"last_name\": \"bc-nt\", \"first_name\": \"agent\", \"updated_at\": \"2026-01-09 07:48:29\"}, \"before\": {\"email\": \"agent1@example.com\", \"password\": \"[REDACTED]\", \"last_name\": \"Agent\", \"first_name\": \"Alex\", \"updated_at\": \"2026-01-08T08:26:18.000000Z\"}}', '{\"ip\": \"127.0.0.1\", \"url\": \"http://localhost:8000/api/admin/users/2\", \"user_agent\": \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36\"}', '2026-01-09 05:48:29', '2026-01-09 05:48:29'),
+(45, 4, 'created', 'App\\Models\\Promotion', 7, '{\"id\": 7, \"name\": \"10+1 gratis\", \"slug\": \"10-1-gratis\", \"type\": \"gift\", \"value\": 0, \"end_at\": \"2026-01-30 00:00:00\", \"status\": \"active\", \"settings\": \"{\\\"gift_qty\\\":1,\\\"gift_product_id\\\":2}\", \"start_at\": \"2026-01-09 00:00:00\", \"created_at\": \"2026-01-09 08:25:08\", \"updated_at\": \"2026-01-09 08:25:08\", \"value_type\": \"percent\", \"description\": \"SOUDAL:ADEZIV 50A=14 BUC+1 BUC GRATIS\", \"customer_type\": \"b2b\", \"logged_in_only\": true, \"min_cart_total\": 0, \"min_qty_per_product\": 10}', '{\"ip\": \"127.0.0.1\", \"user_agent\": \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36\"}', '2026-01-09 06:25:08', '2026-01-09 06:25:08'),
+(46, 4, 'created', 'Promotion', 7, '{\"after\": {\"id\": 7, \"name\": \"10+1 gratis\", \"slug\": \"10-1-gratis\", \"type\": \"gift\", \"value\": 0, \"end_at\": \"2026-01-30 00:00:00\", \"status\": \"active\", \"settings\": \"{\\\"gift_qty\\\":1,\\\"gift_product_id\\\":2}\", \"start_at\": \"2026-01-09 00:00:00\", \"created_at\": \"2026-01-09 08:25:08\", \"updated_at\": \"2026-01-09 08:25:08\", \"value_type\": \"percent\", \"description\": \"SOUDAL:ADEZIV 50A=14 BUC+1 BUC GRATIS\", \"customer_type\": \"b2b\", \"logged_in_only\": true, \"min_cart_total\": 0, \"min_qty_per_product\": 10}}', '{\"ip\": \"127.0.0.1\", \"url\": \"http://localhost:8000/api/admin/promotions\", \"user_agent\": \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36\"}', '2026-01-09 06:25:08', '2026-01-09 06:25:08'),
+(47, 6, 'login', 'User', 6, '[]', '{\"ip\": \"127.0.0.1\", \"url\": \"http://localhost:8000/api/auth/login\", \"user_agent\": \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36\"}', '2026-01-09 06:26:22', '2026-01-09 06:26:22'),
+(48, 6, 'login', 'User', 6, '[]', '{\"ip\": \"127.0.0.1\", \"url\": \"http://localhost:8000/api/auth/login\", \"user_agent\": \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36\"}', '2026-01-09 06:26:22', '2026-01-09 06:26:22'),
+(49, 4, 'login', 'User', 4, '[]', '{\"ip\": \"127.0.0.1\", \"url\": \"http://localhost:8000/api/auth/login\", \"user_agent\": \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Trae/1.104.3 Chrome/138.0.7204.251 Electron/37.6.1 Safari/537.36\"}', '2026-01-09 06:27:33', '2026-01-09 06:27:33'),
+(50, 4, 'login', 'User', 4, '[]', '{\"ip\": \"127.0.0.1\", \"url\": \"http://localhost:8000/api/auth/login\", \"user_agent\": \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Trae/1.104.3 Chrome/138.0.7204.251 Electron/37.6.1 Safari/537.36\"}', '2026-01-09 06:27:33', '2026-01-09 06:27:33'),
+(51, 4, 'deleted', 'Customer', 4, '{\"before\": {\"id\": 4, \"cif\": null, \"iban\": null, \"name\": \"Demo Customer 2\", \"type\": \"b2b\", \"email\": \"demo2@test.com\", \"phone\": \"0700000002\", \"reg_com\": null, \"currency\": \"RON\", \"group_id\": 1, \"latitude\": null, \"is_active\": 1, \"longitude\": null, \"created_at\": \"2026-01-08 09:22:39\", \"is_partner\": 0, \"legal_name\": null, \"updated_at\": \"2026-01-09 07:48:28\", \"credit_limit\": \"50000.00\", \"agent_user_id\": 2, \"current_balance\": \"0.00\", \"payment_terms_days\": 30, \"allow_line_discount\": 0, \"allow_global_discount\": 0, \"sales_director_user_id\": 1}}', '{\"ip\": \"127.0.0.1\", \"url\": \"http://localhost:8000/api/admin/customers/4\", \"user_agent\": \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36\"}', '2026-01-09 06:32:06', '2026-01-09 06:32:06'),
+(52, 4, 'deleted', 'Customer', 3, '{\"before\": {\"id\": 3, \"cif\": null, \"iban\": null, \"name\": \"Demo Customer 1\", \"type\": \"b2b\", \"email\": \"demo1@test.com\", \"phone\": \"0700000001\", \"reg_com\": null, \"currency\": \"RON\", \"group_id\": 1, \"latitude\": null, \"is_active\": 1, \"longitude\": null, \"created_at\": \"2026-01-08 09:22:39\", \"is_partner\": 0, \"legal_name\": null, \"updated_at\": \"2026-01-08 09:22:39\", \"credit_limit\": \"50000.00\", \"agent_user_id\": 3, \"current_balance\": \"0.00\", \"payment_terms_days\": 30, \"allow_line_discount\": 0, \"allow_global_discount\": 0, \"sales_director_user_id\": 1}}', '{\"ip\": \"127.0.0.1\", \"url\": \"http://localhost:8000/api/admin/customers/3\", \"user_agent\": \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36\"}', '2026-01-09 06:32:09', '2026-01-09 06:32:09'),
+(53, 4, 'deleted', 'Customer', 2, '{\"before\": {\"id\": 2, \"cif\": \"RO123456\", \"iban\": null, \"name\": \"Jane Smith Ltd\", \"type\": \"b2b\", \"email\": \"jane@test.com\", \"phone\": \"0700000002\", \"reg_com\": \"J40/123/2020\", \"currency\": \"RON\", \"group_id\": 2, \"latitude\": null, \"is_active\": 1, \"longitude\": null, \"created_at\": \"2026-01-08 09:22:38\", \"is_partner\": 0, \"legal_name\": null, \"updated_at\": \"2026-01-08 09:22:38\", \"credit_limit\": \"0.00\", \"agent_user_id\": null, \"current_balance\": \"0.00\", \"payment_terms_days\": 0, \"allow_line_discount\": 1, \"allow_global_discount\": 1, \"sales_director_user_id\": null}}', '{\"ip\": \"127.0.0.1\", \"url\": \"http://localhost:8000/api/admin/customers/2\", \"user_agent\": \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36\"}', '2026-01-09 06:32:13', '2026-01-09 06:32:13'),
+(54, 4, 'deleted', 'Customer', 5, '{\"before\": {\"id\": 5, \"cif\": null, \"iban\": null, \"name\": \"Demo Customer 3\", \"type\": \"b2b\", \"email\": \"demo3@test.com\", \"phone\": \"0700000003\", \"reg_com\": null, \"currency\": \"RON\", \"group_id\": 1, \"latitude\": null, \"is_active\": 1, \"longitude\": null, \"created_at\": \"2026-01-08 09:22:39\", \"is_partner\": 0, \"legal_name\": null, \"updated_at\": \"2026-01-08 09:22:39\", \"credit_limit\": \"50000.00\", \"agent_user_id\": 3, \"current_balance\": \"2800.00\", \"payment_terms_days\": 30, \"allow_line_discount\": 0, \"allow_global_discount\": 0, \"sales_director_user_id\": 1}}', '{\"ip\": \"127.0.0.1\", \"url\": \"http://localhost:8000/api/admin/customers/5\", \"user_agent\": \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36\"}', '2026-01-09 06:32:16', '2026-01-09 06:32:16'),
+(55, 4, 'deleted', 'Customer', 6, '{\"before\": {\"id\": 6, \"cif\": null, \"iban\": null, \"name\": \"Demo Customer 4\", \"type\": \"b2b\", \"email\": \"demo4@test.com\", \"phone\": \"0700000004\", \"reg_com\": null, \"currency\": \"RON\", \"group_id\": 1, \"latitude\": null, \"is_active\": 1, \"longitude\": null, \"created_at\": \"2026-01-08 09:22:39\", \"is_partner\": 0, \"legal_name\": null, \"updated_at\": \"2026-01-09 07:48:28\", \"credit_limit\": \"50000.00\", \"agent_user_id\": 2, \"current_balance\": \"0.00\", \"payment_terms_days\": 30, \"allow_line_discount\": 0, \"allow_global_discount\": 0, \"sales_director_user_id\": 1}}', '{\"ip\": \"127.0.0.1\", \"url\": \"http://localhost:8000/api/admin/customers/6\", \"user_agent\": \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36\"}', '2026-01-09 06:32:20', '2026-01-09 06:32:20'),
+(56, 4, 'deleted', 'Customer', 7, '{\"before\": {\"id\": 7, \"cif\": null, \"iban\": null, \"name\": \"Demo Customer 5\", \"type\": \"b2b\", \"email\": \"demo5@test.com\", \"phone\": \"0700000005\", \"reg_com\": null, \"currency\": \"RON\", \"group_id\": 1, \"latitude\": null, \"is_active\": 1, \"longitude\": null, \"created_at\": \"2026-01-08 09:22:39\", \"is_partner\": 0, \"legal_name\": null, \"updated_at\": \"2026-01-08 09:22:39\", \"credit_limit\": \"50000.00\", \"agent_user_id\": 3, \"current_balance\": \"0.00\", \"payment_terms_days\": 30, \"allow_line_discount\": 0, \"allow_global_discount\": 0, \"sales_director_user_id\": 1}}', '{\"ip\": \"127.0.0.1\", \"url\": \"http://localhost:8000/api/admin/customers/7\", \"user_agent\": \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36\"}', '2026-01-09 06:32:23', '2026-01-09 06:32:23'),
+(57, 4, 'deleted', 'Customer', 8, '{\"before\": {\"id\": 8, \"cif\": null, \"iban\": null, \"name\": \"Demo Customer 6\", \"type\": \"b2b\", \"email\": \"demo6@test.com\", \"phone\": \"0700000006\", \"reg_com\": null, \"currency\": \"RON\", \"group_id\": 1, \"latitude\": null, \"is_active\": 1, \"longitude\": null, \"created_at\": \"2026-01-08 09:22:39\", \"is_partner\": 0, \"legal_name\": null, \"updated_at\": \"2026-01-09 07:48:28\", \"credit_limit\": \"50000.00\", \"agent_user_id\": 2, \"current_balance\": \"3100.00\", \"payment_terms_days\": 30, \"allow_line_discount\": 0, \"allow_global_discount\": 0, \"sales_director_user_id\": 1}}', '{\"ip\": \"127.0.0.1\", \"url\": \"http://localhost:8000/api/admin/customers/8\", \"user_agent\": \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36\"}', '2026-01-09 06:32:26', '2026-01-09 06:32:26'),
+(58, 4, 'deleted', 'Customer', 9, '{\"before\": {\"id\": 9, \"cif\": null, \"iban\": null, \"name\": \"Demo Customer 7\", \"type\": \"b2b\", \"email\": \"demo7@test.com\", \"phone\": \"0700000007\", \"reg_com\": null, \"currency\": \"RON\", \"group_id\": 1, \"latitude\": null, \"is_active\": 1, \"longitude\": null, \"created_at\": \"2026-01-08 09:22:39\", \"is_partner\": 0, \"legal_name\": null, \"updated_at\": \"2026-01-08 09:22:39\", \"credit_limit\": \"50000.00\", \"agent_user_id\": 3, \"current_balance\": \"0.00\", \"payment_terms_days\": 30, \"allow_line_discount\": 0, \"allow_global_discount\": 0, \"sales_director_user_id\": 1}}', '{\"ip\": \"127.0.0.1\", \"url\": \"http://localhost:8000/api/admin/customers/9\", \"user_agent\": \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36\"}', '2026-01-09 06:32:29', '2026-01-09 06:32:29'),
+(59, 4, 'deleted', 'Customer', 10, '{\"before\": {\"id\": 10, \"cif\": null, \"iban\": null, \"name\": \"Demo Customer 8\", \"type\": \"b2b\", \"email\": \"demo8@test.com\", \"phone\": \"0700000008\", \"reg_com\": null, \"currency\": \"RON\", \"group_id\": 1, \"latitude\": null, \"is_active\": 1, \"longitude\": null, \"created_at\": \"2026-01-08 09:22:39\", \"is_partner\": 0, \"legal_name\": null, \"updated_at\": \"2026-01-09 07:48:28\", \"credit_limit\": \"50000.00\", \"agent_user_id\": 2, \"current_balance\": \"0.00\", \"payment_terms_days\": 30, \"allow_line_discount\": 0, \"allow_global_discount\": 0, \"sales_director_user_id\": 1}}', '{\"ip\": \"127.0.0.1\", \"url\": \"http://localhost:8000/api/admin/customers/10\", \"user_agent\": \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36\"}', '2026-01-09 06:32:32', '2026-01-09 06:32:32'),
+(60, 4, 'deleted', 'Customer', 1, '{\"before\": {\"id\": 1, \"cif\": null, \"iban\": null, \"name\": \"John Doe Company\", \"type\": \"b2c\", \"email\": \"john@test.com\", \"phone\": \"0700000001\", \"reg_com\": null, \"currency\": \"RON\", \"group_id\": 1, \"latitude\": null, \"is_active\": 1, \"longitude\": null, \"created_at\": \"2026-01-08 09:22:38\", \"is_partner\": 0, \"legal_name\": null, \"updated_at\": \"2026-01-08 09:22:38\", \"credit_limit\": \"0.00\", \"agent_user_id\": null, \"current_balance\": \"0.00\", \"payment_terms_days\": 0, \"allow_line_discount\": 0, \"allow_global_discount\": 0, \"sales_director_user_id\": null}}', '{\"ip\": \"127.0.0.1\", \"url\": \"http://localhost:8000/api/admin/customers/1\", \"user_agent\": \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36\"}', '2026-01-09 06:40:38', '2026-01-09 06:40:38'),
+(61, 4, 'updated', 'User', 6, '{\"after\": {\"is_active\": false, \"updated_at\": \"2026-01-09 08:40:46\"}, \"before\": {\"is_active\": true, \"updated_at\": \"2026-01-09T07:48:01.000000Z\"}}', '{\"ip\": \"127.0.0.1\", \"url\": \"http://localhost:8000/api/admin/users/6\", \"user_agent\": \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36\"}', '2026-01-09 06:40:46', '2026-01-09 06:40:46'),
+(62, 4, 'updated', 'User', 5, '{\"after\": {\"is_active\": false, \"updated_at\": \"2026-01-09 08:40:50\"}, \"before\": {\"is_active\": true, \"updated_at\": \"2026-01-09T07:47:35.000000Z\"}}', '{\"ip\": \"127.0.0.1\", \"url\": \"http://localhost:8000/api/admin/users/5\", \"user_agent\": \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36\"}', '2026-01-09 06:40:50', '2026-01-09 06:40:50'),
+(63, 4, 'updated', 'User', 6, '{\"after\": {\"is_active\": true, \"updated_at\": \"2026-01-09 08:40:53\"}, \"before\": {\"is_active\": false, \"updated_at\": \"2026-01-09T08:40:46.000000Z\"}}', '{\"ip\": \"127.0.0.1\", \"url\": \"http://localhost:8000/api/admin/users/6\", \"user_agent\": \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36\"}', '2026-01-09 06:40:53', '2026-01-09 06:40:53'),
+(64, 4, 'updated', 'User', 6, '{\"after\": {\"is_active\": false, \"updated_at\": \"2026-01-09 08:40:56\"}, \"before\": {\"is_active\": true, \"updated_at\": \"2026-01-09T08:40:53.000000Z\"}}', '{\"ip\": \"127.0.0.1\", \"url\": \"http://localhost:8000/api/admin/users/6\", \"user_agent\": \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36\"}', '2026-01-09 06:40:56', '2026-01-09 06:40:56'),
+(65, 4, 'updated', 'User', 6, '{\"after\": {\"is_active\": true, \"updated_at\": \"2026-01-09 08:40:58\"}, \"before\": {\"is_active\": false, \"updated_at\": \"2026-01-09T08:40:56.000000Z\"}}', '{\"ip\": \"127.0.0.1\", \"url\": \"http://localhost:8000/api/admin/users/6\", \"user_agent\": \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36\"}', '2026-01-09 06:40:58', '2026-01-09 06:40:58'),
+(66, 4, 'updated', 'User', 6, '{\"after\": {\"is_active\": false, \"updated_at\": \"2026-01-09 08:41:00\"}, \"before\": {\"is_active\": true, \"updated_at\": \"2026-01-09T08:40:58.000000Z\"}}', '{\"ip\": \"127.0.0.1\", \"url\": \"http://localhost:8000/api/admin/users/6\", \"user_agent\": \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36\"}', '2026-01-09 06:41:00', '2026-01-09 06:41:00');
+INSERT INTO `audit_logs` (`id`, `user_id`, `action`, `entity_type`, `entity_id`, `changes`, `meta`, `created_at`, `updated_at`) VALUES
+(67, 4, 'updated', 'User', 6, '{\"after\": {\"is_active\": true, \"updated_at\": \"2026-01-09 08:41:02\"}, \"before\": {\"is_active\": false, \"updated_at\": \"2026-01-09T08:41:00.000000Z\"}}', '{\"ip\": \"127.0.0.1\", \"url\": \"http://localhost:8000/api/admin/users/6\", \"user_agent\": \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36\"}', '2026-01-09 06:41:02', '2026-01-09 06:41:02'),
+(68, 4, 'updated', 'User', 6, '{\"after\": {\"is_active\": false, \"updated_at\": \"2026-01-09 08:41:05\"}, \"before\": {\"is_active\": true, \"updated_at\": \"2026-01-09T08:41:02.000000Z\"}}', '{\"ip\": \"127.0.0.1\", \"url\": \"http://localhost:8000/api/admin/users/6\", \"user_agent\": \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36\"}', '2026-01-09 06:41:05', '2026-01-09 06:41:05'),
+(69, 4, 'updated', 'User', 6, '{\"after\": {\"is_active\": true, \"updated_at\": \"2026-01-09 08:41:17\"}, \"before\": {\"is_active\": false, \"updated_at\": \"2026-01-09T08:41:05.000000Z\"}}', '{\"ip\": \"127.0.0.1\", \"url\": \"http://localhost:8000/api/admin/users/6\", \"user_agent\": \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36\"}', '2026-01-09 06:41:17', '2026-01-09 06:41:17'),
+(70, 4, 'updated', 'User', 5, '{\"after\": {\"is_active\": true, \"updated_at\": \"2026-01-09 08:41:22\"}, \"before\": {\"is_active\": false, \"updated_at\": \"2026-01-09T08:40:50.000000Z\"}}', '{\"ip\": \"127.0.0.1\", \"url\": \"http://localhost:8000/api/admin/users/5\", \"user_agent\": \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36\"}', '2026-01-09 06:41:22', '2026-01-09 06:41:22'),
+(71, 4, 'updated', 'Customer', 11, '{\"after\": {\"updated_at\": \"2026-01-09 10:35:19\", \"agent_user_id\": 2, \"sales_director_user_id\": 1}, \"before\": {\"updated_at\": \"2026-01-09T10:34:32.000000Z\", \"agent_user_id\": null, \"sales_director_user_id\": null}}', '{\"ip\": \"127.0.0.1\", \"url\": \"http://localhost:8000/api/admin/customers/11\", \"user_agent\": \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Trae/1.104.3 Chrome/138.0.7204.251 Electron/37.6.1 Safari/537.36\"}', '2026-01-09 08:35:19', '2026-01-09 08:35:19'),
+(72, 2, 'login', 'User', 2, '[]', '{\"ip\": \"127.0.0.1\", \"url\": \"http://localhost:8000/api/auth/login\", \"user_agent\": \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36\"}', '2026-01-09 08:35:52', '2026-01-09 08:35:52'),
+(73, 2, 'login', 'User', 2, '[]', '{\"ip\": \"127.0.0.1\", \"url\": \"http://localhost:8000/api/auth/login\", \"user_agent\": \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36\"}', '2026-01-09 08:35:52', '2026-01-09 08:35:52'),
+(74, 6, 'login', 'User', 6, '[]', '{\"ip\": \"127.0.0.1\", \"url\": \"http://localhost:8000/api/auth/login\", \"user_agent\": \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36\"}', '2026-01-09 08:37:26', '2026-01-09 08:37:26'),
+(75, 6, 'login', 'User', 6, '[]', '{\"ip\": \"127.0.0.1\", \"url\": \"http://localhost:8000/api/auth/login\", \"user_agent\": \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36\"}', '2026-01-09 08:37:26', '2026-01-09 08:37:26'),
+(76, 6, 'login', 'User', 6, '[]', '{\"ip\": \"127.0.0.1\", \"url\": \"http://localhost:8000/api/auth/login\", \"user_agent\": \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Trae/1.104.3 Chrome/138.0.7204.251 Electron/37.6.1 Safari/537.36\"}', '2026-01-09 08:48:23', '2026-01-09 08:48:23'),
+(77, 6, 'login', 'User', 6, '[]', '{\"ip\": \"127.0.0.1\", \"url\": \"http://localhost:8000/api/auth/login\", \"user_agent\": \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Trae/1.104.3 Chrome/138.0.7204.251 Electron/37.6.1 Safari/537.36\"}', '2026-01-09 08:48:23', '2026-01-09 08:48:23'),
+(78, 6, 'login', 'User', 6, '[]', '{\"ip\": \"127.0.0.1\", \"url\": \"http://localhost:8000/api/auth/login\", \"user_agent\": \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36\"}', '2026-01-09 08:49:40', '2026-01-09 08:49:40'),
+(79, 6, 'login', 'User', 6, '[]', '{\"ip\": \"127.0.0.1\", \"url\": \"http://localhost:8000/api/auth/login\", \"user_agent\": \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36\"}', '2026-01-09 08:49:40', '2026-01-09 08:49:40'),
+(80, 5, 'login', 'User', 5, '[]', '{\"ip\": \"127.0.0.1\", \"url\": \"http://localhost:8000/api/auth/login\", \"user_agent\": \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Trae/1.104.3 Chrome/138.0.7204.251 Electron/37.6.1 Safari/537.36\"}', '2026-01-09 09:44:54', '2026-01-09 09:44:54'),
+(81, 5, 'login', 'User', 5, '[]', '{\"ip\": \"127.0.0.1\", \"url\": \"http://localhost:8000/api/auth/login\", \"user_agent\": \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Trae/1.104.3 Chrome/138.0.7204.251 Electron/37.6.1 Safari/537.36\"}', '2026-01-09 09:44:54', '2026-01-09 09:44:54'),
+(82, 4, 'login', 'User', 4, '[]', '{\"ip\": \"127.0.0.1\", \"url\": \"http://localhost:8000/api/auth/login\", \"user_agent\": \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36\"}', '2026-01-09 09:45:24', '2026-01-09 09:45:24'),
+(83, 4, 'login', 'User', 4, '[]', '{\"ip\": \"127.0.0.1\", \"url\": \"http://localhost:8000/api/auth/login\", \"user_agent\": \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36\"}', '2026-01-09 09:45:24', '2026-01-09 09:45:24'),
+(84, 4, 'updated', 'Customer', 12, '{\"after\": {\"updated_at\": \"2026-01-09 11:46:33\", \"agent_user_id\": 2, \"sales_director_user_id\": 1}, \"before\": {\"updated_at\": \"2026-01-09T10:35:30.000000Z\", \"agent_user_id\": null, \"sales_director_user_id\": null}}', '{\"ip\": \"127.0.0.1\", \"url\": \"http://localhost:8000/api/admin/customers/12\", \"user_agent\": \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36\"}', '2026-01-09 09:46:33', '2026-01-09 09:46:33'),
+(85, 5, 'login', 'User', 5, '[]', '{\"ip\": \"127.0.0.1\", \"url\": \"http://127.0.0.1:8000/api/auth/login\", \"user_agent\": \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Trae/1.104.3 Chrome/138.0.7204.251 Electron/37.6.1 Safari/537.36\"}', '2026-01-09 11:48:27', '2026-01-09 11:48:27'),
+(86, 5, 'login', 'User', 5, '[]', '{\"ip\": \"127.0.0.1\", \"url\": \"http://127.0.0.1:8000/api/auth/login\", \"user_agent\": \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Trae/1.104.3 Chrome/138.0.7204.251 Electron/37.6.1 Safari/537.36\"}', '2026-01-09 11:48:27', '2026-01-09 11:48:27'),
+(87, 4, 'login', 'User', 4, '[]', '{\"ip\": \"127.0.0.1\", \"url\": \"http://localhost:8000/api/auth/login\", \"user_agent\": \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36\"}', '2026-01-09 12:38:00', '2026-01-09 12:38:00'),
+(88, 4, 'login', 'User', 4, '[]', '{\"ip\": \"127.0.0.1\", \"url\": \"http://localhost:8000/api/auth/login\", \"user_agent\": \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36\"}', '2026-01-09 12:38:00', '2026-01-09 12:38:00');
 
 -- --------------------------------------------------------
 
@@ -386,16 +446,28 @@ INSERT INTO `carts` (`id`, `customer_id`, `user_id`, `session_id`, `status`, `cr
 (3, NULL, NULL, 'tDghBjo7FF8wwaP35bHqKLLOYcY0TZin5n2a2Zvt', 'active', '2026-01-08 05:32:55', '2026-01-08 05:32:55', NULL),
 (4, NULL, NULL, 'iDW9iVo8SKvbu1avTsbGpkBtNaN46IBBxeb1Y1Hg', 'active', '2026-01-08 05:35:36', '2026-01-08 05:35:36', NULL),
 (5, NULL, NULL, '4qmgklHw2LDYGRhIXBKV6fWzImdv0wCgmSjvIkyC', 'active', '2026-01-08 05:38:16', '2026-01-08 05:38:16', NULL),
-(6, 4, 2, NULL, 'active', '2026-01-08 05:56:51', '2026-01-08 05:56:51', NULL),
+(6, NULL, 2, NULL, 'active', '2026-01-08 05:56:51', '2026-01-08 05:56:51', NULL),
 (8, NULL, NULL, 'HX6JkxSsYFWD9aGfmzxlsIlnfTCfl6xefZq1NlBK', 'active', '2026-01-08 06:04:09', '2026-01-08 06:04:09', NULL),
 (9, NULL, 1, NULL, 'active', '2026-01-08 06:04:38', '2026-01-08 06:04:38', NULL),
 (11, NULL, 4, NULL, 'active', '2026-01-08 06:24:17', '2026-01-08 06:24:17', NULL),
-(13, 3, 2, NULL, 'active', '2026-01-08 06:27:44', '2026-01-08 06:27:44', NULL),
+(13, NULL, 2, NULL, 'active', '2026-01-08 06:27:44', '2026-01-08 06:27:44', NULL),
 (14, NULL, NULL, 'jvA30FRUQBkQliaZmJyFO6WV1wxLaTRpnqlGxrwe', 'active', '2026-01-08 11:21:55', '2026-01-08 11:21:55', NULL),
 (15, NULL, NULL, 'un6HqFlJpCQoImYuaf3cJsLbgebhP4BztntHBvJq', 'active', '2026-01-08 11:27:36', '2026-01-08 11:27:36', NULL),
 (16, NULL, NULL, 'Sfbv1hfiPn3eZSPXnDaKxnKmc2Q6G8pTqGWKqRRM', 'active', '2026-01-08 11:52:38', '2026-01-08 11:52:38', NULL),
 (17, NULL, NULL, 'Wnae9FBVts7c1ZwEiafgdBxkm6d3BmRKngunDhMB', 'active', '2026-01-08 12:17:15', '2026-01-08 12:17:15', NULL),
-(18, NULL, NULL, '9buOKf3uyKFCOL6nL6rTsD4PgiD9IleCAQdeDzwB', 'active', '2026-01-08 14:11:46', '2026-01-08 14:11:46', NULL);
+(18, NULL, NULL, '9buOKf3uyKFCOL6nL6rTsD4PgiD9IleCAQdeDzwB', 'active', '2026-01-08 14:11:46', '2026-01-08 14:11:46', NULL),
+(19, NULL, NULL, 'WU7xIVbJpXTuVP0Zu2WgDUKb55cqThJBFi8O3qMj', 'active', '2026-01-09 04:39:38', '2026-01-09 04:39:38', NULL),
+(20, NULL, NULL, 'LqX148R4mjIe18rqFNBvRMnXu6Rn522OzR97SDRH', 'active', '2026-01-09 05:19:27', '2026-01-09 05:19:27', NULL),
+(21, NULL, NULL, 'MyQLEG0CnsdYotws3IuQCZjtLqVEh1TrRcz4kj5R', 'active', '2026-01-09 05:19:42', '2026-01-09 05:19:42', NULL),
+(22, NULL, NULL, 'nHPLXetQcDHaXci7TPl62TsWImBrr1IVUACHShjD', 'converted', '2026-01-09 05:20:07', '2026-01-09 05:20:07', NULL),
+(23, NULL, NULL, 'kORem18CyLSqPXMhclztc2d2dDzknJHgqLBcI8UM', 'active', '2026-01-09 05:27:22', '2026-01-09 05:27:22', NULL),
+(24, NULL, NULL, 'BZOVisS7czAgAYKLNlInvP8wr35pg0yD9pvZOY7e', 'active', '2026-01-09 06:25:21', '2026-01-09 06:25:21', NULL),
+(25, NULL, 6, NULL, 'active', '2026-01-09 06:26:23', '2026-01-09 06:26:23', NULL),
+(26, 12, 6, NULL, 'active', '2026-01-09 08:37:27', '2026-01-09 08:37:27', NULL),
+(27, 11, 5, NULL, 'active', '2026-01-09 09:44:56', '2026-01-09 09:44:56', NULL),
+(28, NULL, NULL, 'Y3C790BOXXEsKLGdIXR9YOyHFMuZ67szLCOvlld9', 'active', '2026-01-09 11:48:10', '2026-01-09 11:48:10', NULL),
+(29, NULL, NULL, 'ufb7KCFgX87gjiXEba0fOdnYHR1ndbYSxr2LJrJR', 'active', '2026-01-09 11:56:40', '2026-01-09 11:56:40', NULL),
+(30, NULL, NULL, 'NifW1bCIskaXX1eF84nQeiYc8IfdlKwYXiVR56SI', 'active', '2026-01-09 12:15:56', '2026-01-09 12:15:56', NULL);
 
 -- --------------------------------------------------------
 
@@ -423,7 +495,11 @@ INSERT INTO `cart_items` (`id`, `cart_id`, `product_id`, `product_variant_id`, `
 (4, 6, 1, NULL, 5, 12000.00, 60000.00, '2026-01-08 05:58:36', '2026-01-08 14:20:40'),
 (10, 13, 1, NULL, 1, 25.50, 25.50, '2026-01-08 07:46:00', '2026-01-08 07:46:00'),
 (11, 13, 2, NULL, 20, 18.00, 360.00, '2026-01-08 07:46:41', '2026-01-08 07:46:41'),
-(12, 13, 3, NULL, 20, 120.00, 2400.00, '2026-01-08 07:46:58', '2026-01-08 07:46:58');
+(12, 13, 3, NULL, 20, 120.00, 2400.00, '2026-01-08 07:46:58', '2026-01-08 07:46:58'),
+(13, 20, 1, NULL, 1, 0.00, 0.00, '2026-01-09 05:19:27', '2026-01-09 05:19:27'),
+(14, 21, 1, NULL, 1, 0.00, 0.00, '2026-01-09 05:19:42', '2026-01-09 05:19:42'),
+(16, 24, 4, NULL, 10, 35.00, 350.00, '2026-01-09 06:25:55', '2026-01-09 06:25:55'),
+(18, 25, 4, NULL, 10, 35.00, 350.00, '2026-01-09 06:26:47', '2026-01-09 06:26:47');
 
 -- --------------------------------------------------------
 
@@ -658,16 +734,8 @@ CREATE TABLE `customers` (
 --
 
 INSERT INTO `customers` (`id`, `type`, `name`, `legal_name`, `cif`, `reg_com`, `iban`, `email`, `phone`, `group_id`, `agent_user_id`, `sales_director_user_id`, `payment_terms_days`, `credit_limit`, `allow_global_discount`, `allow_line_discount`, `current_balance`, `currency`, `is_active`, `is_partner`, `latitude`, `longitude`, `created_at`, `updated_at`) VALUES
-(1, 'b2c', 'John Doe Company', NULL, NULL, NULL, NULL, 'john@test.com', '0700000001', 1, NULL, NULL, 0, 0.00, 0, 0, 0.00, 'RON', 1, 0, NULL, NULL, '2026-01-08 07:22:38', '2026-01-08 07:22:38'),
-(2, 'b2b', 'Jane Smith Ltd', NULL, 'RO123456', 'J40/123/2020', NULL, 'jane@test.com', '0700000002', 2, NULL, NULL, 0, 0.00, 1, 1, 0.00, 'RON', 1, 0, NULL, NULL, '2026-01-08 07:22:38', '2026-01-08 07:22:38'),
-(3, 'b2b', 'Demo Customer 1', NULL, NULL, NULL, NULL, 'demo1@test.com', '0700000001', 1, 3, 1, 30, 50000.00, 0, 0, 0.00, 'RON', 1, 0, NULL, NULL, '2026-01-08 07:22:39', '2026-01-08 07:22:39'),
-(4, 'b2b', 'Demo Customer 2', NULL, NULL, NULL, NULL, 'demo2@test.com', '0700000002', 1, 2, 1, 30, 50000.00, 0, 0, 0.00, 'RON', 1, 0, NULL, NULL, '2026-01-08 07:22:39', '2026-01-08 07:22:39'),
-(5, 'b2b', 'Demo Customer 3', NULL, NULL, NULL, NULL, 'demo3@test.com', '0700000003', 1, 3, 1, 30, 50000.00, 0, 0, 2800.00, 'RON', 1, 0, NULL, NULL, '2026-01-08 07:22:39', '2026-01-08 07:22:39'),
-(6, 'b2b', 'Demo Customer 4', NULL, NULL, NULL, NULL, 'demo4@test.com', '0700000004', 1, 2, 1, 30, 50000.00, 0, 0, 0.00, 'RON', 1, 0, NULL, NULL, '2026-01-08 07:22:39', '2026-01-08 07:22:39'),
-(7, 'b2b', 'Demo Customer 5', NULL, NULL, NULL, NULL, 'demo5@test.com', '0700000005', 1, 3, 1, 30, 50000.00, 0, 0, 0.00, 'RON', 1, 0, NULL, NULL, '2026-01-08 07:22:39', '2026-01-08 07:22:39'),
-(8, 'b2b', 'Demo Customer 6', NULL, NULL, NULL, NULL, 'demo6@test.com', '0700000006', 1, 2, 1, 30, 50000.00, 0, 0, 3100.00, 'RON', 1, 0, NULL, NULL, '2026-01-08 07:22:39', '2026-01-08 07:22:39'),
-(9, 'b2b', 'Demo Customer 7', NULL, NULL, NULL, NULL, 'demo7@test.com', '0700000007', 1, 3, 1, 30, 50000.00, 0, 0, 0.00, 'RON', 1, 0, NULL, NULL, '2026-01-08 07:22:39', '2026-01-08 07:22:39'),
-(10, 'b2b', 'Demo Customer 8', NULL, NULL, NULL, NULL, 'demo8@test.com', '0700000008', 1, 2, 1, 30, 50000.00, 0, 0, 0.00, 'RON', 1, 0, NULL, NULL, '2026-01-08 07:22:39', '2026-01-08 07:22:39');
+(11, 'b2c', 'client b2c', NULL, NULL, NULL, NULL, 'b2c@example.com', '0752222222', NULL, 2, 1, 0, 0.00, 0, 0, 0.00, 'RON', 1, 0, NULL, NULL, '2026-01-09 08:34:32', '2026-01-09 08:35:19'),
+(12, 'b2b', 'client b2b', NULL, NULL, NULL, NULL, 'b2b@example.com', '0758888888', NULL, 2, 1, 0, 0.00, 0, 0, 0.00, 'RON', 1, 0, NULL, NULL, '2026-01-09 08:35:30', '2026-01-09 09:46:33');
 
 -- --------------------------------------------------------
 
@@ -692,8 +760,7 @@ CREATE TABLE `customer_groups` (
 --
 
 INSERT INTO `customer_groups` (`id`, `name`, `type`, `default_discount_percent`, `default_payment_terms_days`, `default_credit_limit`, `is_active`, `created_at`, `updated_at`) VALUES
-(1, 'Distribuitori B2B', 'b2b', 5.00, 0, 0.00, 1, '2026-01-08 07:22:38', '2026-01-08 07:22:38'),
-(2, 'VIP Retail', 'b2c', 2.00, 0, 0.00, 1, '2026-01-08 07:22:38', '2026-01-08 07:22:38');
+(1, 'Distribuitori B2B', 'b2b', 5.00, 0, 0.00, 1, '2026-01-08 07:22:38', '2026-01-08 07:22:38');
 
 -- --------------------------------------------------------
 
@@ -747,11 +814,7 @@ CREATE TABLE `customer_visits` (
 --
 
 INSERT INTO `customer_visits` (`id`, `agent_id`, `customer_id`, `status`, `outcome`, `start_time`, `end_time`, `latitude`, `longitude`, `end_latitude`, `end_longitude`, `distance_deviation`, `is_off_site`, `notes`, `created_at`, `updated_at`) VALUES
-(1, 2, 4, 'completed', 'other', '2026-01-07 18:12:26', '2026-01-08 06:01:15', 46.21354400, 27.66465400, NULL, NULL, 5804703, 1, NULL, '2026-01-07 18:12:26', '2026-01-08 06:01:15'),
-(2, 2, 3, 'completed', 'presentation', '2026-01-08 06:01:56', '2026-01-08 06:14:07', NULL, NULL, NULL, NULL, NULL, 0, NULL, '2026-01-08 06:01:56', '2026-01-08 06:14:07'),
-(3, 2, 3, 'completed', 'presentation', '2026-01-08 06:14:18', '2026-01-08 06:39:05', NULL, NULL, NULL, NULL, 5804066, 1, NULL, '2026-01-08 06:14:18', '2026-01-08 06:39:05'),
-(4, 1, 3, 'in_progress', NULL, '2026-01-08 06:40:57', NULL, NULL, NULL, NULL, NULL, 5804066, 1, NULL, '2026-01-08 06:40:57', '2026-01-08 06:45:38'),
-(5, 2, 4, 'in_progress', NULL, '2026-01-08 08:38:57', NULL, NULL, NULL, NULL, NULL, 5804066, 1, NULL, '2026-01-08 08:38:57', '2026-01-08 09:18:04');
+(6, 2, 11, 'in_progress', NULL, '2026-01-09 08:36:31', NULL, NULL, NULL, NULL, NULL, 5804066, 1, NULL, '2026-01-09 08:36:31', '2026-01-09 09:02:38');
 
 -- --------------------------------------------------------
 
@@ -846,52 +909,6 @@ CREATE TABLE `invoices` (
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
---
--- Eliminarea datelor din tabel `invoices`
---
-
-INSERT INTO `invoices` (`id`, `customer_id`, `order_id`, `erp_id`, `type`, `series`, `number`, `status`, `issue_date`, `due_date`, `subtotal`, `tax_total`, `total`, `currency`, `pdf_url`, `meta`, `created_at`, `updated_at`) VALUES
-(1, 1, NULL, 'ERP-11715', 'fiscal', 'FACT', '84421', 'unpaid', '2025-11-09', '2025-11-10', 2608.09, 495.54, 3103.63, 'RON', NULL, NULL, '2026-01-07 17:45:29', '2026-01-07 17:45:29'),
-(2, 1, NULL, 'ERP-31644', 'fiscal', 'FACT', '58450', 'unpaid', '2025-11-17', '2025-11-19', 4418.42, 839.50, 5257.92, 'RON', NULL, NULL, '2026-01-07 17:45:29', '2026-01-07 17:45:29'),
-(3, 1, NULL, 'ERP-78962', 'fiscal', 'FACT', '59799', 'unpaid', '2025-12-03', '2026-01-31', 3181.24, 604.44, 3785.68, 'RON', NULL, NULL, '2026-01-07 17:45:29', '2026-01-07 17:45:29'),
-(4, 1, NULL, 'ERP-39777', 'fiscal', 'FACT', '25533', 'overdue', '2025-11-20', '2025-12-28', 494.62, 93.98, 588.60, 'RON', NULL, NULL, '2026-01-07 17:45:29', '2026-01-07 17:45:29'),
-(5, 2, NULL, 'ERP-72834', 'fiscal', 'FACT', '18906', 'unpaid', '2025-12-25', '2026-01-02', 1456.52, 276.74, 1733.26, 'RON', NULL, NULL, '2026-01-07 17:45:29', '2026-01-07 17:45:29'),
-(6, 2, NULL, 'ERP-67418', 'fiscal', 'FACT', '38429', 'unpaid', '2025-12-28', '2026-01-08', 1423.41, 270.45, 1693.86, 'RON', NULL, NULL, '2026-01-07 17:45:29', '2026-01-07 17:45:29'),
-(7, 2, NULL, 'ERP-14162', 'fiscal', 'FACT', '86472', 'unpaid', '2025-11-29', '2025-11-30', 1704.26, 323.81, 2028.07, 'RON', NULL, NULL, '2026-01-07 17:45:29', '2026-01-07 17:45:29'),
-(8, 2, NULL, 'ERP-22418', 'fiscal', 'FACT', '6637', 'overdue', '2025-12-22', '2025-12-28', 4283.87, 813.94, 5097.81, 'RON', NULL, NULL, '2026-01-07 17:45:29', '2026-01-07 17:45:29'),
-(9, 3, NULL, 'ERP-41623', 'fiscal', 'FACT', '27383', 'unpaid', '2025-11-12', '2026-01-06', 3127.06, 594.14, 3721.20, 'RON', NULL, NULL, '2026-01-07 17:45:29', '2026-01-07 17:45:29'),
-(10, 3, NULL, 'ERP-80955', 'fiscal', 'FACT', '48243', 'unpaid', '2026-01-03', '2026-01-14', 3108.26, 590.57, 3698.83, 'RON', NULL, NULL, '2026-01-07 17:45:29', '2026-01-07 17:45:29'),
-(11, 3, NULL, 'ERP-27128', 'fiscal', 'FACT', '8005', 'unpaid', '2025-12-16', '2026-01-28', 961.02, 182.59, 1143.61, 'RON', NULL, NULL, '2026-01-07 17:45:29', '2026-01-07 17:45:29'),
-(12, 3, NULL, 'ERP-45089', 'fiscal', 'FACT', '84876', 'overdue', '2025-12-27', '2025-12-28', 3116.26, 592.09, 3708.35, 'RON', NULL, NULL, '2026-01-07 17:45:29', '2026-01-07 17:45:29'),
-(13, 4, NULL, 'ERP-31417', 'fiscal', 'FACT', '70305', 'unpaid', '2025-12-27', '2025-12-29', 2624.13, 498.58, 3122.71, 'RON', NULL, NULL, '2026-01-07 17:45:29', '2026-01-07 17:45:29'),
-(14, 4, NULL, 'ERP-73308', 'fiscal', 'FACT', '84127', 'unpaid', '2025-12-26', '2026-01-14', 2490.50, 473.20, 2963.70, 'RON', NULL, NULL, '2026-01-07 17:45:29', '2026-01-07 17:45:29'),
-(15, 4, NULL, 'ERP-15203', 'fiscal', 'FACT', '8487', 'unpaid', '2025-12-02', '2026-01-19', 3853.19, 732.11, 4585.30, 'RON', NULL, NULL, '2026-01-07 17:45:29', '2026-01-07 17:45:29'),
-(16, 4, NULL, 'ERP-41127', 'fiscal', 'FACT', '32522', 'overdue', '2025-11-30', '2025-12-28', 1324.21, 251.60, 1575.81, 'RON', NULL, NULL, '2026-01-07 17:45:29', '2026-01-07 17:45:29'),
-(17, 5, NULL, 'ERP-25383', 'fiscal', 'FACT', '84685', 'unpaid', '2025-11-13', '2025-12-20', 1025.60, 194.86, 1220.46, 'RON', NULL, NULL, '2026-01-07 17:45:29', '2026-01-07 17:45:29'),
-(18, 5, NULL, 'ERP-16557', 'fiscal', 'FACT', '48704', 'unpaid', '2025-12-20', '2026-01-18', 4217.80, 801.38, 5019.18, 'RON', NULL, NULL, '2026-01-07 17:45:29', '2026-01-07 17:45:29'),
-(19, 5, NULL, 'ERP-70744', 'fiscal', 'FACT', '25960', 'unpaid', '2025-12-06', '2025-12-11', 2905.15, 551.98, 3457.13, 'RON', NULL, NULL, '2026-01-07 17:45:29', '2026-01-07 17:45:29'),
-(20, 5, NULL, 'ERP-78727', 'fiscal', 'FACT', '28088', 'overdue', '2025-12-03', '2025-12-28', 116.94, 22.22, 139.16, 'RON', NULL, NULL, '2026-01-07 17:45:29', '2026-01-07 17:45:29'),
-(21, 6, NULL, 'ERP-17631', 'fiscal', 'FACT', '92925', 'unpaid', '2026-01-06', '2026-01-26', 1690.41, 321.18, 2011.59, 'RON', NULL, NULL, '2026-01-07 17:45:29', '2026-01-07 17:45:29'),
-(22, 6, NULL, 'ERP-31023', 'fiscal', 'FACT', '54113', 'unpaid', '2025-12-08', '2025-12-09', 2363.45, 449.06, 2812.51, 'RON', NULL, NULL, '2026-01-07 17:45:29', '2026-01-07 17:45:29'),
-(23, 6, NULL, 'ERP-57661', 'fiscal', 'FACT', '23714', 'unpaid', '2025-12-05', '2025-12-28', 4511.82, 857.25, 5369.07, 'RON', NULL, NULL, '2026-01-07 17:45:29', '2026-01-07 17:45:29'),
-(24, 6, NULL, 'ERP-74442', 'fiscal', 'FACT', '57055', 'overdue', '2025-12-11', '2025-12-28', 589.22, 111.95, 701.17, 'RON', NULL, NULL, '2026-01-07 17:45:29', '2026-01-07 17:45:29'),
-(25, 7, NULL, 'ERP-87855', 'fiscal', 'FACT', '55296', 'unpaid', '2026-01-01', '2026-01-27', 1784.86, 339.12, 2123.98, 'RON', NULL, NULL, '2026-01-07 17:45:29', '2026-01-07 17:45:29'),
-(26, 7, NULL, 'ERP-75996', 'fiscal', 'FACT', '98621', 'unpaid', '2025-11-22', '2025-11-29', 1187.29, 225.59, 1412.88, 'RON', NULL, NULL, '2026-01-07 17:45:29', '2026-01-07 17:45:29'),
-(27, 7, NULL, 'ERP-79473', 'fiscal', 'FACT', '56711', 'unpaid', '2025-11-11', '2025-11-23', 4286.96, 814.52, 5101.48, 'RON', NULL, NULL, '2026-01-07 17:45:29', '2026-01-07 17:45:29'),
-(28, 7, NULL, 'ERP-62551', 'fiscal', 'FACT', '25590', 'overdue', '2025-12-08', '2025-12-28', 2655.01, 504.45, 3159.46, 'RON', NULL, NULL, '2026-01-07 17:45:29', '2026-01-07 17:45:29'),
-(29, 8, NULL, 'ERP-55834', 'fiscal', 'FACT', '37595', 'unpaid', '2025-11-20', '2026-01-04', 2476.06, 470.45, 2946.51, 'RON', NULL, NULL, '2026-01-07 17:45:29', '2026-01-07 17:45:29'),
-(30, 8, NULL, 'ERP-80402', 'fiscal', 'FACT', '15302', 'unpaid', '2026-01-03', '2026-01-21', 2438.57, 463.33, 2901.90, 'RON', NULL, NULL, '2026-01-07 17:45:29', '2026-01-07 17:45:29'),
-(31, 8, NULL, 'ERP-98882', 'fiscal', 'FACT', '21291', 'unpaid', '2025-11-09', '2025-12-31', 4166.19, 791.58, 4957.77, 'RON', NULL, NULL, '2026-01-07 17:45:29', '2026-01-07 17:45:29'),
-(32, 8, NULL, 'ERP-41259', 'fiscal', 'FACT', '19444', 'overdue', '2025-12-10', '2025-12-28', 1437.31, 273.09, 1710.40, 'RON', NULL, NULL, '2026-01-07 17:45:29', '2026-01-07 17:45:29'),
-(33, 9, NULL, 'ERP-45423', 'fiscal', 'FACT', '93021', 'unpaid', '2025-12-05', '2026-01-07', 1917.68, 364.36, 2282.04, 'RON', NULL, NULL, '2026-01-07 17:45:29', '2026-01-07 17:45:29'),
-(34, 9, NULL, 'ERP-73437', 'fiscal', 'FACT', '70889', 'unpaid', '2025-12-19', '2026-01-23', 1643.17, 312.20, 1955.37, 'RON', NULL, NULL, '2026-01-07 17:45:29', '2026-01-07 17:45:29'),
-(35, 9, NULL, 'ERP-86023', 'fiscal', 'FACT', '78850', 'unpaid', '2025-11-28', '2026-02-04', 4149.45, 788.40, 4937.85, 'RON', NULL, NULL, '2026-01-07 17:45:29', '2026-01-07 17:45:29'),
-(36, 9, NULL, 'ERP-91441', 'fiscal', 'FACT', '92329', 'overdue', '2025-11-16', '2025-12-28', 483.26, 91.82, 575.08, 'RON', NULL, NULL, '2026-01-07 17:45:29', '2026-01-07 17:45:29'),
-(37, 10, NULL, 'ERP-83954', 'fiscal', 'FACT', '46355', 'unpaid', '2025-12-31', '2026-01-01', 1505.07, 285.96, 1791.03, 'RON', NULL, NULL, '2026-01-07 17:45:29', '2026-01-07 17:45:29'),
-(38, 10, NULL, 'ERP-37312', 'fiscal', 'FACT', '73178', 'unpaid', '2025-12-17', '2025-12-18', 1158.18, 220.05, 1378.23, 'RON', NULL, NULL, '2026-01-07 17:45:29', '2026-01-07 17:45:29'),
-(39, 10, NULL, 'ERP-66592', 'fiscal', 'FACT', '73894', 'unpaid', '2025-11-16', '2026-01-03', 4367.27, 829.78, 5197.05, 'RON', NULL, NULL, '2026-01-07 17:45:29', '2026-01-07 17:45:29'),
-(40, 10, NULL, 'ERP-20262', 'fiscal', 'FACT', '87055', 'overdue', '2025-11-21', '2025-12-28', 1593.80, 302.82, 1896.62, 'RON', NULL, NULL, '2026-01-07 17:45:29', '2026-01-07 17:45:29');
 
 -- --------------------------------------------------------
 
@@ -1037,7 +1054,9 @@ INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES
 (82, '2026_01_07_163001_create_discount_rules_table', 1),
 (83, '2026_01_07_174500_remove_priority_columns', 1),
 (84, '2026_01_07_181436_create_cart_promotion_table', 1),
-(85, '2026_01_08_073114_create_sessions_table', 2);
+(85, '2026_01_08_073114_create_sessions_table', 2),
+(86, '2026_01_09_071500_make_customer_id_nullable_in_orders_table', 3),
+(87, '2026_01_09_120000_add_sections_to_pages_table', 4);
 
 -- --------------------------------------------------------
 
@@ -1061,7 +1080,8 @@ CREATE TABLE `notifications` (
 --
 
 INSERT INTO `notifications` (`id`, `type`, `notifiable_type`, `notifiable_id`, `data`, `read_at`, `created_at`, `updated_at`) VALUES
-('6751ecd1-8eaa-4973-b4b1-329c77207a26', 'App\\Notifications\\OrderApprovalRequiredNotification', 'App\\Models\\User', 1, '{\"type\":\"order_approval_required\",\"order_id\":4,\"order_number\":\"CMD-2026-000004\",\"status\":\"pending_approval\",\"total\":8640,\"currency\":\"RON\",\"message\":\"Comanda CMD-2026-000004 necesit\\u0103 aprobarea dvs. (derogare discount)\",\"action_url\":\"\\/admin\\/orders\\/4\"}', '2026-01-08 06:28:02', '2026-01-08 06:27:34', '2026-01-08 06:28:02');
+('6751ecd1-8eaa-4973-b4b1-329c77207a26', 'App\\Notifications\\OrderApprovalRequiredNotification', 'App\\Models\\User', 1, '{\"type\":\"order_approval_required\",\"order_id\":4,\"order_number\":\"CMD-2026-000004\",\"status\":\"pending_approval\",\"total\":8640,\"currency\":\"RON\",\"message\":\"Comanda CMD-2026-000004 necesit\\u0103 aprobarea dvs. (derogare discount)\",\"action_url\":\"\\/admin\\/orders\\/4\"}', '2026-01-08 06:28:02', '2026-01-08 06:27:34', '2026-01-08 06:28:02'),
+('feaebff2-56d8-4e3e-8d81-abb3aef9d32c', 'App\\Notifications\\GeneralNotification', 'App\\Models\\User', 5, '{\"type\":\"general\",\"title\":\"test\",\"message\":\"Promotie implementata\",\"action_url\":null,\"level\":\"info\"}', '2026-01-09 09:48:32', '2026-01-09 09:48:17', '2026-01-09 09:48:32');
 
 -- --------------------------------------------------------
 
@@ -1085,13 +1105,6 @@ CREATE TABLE `offers` (
   `quote_request_id` bigint UNSIGNED DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
---
--- Eliminarea datelor din tabel `offers`
---
-
-INSERT INTO `offers` (`id`, `agent_id`, `customer_id`, `customer_visit_id`, `status`, `total_amount`, `discount_amount`, `notes`, `requires_director_approval`, `valid_until`, `created_at`, `updated_at`, `quote_request_id`) VALUES
-(1, 1, 4, 5, 'draft', 186.96, 41.04, NULL, 0, NULL, '2026-01-08 12:16:17', '2026-01-08 12:16:17', NULL);
-
 -- --------------------------------------------------------
 
 --
@@ -1110,13 +1123,6 @@ CREATE TABLE `offer_items` (
   `updated_at` timestamp NULL DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
---
--- Eliminarea datelor din tabel `offer_items`
---
-
-INSERT INTO `offer_items` (`id`, `offer_id`, `product_id`, `quantity`, `unit_price`, `discount_percent`, `final_price`, `created_at`, `updated_at`) VALUES
-(2, 1, 3, 2, 114.00, 18.00, 93.48, '2026-01-08 12:17:03', '2026-01-08 12:17:03');
-
 -- --------------------------------------------------------
 
 --
@@ -1133,13 +1139,6 @@ CREATE TABLE `offer_messages` (
   `updated_at` timestamp NULL DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
---
--- Eliminarea datelor din tabel `offer_messages`
---
-
-INSERT INTO `offer_messages` (`id`, `offer_id`, `user_id`, `message`, `is_internal`, `created_at`, `updated_at`) VALUES
-(1, 1, 1, 'test agent', 0, '2026-01-08 12:16:54', '2026-01-08 12:16:54');
-
 -- --------------------------------------------------------
 
 --
@@ -1149,7 +1148,7 @@ INSERT INTO `offer_messages` (`id`, `offer_id`, `user_id`, `message`, `is_intern
 CREATE TABLE `orders` (
   `id` bigint UNSIGNED NOT NULL,
   `order_number` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `customer_id` bigint UNSIGNED NOT NULL,
+  `customer_id` bigint UNSIGNED DEFAULT NULL,
   `placed_by_user_id` bigint UNSIGNED DEFAULT NULL,
   `status` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'pending',
   `approval_status` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'none',
@@ -1187,10 +1186,7 @@ CREATE TABLE `orders` (
 --
 
 INSERT INTO `orders` (`id`, `order_number`, `customer_id`, `placed_by_user_id`, `status`, `approval_status`, `approved_by_user_id`, `approved_at`, `type`, `total_items`, `subtotal`, `global_discount_percent`, `discount_total`, `tax_total`, `shipping_total`, `grand_total`, `currency`, `payment_method`, `payment_document`, `payment_status`, `shipping_method_id`, `billing_address_id`, `shipping_address_id`, `credit_blocked`, `placed_at`, `cancelled_at`, `cancel_reason`, `auto_cancelled`, `due_date`, `created_at`, `updated_at`, `customer_visit_id`, `internal_note`) VALUES
-(1, 'CMD-2026-000001', 4, 2, 'pending', 'approved', NULL, NULL, 'b2b', 10, 76000.00, 0.00, 7400.00, 0.00, 0.00, 68600.00, 'RON', 'CHS', NULL, 'pending', NULL, NULL, NULL, 0, NULL, NULL, NULL, 0, '2026-01-07 22:00:00', '2026-01-08 05:56:29', '2026-01-08 05:56:29', 1, NULL),
-(2, 'CMD-2026-000002', 3, 2, 'cancelled', 'rejected', NULL, NULL, 'b2b', 21, 168000.00, 0.00, 31920.00, 0.00, 0.00, 136080.00, 'RON', 'La termen', NULL, 'pending', NULL, NULL, NULL, 0, NULL, NULL, NULL, 0, '2026-01-07 22:00:00', '2026-01-08 06:03:47', '2026-01-08 07:15:26', 2, NULL),
-(3, 'CMD-2026-000003', 3, 2, 'pending', 'approved', NULL, NULL, 'b2b', 21, 168000.00, 0.00, 16800.00, 0.00, 0.00, 151200.00, 'RON', 'La termen', NULL, 'pending', NULL, NULL, NULL, 0, NULL, NULL, NULL, 0, '2026-01-07 22:00:00', '2026-01-08 06:27:12', '2026-01-08 06:27:12', 3, NULL),
-(4, 'CMD-2026-000004', 3, 2, 'pending', 'approved', NULL, NULL, 'b2b', 1, 12000.00, 20.00, 3360.00, 0.00, 0.00, 8640.00, 'RON', 'La termen', NULL, 'pending', NULL, NULL, NULL, 0, NULL, NULL, NULL, 0, '2026-01-07 22:00:00', '2026-01-08 06:27:34', '2026-01-08 07:15:15', 3, NULL);
+(6, 'ORD-LBPI08QBCW', NULL, NULL, 'pending', 'none', NULL, NULL, 'b2c', 1, 25.50, 0.00, 0.00, 0.00, 0.00, 25.50, 'RON', 'card', NULL, 'pending', 1, 3, 4, 0, '2026-01-09 05:20:07', NULL, NULL, 0, NULL, '2026-01-09 05:20:07', '2026-01-09 05:20:07', NULL, NULL);
 
 -- --------------------------------------------------------
 
@@ -1220,17 +1216,7 @@ CREATE TABLE `order_items` (
 --
 
 INSERT INTO `order_items` (`id`, `order_id`, `product_id`, `product_variant_id`, `product_name`, `sku`, `quantity`, `unit_price`, `discount_amount`, `tax_amount`, `total`, `applied_promotions`, `created_at`, `updated_at`) VALUES
-(1, 1, 1, NULL, 'MacBook Pro 16', 'MBP16', 3, 12000.00, 3600.00, 0.00, 32400.00, '\"[{\\\"id\\\":1,\\\"name\\\":\\\"10% Discount MacBook\\\",\\\"slug\\\":\\\"promo-macbook-10\\\",\\\"type\\\":\\\"standard\\\",\\\"value_type\\\":\\\"percent\\\",\\\"value\\\":10,\\\"discount_amount\\\":1200}]\"', '2026-01-08 05:56:29', '2026-01-08 05:56:29'),
-(2, 1, 2, NULL, 'Samsung Galaxy S24', 'SGS24', 1, 4000.00, 200.00, 0.00, 3800.00, '\"[{\\\"id\\\":2,\\\"name\\\":\\\"200 RON Discount Galaxy\\\",\\\"slug\\\":\\\"promo-galaxy-200\\\",\\\"type\\\":\\\"standard\\\",\\\"value_type\\\":\\\"fixed_amount\\\",\\\"value\\\":200,\\\"discount_amount\\\":200}]\"', '2026-01-08 05:56:29', '2026-01-08 05:56:29'),
-(3, 1, 1, NULL, 'MacBook Pro 16', 'MBP16', 3, 12000.00, 3600.00, 0.00, 32400.00, '\"[{\\\"id\\\":1,\\\"name\\\":\\\"10% Discount MacBook\\\",\\\"slug\\\":\\\"promo-macbook-10\\\",\\\"type\\\":\\\"standard\\\",\\\"value_type\\\":\\\"percent\\\",\\\"value\\\":10,\\\"discount_amount\\\":1200}]\"', '2026-01-08 05:56:29', '2026-01-08 05:56:29'),
-(4, 1, 1, NULL, 'MacBook Pro 16', 'MBP16', 3, 0.00, 0.00, 0.00, 0.00, '\"[{\\\"id\\\":7,\\\"name\\\":\\\"Free Mouse with Laptop\\\",\\\"slug\\\":\\\"promo-free-mouse\\\",\\\"type\\\":\\\"gift\\\",\\\"discount_amount\\\":0}]\"', '2026-01-08 05:56:29', '2026-01-08 05:56:29'),
-(5, 2, 1, NULL, 'MacBook Pro 16', 'MBP16', 7, 12000.00, 15960.00, 0.00, 68040.00, '\"[{\\\"id\\\":1,\\\"name\\\":\\\"10% Discount MacBook\\\",\\\"slug\\\":\\\"promo-macbook-10\\\",\\\"type\\\":\\\"standard\\\",\\\"value_type\\\":\\\"percent\\\",\\\"value\\\":10,\\\"discount_amount\\\":1200}]\"', '2026-01-08 06:03:47', '2026-01-08 06:03:47'),
-(6, 2, 1, NULL, 'MacBook Pro 16', 'MBP16', 7, 12000.00, 15960.00, 0.00, 68040.00, '\"[{\\\"id\\\":1,\\\"name\\\":\\\"10% Discount MacBook\\\",\\\"slug\\\":\\\"promo-macbook-10\\\",\\\"type\\\":\\\"standard\\\",\\\"value_type\\\":\\\"percent\\\",\\\"value\\\":10,\\\"discount_amount\\\":1200}]\"', '2026-01-08 06:03:47', '2026-01-08 06:03:47'),
-(7, 2, 1, NULL, 'MacBook Pro 16', 'MBP16', 7, 0.00, 0.00, 0.00, 0.00, '\"[{\\\"id\\\":7,\\\"name\\\":\\\"Free Mouse with Laptop\\\",\\\"slug\\\":\\\"promo-free-mouse\\\",\\\"type\\\":\\\"gift\\\",\\\"discount_amount\\\":0}]\"', '2026-01-08 06:03:47', '2026-01-08 06:03:47'),
-(8, 3, 1, NULL, 'MacBook Pro 16', 'MBP16', 7, 12000.00, 8400.00, 0.00, 75600.00, '\"[{\\\"id\\\":1,\\\"name\\\":\\\"10% Discount MacBook\\\",\\\"slug\\\":\\\"promo-macbook-10\\\",\\\"type\\\":\\\"standard\\\",\\\"value_type\\\":\\\"percent\\\",\\\"value\\\":10,\\\"discount_amount\\\":1200}]\"', '2026-01-08 06:27:12', '2026-01-08 06:27:12'),
-(9, 3, 1, NULL, 'MacBook Pro 16', 'MBP16', 7, 12000.00, 8400.00, 0.00, 75600.00, '\"[{\\\"id\\\":1,\\\"name\\\":\\\"10% Discount MacBook\\\",\\\"slug\\\":\\\"promo-macbook-10\\\",\\\"type\\\":\\\"standard\\\",\\\"value_type\\\":\\\"percent\\\",\\\"value\\\":10,\\\"discount_amount\\\":1200}]\"', '2026-01-08 06:27:12', '2026-01-08 06:27:12'),
-(10, 3, 1, NULL, 'MacBook Pro 16', 'MBP16', 7, 0.00, 0.00, 0.00, 0.00, '\"[{\\\"id\\\":7,\\\"name\\\":\\\"Free Mouse with Laptop\\\",\\\"slug\\\":\\\"promo-free-mouse\\\",\\\"type\\\":\\\"gift\\\",\\\"discount_amount\\\":0}]\"', '2026-01-08 06:27:12', '2026-01-08 06:27:12'),
-(11, 4, 1, NULL, 'MacBook Pro 16', 'MBP16', 1, 12000.00, 1200.00, 0.00, 10800.00, '\"[{\\\"id\\\":1,\\\"name\\\":\\\"10% Discount MacBook\\\",\\\"slug\\\":\\\"promo-macbook-10\\\",\\\"type\\\":\\\"standard\\\",\\\"value_type\\\":\\\"percent\\\",\\\"value\\\":10,\\\"discount_amount\\\":1200}]\"', '2026-01-08 06:27:34', '2026-01-08 06:27:34');
+(13, 6, 1, NULL, 'Placă gips-carton 12.5mm', 'PGC-12.5', 1, 25.50, 0.00, 0.00, 25.50, NULL, '2026-01-09 05:20:07', '2026-01-09 05:20:07');
 
 -- --------------------------------------------------------
 
@@ -1274,6 +1260,7 @@ CREATE TABLE `pages` (
   `title` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `slug` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `content` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `sections` json DEFAULT NULL,
   `is_published` tinyint(1) NOT NULL DEFAULT '1',
   `meta_title` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `meta_description` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
@@ -1285,17 +1272,18 @@ CREATE TABLE `pages` (
 -- Eliminarea datelor din tabel `pages`
 --
 
-INSERT INTO `pages` (`id`, `title`, `slug`, `content`, `is_published`, `meta_title`, `meta_description`, `created_at`, `updated_at`) VALUES
-(1, 'Despre Noi', 'despre-noi', '\n                    <h2 class=\"h4 mb-4\">Cine suntem</h2>\n                    <p>Suntem o companie dedicată furnizării de soluții complete pentru construcții și industrie. Cu o experiență de peste 15 ani pe piață, ne mândrim cu un portofoliu vast de produse și servicii adaptate nevoilor clienților noștri.</p>\n                    \n                    <h3 class=\"h5 mt-4 mb-3\">Misiunea Noastră</h3>\n                    <p>Misiunea noastră este să oferim calitate și inovație, contribuind la succesul proiectelor partenerilor noștri prin livrarea rapidă a materialelor necesare.</p>\n                    \n                    <h3 class=\"h5 mt-4 mb-3\">Valorile Noastre</h3>\n                    <ul class=\"list-unstyled\">\n                        <li class=\"mb-2\"><i class=\"bi bi-check-circle text-primary me-2\"></i><strong>Integritate:</strong> Ne respectăm promisiunile și acționăm etic.</li>\n                        <li class=\"mb-2\"><i class=\"bi bi-check-circle text-primary me-2\"></i><strong>Calitate:</strong> Nu facem compromisuri când vine vorba de produsele noastre.</li>\n                        <li class=\"mb-2\"><i class=\"bi bi-check-circle text-primary me-2\"></i><strong>Parteneriat:</strong> Construim relații de lungă durată cu clienții noștri.</li>\n                    </ul>\n                ', 1, 'Despre Noi - B2B Portal', 'Află mai multe despre compania noastră, misiunea și valorile care ne ghidează.', '2026-01-07 17:45:30', '2026-01-07 17:45:30'),
-(2, 'Contact', 'contact', '\n                    <p class=\"mb-4\">Echipa noastră vă stă la dispoziție pentru orice întrebări sau solicitări. Nu ezitați să ne contactați folosind detaliile de mai jos.</p>\n                    \n                    <div class=\"row g-4\">\n                        <div class=\"col-md-6\">\n                            <div class=\"card h-100 border-0 shadow-sm\">\n                                <div class=\"card-body\">\n                                    <h5 class=\"card-title text-primary mb-3\"><i class=\"bi bi-building me-2\"></i>Sediul Central</h5>\n                                    <p class=\"card-text\">\n                                        Strada Industriei nr. 15<br>\n                                        Sector 3, București<br>\n                                        România\n                                    </p>\n                                </div>\n                            </div>\n                        </div>\n                        <div class=\"col-md-6\">\n                            <div class=\"card h-100 border-0 shadow-sm\">\n                                <div class=\"card-body\">\n                                    <h5 class=\"card-title text-primary mb-3\"><i class=\"bi bi-headset me-2\"></i>Suport Clienți</h5>\n                                    <p class=\"card-text\">\n                                        <strong>Telefon:</strong> +40 722 123 456<br>\n                                        <strong>Email:</strong> contact@b2b-portal.ro<br>\n                                        <strong>Program:</strong> Luni - Vineri, 09:00 - 18:00\n                                    </p>\n                                </div>\n                            </div>\n                        </div>\n                    </div>\n                ', 1, 'Contact - B2B Portal', 'Contactează-ne pentru oferte personalizate și suport tehnic.', '2026-01-07 17:45:30', '2026-01-07 17:45:30'),
-(3, 'Termeni și Condiții', 'termeni-conditii', '\n                    <h2 class=\"h5 mb-3\">1. Introducere</h2>\n                    <p>Folosirea acestui site implică acceptarea termenilor și condițiilor de mai jos. Recomandăm citirea cu atenție a acestora.</p>\n                    \n                    <h2 class=\"h5 mt-4 mb-3\">2. Comenzi și Livrare</h2>\n                    <p>Comenzile plasate pe site sunt procesate în ordinea primirii. Termenul de livrare este de 24-48 ore pentru produsele din stoc.</p>\n                    \n                    <h2 class=\"h5 mt-4 mb-3\">3. Garanții și Retur</h2>\n                    <p>Toate produsele beneficiază de garanție conform legislației în vigoare. Returul produselor se poate face în termen de 14 zile conform politicii noastre de retur.</p>\n                ', 1, 'Termeni și Condiții - B2B Portal', 'Termenii și condițiile de utilizare a platformei B2B Portal.', '2026-01-07 17:45:30', '2026-01-07 17:45:30'),
-(4, 'Politica de Confidențialitate (GDPR)', 'gdpr', '\n                    <p>Respectăm confidențialitatea datelor dumneavoastră și ne angajăm să le protejăm. Această politică explică modul în care colectăm și utilizăm datele personale.</p>\n                    \n                    <h3 class=\"h6 mt-3\">Colectarea datelor</h3>\n                    <p>Colectăm date necesare procesării comenzilor și îmbunătățirii experienței pe site (nume, adresă, email, telefon).</p>\n                ', 1, 'GDPR - B2B Portal', 'Politica noastră de confidențialitate și protecția datelor.', '2026-01-07 17:45:30', '2026-01-07 17:45:30'),
-(5, 'Politica Cookies', 'cookies', '\n                    <p>Acest site folosește cookie-uri pentru a vă oferi o experiență mai bună de navigare și servicii adaptate intereselor dumneavoastră.</p>\n                ', 1, 'Politica Cookies - B2B Portal', 'Informații despre utilizarea cookie-urilor pe platforma noastră.', '2026-01-07 17:45:30', '2026-01-07 17:45:30'),
-(6, 'Livrare și Retur', 'livrare-retur', '\n                    <h2 class=\"h5 mb-3\">Livrare</h2>\n                    <p>Livrarea se face prin curier rapid sau flotă proprie, în funcție de volumul și greutatea comenzii.</p>\n                    \n                    <h2 class=\"h5 mt-4 mb-3\">Retur</h2>\n                    <p>Puteți returna produsele în termen de 14 zile calendaristice, fără penalități și fără invocarea unui motiv.</p>\n                ', 1, 'Livrare și Retur - B2B Portal', 'Detalii despre metodele de livrare și politica de retur.', '2026-01-07 17:45:30', '2026-01-07 17:45:30'),
-(7, 'Garanții', 'garantii', '\n                    <p>Oferim garanție comercială pentru toate produsele vândute, conform specificațiilor producătorului.</p>\n                ', 1, 'Garanții - B2B Portal', 'Informații despre garanția produselor.', '2026-01-07 17:45:30', '2026-01-07 17:45:30'),
-(8, 'Cariere', 'cariere', '\n                    <p>Momentan nu avem posturi disponibile. Vă rugăm să reveniți.</p>\n                ', 1, 'Cariere - B2B Portal', 'Alătură-te echipei noastre.', '2026-01-07 17:45:30', '2026-01-07 17:45:30'),
-(9, 'Sustenabilitate', 'sustenabilitate', '\n                    <p>Ne angajăm să reducem amprenta de carbon prin optimizarea logisticii și promovarea produselor eco-friendly.</p>\n                ', 1, 'Sustenabilitate - B2B Portal', 'Eforturile noastre pentru un viitor sustenabil.', '2026-01-07 17:45:30', '2026-01-07 17:45:30'),
-(10, 'Întrebări Frecvente (FAQ)', 'faq', '\n                    <div class=\"accordion\" id=\"accordionFAQ\">\n                      <div class=\"accordion-item\">\n                        <h2 class=\"accordion-header\">\n                          <button class=\"accordion-button\" type=\"button\" data-bs-toggle=\"collapse\" data-bs-target=\"#collapseOne\">\n                            Cum pot deveni partener B2B?\n                          </button>\n                        </h2>\n                        <div id=\"collapseOne\" class=\"accordion-collapse collapse show\" data-bs-parent=\"#accordionFAQ\">\n                          <div class=\"accordion-body\">\n                            Completați formularul de înregistrare B2B și un reprezentant vă va contacta pentru validarea contului.\n                          </div>\n                        </div>\n                      </div>\n                      <div class=\"accordion-item\">\n                        <h2 class=\"accordion-header\">\n                          <button class=\"accordion-button collapsed\" type=\"button\" data-bs-toggle=\"collapse\" data-bs-target=\"#collapseTwo\">\n                            Care este comanda minimă?\n                          </button>\n                        </h2>\n                        <div id=\"collapseTwo\" class=\"accordion-collapse collapse\" data-bs-parent=\"#accordionFAQ\">\n                          <div class=\"accordion-body\">\n                            Nu impunem o comandă minimă valorică, dar pentru livrare gratuită comanda trebuie să depășească 500 RON.\n                          </div>\n                        </div>\n                      </div>\n                    </div>\n                ', 1, 'FAQ - B2B Portal', 'Răspunsuri la cele mai frecvente întrebări.', '2026-01-07 17:45:30', '2026-01-07 17:45:30');
+INSERT INTO `pages` (`id`, `title`, `slug`, `content`, `sections`, `is_published`, `meta_title`, `meta_description`, `created_at`, `updated_at`) VALUES
+(1, 'Despre Noi', 'despre-noi', '\n                    <h2 class=\"h4 mb-4\">Cine suntem</h2>\n                    <p>Suntem o companie dedicată furnizării de soluții complete pentru construcții și industrie. Cu o experiență de peste 15 ani pe piață, ne mândrim cu un portofoliu vast de produse și servicii adaptate nevoilor clienților noștri.</p>\n                    \n                    <h3 class=\"h5 mt-4 mb-3\">Misiunea Noastră</h3>\n                    <p>Misiunea noastră este să oferim calitate și inovație, contribuind la succesul proiectelor partenerilor noștri prin livrarea rapidă a materialelor necesare.</p>\n                    \n                    <h3 class=\"h5 mt-4 mb-3\">Valorile Noastre</h3>\n                    <ul class=\"list-unstyled\">\n                        <li class=\"mb-2\"><i class=\"bi bi-check-circle text-primary me-2\"></i><strong>Integritate:</strong> Ne respectăm promisiunile și acționăm etic.</li>\n                        <li class=\"mb-2\"><i class=\"bi bi-check-circle text-primary me-2\"></i><strong>Calitate:</strong> Nu facem compromisuri când vine vorba de produsele noastre.</li>\n                        <li class=\"mb-2\"><i class=\"bi bi-check-circle text-primary me-2\"></i><strong>Parteneriat:</strong> Construim relații de lungă durată cu clienții noștri.</li>\n                    </ul>\n                ', NULL, 1, 'Despre Noi - B2B Portal', 'Află mai multe despre compania noastră, misiunea și valorile care ne ghidează.', '2026-01-07 17:45:30', '2026-01-07 17:45:30'),
+(2, 'Contact', 'contact', '\n                    <p class=\"mb-4\">Echipa noastră vă stă la dispoziție pentru orice întrebări sau solicitări. Nu ezitați să ne contactați folosind detaliile de mai jos.</p>\n                    \n                    <div class=\"row g-4\">\n                        <div class=\"col-md-6\">\n                            <div class=\"card h-100 border-0 shadow-sm\">\n                                <div class=\"card-body\">\n                                    <h5 class=\"card-title text-primary mb-3\"><i class=\"bi bi-building me-2\"></i>Sediul Central</h5>\n                                    <p class=\"card-text\">\n                                        Strada Industriei nr. 15<br>\n                                        Sector 3, București<br>\n                                        România\n                                    </p>\n                                </div>\n                            </div>\n                        </div>\n                        <div class=\"col-md-6\">\n                            <div class=\"card h-100 border-0 shadow-sm\">\n                                <div class=\"card-body\">\n                                    <h5 class=\"card-title text-primary mb-3\"><i class=\"bi bi-headset me-2\"></i>Suport Clienți</h5>\n                                    <p class=\"card-text\">\n                                        <strong>Telefon:</strong> +40 722 123 456<br>\n                                        <strong>Email:</strong> contact@b2b-portal.ro<br>\n                                        <strong>Program:</strong> Luni - Vineri, 09:00 - 18:00\n                                    </p>\n                                </div>\n                            </div>\n                        </div>\n                    </div>\n                ', NULL, 1, 'Contact - B2B Portal', 'Contactează-ne pentru oferte personalizate și suport tehnic.', '2026-01-07 17:45:30', '2026-01-07 17:45:30'),
+(3, 'Termeni și Condiții', 'termeni-conditii', '\n                    <h2 class=\"h5 mb-3\">1. Introducere</h2>\n                    <p>Folosirea acestui site implică acceptarea termenilor și condițiilor de mai jos. Recomandăm citirea cu atenție a acestora.</p>\n                    \n                    <h2 class=\"h5 mt-4 mb-3\">2. Comenzi și Livrare</h2>\n                    <p>Comenzile plasate pe site sunt procesate în ordinea primirii. Termenul de livrare este de 24-48 ore pentru produsele din stoc.</p>\n                    \n                    <h2 class=\"h5 mt-4 mb-3\">3. Garanții și Retur</h2>\n                    <p>Toate produsele beneficiază de garanție conform legislației în vigoare. Returul produselor se poate face în termen de 14 zile conform politicii noastre de retur.</p>\n                ', NULL, 1, 'Termeni și Condiții - B2B Portal', 'Termenii și condițiile de utilizare a platformei B2B Portal.', '2026-01-07 17:45:30', '2026-01-07 17:45:30'),
+(4, 'Politica de Confidențialitate (GDPR)', 'gdpr', '\n                    <p>Respectăm confidențialitatea datelor dumneavoastră și ne angajăm să le protejăm. Această politică explică modul în care colectăm și utilizăm datele personale.</p>\n                    \n                    <h3 class=\"h6 mt-3\">Colectarea datelor</h3>\n                    <p>Colectăm date necesare procesării comenzilor și îmbunătățirii experienței pe site (nume, adresă, email, telefon).</p>\n                ', NULL, 1, 'GDPR - B2B Portal', 'Politica noastră de confidențialitate și protecția datelor.', '2026-01-07 17:45:30', '2026-01-07 17:45:30'),
+(5, 'Politica Cookies', 'cookies', '\n                    <p>Acest site folosește cookie-uri pentru a vă oferi o experiență mai bună de navigare și servicii adaptate intereselor dumneavoastră.</p>\n                ', NULL, 1, 'Politica Cookies - B2B Portal', 'Informații despre utilizarea cookie-urilor pe platforma noastră.', '2026-01-07 17:45:30', '2026-01-07 17:45:30'),
+(6, 'Livrare și Retur', 'livrare-retur', '\n                    <h2 class=\"h5 mb-3\">Livrare</h2>\n                    <p>Livrarea se face prin curier rapid sau flotă proprie, în funcție de volumul și greutatea comenzii.</p>\n                    \n                    <h2 class=\"h5 mt-4 mb-3\">Retur</h2>\n                    <p>Puteți returna produsele în termen de 14 zile calendaristice, fără penalități și fără invocarea unui motiv.</p>\n                ', NULL, 1, 'Livrare și Retur - B2B Portal', 'Detalii despre metodele de livrare și politica de retur.', '2026-01-07 17:45:30', '2026-01-07 17:45:30'),
+(7, 'Garanții', 'garantii', '\n                    <p>Oferim garanție comercială pentru toate produsele vândute, conform specificațiilor producătorului.</p>\n                ', NULL, 1, 'Garanții - B2B Portal', 'Informații despre garanția produselor.', '2026-01-07 17:45:30', '2026-01-07 17:45:30'),
+(8, 'Cariere', 'cariere', '\n                    <p>Momentan nu avem posturi disponibile. Vă rugăm să reveniți.</p>\n                ', NULL, 1, 'Cariere - B2B Portal', 'Alătură-te echipei noastre.', '2026-01-07 17:45:30', '2026-01-07 17:45:30'),
+(9, 'Sustenabilitate', 'sustenabilitate', '\n                    <p>Ne angajăm să reducem amprenta de carbon prin optimizarea logisticii și promovarea produselor eco-friendly.</p>\n                ', NULL, 1, 'Sustenabilitate - B2B Portal', 'Eforturile noastre pentru un viitor sustenabil.', '2026-01-07 17:45:30', '2026-01-07 17:45:30'),
+(10, 'Întrebări Frecvente (FAQ)', 'faq', '\n                    <div class=\"accordion\" id=\"accordionFAQ\">\n                      <div class=\"accordion-item\">\n                        <h2 class=\"accordion-header\">\n                          <button class=\"accordion-button\" type=\"button\" data-bs-toggle=\"collapse\" data-bs-target=\"#collapseOne\">\n                            Cum pot deveni partener B2B?\n                          </button>\n                        </h2>\n                        <div id=\"collapseOne\" class=\"accordion-collapse collapse show\" data-bs-parent=\"#accordionFAQ\">\n                          <div class=\"accordion-body\">\n                            Completați formularul de înregistrare B2B și un reprezentant vă va contacta pentru validarea contului.\n                          </div>\n                        </div>\n                      </div>\n                      <div class=\"accordion-item\">\n                        <h2 class=\"accordion-header\">\n                          <button class=\"accordion-button collapsed\" type=\"button\" data-bs-toggle=\"collapse\" data-bs-target=\"#collapseTwo\">\n                            Care este comanda minimă?\n                          </button>\n                        </h2>\n                        <div id=\"collapseTwo\" class=\"accordion-collapse collapse\" data-bs-parent=\"#accordionFAQ\">\n                          <div class=\"accordion-body\">\n                            Nu impunem o comandă minimă valorică, dar pentru livrare gratuită comanda trebuie să depășească 500 RON.\n                          </div>\n                        </div>\n                      </div>\n                    </div>\n                ', NULL, 1, 'FAQ - B2B Portal', 'Răspunsuri la cele mai frecvente întrebări.', '2026-01-07 17:45:30', '2026-01-07 17:45:30'),
+(11, 'Acasă', 'acasa', '', '[{\"type\": \"hero\", \"items\": [{\"url\": \"/produse\", \"title\": \"Materiale de Construcții Premium\", \"subtitle\": \"Soluții complete pentru proiectele tale rezidențiale și industriale.\", \"image_url\": \"https://images.unsplash.com/photo-1504307651254-35680f356dfd?auto=format&fit=crop&q=80&w=2070\"}, {\"url\": \"/promotii\", \"title\": \"Oferte Speciale de Sezon\", \"subtitle\": \"Profită de reduceri la scule și unelte profesionale.\", \"image_url\": \"https://images.unsplash.com/photo-1581094794329-cd1096a7a5ea?auto=format&fit=crop&q=80&w=2070\"}], \"is_active\": true}, {\"type\": \"features\", \"items\": [{\"icon\": \"bi-truck\", \"title\": \"Livrare Rapidă\", \"description\": \"Livrare în 24-48h oriunde în țară.\"}, {\"icon\": \"bi-shield-check\", \"title\": \"Produse Garantate\", \"description\": \"Calitate certificată și garanție extinsă.\"}, {\"icon\": \"bi-headset\", \"title\": \"Suport Tehnic\", \"description\": \"Consultanță specializată pentru proiecte.\"}, {\"icon\": \"bi-arrow-counterclockwise\", \"title\": \"Retur Simplu\", \"description\": \"30 de zile drept de retur.\"}], \"is_active\": true}, {\"type\": \"categories\", \"count\": 6, \"title\": \"Categorii Populare\", \"is_active\": true}, {\"type\": \"latest\", \"limit\": 4, \"title\": \"Produse Noi\", \"is_active\": true}, {\"type\": \"products\", \"limit\": 4, \"title\": \"Promoții\", \"source\": \"promo\", \"is_active\": true}]', 1, 'Acasă - B2B Ecommerce', 'Bine ați venit pe platforma B2B. Găsiți cele mai bune materiale de construcții.', '2026-01-09 06:14:21', '2026-01-09 06:14:21');
 
 -- --------------------------------------------------------
 
@@ -1451,13 +1439,18 @@ INSERT INTO `personal_access_tokens` (`id`, `tokenable_type`, `tokenable_id`, `n
 (3, 'App\\Models\\User', 2, 'spa', '10af44faed36c94c0dc9417797a9cc9a46af5e85fe0416f98a7b892ed37e3129', '[\"*\"]', '2026-01-07 18:16:21', NULL, '2026-01-07 18:12:05', '2026-01-07 18:16:21'),
 (4, 'App\\Models\\User', 4, 'spa', '92b35c5a9231c231098ed3f25c4962a2045d4f159442b694ff8984d7ad2c7a18', '[\"*\"]', '2026-01-08 06:24:25', NULL, '2026-01-08 05:33:04', '2026-01-08 06:24:25'),
 (6, 'App\\Models\\User', 2, 'spa', 'ce697e38609cb5b43f112e428a90d025963040eb2d6bffd5b3ae1603e2c3a6d6', '[\"*\"]', '2026-01-08 06:01:36', NULL, '2026-01-08 05:54:19', '2026-01-08 06:01:36'),
-(8, 'App\\Models\\User', 1, 'spa', 'bb368a1b38fd808d85e392a90fc5d495946a44d6b446a7a6b321c257ee5bab68', '[\"*\"]', '2026-01-08 12:56:47', NULL, '2026-01-08 06:04:36', '2026-01-08 12:56:47'),
 (11, 'App\\Models\\User', 2, 'spa', '829bcf578590cf355b120f983fd31f829f40dcf61e4c941aec57bcb30d2e8134', '[\"*\"]', '2026-01-08 11:49:42', NULL, '2026-01-08 08:39:35', '2026-01-08 11:49:42'),
 (12, 'App\\Models\\User', 4, 'spa', '28c119cccd11caff12acbd2a8e13bd40c4448b6867c4faa7d3c9dbe571da4135', '[\"*\"]', '2026-01-08 11:31:41', NULL, '2026-01-08 11:27:43', '2026-01-08 11:31:41'),
-(13, 'App\\Models\\User', 4, 'spa', 'a157a20e87485903cc1b05781520a67a11dedee50d0c51604cbd49d2174dd447', '[\"*\"]', '2026-01-08 12:28:30', NULL, '2026-01-08 11:32:04', '2026-01-08 12:28:30'),
 (14, 'App\\Models\\User', 2, 'spa', '4b50ac921dbcdd5e93ece1a92e7c05a9e713a168837e472db9a58f9410096104', '[\"*\"]', '2026-01-08 12:56:36', NULL, '2026-01-08 11:53:00', '2026-01-08 12:56:36'),
 (17, 'App\\Models\\User', 4, 'spa', '8ce928dfc4fc5c6000f9d4735de7864bfb0bb80729cbc662dfb7eef7d5ac569d', '[\"*\"]', '2026-01-08 17:16:20', NULL, '2026-01-08 14:21:27', '2026-01-08 17:16:20'),
-(18, 'App\\Models\\User', 4, 'spa', '254c5420ed6413d0ca33ddf54595efccd53704f8d5725d4919e0c39d30643ce6', '[\"*\"]', '2026-01-08 17:16:07', NULL, '2026-01-08 14:21:56', '2026-01-08 17:16:07');
+(18, 'App\\Models\\User', 4, 'spa', '254c5420ed6413d0ca33ddf54595efccd53704f8d5725d4919e0c39d30643ce6', '[\"*\"]', '2026-01-08 17:16:07', NULL, '2026-01-08 14:21:56', '2026-01-08 17:16:07'),
+(22, 'App\\Models\\User', 2, 'spa', '9948b99a5d1ac221b4dacc9328c6cc5db91f58662fa0f76c090c197179c8949f', '[\"*\"]', '2026-01-09 12:47:14', NULL, '2026-01-09 08:35:52', '2026-01-09 12:47:14'),
+(23, 'App\\Models\\User', 6, 'spa', 'b509a4854d6b927680a55e614c57a01c3c06b638f4a3588ad10313ac1e25f783', '[\"*\"]', '2026-01-09 08:49:05', NULL, '2026-01-09 08:37:26', '2026-01-09 08:49:05'),
+(25, 'App\\Models\\User', 6, 'spa', '8d34f0b5bbebdd7148fbc9aceca0be7044af4733f714c1d08c094b70b3c76d46', '[\"*\"]', '2026-01-09 12:15:05', NULL, '2026-01-09 08:49:40', '2026-01-09 12:15:05'),
+(26, 'App\\Models\\User', 5, 'spa', '4abadd1a8172ab6262a79369fd204a5a8f50bb10bbeb0b7d6a169913666faf16', '[\"*\"]', '2026-01-09 10:31:32', NULL, '2026-01-09 09:44:54', '2026-01-09 10:31:32'),
+(27, 'App\\Models\\User', 4, 'spa', '483bf000470c3a4233e4fef90c43d270f967973f681202e2b24947c80b4cafe1', '[\"*\"]', '2026-01-09 09:48:16', NULL, '2026-01-09 09:45:24', '2026-01-09 09:48:16'),
+(28, 'App\\Models\\User', 5, 'spa', 'd673f36e83185832be337342edd4d67aea6e60b99e7cff0acfe96c568b7207c9', '[\"*\"]', '2026-01-09 12:15:01', NULL, '2026-01-09 11:48:27', '2026-01-09 12:15:01'),
+(29, 'App\\Models\\User', 4, 'spa', '6b389d4cfd3a5e5c3b0e84a1cdf3f8aad0d5bcdc401dd71833d53370be5b8839', '[\"*\"]', '2026-01-09 12:55:55', NULL, '2026-01-09 12:38:00', '2026-01-09 12:55:55');
 
 -- --------------------------------------------------------
 
@@ -1522,11 +1515,11 @@ CREATE TABLE `products` (
 --
 
 INSERT INTO `products` (`id`, `name`, `price`, `slug`, `type`, `internal_code`, `barcode`, `erp_id`, `short_description`, `long_description`, `key_benefits`, `technical_specs`, `main_category_id`, `brand_id`, `tags`, `status`, `visibility`, `sort_order`, `list_price`, `rrp_price`, `vat_rate`, `vat_included`, `price_override`, `currency`, `stock_status`, `stock_qty`, `min_stock_limit`, `supplier_stock_qty`, `lead_time_days`, `is_new`, `is_recommended`, `is_on_sale`, `is_promo`, `is_best_seller`, `created_at`, `updated_at`, `meta_title`, `meta_description`, `meta_keywords`, `video_url`, `allow_backorder`, `overstock_policy`, `estimated_delivery_text`, `unit_of_measure`, `min_order_quantity`, `order_quantity_step`, `requires_quote`, `erp_sync_status`, `erp_last_sync_at`) VALUES
-(1, 'Placă gips-carton 12.5mm', 0.00, 'placa-gips-carton-12-5', 'simple', 'PGC-12.5', NULL, NULL, NULL, NULL, NULL, NULL, 2, 3, '[\"gips-carton\", \"interior\"]', 'published', 'public', 0, 25.50, 0.00, 19.00, 0, NULL, 'RON', 'in_stock', 240, 0, 0, 0, 0, 0, 0, 1, 0, '2026-01-08 07:22:39', '2026-01-08 07:22:39', NULL, NULL, NULL, NULL, 0, 'block', NULL, 'buc', 1, 1, 0, 'pending', NULL),
+(1, 'Placă gips-carton 12.5mm', 0.00, 'placa-gips-carton-12-5', 'simple', 'PGC-12.5', NULL, NULL, NULL, NULL, NULL, NULL, 2, 3, '[\"gips-carton\", \"interior\"]', 'published', 'public', 0, 25.50, 0.00, 19.00, 0, NULL, 'RON', 'in_stock', 240, 0, 0, 0, 0, 1, 0, 1, 0, '2026-01-08 07:22:39', '2026-01-09 05:07:57', NULL, NULL, NULL, NULL, 0, 'block', NULL, 'buc', 1, 1, 0, 'pending', NULL),
 (2, 'Plasa fibra sticla 160g/mp STANDARD– 50mp – Galben', 0.00, 'profil-metalic-uw-50', 'simple', 'UW-50', NULL, NULL, '<p>???? Plasa fibra sticla 160g/mp STANDARD – 50mp – Galben ???? Descriere produs Plasa din fibra de sticla 160 STANDARD Galben este destinata consolidarii stratului suport in sistemele de termoizolare (ETICS), oferind o rezistenta mecanica excelenta si stabilitate dimensionala in timp.</p>', '<p><span style=\"color: rgb(34, 34, 34);\">???? Plasa fibra sticla 160g/mp STANDARD – 50mp – Galben ???? Descriere produs Plasa din fibra de sticla 160 STANDARD Galben este destinata consolidarii stratului suport in sistemele de termoizolare (ETICS), oferind o rezistenta mecanica excelenta si stabilitate dimensionala in timp. Este fabricata din fibra de sticla tratata anti-alcalin si este ideala pentru utilizari in zone cu expunere la vibratii, contractii sau trafic moderat. Culoarea galbena permite o aplicare vizibila si un control facil pe santier. Structura de ochiuri 5x5 mm si greutatea constanta de 160 +/- 5% g/mp o recomanda pentru aplicatii profesionale in constructii. ⚙️ Caracteristici tehnice: Cod produs: 1030002.004 Culoare: Galben – cod 004 Greutate specifica: 160 +/- 5% g/mp Lungime rola: 50 m ±2% Latime rola: 1 m ±2% Suprafata acoperita: 50 mp/rola Structura ochiuri: 5 × 5 mm Material: Fibra de sticla E tratata anti-alcalin Utilizare: Armare tencuieli, sisteme ETICS, aplicatii generale Ambalare: Rola individuala Destinatie: Exterior Conditii depozitare: -10°C pana la +40°C, ferit de razele solare si umiditate Recomandare: Se depoziteaza doar pe paleti si in pozitie orizontala Durata de valabilitate: 2 ani, daca este depozitata in spatiu uscat si ventilat</span></p>', NULL, NULL, 1, 1, '[\"structuri\", \"pereți\"]', 'published', 'public', 0, 18.00, 0.00, 21.00, 0, NULL, 'RON', 'in_stock', 150, 0, 0, 0, 0, 0, 0, 0, 0, '2026-01-08 07:22:39', '2026-01-08 16:43:16', NULL, NULL, NULL, NULL, 0, 'block', NULL, 'ml', 1, 1, 0, 'pending', NULL),
-(3, 'Plasă sudată 4mm', 0.00, 'plasa-sudata-4mm', 'simple', 'PLS-4', NULL, NULL, NULL, NULL, NULL, NULL, 5, 1, '[\"armare\", \"beton\"]', 'published', 'public', 0, 120.00, 0.00, 19.00, 0, NULL, 'RON', 'in_stock', 500, 0, 0, 0, 0, 0, 0, 0, 0, '2026-01-08 07:22:39', '2026-01-08 07:22:39', NULL, NULL, NULL, NULL, 0, 'block', NULL, 'mp', 1, 1, 0, 'pending', NULL),
-(4, 'Țeavă rectangulară 40x20', 0.00, 'teava-rectangulara-40x20', 'simple', 'TR-40x20', NULL, NULL, NULL, NULL, NULL, NULL, 4, 2, '[\"structural\", \"metal\"]', 'published', 'public', 0, 35.00, 0.00, 19.00, 0, NULL, 'RON', 'in_stock', 800, 0, 0, 0, 0, 0, 0, 0, 0, '2026-01-08 07:22:39', '2026-01-08 07:22:39', NULL, NULL, NULL, NULL, 0, 'block', NULL, 'ml', 1, 1, 0, 'pending', NULL),
-(5, 'Șuruburi gips-carton 25mm (cutie)', 0.00, 'suruburi-gips-carton-25mm', 'simple', 'SUR-25', NULL, NULL, NULL, NULL, NULL, NULL, 7, 4, '[\"feronerie\", \"gips-carton\"]', 'published', 'public', 0, 55.50, 0.00, 19.00, 0, NULL, 'RON', 'in_stock', 1200, 0, 0, 0, 0, 0, 0, 0, 0, '2026-01-08 07:22:39', '2026-01-08 07:22:39', NULL, NULL, NULL, NULL, 0, 'block', NULL, 'cutie', 1, 1, 0, 'pending', NULL);
+(3, 'Plasă sudată 4mm', 0.00, 'plasa-sudata-4mm', 'simple', 'PLS-4', NULL, NULL, NULL, NULL, NULL, NULL, 5, 1, '[\"armare\", \"beton\"]', 'published', 'public', 0, 120.00, 0.00, 19.00, 0, NULL, 'RON', 'in_stock', 500, 0, 0, 0, 0, 1, 0, 0, 0, '2026-01-08 07:22:39', '2026-01-09 05:07:57', NULL, NULL, NULL, NULL, 0, 'block', NULL, 'mp', 1, 1, 0, 'pending', NULL),
+(4, 'Țeavă rectangulară 40x20', 0.00, 'teava-rectangulara-40x20', 'simple', 'TR-40x20', NULL, NULL, NULL, NULL, NULL, NULL, 4, 2, '[\"structural\", \"metal\"]', 'published', 'public', 0, 35.00, 0.00, 19.00, 0, NULL, 'RON', 'in_stock', 800, 0, 0, 0, 0, 1, 0, 0, 0, '2026-01-08 07:22:39', '2026-01-09 05:07:57', NULL, NULL, NULL, NULL, 0, 'block', NULL, 'ml', 1, 1, 0, 'pending', NULL),
+(5, 'Șuruburi gips-carton 25mm (cutie)', 0.00, 'suruburi-gips-carton-25mm', 'simple', 'SUR-25', NULL, NULL, NULL, NULL, NULL, NULL, 7, 4, '[\"feronerie\", \"gips-carton\"]', 'published', 'public', 0, 55.50, 0.00, 19.00, 0, NULL, 'RON', 'in_stock', 1200, 0, 0, 0, 0, 1, 0, 0, 0, '2026-01-08 07:22:39', '2026-01-09 05:07:57', NULL, NULL, NULL, NULL, 0, 'block', NULL, 'cutie', 1, 1, 0, 'pending', NULL);
 
 -- --------------------------------------------------------
 
@@ -1603,7 +1596,8 @@ CREATE TABLE `product_promotion` (
 INSERT INTO `product_promotion` (`promotion_id`, `product_id`) VALUES
 (2, 4),
 (5, 3),
-(6, 2);
+(6, 2),
+(7, 4);
 
 -- --------------------------------------------------------
 
@@ -1716,6 +1710,13 @@ CREATE TABLE `promotions` (
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Eliminarea datelor din tabel `promotions`
+--
+
+INSERT INTO `promotions` (`id`, `name`, `slug`, `type`, `value_type`, `value`, `short_description`, `description`, `hero_image`, `banner_image`, `mobile_image`, `start_at`, `end_at`, `settings`, `conditions`, `status`, `applies_to`, `is_exclusive`, `is_iterative`, `stacking_type`, `discount_percent`, `discount_value`, `min_cart_total`, `min_qty_per_product`, `customer_type`, `logged_in_only`, `created_at`, `updated_at`) VALUES
+(7, '10+1 gratis', '10-1-gratis', 'gift', 'percent', 0.00, NULL, 'SOUDAL:ADEZIV 50A=14 BUC+1 BUC GRATIS', NULL, NULL, NULL, '2026-01-08 22:00:00', '2026-01-29 22:00:00', '{\"gift_qty\": 1, \"gift_product_id\": 2}', NULL, 'active', 'all', 0, 0, 'iterative', NULL, NULL, 0.00, 10, 'b2b', 1, '2026-01-09 06:25:08', '2026-01-09 06:25:08');
 
 -- --------------------------------------------------------
 
@@ -1948,7 +1949,9 @@ INSERT INTO `role_user` (`role_id`, `user_id`) VALUES
 (5, 1),
 (4, 2),
 (4, 3),
-(1, 4);
+(1, 4),
+(2, 5),
+(3, 6);
 
 -- --------------------------------------------------------
 
@@ -2106,7 +2109,16 @@ INSERT INTO `route_points` (`id`, `agent_daily_route_id`, `latitude`, `longitude
 (128, 3, 46.20850000, 27.66060000, 1651, NULL, NULL, '2026-01-08 12:17:15', NULL, 0, '2026-01-08 12:17:15', '2026-01-08 12:17:15'),
 (129, 3, 46.20850000, 27.66060000, 1651, NULL, NULL, '2026-01-08 12:17:45', NULL, 0, '2026-01-08 12:17:45', '2026-01-08 12:17:45'),
 (130, 3, 46.20850000, 27.66060000, 1651, NULL, NULL, '2026-01-08 12:49:45', NULL, 0, '2026-01-08 12:49:45', '2026-01-08 12:49:45'),
-(131, 3, 46.20850000, 27.66060000, 1651, NULL, NULL, '2026-01-08 12:50:44', NULL, 0, '2026-01-08 12:50:44', '2026-01-08 12:50:44');
+(131, 3, 46.20850000, 27.66060000, 1651, NULL, NULL, '2026-01-08 12:50:44', NULL, 0, '2026-01-08 12:50:44', '2026-01-08 12:50:44'),
+(132, 4, 46.20850000, 27.66060000, 1651, NULL, NULL, '2026-01-09 08:35:58', NULL, 0, '2026-01-09 08:35:58', '2026-01-09 08:35:58'),
+(133, 4, 46.20850000, 27.66060000, 1651, NULL, NULL, '2026-01-09 08:36:59', NULL, 0, '2026-01-09 08:36:59', '2026-01-09 08:36:59'),
+(134, 4, 46.20850000, 27.66060000, 1651, NULL, NULL, '2026-01-09 08:47:59', NULL, 0, '2026-01-09 08:47:59', '2026-01-09 08:47:59'),
+(135, 4, 46.20850000, 27.66060000, 1651, NULL, NULL, '2026-01-09 09:01:38', NULL, 0, '2026-01-09 09:01:38', '2026-01-09 09:01:38'),
+(136, 4, 46.20850000, 27.66060000, 1651, NULL, NULL, '2026-01-09 09:02:38', NULL, 0, '2026-01-09 09:02:38', '2026-01-09 09:02:38'),
+(137, 4, 46.20850000, 27.66060000, 1651, NULL, NULL, '2026-01-09 09:20:38', NULL, 0, '2026-01-09 09:20:38', '2026-01-09 09:20:38'),
+(138, 5, 46.20850000, 27.66060000, 1651, NULL, NULL, '2026-01-09 12:38:24', NULL, 0, '2026-01-09 12:38:24', '2026-01-09 12:38:24'),
+(139, 5, 46.20850000, 27.66060000, 1651, NULL, NULL, '2026-01-09 12:38:44', NULL, 0, '2026-01-09 12:38:44', '2026-01-09 12:38:44'),
+(140, 4, 46.20850000, 27.66060000, 1651, NULL, NULL, '2026-01-09 12:47:14', NULL, 0, '2026-01-09 12:47:14', '2026-01-09 12:47:14');
 
 -- --------------------------------------------------------
 
@@ -2244,6 +2256,13 @@ CREATE TABLE `shipping_methods` (
   `updated_at` timestamp NULL DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+--
+-- Eliminarea datelor din tabel `shipping_methods`
+--
+
+INSERT INTO `shipping_methods` (`id`, `name`, `code`, `type`, `is_active`, `created_at`, `updated_at`) VALUES
+(1, 'Standard', 'std', 'courier', 1, '2026-01-09 05:19:42', '2026-01-09 05:19:42');
+
 -- --------------------------------------------------------
 
 --
@@ -2333,9 +2352,11 @@ CREATE TABLE `users` (
 
 INSERT INTO `users` (`id`, `customer_id`, `first_name`, `last_name`, `email`, `phone`, `email_verified_at`, `password`, `is_active`, `notification_preferences`, `remember_token`, `company_role`, `requires_approval`, `created_at`, `updated_at`, `director_id`) VALUES
 (1, NULL, 'Diana', 'Director', 'director@example.com', '0711111111', NULL, '$2y$12$VPrmCZ2bgwzvZvpghOCX0esu/AbjuY2fe1yDmj0uDYAEjbOd8CGs6', 1, NULL, NULL, NULL, 0, '2026-01-07 17:45:28', '2026-01-07 17:45:28', NULL),
-(2, NULL, 'Alex', 'Agent', 'agent1@example.com', '0722222222', NULL, '$2y$12$A3GREVmVSQZwWAT9mvKEbue8Rw7/.IuVYkvb6DnQ.fRjbAl7pSArO', 1, NULL, NULL, NULL, 0, '2026-01-07 17:45:29', '2026-01-08 06:26:18', 1),
+(2, NULL, 'agent', 'bc-nt', 'bc-nt@metal-rom.ro', '0722222222', NULL, '$2y$12$KwrZgom55FvEcG/wJ5GzhusShJWp5KEfv.ezJ4LtqdcFqm0ptfrM2', 1, NULL, NULL, NULL, 0, '2026-01-07 17:45:29', '2026-01-09 05:48:29', 1),
 (3, NULL, 'Bianca', 'Agent', 'agent2@example.com', '0733333333', NULL, '$2y$12$WB9n/dCfplK9e8QSztHe1OZ2lsi4RYFlk0DXI/BM4ydsBVa3sSA5K', 1, NULL, NULL, NULL, 0, '2026-01-07 17:45:29', '2026-01-08 06:26:18', 1),
-(4, NULL, 'Admin', 'System', 'cod.binar@gmail.com', '0700000000', NULL, '$2y$12$Iu2O7B0Sarj0Fb1vosXcm.6tEC9IRY.8KAMsucUMfPXtBv.7TI8Ua', 1, NULL, NULL, NULL, 0, '2026-01-07 17:50:17', '2026-01-07 17:50:17', NULL);
+(4, NULL, 'Admin', 'System', 'cod.binar@gmail.com', '0700000000', NULL, '$2y$12$Iu2O7B0Sarj0Fb1vosXcm.6tEC9IRY.8KAMsucUMfPXtBv.7TI8Ua', 1, NULL, NULL, NULL, 0, '2026-01-07 17:50:17', '2026-01-07 17:50:17', NULL),
+(5, 11, 'client', 'b2c', 'b2c@example.com', '0752222222', NULL, '$2y$12$ynmLC2/rm3WNcFtR6ovRxeuwENN4qmQWomkfyawtM90vVwHGAWvxe', 1, NULL, NULL, NULL, 0, '2026-01-09 05:47:35', '2026-01-09 08:34:32', NULL),
+(6, 12, 'client', 'b2b', 'b2b@example.com', '0758888888', NULL, '$2y$12$keYP6lZ0.rxoTo4vZql1oe1SRkmq492d91D/6EUpEO79p/nbiBS5e', 1, NULL, NULL, NULL, 0, '2026-01-09 05:48:01', '2026-01-09 08:35:30', NULL);
 
 -- --------------------------------------------------------
 
@@ -2366,23 +2387,8 @@ CREATE TABLE `visit_location_logs` (
 --
 
 INSERT INTO `visit_location_logs` (`id`, `customer_visit_id`, `latitude`, `longitude`, `accuracy`, `battery_level`, `provider`, `recorded_at`, `created_at`, `updated_at`, `speed`, `heading`, `altitude`, `network_type`, `is_mocked`) VALUES
-(1, 1, 46.2135440, 27.6646540, 500, 100, 'browser', '2026-01-07 20:12:55', '2026-01-07 18:12:55', '2026-01-07 18:12:55', NULL, NULL, NULL, '4g', 0),
-(2, 1, 46.2135440, 27.6646540, 500, 100, 'browser', '2026-01-07 20:13:54', '2026-01-07 18:13:54', '2026-01-07 18:13:54', NULL, NULL, NULL, '4g', 0),
-(3, 1, 46.2135440, 27.6646540, 500, 100, 'browser', '2026-01-07 20:16:06', '2026-01-07 18:16:06', '2026-01-07 18:16:06', NULL, NULL, NULL, '4g', 0),
-(4, 1, 46.2135440, 27.6646540, 500, 100, 'browser', '2026-01-07 20:16:21', '2026-01-07 18:16:21', '2026-01-07 18:16:21', NULL, NULL, NULL, '4g', 0),
-(5, 1, 46.2085000, 27.6606000, 1651, 100, 'browser', '2026-01-08 07:54:26', '2026-01-08 05:54:26', '2026-01-08 05:54:26', NULL, NULL, NULL, '4g', 0),
-(6, 1, 46.2085000, 27.6606000, 1651, 100, 'browser', '2026-01-08 07:56:05', '2026-01-08 05:56:05', '2026-01-08 05:56:05', NULL, NULL, NULL, '4g', 0),
-(7, 1, 46.2085000, 27.6606000, 1651, 100, 'browser', '2026-01-08 07:56:12', '2026-01-08 05:56:12', '2026-01-08 05:56:12', NULL, NULL, NULL, '4g', 0),
-(8, 3, 46.2085000, 27.6606000, 1651, 100, 'browser', '2026-01-08 08:15:20', '2026-01-08 06:15:20', '2026-01-08 06:15:20', NULL, NULL, NULL, '4g', 0),
-(9, 4, 46.2085000, 27.6606000, 1651, 100, 'browser', '2026-01-08 08:45:38', '2026-01-08 06:45:38', '2026-01-08 06:45:38', NULL, NULL, NULL, '4g', 0),
-(10, 4, 46.2085000, 27.6606000, 1651, 100, 'browser', '2026-01-08 08:47:11', '2026-01-08 06:47:11', '2026-01-08 06:47:11', NULL, NULL, NULL, '4g', 0),
-(11, 4, 46.2085000, 27.6606000, 1651, 100, 'browser', '2026-01-08 08:51:41', '2026-01-08 06:51:41', '2026-01-08 06:51:41', NULL, NULL, NULL, '4g', 0),
-(12, 4, 46.2085000, 27.6606000, 1651, 100, 'browser', '2026-01-08 09:21:11', '2026-01-08 07:21:11', '2026-01-08 07:21:11', NULL, NULL, NULL, '4g', 0),
-(13, 4, 46.2085000, 27.6606000, 1651, 100, 'browser', '2026-01-08 09:39:12', '2026-01-08 07:39:12', '2026-01-08 07:39:12', NULL, NULL, NULL, '4g', 0),
-(14, 4, 46.2085000, 27.6606000, 1651, 100, 'browser', '2026-01-08 09:47:23', '2026-01-08 07:47:23', '2026-01-08 07:47:23', NULL, NULL, NULL, '4g', 0),
-(15, 4, 46.2085000, 27.6606000, 1651, 100, 'browser', '2026-01-08 09:47:24', '2026-01-08 07:47:24', '2026-01-08 07:47:24', NULL, NULL, NULL, '4g', 0),
-(16, 4, 46.2085000, 27.6606000, 1651, 100, 'browser', '2026-01-08 10:31:44', '2026-01-08 08:31:44', '2026-01-08 08:31:44', NULL, NULL, NULL, '4g', 0),
-(17, 5, 46.2085000, 27.6606000, 1651, 100, 'browser', '2026-01-08 11:18:04', '2026-01-08 09:18:04', '2026-01-08 09:18:04', NULL, NULL, NULL, '4g', 0);
+(18, 6, 46.2085000, 27.6606000, 1651, 100, 'browser', '2026-01-09 11:02:38', '2026-01-09 09:02:38', '2026-01-09 09:02:38', NULL, NULL, NULL, '4g', 0),
+(19, 6, 46.2085000, 27.6606000, 1651, 100, 'browser', '2026-01-09 11:20:38', '2026-01-09 09:20:38', '2026-01-09 09:20:38', NULL, NULL, NULL, '4g', 0);
 
 --
 -- Indexuri pentru tabele eliminate
@@ -3056,7 +3062,7 @@ ALTER TABLE `visit_location_logs`
 -- AUTO_INCREMENT pentru tabele `addresses`
 --
 ALTER TABLE `addresses`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
 -- AUTO_INCREMENT pentru tabele `agent_customer`
@@ -3068,13 +3074,13 @@ ALTER TABLE `agent_customer`
 -- AUTO_INCREMENT pentru tabele `agent_daily_routes`
 --
 ALTER TABLE `agent_daily_routes`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
 
 --
 -- AUTO_INCREMENT pentru tabele `agent_routes`
 --
 ALTER TABLE `agent_routes`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT pentru tabele `attributes`
@@ -3092,7 +3098,7 @@ ALTER TABLE `attribute_values`
 -- AUTO_INCREMENT pentru tabele `audit_logs`
 --
 ALTER TABLE `audit_logs`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=40;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=89;
 
 --
 -- AUTO_INCREMENT pentru tabele `blog_categories`
@@ -3116,13 +3122,13 @@ ALTER TABLE `brands`
 -- AUTO_INCREMENT pentru tabele `carts`
 --
 ALTER TABLE `carts`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=19;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=31;
 
 --
 -- AUTO_INCREMENT pentru tabele `cart_items`
 --
 ALTER TABLE `cart_items`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=13;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=19;
 
 --
 -- AUTO_INCREMENT pentru tabele `cart_promotion`
@@ -3158,7 +3164,7 @@ ALTER TABLE `coupons`
 -- AUTO_INCREMENT pentru tabele `customers`
 --
 ALTER TABLE `customers`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=13;
 
 --
 -- AUTO_INCREMENT pentru tabele `customer_groups`
@@ -3170,7 +3176,7 @@ ALTER TABLE `customer_groups`
 -- AUTO_INCREMENT pentru tabele `customer_visits`
 --
 ALTER TABLE `customer_visits`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
 
 --
 -- AUTO_INCREMENT pentru tabele `discount_rules`
@@ -3206,7 +3212,7 @@ ALTER TABLE `jobs`
 -- AUTO_INCREMENT pentru tabele `migrations`
 --
 ALTER TABLE `migrations`
-  MODIFY `id` int UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=86;
+  MODIFY `id` int UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=88;
 
 --
 -- AUTO_INCREMENT pentru tabele `offers`
@@ -3230,13 +3236,13 @@ ALTER TABLE `offer_messages`
 -- AUTO_INCREMENT pentru tabele `orders`
 --
 ALTER TABLE `orders`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
 
 --
 -- AUTO_INCREMENT pentru tabele `order_items`
 --
 ALTER TABLE `order_items`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=12;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=14;
 
 --
 -- AUTO_INCREMENT pentru tabele `order_templates`
@@ -3254,7 +3260,7 @@ ALTER TABLE `order_template_items`
 -- AUTO_INCREMENT pentru tabele `pages`
 --
 ALTER TABLE `pages`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=12;
 
 --
 -- AUTO_INCREMENT pentru tabele `partner_requests`
@@ -3284,7 +3290,7 @@ ALTER TABLE `permissions`
 -- AUTO_INCREMENT pentru tabele `personal_access_tokens`
 --
 ALTER TABLE `personal_access_tokens`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=19;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=30;
 
 --
 -- AUTO_INCREMENT pentru tabele `products`
@@ -3338,7 +3344,7 @@ ALTER TABLE `product_variants`
 -- AUTO_INCREMENT pentru tabele `promotions`
 --
 ALTER TABLE `promotions`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
 
 --
 -- AUTO_INCREMENT pentru tabele `promotion_brand`
@@ -3416,7 +3422,7 @@ ALTER TABLE `roles`
 -- AUTO_INCREMENT pentru tabele `route_points`
 --
 ALTER TABLE `route_points`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=132;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=141;
 
 --
 -- AUTO_INCREMENT pentru tabele `sales_representatives`
@@ -3452,7 +3458,7 @@ ALTER TABLE `shipments`
 -- AUTO_INCREMENT pentru tabele `shipping_methods`
 --
 ALTER TABLE `shipping_methods`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT pentru tabele `shipping_rules`
@@ -3476,13 +3482,13 @@ ALTER TABLE `ticket_messages`
 -- AUTO_INCREMENT pentru tabele `users`
 --
 ALTER TABLE `users`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
 
 --
 -- AUTO_INCREMENT pentru tabele `visit_location_logs`
 --
 ALTER TABLE `visit_location_logs`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=18;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=20;
 
 --
 -- Constrângeri pentru tabele eliminate

@@ -69,7 +69,7 @@
               contacteze un reprezentant de vânzări pentru o ofertă personalizată.
             </p>
             <div class="d-grid gap-2">
-              <button type="button" class="btn btn-sm btn-primary">
+              <button type="button" class="btn btn-sm btn-orange">
                 Devino partener (demo)
               </button>
               <button type="button" class="btn btn-sm btn-outline-secondary">

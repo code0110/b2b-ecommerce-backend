@@ -1,141 +1,162 @@
 <template>
-  <div class="container py-4">
-    <div class="d-flex flex-wrap justify-content-between align-items-center mb-3">
-      <div>
-        <h1 class="h5 mb-1">Rezultate căutare</h1>
-        <p class="small text-muted mb-0">
-          Căutare după: <strong>"{{ query || '' }}"</strong>
-        </p>
-      </div>
-      <div v-if="total > 0" class="small text-muted mt-2 mt-md-0">
-        {{ total }} rezultat{{ total === 1 ? '' : 'e' }}
-      </div>
-    </div>
-
-    <div class="card mb-3">
-      <div class="card-body">
-        <form class="row g-2" @submit.prevent="handleSubmit">
-          <div class="col-md-10">
-            <input
-              v-model="searchInput"
-              type="text"
-              class="form-control form-control-sm"
-              placeholder="Caută după denumire, cod intern, cod de bare..."
-            />
+  <div>
+    <!-- Header -->
+    <div class="dd-page-header py-3 mb-3 border-bottom bg-white">
+      <div class="container">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+          <div>
+            <h1 class="h4 mb-1">Rezultate căutare: <span class="text-primary">"{{ query }}"</span></h1>
+            <div class="small text-muted">
+              {{ total }} produse găsite
+            </div>
           </div>
-          <div class="col-md-2 text-md-end">
-            <button class="btn btn-primary btn-sm w-100" type="submit">
-              Caută
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-
-    <div v-if="error" class="alert alert-danger py-2 mb-3">
-      {{ error }}
-    </div>
-
-    <div v-if="loading" class="text-center py-4">
-      <div class="spinner-border spinner-border-sm" role="status" />
-      <div class="small text-muted mt-2">Se caută produse...</div>
-    </div>
-
-    <div v-else>
-      <div v-if="!query" class="alert alert-info py-2">
-        Introdu un termen de căutare pentru a vedea rezultate.
-      </div>
-
-      <div v-else-if="products.length === 0" class="alert alert-warning py-2">
-        Nu am găsit produse pentru termenul introdus.
-      </div>
-
-      <div v-else class="row g-3">
-        <div
-          v-for="product in products"
-          :key="product.id"
-          class="col-md-3 col-sm-6"
-        >
-          <div class="card h-100">
-            <div class="card-body d-flex flex-column">
-              <div class="small text-muted mb-1">
-                {{ product.category || 'Categorie nespecificată' }}
-              </div>
-              <h2 class="h6 mb-1">{{ product.name }}</h2>
-              <div class="small text-muted mb-2">{{ product.code }}</div>
-              <div class="mt-auto">
-                <div v-if="product.promoPrice || product.promo_price || product.price">
-                  <span v-if="product.list_price && product.list_price > (product.promoPrice || product.promo_price || product.price)" class="text-decoration-line-through text-muted small d-block">
-                    {{ formatPrice(product.list_price) }}
-                  </span>
-                  <div class="fw-semibold mb-1" :class="{'text-danger': (product.list_price > (product.promoPrice || product.promo_price || product.price))}">
-                    {{ formatPrice(product.promoPrice || product.promo_price || product.price) }} RON
-                  </div>
-                </div>
-                <div v-else class="fw-semibold mb-1">
-                  {{ formatPrice(product.price || 0) }} RON
-                </div>
-                <RouterLink
-                  :to="`/produs/${product.slug}`"
-                  class="btn btn-outline-secondary btn-sm"
-                >
-                  Detalii produs
-                </RouterLink>
-              </div>
+          
+          <!-- Controls -->
+          <div class="d-flex gap-2 align-items-center">
+             <div class="d-flex align-items-center gap-2">
+                <label class="small text-muted text-nowrap">Sortează:</label>
+                <select v-model="sortBy" @change="applyFilters" class="form-select form-select-sm" style="min-width: 140px;">
+                    <option value="relevance">Relevanță</option>
+                    <option value="price_asc">Preț crescător</option>
+                    <option value="price_desc">Preț descrescător</option>
+                    <option value="newest">Cele mai noi</option>
+                    <option value="name_asc">Nume (A-Z)</option>
+                </select>
+             </div>
+             
+             <div class="btn-group btn-group-sm">
+                <button class="btn btn-outline-secondary" :class="{ active: viewMode === 'grid' }" @click="viewMode = 'grid'">
+                    <i class="bi bi-grid-3x3-gap"></i>
+                </button>
+                <button class="btn btn-outline-secondary" :class="{ active: viewMode === 'list' }" @click="viewMode = 'list'">
+                    <i class="bi bi-list"></i>
+                </button>
             </div>
           </div>
         </div>
       </div>
+    </div>
 
-      <!-- Paginare minimală (dacă vrei să o folosești mai târziu) -->
-      <nav
-        v-if="meta.last_page > 1"
-        class="mt-3"
-        aria-label="Pagini rezultate căutare"
-      >
-        <ul class="pagination pagination-sm mb-0">
-          <li
-            class="page-item"
-            :class="{ disabled: meta.current_page <= 1 }"
-          >
-            <button
-              class="page-link"
-              type="button"
-              @click="changePage(meta.current_page - 1)"
-            >
-              «
-            </button>
-          </li>
+    <div class="container pb-5">
+      <div class="row g-4">
+        <!-- Sidebar Filters -->
+        <div class="col-lg-3">
+            <div class="card border-0 shadow-sm p-3 sticky-top" style="top: 100px; z-index: 100;">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="mb-0 fw-bold">Filtre</h5>
+                    <button v-if="hasActiveFilters" class="btn btn-sm btn-link text-danger text-decoration-none p-0" @click="clearFilters">
+                        Reset
+                    </button>
+                </div>
+                
+                <div v-if="loadingFacets" class="text-center py-3">
+                    <div class="spinner-border spinner-border-sm text-secondary"></div>
+                </div>
+                
+                <div v-else>
+                    <!-- Price Range -->
+                    <div class="mb-4">
+                        <h6 class="fw-bold small text-uppercase mb-2">Preț (RON {{ showVat ? 'cu TVA' : 'fără TVA' }})</h6>
+                        <div class="d-flex align-items-center gap-2 mb-2">
+                            <input type="number" class="form-control form-control-sm" v-model.number="priceMin" placeholder="Min">
+                            <span>-</span>
+                            <input type="number" class="form-control form-control-sm" v-model.number="priceMax" placeholder="Max">
+                        </div>
+                        <button class="btn btn-sm btn-outline-primary w-100" @click="applyFilters">Aplică Preț</button>
+                    </div>
 
-          <li
-            v-for="page in pages"
-            :key="page"
-            class="page-item"
-            :class="{ active: page === meta.current_page }"
-          >
-            <button
-              class="page-link"
-              type="button"
-              @click="changePage(page)"
-            >
-              {{ page }}
-            </button>
-          </li>
+                    <!-- Categories Facet -->
+                    <div v-if="facets.categories && facets.categories.length > 0" class="mb-4">
+                        <h6 class="fw-bold small text-uppercase mb-2">Categorii</h6>
+                        <div class="overflow-auto custom-scrollbar" style="max-height: 250px;">
+                            <div v-for="cat in facets.categories" :key="cat.id" class="form-check">
+                                <input 
+                                    class="form-check-input" 
+                                    type="checkbox" 
+                                    :value="cat.id" 
+                                    v-model="selectedCategories"
+                                    :id="'cat-'+cat.id"
+                                    @change="applyFilters"
+                                >
+                                <label class="form-check-label small" :for="'cat-'+cat.id">
+                                    {{ cat.name }} <span class="text-muted">({{ cat.count }})</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
 
-          <li
-            class="page-item"
-            :class="{ disabled: meta.current_page >= meta.last_page }"
-          >
-            <button
-              class="page-link"
-              type="button"
-              @click="changePage(meta.current_page + 1)"
-            >
-              »
-            </button>
-          </li>
-        </ul>
-      </nav>
+                    <!-- Brands Facet -->
+                    <div v-if="facets.brands && facets.brands.length > 0" class="mb-4">
+                        <h6 class="fw-bold small text-uppercase mb-2">Branduri</h6>
+                        <div class="overflow-auto custom-scrollbar" style="max-height: 250px;">
+                             <div v-for="brand in facets.brands" :key="brand.id" class="form-check">
+                                <input 
+                                    class="form-check-input" 
+                                    type="checkbox" 
+                                    :value="brand.id" 
+                                    v-model="selectedBrands"
+                                    :id="'brand-'+brand.id"
+                                    @change="applyFilters"
+                                >
+                                <label class="form-check-label small" :for="'brand-'+brand.id">
+                                    {{ brand.name }} <span class="text-muted">({{ brand.count }})</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Results -->
+        <div class="col-lg-9">
+             <div v-if="loading" class="text-center py-5">
+                <div class="spinner-border text-orange" style="width: 3rem; height: 3rem;" role="status"></div>
+                <div class="mt-3 text-muted fs-5">Căutăm produsele...</div>
+            </div>
+
+            <div v-else-if="products.length === 0" class="text-center py-5 bg-white rounded shadow-sm">
+                <div class="display-1 text-muted mb-3"><i class="bi bi-search"></i></div>
+                <h4>Nu am găsit rezultate</h4>
+                <p class="text-muted">Încearcă alți termeni de căutare sau elimină filtrele active.</p>
+                <button v-if="hasActiveFilters" class="btn btn-outline-primary mt-2" @click="clearFilters">
+                    Șterge filtrele
+                </button>
+            </div>
+
+            <div v-else>
+                 <div :class="viewMode === 'grid' ? 'row g-3' : 'd-flex flex-column gap-3'">
+                    <div v-for="product in products" :key="product.id" :class="viewMode === 'grid' ? 'col-6 col-md-4 col-lg-3 col-xxl-2' : 'w-100'">
+                        <ProductCard v-if="viewMode === 'grid'" :product="product" />
+                        <ProductCardList v-else :product="product" />
+                    </div>
+                 </div>
+                 
+                 <!-- Pagination -->
+                 <div v-if="lastPage > 1" class="d-flex justify-content-center mt-5">
+                    <nav>
+                        <ul class="pagination shadow-sm">
+                            <li class="page-item" :class="{ disabled: currentPage === 1 }">
+                                <button class="page-link" @click="changePage(currentPage - 1)" aria-label="Previous">
+                                    <span aria-hidden="true">&laquo;</span>
+                                </button>
+                            </li>
+                            
+                            <li v-for="page in paginationPages" :key="page" class="page-item" :class="{ active: currentPage === page, disabled: page === '...' }">
+                                <button class="page-link" @click="page !== '...' && changePage(page)">{{ page }}</button>
+                            </li>
+                            
+                             <li class="page-item" :class="{ disabled: currentPage === lastPage }">
+                                <button class="page-link" @click="changePage(currentPage + 1)" aria-label="Next">
+                                    <span aria-hidden="true">&raquo;</span>
+                                </button>
+                            </li>
+                        </ul>
+                    </nav>
+                 </div>
+            </div>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -143,104 +164,193 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import { usePreferencesStore } from '@/store/preferences';
+import { storeToRefs } from 'pinia';
 import { searchProducts } from '@/services/catalog';
+import ProductCard from '@/components/common/ProductCard.vue';
+import ProductCardList from '@/components/common/ProductCardList.vue';
 
 const route = useRoute();
 const router = useRouter();
+const preferences = usePreferencesStore();
+const { showVat } = storeToRefs(preferences);
 
-const query = ref(route.query.q || '');
-const searchInput = ref(query.value);
-
+// State
+const query = ref('');
 const products = ref([]);
+const facets = ref({ brands: [], categories: [], min_price: 0, max_price: 0 });
 const loading = ref(false);
-const error = ref('');
+const loadingFacets = ref(false);
+const total = ref(0);
+const currentPage = ref(1);
+const lastPage = ref(1);
+const viewMode = ref('grid');
 
-const meta = ref({
-  total: 0,
-  current_page: 1,
-  last_page: 1,
+// Filters State
+const selectedBrands = ref([]);
+const selectedCategories = ref([]);
+const priceMin = ref(null);
+const priceMax = ref(null);
+const sortBy = ref('relevance');
+
+// Computed
+const hasActiveFilters = computed(() => {
+    return selectedBrands.value.length > 0 || 
+           selectedCategories.value.length > 0 || 
+           priceMin.value !== null || 
+           priceMax.value !== null ||
+           sortBy.value !== 'relevance';
 });
 
-const total = computed(() => meta.value.total);
+const paginationPages = computed(() => {
+    const delta = 2;
+    const range = [];
+    const rangeWithDots = [];
+    const l = lastPage.value;
+    const current = currentPage.value;
 
-const pages = computed(() => {
-  const last = meta.value.last_page || 1;
-  const current = meta.value.current_page || 1;
+    range.push(1);
+    for (let i = current - delta; i <= current + delta; i++) {
+        if (i < l && i > 1) {
+            range.push(i);
+        }
+    }
+    range.push(l);
 
-  const result = [];
-  const start = Math.max(1, current - 2);
-  const end = Math.min(last, current + 2);
-
-  for (let p = start; p <= end; p += 1) {
-    result.push(p);
-  }
-  return result;
+    let prev;
+    for (const i of range) {
+        if (prev) {
+            if (i - prev === 2) {
+                rangeWithDots.push(prev + 1);
+            } else if (i - prev !== 1) {
+                rangeWithDots.push('...');
+            }
+        }
+        rangeWithDots.push(i);
+        prev = i;
+    }
+    return rangeWithDots;
 });
 
-const loadResults = async () => {
-  const q = query.value?.toString().trim();
+// Methods
+const syncFiltersFromQuery = () => {
+    query.value = route.query.q || '';
+    currentPage.value = parseInt(route.query.page) || 1;
+    sortBy.value = route.query.sort || 'relevance';
+    
+    if (route.query.brands) {
+        selectedBrands.value = route.query.brands.split(',').map(Number);
+    } else {
+        selectedBrands.value = [];
+    }
+    
+    if (route.query.categories) {
+        selectedCategories.value = route.query.categories.split(',').map(Number);
+    } else {
+        selectedCategories.value = [];
+    }
+    
+    priceMin.value = route.query.min_price ? Number(route.query.min_price) : null;
+    priceMax.value = route.query.max_price ? Number(route.query.max_price) : null;
+};
 
-  if (!q) {
-    products.value = [];
-    meta.value = { total: 0, current_page: 1, last_page: 1 };
-    return;
-  }
-
+const performSearch = async () => {
   loading.value = true;
-  error.value = '';
-
+  loadingFacets.value = products.value.length === 0; // Only show facet loader on initial load
+  
+  const params = {
+      q: query.value,
+      page: currentPage.value,
+      sort: sortBy.value,
+      brands: selectedBrands.value.join(','),
+      categories: selectedCategories.value.join(','),
+      min_price: priceMin.value,
+      max_price: priceMax.value,
+      price_mode: showVat.value ? 'gross' : 'net'
+  };
+  
   try {
-    const data = await searchProducts({
-      q,
-      page: meta.value.current_page,
-    });
-
-    products.value = data.data ?? [];
-    meta.value = data.meta ?? {
-      total: 0,
-      current_page: 1,
-      last_page: 1,
-    };
+    const data = await searchProducts(params);
+    products.value = data.data || [];
+    total.value = data.meta.total;
+    lastPage.value = data.meta.last_page;
+    
+    // Update facets only if we have them in response
+    if (data.facets) {
+        facets.value = data.facets;
+    }
   } catch (e) {
-    console.error(e);
-    error.value = 'A apărut o eroare la căutare.';
+    console.error('Search error', e);
   } finally {
     loading.value = false;
+    loadingFacets.value = false;
   }
 };
 
-const handleSubmit = () => {
-  query.value = searchInput.value;
-  meta.value.current_page = 1;
-  router.replace({
-    name: 'search-results',
-    query: { q: query.value || undefined },
-  });
-  loadResults();
+const applyFilters = () => {
+    currentPage.value = 1;
+    const queryParams = {
+        ...route.query,
+        page: 1,
+        sort: sortBy.value,
+        brands: selectedBrands.value.length ? selectedBrands.value.join(',') : undefined,
+        categories: selectedCategories.value.length ? selectedCategories.value.join(',') : undefined,
+        min_price: priceMin.value || undefined,
+        max_price: priceMax.value || undefined
+    };
+    
+    // Remove undefined keys
+    Object.keys(queryParams).forEach(key => queryParams[key] === undefined && delete queryParams[key]);
+    
+    router.push({ query: queryParams });
+};
+
+const clearFilters = () => {
+    selectedBrands.value = [];
+    selectedCategories.value = [];
+    priceMin.value = null;
+    priceMax.value = null;
+    sortBy.value = 'relevance';
+    applyFilters();
 };
 
 const changePage = (page) => {
-  if (page < 1 || page > meta.value.last_page) return;
-  meta.value.current_page = page;
-  loadResults();
+    if (page < 1 || page > lastPage.value) return;
+    currentPage.value = page;
+    router.push({ query: { ...route.query, page } });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
 };
 
-const formatPrice = (value) => {
-  if (typeof value !== 'number') return value;
-  return value.toLocaleString('ro-RO', { minimumFractionDigits: 2 });
-};
+// Lifecycle
+onMounted(() => {
+    syncFiltersFromQuery();
+    if (query.value || hasActiveFilters.value) {
+        performSearch();
+    }
+});
 
-// inițial
-onMounted(loadResults);
+watch(() => route.query, () => {
+    syncFiltersFromQuery();
+    performSearch();
+});
 
-// reîncarcă dacă se schimbă q în URL
-watch(
-  () => route.query.q,
-  (newQ) => {
-    query.value = newQ || '';
-    searchInput.value = query.value;
-    meta.value.current_page = 1;
-    loadResults();
-  }
-);
+watch(showVat, () => {
+    performSearch();
+});
 </script>
+
+<style scoped>
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #ccc;
+  border-radius: 3px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #aaa;
+}
+</style>

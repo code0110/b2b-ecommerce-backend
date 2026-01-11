@@ -58,25 +58,44 @@
                 <th style="width: 40px;" class="text-center">#</th>
                 <th>Produs</th>
                 <th style="width: 120px;">Cod intern</th>
+                <th style="width: 100px;" class="text-center">Unitate</th>
                 <th style="width: 110px;" class="text-end">Preț Listă</th>
                 <th style="width: 90px;" class="text-center">Stoc</th>
                 <th style="width: 120px;" class="text-center">Cantitate</th>
               </tr>
             </thead>
             <tbody class="small">
-              <tr v-for="(product, index) in products" :key="product.id">
+              <tr v-for="(product, index) in products" :key="`${product.id}_${product.variant_id || 'main'}`">
                 <td class="text-center">{{ index + 1 }}</td>
                 <td>
-                  <div class="fw-semibold">{{ product.name }}</div>
+                  <div class="fw-semibold">
+                    <router-link :to="`/product/${product.slug}`" class="text-decoration-none text-dark">
+                      {{ product.name }}
+                    </router-link>
+                  </div>
                   <div class="text-muted">
-                    {{ product.mainCategory || 'Fără categorie' }}
+                    {{ product.category || 'Fără categorie' }}
                   </div>
                 </td>
                 <td>
-                  <span class="text-monospace">{{ product.internal_code }}</span>
+                  <span class="text-monospace">{{ product.code }}</span>
+                </td>
+                <td class="text-center">
+                  <select 
+                    v-if="product.units && product.units.length > 1" 
+                    v-model="product.selectedUnit" 
+                    class="form-select form-select-sm"
+                  >
+                    <option v-for="u in product.units" :key="u.name" :value="u.name">
+                      {{ u.name }} (x{{ u.conversion_factor }})
+                    </option>
+                  </select>
+                  <span v-else class="badge bg-light text-dark border">
+                    {{ product.selectedUnit || 'buc' }}
+                  </span>
                 </td>
                 <td class="text-end">
-                  {{ formatMoney(product.list_price || product.price) }}
+                  {{ formatMoney(product.price) }}
                 </td>
                 <td class="text-center">
                   <span
@@ -112,7 +131,7 @@
       <div class="card-footer d-flex justify-content-between align-items-center small">
         <div class="text-muted">
           Cantitate totală selectată: <strong>{{ totalQuantity }}</strong> buc.
-          <span v-if="addingToCart" class="ms-2 text-primary">Se adaugă în coș...</span>
+          <span v-if="addingToCart" class="ms-2 text-orange">Se adaugă în coș...</span>
         </div>
         <div class="d-flex gap-2">
           <button
@@ -124,7 +143,7 @@
           </button>
           <button
             type="button"
-            class="btn btn-primary btn-sm"
+            class="btn btn-orange btn-sm"
             :disabled="totalQuantity === 0 || addingToCart"
             @click="addAllToCart"
           >
@@ -197,10 +216,18 @@ const fetchProducts = async () => {
     const { data } = await api.get('/quick-order/search', {
       params: { q: filters.search }
     })
-    products.value = data.map(p => ({
-      ...p,
-      orderQuantity: 0 // Local state for input
-    }))
+    products.value = data.map(p => {
+      let defaultUnit = 'buc'
+      if (p.units && p.units.length > 0) {
+        const def = p.units.find(u => u.is_default) || p.units[0]
+        defaultUnit = def.name
+      }
+      return {
+        ...p,
+        orderQuantity: 0, // Local state for input
+        selectedUnit: defaultUnit
+      }
+    })
   } catch (e) {
     console.error('Error fetching products', e)
     toast.error('Eroare la căutarea produselor')
@@ -214,20 +241,30 @@ const totalQuantity = computed(() => {
 })
 
 const resetQuantities = () => {
-  products.value.forEach(p => p.orderQuantity = 0)
+  products.value.forEach(p => {
+      p.orderQuantity = 0;
+  })
 }
 
 const addAllToCart = async () => {
-  const itemsToAdd = products.value.filter(p => p.orderQuantity > 0)
+  const itemsToAdd = products.value
+    .filter(p => p.orderQuantity > 0)
+    .map(p => ({
+      id: p.id,
+      quantity: p.orderQuantity,
+      variant_id: p.variant_id || null,
+      unit: p.selectedUnit
+    }))
+
   if (itemsToAdd.length === 0) return
 
   addingToCart.value = true
   let successCount = 0
 
-  // Sequential add to ensure order and avoid race conditions if backend doesn't support bulk
-  // Optimization: Could use Promise.all if backend handles concurrency well, but safe is better.
+  // Sequential add to ensure order and avoid race conditions
   for (const item of itemsToAdd) {
-    const success = await cartStore.addItem(item.id, item.orderQuantity)
+    // Pass unit as 4th argument
+    const success = await cartStore.addItem(item.id, item.quantity, item.variant_id, item.unit)
     if (success) successCount++
   }
 
